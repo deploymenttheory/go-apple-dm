@@ -18,8 +18,8 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/ddm"
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/status"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/server/lab/target"
 )
 
@@ -32,6 +32,7 @@ type appsInstallation struct {
 	MaxAgeSeconds int    `json:"max_age_seconds"`
 }
 
+// appsInstallationConfig validates operator expectations without treating them as native installation proof.
 func appsInstallationConfig(s *Session) (appsInstallation, error) {
 	var c appsInstallation
 	b, err := appsRead(s, "installation.json")
@@ -50,7 +51,7 @@ func appsInstallationConfig(s *Session) (appsInstallation, error) {
 // operation dispatch. ACK, publication and stale historical processing fail.
 func appsInstallationSource(op managedcontent.Operation, e managedcontent.Evidence, c appsInstallation, now time.Time) error {
 	d, o := e.Dispatch, e.Observation
-	if op.ID != c.Operation || op.Phase != managedcontent.Dispatched || d == nil || o == nil || op.Dispatch == nil ||
+	if op.ID != c.Operation || op.Phase != managedcontent.Dispatched || op.SupersededBy != "" || d == nil || o == nil || op.Dispatch == nil ||
 		d.ID != op.Dispatch.ID || d.Digest != op.Dispatch.Digest || d.Method != op.Plan.Method || d.Content != op.Plan.Content || d.Enrollment != op.Plan.Target.Enrollment || d.Serial != op.Plan.Target.Serial || d.ClientUserID != op.Plan.Target.ClientUserID ||
 		o.ID != d.ID || o.Digest != d.Digest || o.Enrollment != d.Enrollment || o.Method != d.Method || o.ManagementMethod != d.Method || !o.Authoritative || !o.OwnsIdentity || !o.Found || !o.Terminal || !o.Installed || len(o.Raw) == 0 ||
 		o.ObservedAt.IsZero() || o.ObservedAt.After(now) || now.Sub(o.ObservedAt) > time.Duration(c.MaxAgeSeconds)*time.Second {
@@ -80,26 +81,34 @@ func appsInstallationSource(op managedcontent.Operation, e managedcontent.Eviden
 			return fmt.Errorf("%w: current installed app version required", ErrBlocked)
 		}
 	} else if d.Method == managedcontent.DDM {
-		var apps status.AppManagedList
-		if !o.DeclarationPublished || json.Unmarshal(o.Raw, &apps) != nil {
-			return fmt.Errorf("%w: current declarative managed-app status required", ErrBlocked)
+		var provenance app.ManagedContentDDMEvidence
+		if !o.DeclarationPublished || json.Unmarshal(o.Raw, &provenance) != nil || provenance.BundleID != c.BundleID || provenance.DeclarationIdentifier == "" || provenance.ServerToken == "" || provenance.PublishedAt.IsZero() || o.ObservedAt.Before(provenance.PublishedAt) || o.AppVersion != "" && o.AppVersion != c.Version {
+			return fmt.Errorf("%w: current owned declarative app provenance required", ErrBlocked)
 		}
-		matches := 0
-		for _, app := range apps.Value {
-			if app.Identifier != c.BundleID {
+		documents := 0
+		for _, doc := range d.Declarations {
+			if doc.Identifier == provenance.DeclarationIdentifier && doc.ServerToken == provenance.ServerToken && len(doc.Raw) > 0 {
+				documents++
+			}
+		}
+		declarations := 0
+		for _, decl := range provenance.Declarations {
+			if decl.Identifier != provenance.DeclarationIdentifier {
 				continue
 			}
-			if app.State == nil || *app.State != "managed" || app.DeclarationIdentifier == nil || app.Removed != nil && *app.Removed || app.Version == nil || *app.Version != c.Version {
-				return fmt.Errorf("%w: current declarative managed-app status required", ErrBlocked)
+			if decl.ServerToken != provenance.ServerToken || !decl.Active || decl.Valid != "valid" {
+				return fmt.Errorf("%w: current declaration token and active state required", ErrBlocked)
 			}
-			for _, doc := range d.Declarations {
-				if doc.Identifier == *app.DeclarationIdentifier {
-					matches++
-				}
+			declarations++
+		}
+		report := false
+		for _, record := range provenance.Reports {
+			if record.Seq > 0 && !record.ReceivedAt.Before(provenance.PublishedAt) && len(record.Raw) > 0 {
+				report = true
 			}
 		}
-		if matches != 1 {
-			return appsError(context.Background(), "declaration provenance")
+		if documents != 1 || declarations != 1 || !report {
+			return fmt.Errorf("%w: authenticated native declaration/report provenance required", ErrBlocked)
 		}
 	} else {
 		return appsError(context.Background(), "installation method")
@@ -119,6 +128,25 @@ func appsNativeQuery(ctx context.Context, s *Session, path string, payload comma
 		return nil, appsError(ctx, "native query push and acknowledgment")
 	}
 	return b, nil
+}
+
+// appsCurrentObservation reads existing authenticated native facts through the
+// configured reference inspector. It never advances an SDK operation or queues.
+func appsCurrentObservation(ctx context.Context, s *Session, base, id, name string) (managedcontent.Observation, error) {
+	var current struct {
+		OperationID string                     `json:"operationId"`
+		Observation managedcontent.Observation `json:"observation"`
+	}
+	if err := appsRequest(ctx, s, "GET", base+"/native-observation", nil, &current); err != nil {
+		return managedcontent.Observation{}, err
+	}
+	if current.OperationID != id {
+		return managedcontent.Observation{}, appsError(ctx, "native observation identity")
+	}
+	if err := appsSave(s, name, current); err != nil {
+		return managedcontent.Observation{}, err
+	}
+	return current.Observation, nil
 }
 
 // liveAppsBooksInstallation only inspects an operator-prepared app. It does not
@@ -157,6 +185,17 @@ func liveAppsBooksInstallation(ctx context.Context, session *Session) (result er
 	if op.Plan.LocationID != a.config.Location || op.LocationUID != a.config.UID || op.MDMID != a.config.MDMID || op.Plan.Content.Asset != a.config.Asset || op.Plan.Content.Kind != "App" || op.Plan.Target.Serial != a.config.Serial || op.Plan.Target.ClientUserID != a.config.User {
 		return appsError(ctx, "designated content operation")
 	}
+	if a.config.Serial != "" && s.Info.Serial != "" && inventory.CanonicalSerial(a.config.Serial) != inventory.CanonicalSerial(s.Info.Serial) {
+		return fmt.Errorf("%w: selected native serial differs from designated target", ErrBlocked)
+	}
+	if err = appsSave(s, "sdk-evidence.json", evidence); err != nil {
+		return err
+	}
+	current, err := appsCurrentObservation(ctx, s, base, c.Operation, "native-observation-before.json")
+	if err != nil {
+		return err
+	}
+	evidence.Observation = &current
 	if err = appsInstallationSource(op, evidence, c, time.Now()); err != nil {
 		return err
 	}
@@ -256,6 +295,18 @@ func liveAppsBooksInstallation(ctx context.Context, session *Session) (result er
 	}
 	if !reflect.DeepEqual(identity, fresh) {
 		return appsError(ctx, "native identity continuity")
+	}
+	var latest managedcontent.Operation
+	if err = appsRequest(ctx, s, "GET", base, nil, &latest); err != nil {
+		return err
+	}
+	final, err := appsCurrentObservation(ctx, s, base, c.Operation, "native-observation-final.json")
+	if err != nil {
+		return err
+	}
+	evidence.Observation = &final
+	if err = appsInstallationSource(latest, evidence, c, time.Now()); err != nil {
+		return err
 	}
 	if err = appsSave(s, "operation.json", op); err != nil {
 		return err

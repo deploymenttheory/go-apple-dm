@@ -130,6 +130,9 @@ Cleanup uses a separate eight-minute-thirty-second bounded context. If the origi
 the module disassociates only this app from this target and independently confirms
 absence. It never uses broad target revocation. A preexisting assignment is never
 disassociated. Cleanup must succeed before the invocation's own fence is removed.
+Each direct mutation re-reads native app/revocation capabilities; the original
+snapshot cannot authorize cleanup after those restrictions change. A final
+reference read rejects contradictory callbacks received while cleanup settles.
 
 Any uncertain submission, partial status, conflicting revision, callback failure,
 failed readback or unsuccessful cleanup retains the fence and original evidence.
@@ -182,6 +185,14 @@ platform, OS and channel. ACK and declaration publication alone are insufficient
 DDM uses current managed-app status joined to its declaration identity; installed
 queries do not set the MDM-only managed-app filter. tvOS app delivery uses MDM;
 this does not exclude its other supported DDM status features.
+
+The privileged `native-observation` GET reads current authenticated native facts
+before and after explicit query commands. It does not call SDK `Step`, update
+leases, submit licensing or queue work. Stored operation evidence remains an
+as-of snapshot. The server owns DDM status folding; the lab consumes its typed
+observation and exact declaration/token/bundle provenance without recreating that
+state engine. A late foreign declaration or removal cannot pass because the app
+still appears in an installed-app list.
 
 The inspection reports cleanup as not applicable because it changes no apps or
 licenses. It does not claim the environment was restored after external setup.

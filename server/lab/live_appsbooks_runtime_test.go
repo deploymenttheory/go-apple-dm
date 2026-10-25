@@ -13,7 +13,9 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime/pprof"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -51,7 +53,17 @@ func appsRuntime(t *testing.T) (*Session, *appsFixture, appsAcceptance) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(e.Close)
+	t.Cleanup(func() {
+		e.Close()
+		if t.Failed() {
+			select {
+			case runtimeErr := <-e.errs:
+				t.Logf("private reference runtime termination: %v", runtimeErr)
+			default:
+				t.Log("private reference runtime had no terminal error receipt")
+			}
+		}
+	})
 	s := &Session{Env: e, Evidence: t.TempDir()}
 	c := appsAcceptance{Location: f.location.ID, UID: f.location.UID, MDMID: "mdm", Asset: appsbooks.Asset{AdamID: "123", PricingParam: "STDQ"}, User: "private-user", MaxPages: 5, FreeApp: true, Mutate: true, Quiescent: true}
 	if err = os.Mkdir(w.path("appsbooks"), 0o700); err != nil {
@@ -79,6 +91,7 @@ func appsRuntime(t *testing.T) (*Session, *appsFixture, appsAcceptance) {
 	return s, f, c
 }
 
+// appsRuntimeSQL opens the actual sealed SQLite state store only in simulated mode.
 func appsRuntimeSQL(t *testing.T, s *Session) *statestore.Store {
 	t.Helper()
 	if s.Env.Mode != "simulated" {
@@ -207,6 +220,7 @@ func appsDueFixture(t *testing.T, s *Session, f *appsFixture, st state.Store, lo
 	}
 }
 
+// requestCount counts a selected Apple request under the fixture lock.
 func (f *appsFixture) requestCount(request string) int {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -219,6 +233,7 @@ func (f *appsFixture) requestCount(request string) int {
 	return n
 }
 
+// appsInstallDueFixture installs test-only due progression after asserting the real SQL poll barrier.
 func appsInstallDueFixture(t *testing.T, s *Session, f *appsFixture, c appsAcceptance) {
 	t.Helper()
 	st := appsRuntimeSQL(t, s)
@@ -250,6 +265,7 @@ func appsInstallDueFixture(t *testing.T, s *Session, f *appsFixture, c appsAccep
 	})
 }
 
+// TestAppsBooksPreparedJobHasNoAutomaticSubmission proves the worker cannot remotely submit a locally prepared licensing intent.
 func TestAppsBooksPreparedJobHasNoAutomaticSubmission(t *testing.T) {
 	s, f, _ := appsRuntime(t)
 	p, id, err := appsScope(s, "prepared")
@@ -281,8 +297,10 @@ func TestAppsBooksPreparedJobHasNoAutomaticSubmission(t *testing.T) {
 	}
 }
 
+// TestAppsBooksNativeInstallationThroughReferenceRuntime proves installation through signed native exchanges and real SQL composition.
 func TestAppsBooksNativeInstallationThroughReferenceRuntime(t *testing.T) {
 	s, f, c := appsRuntime(t)
+	capture := appsNativeStackCapture(t, s)
 	c.User, c.Serial = "", benchSerial
 	adeTestJSON(t, s.Env.Workspace.path("appsbooks", "acceptance.json"), c)
 	f.mu.Lock()
@@ -319,8 +337,11 @@ func TestAppsBooksNativeInstallationThroughReferenceRuntime(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(t.Context(), time.Minute)
 	stopped := make(chan struct{})
+	var connects, empty, processed atomic.Int64
+	wakesBefore := len(s.Env.APNS.Requests())
 	go func() {
 		defer close(stopped)
+		seen := wakesBefore
 		tick := time.NewTicker(20 * time.Millisecond)
 		defer tick.Stop()
 		for {
@@ -328,14 +349,30 @@ func TestAppsBooksNativeInstallationThroughReferenceRuntime(t *testing.T) {
 			case <-ctx.Done():
 				return
 			case <-tick.C:
-				if _, err := d.Connect(ctx); err != nil && ctx.Err() == nil {
+				wakes := len(s.Env.APNS.Requests())
+				if wakes <= seen {
+					continue
+				}
+				seen = wakes
+				connects.Add(1)
+				commands, err := d.Connect(ctx)
+				processed.Add(int64(len(commands)))
+				if len(commands) == 0 {
+					empty.Add(1)
+				}
+				if err != nil && ctx.Err() == nil {
+					capture("native-connect-error")
 					t.Error(err)
 					return
 				}
 			}
 		}
 	}()
-	defer func() { cancel(); <-stopped }()
+	defer func() {
+		cancel()
+		<-stopped
+		t.Logf("native fixture flow: connects=%d empty=%d processed=%d wakes=%d", connects.Load(), empty.Load(), processed.Load(), len(s.Env.APNS.Requests())-wakesBefore)
+	}()
 	query, err := mdm.NewCommand(&commands.DeviceInformation{Queries: []string{"OSVersion", "BuildVersion", "SerialNumber", "ProductName", "IsSupervised"}})
 	if err != nil {
 		t.Fatal(err)
@@ -351,11 +388,6 @@ func TestAppsBooksNativeInstallationThroughReferenceRuntime(t *testing.T) {
 		t.Fatal(err)
 	}
 	worker := map[string]any{"worker": "lab-native", "leaseSeconds": 30}
-	if err = s.Env.api(ctx, "POST", base+"/step", worker, &op); err != nil {
-		var failed managedcontent.Operation
-		readErr := appsRequest(ctx, s, "GET", base, nil, &failed)
-		t.Fatalf("step rejected: %v; phase=%s blocked=%s read=%v", err, failed.Phase, failed.Blocked, readErr)
-	}
 	if err = waitLive(ctx, func() (bool, error) {
 		var current managedcontent.Operation
 		if err := appsRequest(ctx, s, "GET", base, nil, &current); err != nil {
@@ -363,6 +395,7 @@ func TestAppsBooksNativeInstallationThroughReferenceRuntime(t *testing.T) {
 		}
 		return current.Phase == managedcontent.Dispatched, nil
 	}); err != nil {
+		capture("initial-worker-dispatch-error")
 		t.Fatal(err)
 	}
 	list, err := mdm.NewCommand(&commands.InstalledApplicationList{Identifiers: []string{"com.example.selected"}})
@@ -393,6 +426,7 @@ func TestAppsBooksNativeInstallationThroughReferenceRuntime(t *testing.T) {
 		return response, err
 	})
 	if err = liveAppsBooksInstallation(ctx, s); err != nil {
+		capture("native-proof-error")
 		paths, _ := filepath.Glob(filepath.Join(s.Evidence, "appsbooks-installation-*", "*-request.plist"))
 		for _, path := range paths {
 			b, readErr := os.ReadFile(path)
@@ -437,6 +471,59 @@ func TestAppsBooksNativeInstallationThroughReferenceRuntime(t *testing.T) {
 	}
 }
 
+// appsNativeStackCapture is an opt-in private test diagnostic. It retains SQL
+// blocking stacks before a supervisor failure without changing any deadline.
+func appsNativeStackCapture(t *testing.T, s *Session) func(string) {
+	t.Helper()
+	path := os.Getenv("LAB_APPSBOOKS_STACK_FILE")
+	if path == "" {
+		return func(string) {}
+	}
+	if s.Env.Mode != "simulated" {
+		t.Fatal("native stack fixture requires simulated mode")
+	}
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600) // #nosec G304 -- Operator-selected private test diagnostics path, not a network input.
+	if err != nil {
+		t.Fatal("private native stack file unavailable")
+	}
+	ctx, cancel := context.WithCancel(t.Context())
+	stopped := make(chan struct{})
+	var lock sync.Mutex
+	capture := func(reason string) {
+		lock.Lock()
+		defer lock.Unlock()
+		if _, err := fmt.Fprintf(f, "\n--- native SQL blocking sample: %s ---\n", reason); err != nil {
+			t.Error(err)
+			return
+		}
+		if err := pprof.Lookup("goroutine").WriteTo(f, 2); err != nil {
+			t.Error(err)
+		}
+	}
+	go func() {
+		defer close(stopped)
+		for _, delay := range []time.Duration{2 * time.Second, 3 * time.Second, 5 * time.Second} {
+			timer := time.NewTimer(delay)
+			select {
+			case <-ctx.Done():
+				timer.Stop()
+				return
+			case <-timer.C:
+			}
+			capture("timed")
+		}
+	}()
+	t.Cleanup(func() {
+		cancel()
+		<-stopped
+		if err := f.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	return capture
+}
+
+// appsLongContext provides the protocol budget while isolated timers avoid wall-clock delays.
 func appsLongContext(t *testing.T) context.Context {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(t.Context()), appsModuleTimeout)
@@ -444,6 +531,7 @@ func appsLongContext(t *testing.T) context.Context {
 	return ctx
 }
 
+// TestAppsBooksLicensingThroughReferenceSQLRuntime settles both licensing paths and restores original assignments through real SQL.
 func TestAppsBooksLicensingThroughReferenceSQLRuntime(t *testing.T) {
 	for _, scenario := range []struct {
 		name                   string
@@ -500,8 +588,9 @@ func TestAppsBooksLicensingThroughReferenceSQLRuntime(t *testing.T) {
 	}
 }
 
+// TestAppsBooksRuntimePartialCallbacksAndCleanupRetainFence retains recovery ownership for partial, contradictory and unresolved outcomes.
 func TestAppsBooksRuntimePartialCallbacksAndCleanupRetainFence(t *testing.T) {
-	for _, name := range []string{"SDK partial", "reference partial", "missing callback", "cleanup partial", "late callback failure"} {
+	for _, name := range []string{"SDK partial", "reference partial", "missing callback", "cleanup partial", "late callback failure", "cleanup capability changed"} {
 		t.Run(name, func(t *testing.T) {
 			s, f, c := appsRuntime(t)
 			appsInstallDueFixture(t, s, f, c)
@@ -513,6 +602,9 @@ func TestAppsBooksRuntimePartialCallbacksAndCleanupRetainFence(t *testing.T) {
 				f.lateReferenceFailure = true
 			}
 			f.rewrite = func(r *http.Request, m map[string]any) {
+				if name == "cleanup capability changed" && r.URL.Path == "/assets" && f.events == 2 {
+					m["assets"].([]any)[0].(map[string]any)["revocable"] = false
+				}
 				if r.URL.Path != "/status" {
 					return
 				}
@@ -533,7 +625,7 @@ func TestAppsBooksRuntimePartialCallbacksAndCleanupRetainFence(t *testing.T) {
 				t.Fatal("uncertainty lost original fence", readErr)
 			}
 			posts := f.postCount()
-			if name == "SDK partial" && posts != 1 || name == "reference partial" && posts != 2 || name == "missing callback" && posts != 2 || (name == "cleanup partial" || name == "late callback failure") && posts != 3 {
+			if name == "SDK partial" && posts != 1 || name == "reference partial" && posts != 2 || (name == "missing callback" || name == "cleanup capability changed") && posts != 2 || (name == "cleanup partial" || name == "late callback failure") && posts != 3 {
 				t.Fatal("failure performed an unowned inverse or unexpected mutation")
 			}
 			s.Evidence = t.TempDir()
@@ -548,6 +640,7 @@ func TestAppsBooksRuntimePartialCallbacksAndCleanupRetainFence(t *testing.T) {
 	}
 }
 
+// TestAppsBooksShortDeadlineBlocksBeforeAppleMutation rejects an insufficient mutation budget before Apple writes.
 func TestAppsBooksShortDeadlineBlocksBeforeAppleMutation(t *testing.T) {
 	s, f := appsFixtureSession(t)
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(t.Context()), appsMinimumBudget-time.Second)

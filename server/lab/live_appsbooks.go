@@ -41,6 +41,7 @@ type appsAccess struct {
 	configuration appsbooks.ClientConfiguration
 }
 
+// appsNow returns fixture time only for simulated acceptance, otherwise wall time.
 func appsNow(s *Session) time.Time {
 	if s.Env.appsBooksFixture != nil && s.Env.appsBooksFixture.Clock != nil {
 		return s.Env.appsBooksFixture.Clock.Now()
@@ -68,6 +69,7 @@ func appsRead(s *Session, name string) ([]byte, error) {
 	return b, nil
 }
 
+// appsConfig validates the explicit private location and bounded collection scope.
 func appsConfig(s *Session) (appsAcceptance, error) {
 	var c appsAcceptance
 	b, err := appsRead(s, "acceptance.json")
@@ -82,6 +84,7 @@ func appsConfig(s *Session) (appsAcceptance, error) {
 	return c, nil
 }
 
+// appsError preserves cancellation while withholding private upstream errors.
 func appsError(ctx context.Context, phase string) error {
 	if ctx.Err() != nil {
 		return fmt.Errorf("%w: Apps and Books %s interrupted", ctx.Err(), phase)
@@ -89,6 +92,7 @@ func appsError(ctx context.Context, phase string) error {
 	return fmt.Errorf("%w: Apps and Books %s failed", errOperation, phase)
 }
 
+// appsSDKError classifies missing Apple permissions without exposing raw responses.
 func appsSDKError(ctx context.Context, phase string, cause error) error {
 	var api *appsbooks.APIError
 	if errors.Is(cause, appsbooks.ErrExpired) || errors.As(cause, &api) && (api.HTTPStatus == http.StatusForbidden || api.HTTPStatus == http.StatusUnauthorized) {
@@ -120,6 +124,7 @@ func appsRequest(ctx context.Context, s *Session, method, path string, in, out a
 	return nil
 }
 
+// appsBase addresses the selected opaque reference location identifier.
 func appsBase(c appsAcceptance) string {
 	return "/appsbooks/locations/" + url.PathEscape(c.Location)
 }
@@ -145,6 +150,7 @@ func appsScope(s *Session, phase string) (*Session, string, error) {
 	return &copy, id, nil
 }
 
+// appsSave creates exclusive private structured evidence without replacing prior files.
 func appsSave(s *Session, name string, value any) error {
 	b, err := jsonv2.Marshal(value)
 	if err != nil {
@@ -203,6 +209,7 @@ func appsOpen(ctx context.Context, s *Session) (*appsAccess, error) {
 	return a, nil
 }
 
+// appsRevision identifies the compiled source revision for acceptance evidence.
 func appsRevision() string {
 	if info, ok := debug.ReadBuildInfo(); ok {
 		for _, setting := range info.Settings {

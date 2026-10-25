@@ -56,8 +56,13 @@ type appsTestClock struct {
 	waits []time.Duration
 }
 
-func (c *appsTestClock) Now() time.Time                  { c.mu.Lock(); defer c.mu.Unlock(); return c.now }
+// Now returns synchronized simulated time.
+func (c *appsTestClock) Now() time.Time { c.mu.Lock(); defer c.mu.Unlock(); return c.now }
+
+// Since measures elapsed simulated time.
 func (c *appsTestClock) Since(t time.Time) time.Duration { return c.Now().Sub(t) }
+
+// After advances only the direct-client fixture timer and returns its completion.
 func (c *appsTestClock) After(d time.Duration) <-chan time.Time {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -68,8 +73,10 @@ func (c *appsTestClock) After(d time.Duration) <-chan time.Time {
 	return ch
 }
 
+// postCount counts Apple mutation requests observed by the fixture.
 func (f *appsFixture) postCount() int { f.mu.Lock(); defer f.mu.Unlock(); return f.posts }
 
+// appsSDKFixture creates the controlled Apple endpoint with synthetic location facts.
 func appsSDKFixture(t *testing.T) *appsFixture {
 	t.Helper()
 	f := &appsFixture{location: appsbooks.Location{ID: "lab", UID: "library", MDMID: "mdm", Revision: 1}, assignment: appsbooks.Assignment{Asset: appsbooks.Asset{AdamID: "123", PricingParam: "STDQ"}, ClientUserID: "private-user", UserStatus: "Associated"}}
@@ -80,6 +87,7 @@ func appsSDKFixture(t *testing.T) *appsFixture {
 	return f
 }
 
+// appsFixtureSession builds a private simulated acceptance scope and SDK fixture.
 func appsFixtureSession(t *testing.T) (*Session, *appsFixture) {
 	t.Helper()
 	f := appsSDKFixture(t)
@@ -125,6 +133,7 @@ func appsFixtureSession(t *testing.T) (*Session, *appsFixture) {
 	return s, f
 }
 
+// serve implements bounded synthetic Apple responses and records requested actions.
 func (f *appsFixture) serve(t *testing.T, base string, w http.ResponseWriter, r *http.Request) {
 	t.Helper()
 	f.mu.Lock()
@@ -242,6 +251,7 @@ func (f *appsFixture) serve(t *testing.T, base string, w http.ResponseWriter, r 
 	_ = json.NewEncoder(w).Encode(meta)
 }
 
+// notify delivers a signed fixture notification through the configured receiver.
 func (f *appsFixture) notify(t *testing.T, r *http.Request, id, kind string, payload any) {
 	t.Helper()
 	if f.callback == "" || f.callbackClient == nil || f.dropCallback || f.dropCallbackEvent == f.events && kind == "ASSET_MANAGEMENT" {
@@ -271,6 +281,7 @@ func (f *appsFixture) notify(t *testing.T, r *http.Request, id, kind string, pay
 	}
 }
 
+// TestAppsBooksReadOnlyCollectionAndPrivateEvidence collects location facts without mutations and confines raw output privately.
 func TestAppsBooksReadOnlyCollectionAndPrivateEvidence(t *testing.T) {
 	s, f := appsFixtureSession(t)
 	if err := liveAppsBooksCollection(t.Context(), s); err != nil {
@@ -306,6 +317,7 @@ func TestAppsBooksReadOnlyCollectionAndPrivateEvidence(t *testing.T) {
 	}
 }
 
+// TestAppsBooksPrivatePrerequisitesAndSafeErrors rejects invalid private scope without leaking credentials or identifiers.
 func TestAppsBooksPrivatePrerequisitesAndSafeErrors(t *testing.T) {
 	for _, name := range []string{"missing workspace", "missing scope", "unknown field", "missing token", "invalid token", "missing evidence", "unavailable evidence", "reference missing", "reference denied", "reference malformed", "SDK read failure", "foreign ownership"} {
 		t.Run(name, func(t *testing.T) {
@@ -356,6 +368,7 @@ func TestAppsBooksPrivatePrerequisitesAndSafeErrors(t *testing.T) {
 	}
 }
 
+// TestAppsBooksLicensingUncertaintyFenceAndReadback retains uncertain intents and requires exact assignment readback.
 func TestAppsBooksLicensingUncertaintyFenceAndReadback(t *testing.T) {
 	for _, name := range []string{"opt out", "ambiguous target", "unapproved app", "missing callback", "partial", "unknown outcome", "duplicate readback", "reference submission unavailable", "preexisting fence"} {
 		t.Run(name, func(t *testing.T) {
@@ -418,6 +431,7 @@ func TestAppsBooksLicensingUncertaintyFenceAndReadback(t *testing.T) {
 	}
 }
 
+// TestAppsBooksPauseCancellation stops the bounded polling pause on cancellation.
 func TestAppsBooksPauseCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()

@@ -27,6 +27,7 @@ const (
 	appsModuleTimeout = 30 * time.Minute
 )
 
+// appsRequireBudget rejects insufficient remaining time before any Apple mutation.
 func appsRequireBudget(ctx context.Context) error {
 	if deadline, ok := ctx.Deadline(); ok && time.Until(deadline) < appsMinimumBudget {
 		return fmt.Errorf("%w: licensing deadline cannot cover notification fallback and restoration budget", ErrBlocked)
@@ -34,6 +35,7 @@ func appsRequireBudget(ctx context.Context) error {
 	return nil
 }
 
+// appsWait waits using the isolated fixture scheduler or the live context.
 func appsWait(ctx context.Context, s *Session, d time.Duration) error {
 	if s.Env.appsBooksFixture != nil && s.Env.appsBooksFixture.Clock != nil {
 		select {
@@ -79,6 +81,7 @@ func appsFence(s *Session, intent appsLicensingIntent) error {
 	return nil
 }
 
+// appsCheckFence blocks a new attempt while any prior outcome remains unresolved.
 func appsCheckFence(s *Session) error {
 	_, err := os.Lstat(s.Env.Workspace.path("appsbooks", "pending-licensing.json"))
 	if errors.Is(err, os.ErrNotExist) {
@@ -90,6 +93,7 @@ func appsCheckFence(s *Session) error {
 	return appsError(context.Background(), "pending fence inspection")
 }
 
+// appsRelease removes only the positively settled fence owned by this run.
 func appsRelease(s *Session, id string) error {
 	b, err := appsRead(s, "pending-licensing.json")
 	if err != nil {
@@ -105,6 +109,7 @@ func appsRelease(s *Session, id string) error {
 	return nil
 }
 
+// binding revalidates location ownership and original client configuration.
 func (a *appsAccess) binding(ctx context.Context, s *Session) error {
 	var current appsbooks.Location
 	if err := appsRequest(ctx, s, "GET", appsBase(a.config), nil, &current); err != nil {
@@ -152,6 +157,7 @@ func appsPhase(s *Session, name string) (*Session, error) {
 	return &copy, nil
 }
 
+// readback requires the selected target assignment to match the expected state.
 func (a *appsAccess) readback(ctx context.Context, s *Session, phase string, want bool) error {
 	p, err := appsPhase(s, phase)
 	if err != nil {
@@ -179,8 +185,41 @@ func appsPause(ctx context.Context) error {
 	}
 }
 
+// capability reads current native restrictions before each direct SDK mutation.
+// A previously revocable snapshot cannot authorize a later unsafe cleanup.
+func (a *appsAccess) capability(ctx context.Context, s *Session, name string) (appsbooks.LicenseStock, error) {
+	c := a.config
+	var selected []appsbooks.AssetRecord
+	var stock appsbooks.LicenseStock
+	_, err := a.client.WalkAssets(ctx, appsbooks.AssetsQuery{AdamID: c.Asset.AdamID, PricingParam: c.Asset.PricingParam}, c.MaxPages, func(inventory appsbooks.AssetInventory) error {
+		if inventory.Record != nil {
+			selected = append(selected, *inventory.Record)
+		}
+		if inventory.Unlimited != nil {
+			u := inventory.Unlimited
+			selected = append(selected, appsbooks.AssetRecord{Asset: u.Asset, ProductType: u.ProductType, Revocable: u.Revocable, DeviceAssignable: u.DeviceAssignable, SupportedPlatforms: u.SupportedPlatforms, Raw: u.Raw})
+		}
+		stock = inventory.Stock()
+		return nil
+	})
+	if err != nil {
+		return appsbooks.LicenseStock{}, appsSDKError(ctx, "designated asset capabilities", err)
+	}
+	if len(selected) != 1 || selected[0].Asset != c.Asset || selected[0].ProductType != "App" || !selected[0].Revocable || c.Serial != "" && !selected[0].DeviceAssignable {
+		return appsbooks.LicenseStock{}, fmt.Errorf("%w: one revocable app with applicable licensing capability required", ErrBlocked)
+	}
+	if err = appsSaveRaw(s, name, selected[0].Raw); err != nil {
+		return appsbooks.LicenseStock{}, err
+	}
+	return stock, nil
+}
+
+// sdkJob settles one direct mutation with status and per-target readback evidence.
 func (a *appsAccess) sdkJob(ctx context.Context, s *Session, phase string, associate bool) error {
 	if err := a.binding(ctx, s); err != nil {
+		return err
+	}
+	if _, err := a.capability(ctx, s, phase+"-asset.json"); err != nil {
 		return err
 	}
 	r := appsbooks.ManageAssetsRequest{Assets: []appsbooks.Asset{a.config.Asset}}
@@ -265,6 +304,7 @@ func (a *appsAccess) referencePrepare(ctx context.Context, s *Session, id string
 	return appsSave(s, "reference-intent.json", job)
 }
 
+// referenceJob submits and settles the prepared reference job with callback proof.
 func (a *appsAccess) referenceJob(ctx context.Context, s *Session, id string) error {
 	if err := a.binding(ctx, s); err != nil {
 		return err
@@ -401,26 +441,8 @@ func liveAppsBooksLicensing(ctx context.Context, session *Session) (result error
 			return fmt.Errorf("%w: designated associated Apple clientUserId required", ErrBlocked)
 		}
 	}
-	var selected []appsbooks.AssetRecord
-	var stock appsbooks.LicenseStock
-	_, err = a.client.WalkAssets(ctx, appsbooks.AssetsQuery{AdamID: c.Asset.AdamID, PricingParam: c.Asset.PricingParam}, c.MaxPages, func(inventory appsbooks.AssetInventory) error {
-		if inventory.Record != nil {
-			selected = append(selected, *inventory.Record)
-		}
-		if inventory.Unlimited != nil {
-			u := inventory.Unlimited
-			selected = append(selected, appsbooks.AssetRecord{Asset: u.Asset, ProductType: u.ProductType, Revocable: u.Revocable, DeviceAssignable: u.DeviceAssignable, SupportedPlatforms: u.SupportedPlatforms, Raw: u.Raw})
-		}
-		stock = inventory.Stock()
-		return nil
-	})
+	stock, err := a.capability(ctx, s, "asset.json")
 	if err != nil {
-		return appsSDKError(ctx, "designated asset capabilities", err)
-	}
-	if len(selected) != 1 || selected[0].Asset != c.Asset || selected[0].ProductType != "App" || !selected[0].Revocable || c.Serial != "" && !selected[0].DeviceAssignable {
-		return fmt.Errorf("%w: one available revocable app with applicable licensing capability required", ErrBlocked)
-	}
-	if err = appsSaveRaw(s, "asset.json", selected[0].Raw); err != nil {
 		return err
 	}
 	p, err := appsPhase(s, "original")

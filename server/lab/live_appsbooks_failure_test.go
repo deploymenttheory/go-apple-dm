@@ -14,12 +14,15 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/appsbooks"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/applications/managedcontent"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/server/lab/target"
 )
 
+// TestAppsBooksIncompletePagesAndPrerequisitesNeverMutate rejects incomplete collection and missing licensing prerequisites before writes.
 func TestAppsBooksIncompletePagesAndPrerequisitesNeverMutate(t *testing.T) {
 	for _, name := range []string{"missing version", "version drift", "skipped page", "page bound", "unowned location", "no callback", "Book", "not revocable", "missing asset", "stock unknown", "inactive user", "foreign assignment", "revised location"} {
 		t.Run(name, func(t *testing.T) {
@@ -97,6 +100,7 @@ func TestAppsBooksIncompletePagesAndPrerequisitesNeverMutate(t *testing.T) {
 	}
 }
 
+// TestAppsBooksImmutableFenceAndEvidenceOwnership preserves pending ownership and exclusive evidence across reruns.
 func TestAppsBooksImmutableFenceAndEvidenceOwnership(t *testing.T) {
 	s, _ := appsFixtureSession(t)
 	p, id, err := appsScope(s, "fixture")
@@ -148,12 +152,13 @@ func TestAppsBooksImmutableFenceAndEvidenceOwnership(t *testing.T) {
 	}
 }
 
+// appsSourceFixture constructs source-provenance inputs for negative installation checks.
 func appsSourceFixture(t *testing.T, method managedcontent.Method) (managedcontent.Operation, managedcontent.Evidence, appsInstallation) {
 	t.Helper()
 	c := appsInstallation{Operation: "prepared", BundleID: "com.example.app", Version: "1", Platform: "macOS", Identity: "scep", MaxAgeSeconds: 60}
 	selection := managedcontent.Selection{Enrollment: mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "device"}, Serial: "serial"}
 	content := managedcontent.Content{Asset: appsbooks.Asset{AdamID: "123", PricingParam: "STDQ"}, Kind: "App"}
-	d := managedcontent.Dispatch{ID: "dispatch", Digest: "digest", Enrollment: selection.Enrollment, Serial: selection.Serial, Method: method, Content: content, MDM: []byte("wire"), Declarations: []managedcontent.Document{{Identifier: "declaration"}}}
+	d := managedcontent.Dispatch{ID: "dispatch", Digest: "digest", Enrollment: selection.Enrollment, Serial: selection.Serial, Method: method, Content: content, MDM: []byte("wire"), Declarations: []managedcontent.Document{{Identifier: "declaration", ServerToken: "token", Raw: []byte(`{}`)}}}
 	o := managedcontent.Observation{ID: d.ID, Digest: d.Digest, Enrollment: d.Enrollment, Method: method, ManagementMethod: method, Found: true, Authoritative: true, OwnsIdentity: true, Installed: true, Terminal: true, CommandAcknowledged: true, DeclarationPublished: true, ObservedAt: time.Now()}
 	var err error
 	if method == managedcontent.MDM {
@@ -168,7 +173,8 @@ func appsSourceFixture(t *testing.T, method managedcontent.Method) (managedconte
 		}
 		o.Raw, err = json.Marshal(map[string]any{"bundleId": c.BundleID, "installationResponse": install, "currentReport": report})
 	} else {
-		o.Raw = []byte(`[{"identifier":"com.example.app","declaration-identifier":"declaration","state":"managed","version":"1"}]`)
+		o.AppVersion = c.Version
+		o.Raw, err = json.Marshal(app.ManagedContentDDMEvidence{BundleID: c.BundleID, DeclarationIdentifier: "declaration", ServerToken: "token", PublishedAt: o.ObservedAt.Add(-time.Second), Declarations: []ddm.DeclarationStatus{{Identifier: "declaration", ServerToken: "token", Active: true, Valid: "valid", LastSeen: o.ObservedAt}}, Reports: []ddm.StatusReportRecord{{Seq: 1, ReceivedAt: o.ObservedAt, Raw: []byte(`{"StatusItems":{"app.managed.list":[{"identifier":"com.example.app","declaration-identifier":"declaration","state":"managed","version":"1"}]}}`)}}})
 	}
 	if err != nil {
 		t.Fatal(err)
@@ -177,6 +183,7 @@ func appsSourceFixture(t *testing.T, method managedcontent.Method) (managedconte
 	return op, managedcontent.Evidence{Dispatch: &d, Observation: &o}, c
 }
 
+// TestAppsBooksInstallationRequiresNativeProvenance rejects incomplete, stale, foreign and contradictory native installation sources.
 func TestAppsBooksInstallationRequiresNativeProvenance(t *testing.T) {
 	for _, method := range []managedcontent.Method{managedcontent.MDM, managedcontent.DDM} {
 		t.Run(string(method), func(t *testing.T) {
@@ -233,6 +240,7 @@ func TestAppsBooksInstallationRequiresNativeProvenance(t *testing.T) {
 	}
 }
 
+// TestAppsBooksMissingPhysicalPrerequisitesRemainUnexercised keeps missing physical proof from becoming installation acceptance.
 func TestAppsBooksMissingPhysicalPrerequisitesRemainUnexercised(t *testing.T) {
 	s, _ := appsFixtureSession(t)
 	if err := liveAppsBooksInstallation(t.Context(), s); !errors.Is(err, ErrBlocked) {
@@ -257,6 +265,7 @@ func TestAppsBooksMissingPhysicalPrerequisitesRemainUnexercised(t *testing.T) {
 	}
 }
 
+// TestAppsBooksBoundsContextAndSafeRequestEncoding bounds private inputs and preserves safe cancellation and encoding failures.
 func TestAppsBooksBoundsContextAndSafeRequestEncoding(t *testing.T) {
 	s, _ := appsFixtureSession(t)
 	if err := appsRequest(t.Context(), s, "GET", "/unused", make(chan int), nil); err == nil {
@@ -295,6 +304,7 @@ func TestAppsBooksBoundsContextAndSafeRequestEncoding(t *testing.T) {
 	}
 }
 
+// TestAppsBooksProtocolTimeoutAndExplicitOverride checks module budget defaults and caller overrides.
 func TestAppsBooksProtocolTimeoutAndExplicitOverride(t *testing.T) {
 	for _, tc := range []struct {
 		name                   string
@@ -319,6 +329,7 @@ func TestAppsBooksProtocolTimeoutAndExplicitOverride(t *testing.T) {
 	}
 }
 
+// TestAppsBooksDirectNotificationFallbackAndPendingSpacing proves first-status fallback and subsequent pending polling intervals.
 func TestAppsBooksDirectNotificationFallbackAndPendingSpacing(t *testing.T) {
 	s, f := appsFixtureSession(t)
 	p, _, err := appsScope(s, "SDK-policy")
@@ -362,6 +373,7 @@ func TestAppsBooksDirectNotificationFallbackAndPendingSpacing(t *testing.T) {
 	}
 }
 
+// TestAppsBooksSDKPermissionPrerequisiteAndWaitCancellation classifies unavailable permissions and respects cancelled waits.
 func TestAppsBooksSDKPermissionPrerequisiteAndWaitCancellation(t *testing.T) {
 	for _, status := range []int{http.StatusUnauthorized, http.StatusForbidden} {
 		if err := appsSDKError(t.Context(), "probe", &appsbooks.APIError{HTTPStatus: status}); !errors.Is(err, ErrBlocked) {
@@ -386,6 +398,7 @@ func TestAppsBooksSDKPermissionPrerequisiteAndWaitCancellation(t *testing.T) {
 	}
 }
 
+// TestAppsBooksRawEvidencePreservesExactSourceBytes retains upstream bytes without normalizing native evidence.
 func TestAppsBooksRawEvidencePreservesExactSourceBytes(t *testing.T) {
 	s, _ := appsFixtureSession(t)
 	raw := []byte("{\n  \"future\":null, \"escaped\":\"\\u0061\", \"large\":9007199254740993, \"false\":false\n}\n")
