@@ -17,6 +17,7 @@ import (
 // TestAppsBooksLicensingRequiresCoherentDurableProof rejects conflicting target
 // and callback evidence and unavailable private storage through the actual runtime.
 func TestAppsBooksLicensingRequiresCoherentDurableProof(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{"intent storage", "asset storage", "original phase storage", "SDK event storage", "SDK observation storage", "SDK completion storage", "SDK readback phase storage", "reference job storage", "reference callback storage", "missing callback proof storage", "reference readback phase storage", "cleanup proof storage", "final job storage", "queued intent mismatch", "callback target mismatch", "authenticated receipt mismatch", "final target mismatch", "SDK unknown status", "cleanup unknown status", "SDK assignment absent", "ownership changed after assignment"} {
 		t.Run(name, func(t *testing.T) {
 			s, f, c := appsRuntime(t)

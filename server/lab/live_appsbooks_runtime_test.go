@@ -698,6 +698,7 @@ func appsLongContext(t *testing.T) context.Context {
 
 // TestAppsBooksLicensingThroughReferenceSQLRuntime settles both licensing paths and restores original assignments through real SQL.
 func TestAppsBooksLicensingThroughReferenceSQLRuntime(t *testing.T) {
+	t.Parallel()
 	for _, scenario := range []struct {
 		name                           string
 		preexisting, unlimited, serial bool
@@ -763,6 +764,7 @@ func TestAppsBooksLicensingThroughReferenceSQLRuntime(t *testing.T) {
 
 // TestAppsBooksRuntimePartialCallbacksAndCleanupRetainFence retains recovery ownership for partial, contradictory and unresolved outcomes.
 func TestAppsBooksRuntimePartialCallbacksAndCleanupRetainFence(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{"SDK partial", "reference partial", "missing callback", "cleanup partial", "late callback failure", "cleanup capability changed"} {
 		t.Run(name, func(t *testing.T) {
 			s, f, c := appsRuntime(t)
@@ -833,6 +835,7 @@ func TestAppsBooksShortDeadlineBlocksBeforeAppleMutation(t *testing.T) {
 // TestAppsBooksRuntimeExchangeFailuresPreserveRecovery proves rejected and lost
 // exchanges never become success or authorize a guessed cleanup mutation.
 func TestAppsBooksRuntimeExchangeFailuresPreserveRecovery(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{"reference location unavailable", "reference intent denied", "reference evidence denied", "reference submit endpoint unavailable", "reference polling endpoint unavailable", "reference callback evidence denied", "reference completed evidence unavailable", "final location unavailable", "final job evidence unavailable", "preflight unavailable", "before SDK submit", "accepted SDK response lost", "SDK status unavailable", "SDK target readback unavailable", "reference submit unavailable", "accepted reference response lost", "reference status unavailable", "reference target readback unavailable", "cleanup rejected", "accepted cleanup response lost", "cleanup status unavailable", "cleanup target readback unavailable"} {
 		t.Run(name, func(t *testing.T) {
 			var armed, hit atomic.Bool
