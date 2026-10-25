@@ -94,6 +94,27 @@ The source journal grows with successful refreshes; applications choose refresh
 schedules, access controls and retention for their deployment. No background
 jobs, licensing mutations, installation or policy decisions are added by Workflow.
 
+## Storage verification
+
+The published shared workflow contract runs against caller-owned memory and the
+server's existing sealed SQL state adapter. SQLite, PostgreSQL and MySQL tests use
+two independent connection pools for replica/configuration races and recovery.
+They inspect physical ciphertext, reject plaintext in strict mode and reject
+ciphertext copied to another row. Test-only key scopes isolate scenarios without
+resetting shared databases. The [SQL composition tests](../../server/statestore/appsbooks_test.go)
+and [integration tests](../../server/statestore/appsbooks_integration_test.go)
+consume the root library version declared in `server/go.mod`.
+
+From `server/`, with the isolated test database DSNs configured, run:
+
+```sh
+GOWORK=off go test -tags=integration ./statestore -run AppsBooks -race -count=1
+```
+
+The [Apple service clients diagram](../diagrams/apple-service-clients.html) shows
+this optional caller composition. It does not configure Apps and Books workflows
+in the reference-server runtime.
+
 ## Licensing and user lifecycle
 
 Use `Assets`, `Assignments` and `Users` for single-page reads, or their `Walk…`
