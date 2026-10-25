@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -193,8 +194,14 @@ func TestLabReportsRetainFailureAndBlockedStatus(t *testing.T) {
 		t.Fatal("unknown selection accepted")
 	}
 	selected, err := SelectMode("live", "all")
-	if err != nil || len(selected) != 12 {
-		t.Fatalf("live selection: %v %v", selected, err)
+	ids := make([]string, len(selected))
+	for i, module := range selected {
+		ids[i] = module.ID
+	}
+	slices.Sort(ids)
+	wantIDs := []string{"APP-001", "APP-002", "E2E-027", "LIVE-001", "LIVE-002", "LIVE-003", "LIVE-004", "LIVE-005", "LIVE-006", "LIVE-007", "LIVE-008", "LIVE-009", "LIVE-010", "LIVE-011", "LIVE-012"}
+	if err != nil || !slices.Equal(ids, wantIDs) {
+		t.Fatalf("live selection IDs = %v; want %v; err = %v", ids, wantIDs, err)
 	}
 	selected, err = Select("apns")
 	if err != nil || len(selected) == 0 {
