@@ -35,7 +35,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "1fc9f965bb0876a5907efa06f1943e8babd51379"
+      "revision": "12aaa32385107bcfe1627b5cb3caf20b7082da5d"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -278,7 +278,7 @@
       "id": "appsbooksclient",
       "type": "backend",
       "label": "appsbooks",
-      "sublabel": "Client + optional Workflow",
+      "sublabel": "Client + durable Workflow",
       "pos": [
         345,
         560
@@ -290,16 +290,16 @@
       "purpose": "service",
       "sources": [
         {
-          "path": "devicemanagement/appleplatformservices/appsbooks/client.go",
-          "label": "HTTP client"
-        },
-        {
           "path": "devicemanagement/appleplatformservices/appsbooks/workflow.go",
           "label": "Location workflows"
         },
         {
-          "path": "devicemanagement/appleplatformservices/appsbooks/refresh.go",
-          "label": "Atomic source refresh"
+          "path": "devicemanagement/appleplatformservices/appsbooks/jobs.go",
+          "label": "Fenced explicit licensing jobs"
+        },
+        {
+          "path": "devicemanagement/appleplatformservices/appsbooks/job_notifications.go",
+          "label": "Authenticated durable callback processing"
         }
       ]
     },
@@ -307,7 +307,7 @@
       "id": "appsbooksstate",
       "type": "database",
       "label": "state.Store",
-      "sublabel": "Caller-owned location records",
+      "sublabel": "Location, jobs and callbacks",
       "pos": [
         945,
         560
@@ -436,7 +436,7 @@
       "id": "appsbooks-state",
       "from": "appsbooksclient",
       "to": "appsbooksstate",
-      "label": "Optional location transactions",
+      "label": "Atomic location + job state",
       "purpose": "storage"
     }
   ],
@@ -492,7 +492,7 @@
       "items": [
         "Inventory pages and cursors commit atomically after account, credential and cursor checks. Only the final page of the current full-fetch generation reconciles missing devices; interrupted or superseded fetches cannot delete unseen inventory.",
         "Sync and assignment run independently. Assignment outcomes and readback recheck lease ownership, Apple account identity, OAuth credentials and the desired profile before saving; a conflict stops that run.",
-        "Apps and Books returns asynchronous event IDs. The caller persists progress, authenticates notifications and checks completion before installation.",
+        "Apps and Books returns asynchronous event IDs. Optional Workflow persists explicit jobs and target evidence, authenticates and commits callbacks before acknowledgment, and polls aggregate completion before installation.",
         "Apps and Books preserves finite/sentinel and unlimited asset arrays plus original JSON. Optional counts distinguish missing from zero; totalCount 2147483647 means unlimited. Bounded traversal retains the location filter; stock does not establish licensing, dispatch or installation."
       ]
     },
@@ -507,7 +507,13 @@
         "Atomic location workflows \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2a149558826712758d6a69f3cf69f315011fdddb/devicemanagement/appleplatformservices/appsbooks/workflow.go",
         "Complete source refresh \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2a149558826712758d6a69f3cf69f315011fdddb/devicemanagement/appleplatformservices/appsbooks/refresh.go",
         "Finite and unlimited source representation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/appsbooks/assets.go",
-        "Filtered bounded page traversal \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/appsbooks/pages.go"
+        "Filtered bounded page traversal \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/appsbooks/pages.go",
+        "Explicit licensing and user jobs persist request intent, location revisions, worker fences, event IDs and per-target observations. A per-location reservation precedes the single POST; all Apple HTTP runs outside local transactions.",
+        "Expired or uncertain submissions require stopped-worker reconciliation and never become automatically eligible for POST replay. Read-only token recovery preserves uncertainty and existing evidence. Accepted jobs allow ordinary token renewal.",
+        "Authenticated TEST_NOTIFICATION and management callbacks commit raw receipts, deduplication and matching job changes before the host acknowledges. Unbound event receipts apply on later event binding. Batches never establish whole-event success; duplicate or older success cannot erase failure.",
+        "Polling begins at five minutes and spaces subsequent queries by at least thirty seconds. COMPLETE must match the operation and positive requested/completed counts; ordinary jobs also match the explicit task count. Aggregate success, available target evidence, dispatch and installation remain distinct.",
+        "Durable licensing jobs \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/12aaa32385107bcfe1627b5cb3caf20b7082da5d/devicemanagement/appleplatformservices/appsbooks/jobs.go",
+        "Atomic callback processing \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/12aaa32385107bcfe1627b5cb3caf20b7082da5d/devicemanagement/appleplatformservices/appsbooks/job_notifications.go"
       ]
     },
     {
