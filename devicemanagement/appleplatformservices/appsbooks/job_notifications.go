@@ -31,8 +31,9 @@ func receiptKey(location, id string) string {
 }
 
 // eventReceiptPrefix groups retained callback identities for one opaque Apple event.
+// The short namespace leaves room for caller/store key scopes within the 255-byte limit.
 func eventReceiptPrefix(location, event string) string {
-	return locationKey(location, fmt.Sprintf("event-notifications/%x/", sha256.Sum256([]byte(event))))
+	return locationKey(location, fmt.Sprintf("inbox/%x/", sha256.Sum256([]byte(event))))
 }
 
 // eventReceiptKey indexes a callback without copying its sensitive original body.
