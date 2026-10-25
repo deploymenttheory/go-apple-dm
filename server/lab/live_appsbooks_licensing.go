@@ -214,6 +214,18 @@ func (a *appsAccess) capability(ctx context.Context, s *Session, name string) (a
 	return stock, nil
 }
 
+// licensingRequest selects exactly the designated asset and one preflight-validated
+// user or serial for both SDK and reference licensing paths.
+func (c appsAcceptance) licensingRequest() appsbooks.ManageAssetsRequest {
+	r := appsbooks.ManageAssetsRequest{Assets: []appsbooks.Asset{c.Asset}}
+	if c.User != "" {
+		r.ClientUserIDs = []string{c.User}
+	} else {
+		r.SerialNumbers = []string{c.Serial}
+	}
+	return r
+}
+
 // sdkJob settles one direct mutation with status and per-target readback evidence.
 func (a *appsAccess) sdkJob(ctx context.Context, s *Session, phase string, associate bool) error {
 	if err := a.binding(ctx, s); err != nil {
@@ -222,12 +234,7 @@ func (a *appsAccess) sdkJob(ctx context.Context, s *Session, phase string, assoc
 	if _, err := a.capability(ctx, s, phase+"-asset.json"); err != nil {
 		return err
 	}
-	r := appsbooks.ManageAssetsRequest{Assets: []appsbooks.Asset{a.config.Asset}}
-	if a.config.User != "" {
-		r.ClientUserIDs = []string{a.config.User}
-	} else {
-		r.SerialNumbers = []string{a.config.Serial}
-	}
+	r := a.config.licensingRequest()
 	var event appsbooks.Event
 	var err error
 	if associate {
@@ -283,12 +290,7 @@ func (a *appsAccess) referencePrepare(ctx context.Context, s *Session, id string
 	if err := a.binding(ctx, s); err != nil {
 		return err
 	}
-	r := appsbooks.ManageAssetsRequest{Assets: []appsbooks.Asset{a.config.Asset}}
-	if a.config.User != "" {
-		r.ClientUserIDs = []string{a.config.User}
-	} else {
-		r.SerialNumbers = []string{a.config.Serial}
-	}
+	r := a.config.licensingRequest()
 	base := appsBase(a.config) + "/jobs/" + id
 	var job appsbooks.LicensingJob
 	request := appsbooks.JobRequest{Operation: appsbooks.JobAssociate, Assets: &r, MaxPages: a.config.MaxPages}
