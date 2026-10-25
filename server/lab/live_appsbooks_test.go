@@ -439,3 +439,17 @@ func TestAppsBooksPauseCancellation(t *testing.T) {
 		t.Fatal("wait ignored cancellation")
 	}
 }
+
+// appsFixtureAsset checks fixture shape before a test changes a native capability.
+func appsFixtureAsset(t *testing.T, m map[string]any) ([]any, map[string]any) {
+	t.Helper()
+	rows, ok := m["assets"].([]any)
+	if !ok || len(rows) != 1 {
+		t.Fatal("expected one fixture asset")
+	}
+	asset, ok := rows[0].(map[string]any)
+	if !ok {
+		t.Fatal("expected a native asset object")
+	}
+	return rows, asset
+}

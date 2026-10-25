@@ -37,7 +37,16 @@ import (
 // Only Apple's external HTTP service is replaced; no administration API is faked.
 func appsRuntime(t *testing.T) (*Session, *appsFixture, appsAcceptance) {
 	t.Helper()
+	return appsRuntimeWith(t, nil)
+}
+
+// appsRuntimeWith installs a fixture transport before any runtime worker starts.
+func appsRuntimeWith(t *testing.T, prepare func(*appsFixture)) (*Session, *appsFixture, appsAcceptance) {
+	t.Helper()
 	f := appsSDKFixture(t)
+	if prepare != nil {
+		prepare(f)
+	}
 	f.location.ID = "lab-" + randomID()
 	f.location.UID = "library-" + randomID()
 	f.config.UID = f.location.UID
@@ -311,6 +320,7 @@ func TestAppsBooksDeclarativeInstallationThroughReferenceRuntime(t *testing.T) {
 // appsNativeInstallationRuntime exercises the real worker, authenticated native
 // reports and read-only acceptance with an APNs-driven protocol simulator.
 func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method) {
+	t.Helper()
 	s, f, c := appsRuntime(t)
 	capture := appsNativeStackCapture(t, s)
 	c.User, c.Serial = "", benchSerial
@@ -320,23 +330,60 @@ func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method) {
 	f.assignment = appsbooks.Assignment{Asset: c.Asset, SerialNumber: c.Serial}
 	f.mu.Unlock()
 	var installed atomic.Bool
+	var nativeFault atomic.Value
+	nativeFault.Store("")
 	responder := func(command *mdm.Command) simulator.Reply {
 		switch command.RequestType {
 		case "DeviceInformation":
-			return simulator.Reply{Status: mdm.StatusAcknowledged, Payload: &commands.DeviceInformationResponse{QueryResponses: commands.DeviceInformationResponseQueryResponses{SerialNumber: new(benchSerial), OSVersion: new("27.0"), BuildVersion: new("27A100"), ProductName: new("Mac14,7"), IsSupervised: new(true)}}}
+			fault, ok := nativeFault.Load().(string)
+			if !ok {
+				t.Error("invalid native fixture mode")
+			}
+			facts := commands.DeviceInformationResponseQueryResponses{SerialNumber: new(benchSerial), OSVersion: new("27.0"), BuildVersion: new("27A100"), ProductName: new("Mac14,7"), IsSupervised: new(true)}
+			switch fault {
+			case "wrong serial":
+				facts.SerialNumber = new("FOREIGN-SERIAL")
+			case "missing build":
+				facts.BuildVersion = nil
+			case "invalid OS":
+				facts.OSVersion = new("invalid")
+			case "unsupported OS":
+				facts.OSVersion = new("1.0")
+			case "foreign platform":
+				facts.ProductName = new("iPhone18,1")
+			}
+			return simulator.Reply{Status: mdm.StatusAcknowledged, Payload: &commands.DeviceInformationResponse{QueryResponses: facts}}
 		case "InstallApplication":
 			installed.Store(true)
 			return simulator.Reply{Status: mdm.StatusAcknowledged, Payload: &commands.InstallApplicationResponse{Identifier: new("com.example.selected"), State: new("Managed")}}
 		case "InstalledApplicationList":
 			rows := []commands.InstalledApplicationListResponseInstalledApplicationList{}
 			if installed.Load() {
-				rows = append(rows, commands.InstalledApplicationListResponseInstalledApplicationList{Identifier: new("com.example.selected"), Version: new("2.4"), Installing: new(false)})
+				fault, ok := nativeFault.Load().(string)
+				if !ok {
+					t.Error("invalid native fixture mode")
+				}
+				row := commands.InstalledApplicationListResponseInstalledApplicationList{Identifier: new("com.example.selected"), Version: new("2.4"), Installing: new(false)}
+				switch fault {
+				case "wrong app version":
+					row.Version = new("9.9")
+				case "installing":
+					row.Installing = new(true)
+				case "missing app version":
+					row.Version = nil
+				}
+				if fault != "missing app" {
+					rows = append(rows, row)
+				}
 			}
 			return simulator.Reply{Status: mdm.StatusAcknowledged, Payload: &commands.InstalledApplicationListResponse{InstalledApplicationList: rows}}
 		case "ManagedApplicationList":
 			state := "ManagedButUninstalled"
 			if installed.Load() {
 				state = "Managed"
+			}
+			if fault, ok := nativeFault.Load().(string); ok && fault == "not managed" {
+				state = "UserInstalledApp"
 			}
 			return simulator.Reply{Status: mdm.StatusAcknowledged, Payload: &commands.ManagedApplicationListResponse{ManagedApplicationList: map[string]commands.ManagedApplicationListManagedApplicationItem{"com.example.selected": {Status: state}}}}
 		default:
@@ -473,6 +520,27 @@ func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method) {
 		capture("native-proof-error")
 		t.Fatal(err)
 	}
+	if method == managedcontent.MDM {
+		for _, name := range []string{"wrong serial", "missing build", "invalid OS", "unsupported OS", "foreign platform", "wrong app version", "missing app version", "installing", "missing app", "not managed"} {
+			t.Run(name, func(t *testing.T) {
+				nativeFault.Store(name)
+				if err := liveAppsBooksInstallation(ctx, s); err == nil {
+					t.Fatal("contradictory authenticated native facts passed")
+				}
+				nativeFault.Store("")
+				// Restore source facts using the same authenticated native query path.
+				if _, err := appsNativeQuery(ctx, s, pathOf(d), &commands.DeviceInformation{Queries: []string{"OSVersion", "BuildVersion", "SerialNumber", "ProductName", "IsSupervised"}}); err != nil {
+					t.Fatal(err)
+				}
+				if _, err := appsNativeQuery(ctx, s, pathOf(d), &commands.InstalledApplicationList{Identifiers: []string{"com.example.selected"}}); err != nil {
+					t.Fatal(err)
+				}
+			})
+		}
+		if err := liveAppsBooksInstallation(ctx, s); err != nil {
+			t.Fatal("valid native proof did not recover after contradictory reports", err)
+		}
+	}
 	if f.postCount() != 0 {
 		t.Fatal("read-only inspection changed preexisting licenses")
 	}
@@ -533,7 +601,7 @@ func appsNativeStackCapture(t *testing.T, s *Session) func(string) {
 	if s.Env.Mode != "simulated" {
 		t.Fatal("native stack fixture requires simulated mode")
 	}
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600) // #nosec G304 -- Operator-selected private test diagnostics path, not a network input.
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600) // #nosec G304 G703 -- Explicit operator-selected private diagnostic file; no network input determines its path.
 	if err != nil {
 		t.Fatal("private native stack file unavailable")
 	}
@@ -585,19 +653,23 @@ func appsLongContext(t *testing.T) context.Context {
 // TestAppsBooksLicensingThroughReferenceSQLRuntime settles both licensing paths and restores original assignments through real SQL.
 func TestAppsBooksLicensingThroughReferenceSQLRuntime(t *testing.T) {
 	for _, scenario := range []struct {
-		name                   string
-		preexisting, unlimited bool
-	}{{"absent", false, false}, {"preexisting", true, false}, {"unlimited", false, true}} {
+		name                           string
+		preexisting, unlimited, serial bool
+	}{{"absent", false, false, false}, {"preexisting", true, false, false}, {"unlimited", false, true, false}, {"serial absent", false, false, true}, {"serial preexisting", true, false, true}} {
 		t.Run(scenario.name, func(t *testing.T) {
 			preexisting := scenario.preexisting
 			s, f, c := appsRuntime(t)
 			f.mu.Lock()
 			f.assigned = preexisting
+			if scenario.serial {
+				c.User, c.Serial = "", "DESIGNATED-SERIAL"
+				f.assignment.ClientUserID, f.assignment.UserStatus, f.assignment.SerialNumber = "", "", c.Serial
+				adeTestJSON(t, s.Env.Workspace.path("appsbooks", "acceptance.json"), c)
+			}
 			if scenario.unlimited {
 				f.rewrite = func(r *http.Request, m map[string]any) {
 					if r.URL.Path == "/assets" {
-						rows := m["assets"].([]any)
-						asset := rows[0].(map[string]any)
+						rows, asset := appsFixtureAsset(t, m)
 						delete(asset, "availableCount")
 						m["unlimitedAssets"] = rows
 						m["assets"] = []any{}
@@ -654,7 +726,8 @@ func TestAppsBooksRuntimePartialCallbacksAndCleanupRetainFence(t *testing.T) {
 			}
 			f.rewrite = func(r *http.Request, m map[string]any) {
 				if name == "cleanup capability changed" && r.URL.Path == "/assets" && f.events == 2 {
-					m["assets"].([]any)[0].(map[string]any)["revocable"] = false
+					_, asset := appsFixtureAsset(t, m)
+					asset["revocable"] = false
 				}
 				if r.URL.Path != "/status" {
 					return
@@ -704,5 +777,91 @@ func TestAppsBooksShortDeadlineBlocksBeforeAppleMutation(t *testing.T) {
 	}
 	if _, err := os.Stat(s.Env.Workspace.path("appsbooks", "pending-licensing.json")); !os.IsNotExist(err) {
 		t.Fatal("short budget acquired mutation fence")
+	}
+}
+
+// TestAppsBooksRuntimeExchangeFailuresPreserveRecovery proves rejected and lost
+// exchanges never become success or authorize a guessed cleanup mutation.
+func TestAppsBooksRuntimeExchangeFailuresPreserveRecovery(t *testing.T) {
+	for _, name := range []string{"preflight unavailable", "before SDK submit", "accepted SDK response lost", "SDK status unavailable", "SDK target readback unavailable", "reference submit unavailable", "accepted reference response lost", "reference status unavailable", "reference target readback unavailable", "cleanup rejected", "accepted cleanup response lost", "cleanup status unavailable", "cleanup target readback unavailable"} {
+		t.Run(name, func(t *testing.T) {
+			var armed, hit atomic.Bool
+			s, f, c := appsRuntimeWith(t, func(f *appsFixture) {
+				transport := f.config.HTTPClient.Transport
+				f.config.HTTPClient.Transport = transportFunc(func(r *http.Request) (*http.Response, error) {
+					f.mu.Lock()
+					events := f.events
+					f.mu.Unlock()
+					selected := armed.Load() && ((name == "preflight unavailable" && r.URL.Path == "/config" && events == 0) ||
+						((name == "before SDK submit" || name == "accepted SDK response lost") && r.URL.Path == "/associate" && events == 0) ||
+						(name == "SDK status unavailable" && r.URL.Path == "/status" && events == 1) ||
+						(name == "SDK target readback unavailable" && r.URL.Path == "/assignments" && events == 1) ||
+						((name == "reference submit unavailable" || name == "accepted reference response lost") && r.URL.Path == "/associate" && events == 1) ||
+						(name == "reference status unavailable" && r.URL.Path == "/status" && events == 2) ||
+						(name == "reference target readback unavailable" && r.URL.Path == "/assignments" && events == 2) ||
+						((name == "cleanup rejected" || name == "accepted cleanup response lost") && r.URL.Path == "/disassociate") ||
+						(name == "cleanup status unavailable" && r.URL.Path == "/status" && events == 3) ||
+						(name == "cleanup target readback unavailable" && r.URL.Path == "/assignments" && events == 3))
+					selected = selected && hit.CompareAndSwap(false, true)
+					if selected && !strings.Contains(name, "response lost") {
+						return nil, errors.New("private-token private-user upstream rejected")
+					}
+					response, err := transport.RoundTrip(r)
+					if selected {
+						if response != nil {
+							if closeErr := response.Body.Close(); closeErr != nil {
+								t.Error(closeErr)
+							}
+						}
+						return nil, errors.New("private-token private-user response lost after acceptance")
+					}
+					return response, err
+				})
+			})
+			appsInstallDueFixture(t, s, f, c)
+			armed.Store(true)
+			err := liveAppsBooksLicensing(appsLongContext(t), s)
+			if !hit.Load() || err == nil {
+				t.Fatal("named failure was not reached or passed", err)
+			}
+			if strings.Contains(err.Error(), "private-token") || strings.Contains(err.Error(), "private-user") {
+				t.Fatal("upstream error leaked private facts")
+			}
+			posts := f.postCount()
+			fence, readErr := os.ReadFile(s.Env.Workspace.path("appsbooks", "pending-licensing.json"))
+			if name == "preflight unavailable" {
+				if posts != 0 || !os.IsNotExist(readErr) {
+					t.Fatal("failed preflight wrote or claimed mutation ownership")
+				}
+				return
+			}
+			if readErr != nil || len(fence) == 0 {
+				t.Fatal("uncertain outcome lost durable recovery fence", readErr)
+			}
+			maximum := 1
+			if strings.HasPrefix(name, "reference") || name == "accepted reference response lost" {
+				maximum = 2
+			}
+			if strings.HasPrefix(name, "cleanup") || name == "accepted cleanup response lost" {
+				maximum = 3
+			}
+			if posts > maximum {
+				t.Fatal("failed phase triggered an unproven inverse")
+			}
+			f.mu.Lock()
+			assigned := f.assigned
+			f.mu.Unlock()
+			if posts > 0 && posts < 3 && !assigned {
+				t.Fatal("unknown outcome revoked the selected assignment")
+			}
+			s.Evidence = t.TempDir()
+			if err := liveAppsBooksLicensing(appsLongContext(t), s); !errors.Is(err, ErrBlocked) {
+				t.Fatal("unresolved run allowed replay", err)
+			}
+			after, err := os.ReadFile(s.Env.Workspace.path("appsbooks", "pending-licensing.json"))
+			if err != nil || !bytes.Equal(fence, after) || f.postCount() != posts {
+				t.Fatal("recovery ownership changed on rerun", err)
+			}
+		})
 	}
 }

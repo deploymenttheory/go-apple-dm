@@ -61,9 +61,9 @@ func appsRead(s *Session, name string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w: private Apps and Books input unavailable", errOperation)
 	}
-	defer f.Close()
 	b, err := io.ReadAll(io.LimitReader(f, (1<<20)+1))
-	if err != nil || len(b) > 1<<20 {
+	closeErr := f.Close()
+	if err != nil || closeErr != nil || len(b) > 1<<20 {
 		return nil, fmt.Errorf("%w: private Apps and Books input unreadable or oversized", errOperation)
 	}
 	return b, nil

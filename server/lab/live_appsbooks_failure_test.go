@@ -48,7 +48,10 @@ func TestAppsBooksIncompletePagesAndPrerequisitesNeverMutate(t *testing.T) {
 					}
 				case "page bound":
 					if r.URL.Path == "/assets" {
-						index := m["currentPageIndex"].(int)
+						index, ok := m["currentPageIndex"].(int)
+						if !ok {
+							t.Fatal("fixture page index is not numeric")
+						}
 						m["nextPageIndex"] = index + 1
 						m["totalPages"] = 100
 					}
@@ -62,7 +65,7 @@ func TestAppsBooksIncompletePagesAndPrerequisitesNeverMutate(t *testing.T) {
 					}
 				case "Book", "not revocable", "stock unknown":
 					if r.URL.Path == "/assets" {
-						asset := m["assets"].([]any)[0].(map[string]any)
+						_, asset := appsFixtureAsset(t, m)
 						if name == "Book" {
 							asset["productType"] = "Book"
 						}
@@ -340,7 +343,10 @@ func TestAppsBooksDirectNotificationFallbackAndPendingSpacing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	clock := f.config.Clock.(*appsTestClock)
+	clock, ok := f.config.Clock.(*appsTestClock)
+	if !ok {
+		t.Fatal("fixture clock unavailable")
+	}
 	started := clock.Now()
 	var first time.Time
 	calls := 0
