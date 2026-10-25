@@ -100,6 +100,13 @@ use a separate credential-free request to the documented Apple storage origin.
 [ADR 0030](research/decisions/0030-apple-business-manager-api-client.md) describes origin,
 CSV verification and per-device outcome contracts.
 
+Apps and Books asset reads preserve finite/sentinel records and typed unlimited
+records separately, with original page and record JSON. Missing counts remain
+optional; the documented maximum-integer sentinel represents unlimited stock.
+Bounded traversal retains filters and location scope. Inventory availability,
+licensing completion, command dispatch and installation are separate outcomes.
+See [Apps and Books licensing](operations/apps-and-books.md).
+
 ADE profile authoring can call `dep.Profile.ValidateForTarget` before submission.
 The library combines generated skip-key support with documented ADE field
 restrictions and reports unsupported fields and unchecked dimensions. Target

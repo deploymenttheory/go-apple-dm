@@ -10,6 +10,8 @@ import (
 
 // AssetsQuery filters asset counts. Assets do not accept SinceVersionID.
 type AssetsQuery struct {
+	// Unlimited preserves Apple's true, false and omitted query semantics.
+	Unlimited         *bool
 	PageIndex         int
 	AdamID            string
 	ProductType       string
@@ -49,6 +51,7 @@ func (c *Client) Assets(ctx context.Context, q AssetsQuery) (AssetsPage, error) 
 	setString(v, "adamId", q.AdamID)
 	setString(v, "productType", q.ProductType)
 	setString(v, "pricingParam", q.PricingParam)
+	setBool(v, "unlimited", q.Unlimited)
 	setBool(v, "revocable", q.Revocable)
 	setBool(v, "deviceAssignable", q.DeviceAssignable)
 	for key, value := range map[string]*int64{"minAvailableCount": q.MinAvailableCount, "maxAvailableCount": q.MaxAvailableCount, "minAssignedCount": q.MinAssignedCount, "maxAssignedCount": q.MaxAssignedCount} {
@@ -143,22 +146,31 @@ func setBool(v url.Values, key string, value *bool) {
 	}
 }
 
-// WalkAssets visits all pages sequentially, returning the first page's version
+// WalkAssets visits assets followed by unlimitedAssets on each page, preserving
+// the original representation in each item. It starts at page zero, retaining all
+// other query filters. It returns the first page's version
 // only on success. maxPages must be positive and bounds a changing result set.
 func (c *Client) WalkAssets(
 	ctx context.Context,
 	q AssetsQuery,
 	maxPages int,
-	visit func(AssetRecord) error,
+	visit func(AssetInventory) error,
 ) (string, error) {
 	return walk(
 		ctx,
 		maxPages,
 		visit,
-		func(ctx context.Context, index int) ([]AssetRecord, Pagination, error) {
+		func(ctx context.Context, index int) ([]AssetInventory, Pagination, error) {
 			q.PageIndex = index
 			p, err := c.Assets(ctx, q)
-			return p.Assets, p.Pagination, err
+			items := make([]AssetInventory, 0, len(p.Assets)+len(p.UnlimitedAssets))
+			for i := range p.Assets {
+				items = append(items, AssetInventory{Record: &p.Assets[i]})
+			}
+			for i := range p.UnlimitedAssets {
+				items = append(items, AssetInventory{Unlimited: &p.UnlimitedAssets[i]})
+			}
+			return items, p.Pagination, err
 		},
 	)
 }
@@ -216,6 +228,9 @@ func walk[T any](
 	index := 0
 	version := ""
 	for page := 0; page < maxPages; page++ {
+		if err := ctx.Err(); err != nil {
+			return "", err
+		}
 		items, p, err := fetch(ctx, index)
 		if err != nil {
 			return "", err
@@ -224,9 +239,15 @@ func walk[T any](
 			version = p.VersionID
 		}
 		for _, item := range items {
+			if err := ctx.Err(); err != nil {
+				return "", err
+			}
 			if err := visit(item); err != nil {
 				return "", fmt.Errorf("appsbooks: visit: %w", err)
 			}
+		}
+		if err := ctx.Err(); err != nil {
+			return "", err
 		}
 		if p.NextPageIndex == nil {
 			return version, nil
