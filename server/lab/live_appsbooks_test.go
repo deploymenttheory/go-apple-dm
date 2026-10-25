@@ -310,14 +310,8 @@ func TestAppsBooksReadOnlyCollectionAndPrivateEvidence(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, path := range paths {
-		info, err := os.Stat(path)
-		if err != nil || info.Mode().Perm() != 0o600 {
-			t.Fatal("evidence file is not private", err)
-		}
-		parent, err := os.Stat(filepath.Dir(path))
-		if err != nil || parent.Mode().Perm() != 0o700 {
-			t.Fatal("evidence directory is not private", err)
-		}
+		assertAppsBooksPrivateFile(t, path)
+		assertAppsBooksPrivateDirectory(t, filepath.Dir(path))
 	}
 }
 

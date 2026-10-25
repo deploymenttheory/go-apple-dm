@@ -71,6 +71,23 @@ func Check(path string) error {
 	if !info.Mode().IsRegular() {
 		return wrap(os.ErrPermission)
 	}
+	return checkWindowsACL(path)
+}
+
+// CheckDirectory examines the directory DACL rather than synthesized mode bits.
+func CheckDirectory(path string) error {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return wrap(err)
+	}
+	if !info.IsDir() {
+		return wrap(os.ErrPermission)
+	}
+	return checkWindowsACL(path)
+}
+
+// checkWindowsACL rejects grants to identities outside the private-file contract.
+func checkWindowsACL(path string) error {
 	user, err := windows.GetCurrentProcessToken().GetTokenUser()
 	if err != nil {
 		return wrap(err)

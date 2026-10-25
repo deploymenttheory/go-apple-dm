@@ -22,5 +22,17 @@ func Check(path string) error {
 	return nil
 }
 
+// CheckDirectory refuses nondirectories and access granted to other users.
+func CheckDirectory(path string) error {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return wrap(err)
+	}
+	if !info.IsDir() || info.Mode().Perm()&0o077 != 0 {
+		return wrap(os.ErrPermission)
+	}
+	return nil
+}
+
 // SyncDirectory flushes directory metadata after exclusive publication.
 func SyncDirectory(file *os.File) error { return wrap(file.Sync()) }

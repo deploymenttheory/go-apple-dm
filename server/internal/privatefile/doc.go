@@ -8,10 +8,11 @@
 // Protection is applied to the opened file even if its path is renamed.
 //
 // Check rejects nonregular files and permissions that grant access to other
-// users. OpenFile callers must request exclusive creation; OpenRootFile retains
-// the caller's os.Root boundary. SyncDirectory flushes directory metadata on
-// Unix and validates the handle on Windows, where directory flushing is not
-// supported. Callers must sync file contents separately.
+// users. CheckDirectory applies the same permission contract to directories and
+// rejects nondirectories. OpenFile callers must request exclusive creation;
+// OpenRootFile retains the caller's os.Root boundary. SyncDirectory flushes
+// directory metadata on Unix and validates the handle on Windows, where directory
+// flushing is not supported. Callers must sync file contents separately.
 //
 // # References
 //
