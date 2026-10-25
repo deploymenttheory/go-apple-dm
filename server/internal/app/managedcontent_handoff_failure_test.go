@@ -128,6 +128,7 @@ type contentMutationQueue struct {
 	hits *atomic.Int32
 }
 
+// Enqueue fails the actual native write without delegating a partial enqueue.
 func (s contentMutationQueue) Enqueue(context.Context, []mdm.EnrollmentID, *mdm.Command, storage.EnqueueOptions) (storage.EnqueueResult, error) {
 	s.hits.Add(1)
 	return storage.EnqueueResult{}, errors.New("fixture-provider-secret enqueue unavailable")
@@ -141,6 +142,7 @@ type contentMutationDDM struct {
 	hits   *atomic.Int32
 }
 
+// Update retains the native transaction while decorating only its write methods.
 func (s contentMutationDDM) Update(ctx context.Context, fn func(ddm.Tx) error) error {
 	return s.Store.Update(ctx, func(tx ddm.Tx) error {
 		return fn(contentMutationDDMTx{Tx: tx, method: s.method, hits: s.hits})
@@ -153,6 +155,7 @@ type contentMutationDDMTx struct {
 	hits   *atomic.Int32
 }
 
+// LockPublication forwards the original transaction publication lock capability.
 func (s contentMutationDDMTx) LockPublication(ctx context.Context, name string) error {
 	locker, ok := s.Tx.(ddm.PublicationLocker)
 	if !ok {
@@ -161,6 +164,7 @@ func (s contentMutationDDMTx) LockPublication(ctx context.Context, name string) 
 	return locker.LockPublication(ctx, name)
 }
 
+// PutDeclaration fails the selected publication write and forwards other writes.
 func (s contentMutationDDMTx) PutDeclaration(ctx context.Context, d *ddm.Declaration) (bool, error) {
 	if s.method == "PutDeclaration" {
 		s.hits.Add(1)
@@ -169,6 +173,7 @@ func (s contentMutationDDMTx) PutDeclaration(ctx context.Context, d *ddm.Declara
 	return s.Tx.PutDeclaration(ctx, d)
 }
 
+// AssignSet fails the selected assignment after publication in the same transaction.
 func (s contentMutationDDMTx) AssignSet(ctx context.Context, id mdm.EnrollmentID, set string, at time.Time) (bool, error) {
 	if s.method == "AssignSet" {
 		s.hits.Add(1)
