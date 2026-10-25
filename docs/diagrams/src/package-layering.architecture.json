@@ -31,7 +31,7 @@
     ],
     "viewBox": [
       1390,
-      560
+      720
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
@@ -50,7 +50,7 @@
       "sublabel": "Server, bench, and CLI",
       "pos": [
         40.0,
-        270.0
+        430.0
       ],
       "size": [
         220,
@@ -71,7 +71,7 @@
       "sublabel": "Services and SQL stores",
       "pos": [
         285.0,
-        270.0
+        430.0
       ],
       "size": [
         220,
@@ -96,7 +96,7 @@
       "sublabel": "Modeled protocol exchanges",
       "pos": [
         850.0,
-        430.0
+        590.0
       ],
       "size": [
         220,
@@ -117,7 +117,7 @@
       "sublabel": "Interfaces and memory stores",
       "pos": [
         570.0,
-        270.0
+        430.0
       ],
       "size": [
         220,
@@ -138,7 +138,7 @@
       "sublabel": "Assignment and push APIs",
       "pos": [
         570.0,
-        110.0
+        270.0
       ],
       "size": [
         220,
@@ -159,7 +159,7 @@
       "sublabel": "Issue and verify identities",
       "pos": [
         570.0,
-        430.0
+        590.0
       ],
       "size": [
         220,
@@ -184,7 +184,7 @@
       "sublabel": "Wire messages and engines",
       "pos": [
         850.0,
-        270.0
+        430.0
       ],
       "size": [
         220,
@@ -209,7 +209,7 @@
       "sublabel": "Typed payloads and rules",
       "pos": [
         850.0,
-        110.0
+        270.0
       ],
       "size": [
         220,
@@ -227,10 +227,10 @@
       "id": "foundationtier",
       "type": "backend",
       "label": "Shared utilities",
-      "sublabel": "Paging, secrets, app workflows",
+      "sublabel": "Clock, paging, and secrets",
       "pos": [
         1130.0,
-        270.0
+        430.0
       ],
       "size": [
         220,
@@ -240,10 +240,31 @@
         {
           "path": "devicemanagement/paging/paging.go",
           "label": "paging"
+        }
+      ],
+      "purpose": "service"
+    },
+    {
+      "id": "contentutility",
+      "type": "backend",
+      "label": "Optional content workflows",
+      "sublabel": "Caller-owned licensed delivery",
+      "pos": [
+        570,
+        70
+      ],
+      "size": [
+        250,
+        70
+      ],
+      "sources": [
+        {
+          "path": "devicemanagement/applications/managedcontent/workflow.go",
+          "label": "Reusable workflow composition"
         },
         {
           "path": "devicemanagement/applications/managedcontent/types.go",
-          "label": "Independent content adapters"
+          "label": "Independent adapter contracts"
         }
       ],
       "purpose": "service"
@@ -269,7 +290,8 @@
         "pkitier",
         "protocoltier",
         "schematier",
-        "foundationtier"
+        "foundationtier",
+        "contentutility"
       ],
       "pad": 26
     }
@@ -282,7 +304,7 @@
       "id": "import-0",
       "labelAt": [
         273.0,
-        354.0
+        514.0
       ],
       "purpose": "neutral"
     },
@@ -356,22 +378,31 @@
       "via": [
         [
           1090,
-          305
+          465
         ],
         [
           1090,
-          60
+          220
         ],
         [
           680,
-          60
+          220
         ]
       ],
       "labelAt": [
         850,
-        46
+        206
       ],
       "purpose": "neutral"
+    },
+    {
+      "id": "content-licensing-dependency",
+      "from": "contentutility",
+      "to": "clienttier",
+      "label": "imports licensing API",
+      "purpose": "neutral",
+      "fromSide": "bottom",
+      "toSide": "top"
     }
   ],
   "cards": [
@@ -403,7 +434,7 @@
       "dot": "service",
       "title": "Reusable managed-content composition",
       "items": [
-        "applications/managedcontent is a library utility with explicit Licensing, Resolver and Delivery adapters plus the atomic foundation state.Store contract. The existing appsbooks.Workflow satisfies Licensing directly. Consumers can adopt it without a universal inventory model or any reference-server package.",
+        "applications/managedcontent belongs to the library utility tier above management protocols and Apple service clients. It composes explicit Licensing, Resolver and Delivery adapters with the atomic foundation state.Store contract. The existing appsbooks.Workflow satisfies Licensing directly; consumers need no universal inventory model or reference-server package.",
         "Queued starts permit atomic caller audit capture; Step owns Apple and native-delivery effects. Authenticated target selection and native support metadata gate installation, while stable payload identities and ownership fences preserve restart/readback recovery.",
         "Backend-independent production code and tests never import the reference server. Shared memory and sealed-SQL contracts live in storage/storagetest as existing test scaffolding; concrete MDM/DDM queue composition remains caller-owned.",
         "Public adapter contracts \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/bb39d3a24680dffbdd4863361c9be1718615d704/devicemanagement/applications/managedcontent/types.go",
