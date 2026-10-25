@@ -30,41 +30,60 @@ type contentAdmission struct {
 // nativeContentIdentity identifies the actual authenticated principal generation,
 // independently of optional serial disclosure and Apple licensing aliases.
 func (a *App) nativeContentIdentity(ctx context.Context, s managedcontent.Selection) (contentIdentity, error) {
-	e, err := a.Store.Get(ctx, s.Enrollment)
-	if err != nil {
+	e, device, err := a.authenticatedContentEnrollment(ctx, s.Enrollment)
+	if e == nil {
 		return contentIdentity{}, err
 	}
-	if !e.Enabled {
-		return contentIdentity{}, managedcontent.ErrTarget
-	}
 	out := contentIdentity{Enrollment: e.ID, Principal: e.EnrollmentUserID + "/" + e.UserShortName}
-	device := e
-	if e.ID.Channel.IsUser() {
-		ch := mdm.ChannelDevice
-		if e.ID.Channel == mdm.ChannelUserEnrollmentUser {
-			ch = mdm.ChannelUserEnrollmentDevice
-		}
-		device, err = a.Store.Get(ctx, mdm.EnrollmentID{Channel: ch, ID: e.ID.ParentID})
-		if err != nil {
-			return out, err
-		}
-	}
-	if !device.Enabled || device.CertHash == "" {
-		return out, managedcontent.ErrTarget
+	if err != nil {
+		return out, err
 	}
 	out.Certificate = device.CertHash
 	if s.ClientUserID != "" {
-		record, err := a.protocol.Get(ctx, contentUserKey(e.ID))
+		raw, err := a.contentUserBindingValue(ctx, e, device, s.ClientUserID)
 		if err != nil {
 			return out, err
 		}
-		var binding contentUserBinding
-		if json.Unmarshal(record.Value, &binding) != nil || binding.CertHash != out.Certificate || binding.Enrollment != e.ID || binding.ClientUserID != s.ClientUserID || binding.Principal != out.Principal {
-			return out, managedcontent.ErrTarget
-		}
-		out.UserBinding = string(record.Value)
+		out.UserBinding = string(raw)
 	}
 	return out, nil
+}
+
+// authenticatedContentEnrollment reads the selected native principal and its
+// certificate-bearing device parent without requiring hardware disclosure.
+func (a *App) authenticatedContentEnrollment(ctx context.Context, id mdm.EnrollmentID) (*storage.Enrollment, *storage.Enrollment, error) {
+	e, err := a.Store.Get(ctx, id)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !e.Enabled {
+		return nil, nil, managedcontent.ErrTarget
+	}
+	device := e
+	if e.ID.Channel.IsUser() {
+		device, err = a.Store.Get(ctx, e.ID.Device())
+		if err != nil {
+			return e, nil, err
+		}
+	}
+	if !device.Enabled || device.CertHash == "" {
+		return e, device, managedcontent.ErrTarget
+	}
+	return e, device, nil
+}
+
+// contentUserBindingValue verifies an explicit licensing alias against the
+// current native principal and certificate, retaining its sealed admission bytes.
+func (a *App) contentUserBindingValue(ctx context.Context, e, device *storage.Enrollment, clientUser string) ([]byte, error) {
+	record, err := a.protocol.Get(ctx, contentUserKey(e.ID))
+	if err != nil {
+		return nil, err
+	}
+	var binding contentUserBinding
+	if json.Unmarshal(record.Value, &binding) != nil || binding.Enrollment != e.ID || binding.CertHash != device.CertHash || binding.ClientUserID != clientUser || binding.Principal != e.EnrollmentUserID+"/"+e.UserShortName {
+		return nil, managedcontent.ErrTarget
+	}
+	return record.Value, nil
 }
 
 // queueContent pins the native authenticated principal before durable local

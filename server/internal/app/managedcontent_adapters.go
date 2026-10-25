@@ -38,26 +38,9 @@ func (v contentResolver) Resolve(ctx context.Context, s managedcontent.Selection
 			return nil, managedcontent.ErrTarget
 		}
 	}
-	e, err := v.a.Store.Get(ctx, s.Enrollment)
+	e, device, err := v.a.authenticatedContentEnrollment(ctx, s.Enrollment)
 	if err != nil {
 		return nil, err
-	}
-	if !e.Enabled {
-		return nil, managedcontent.ErrTarget
-	}
-	device := e
-	if e.ID.Channel.IsUser() {
-		ch := mdm.ChannelDevice
-		if e.ID.Channel == mdm.ChannelUserEnrollmentUser {
-			ch = mdm.ChannelUserEnrollmentDevice
-		}
-		device, err = v.a.Store.Get(ctx, mdm.EnrollmentID{Channel: ch, ID: e.ID.ParentID})
-		if err != nil {
-			return nil, err
-		}
-	}
-	if !device.Enabled || device.CertHash == "" {
-		return nil, managedcontent.ErrTarget
 	}
 	target, err := service.EnrollmentTarget(ctx, v.a.Store, e.ID)
 	if err != nil {
@@ -73,15 +56,10 @@ func (v contentResolver) Resolve(ctx context.Context, s managedcontent.Selection
 	scope := e.ID.ID
 	clientUser := ""
 	if s.ClientUserID != "" {
-		record, err := v.a.protocol.Get(ctx, contentUserKey(e.ID))
-		if err != nil {
+		if _, err := v.a.contentUserBindingValue(ctx, e, device, s.ClientUserID); err != nil {
 			return nil, managedcontent.ErrTarget
 		}
-		var binding contentUserBinding
-		if json.Unmarshal(record.Value, &binding) != nil || binding.Enrollment != e.ID || binding.CertHash != device.CertHash || binding.ClientUserID != s.ClientUserID || binding.Principal != e.EnrollmentUserID+"/"+e.UserShortName {
-			return nil, managedcontent.ErrTarget
-		}
-		clientUser = binding.ClientUserID
+		clientUser = s.ClientUserID
 	}
 	_, capErr := v.a.Engine.ClientCapabilities(ctx, e.ID)
 	if capErr != nil && !errors.Is(capErr, ddm.ErrNotFound) {
