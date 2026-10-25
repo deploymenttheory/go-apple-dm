@@ -149,3 +149,8 @@ and its [authorization algorithm](https://docs.cedarpolicy.com/auth/authorizatio
 Cedar can skip a policy that produces an evaluation error. This server deliberately
 denies an operation if any evaluation diagnostic occurs; invalid active documents
 also block the operational policy set. This fail-closed policy is a project choice.
+
+Apps and Books/content capabilities require their individually authored grants;
+none joins the routine action groups. Safe inspection, explicit mutations and raw
+source/native evidence use separate actions described in the
+[content operations guide](apps-and-books.md#reference-server-operations).

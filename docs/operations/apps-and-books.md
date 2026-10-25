@@ -365,3 +365,87 @@ The client models the field tables and examples in these Apple contracts:
 and [notifications](https://developer.apple.com/documentation/devicemanagement/subscribing-to-notifications).
 Tests use local HTTPS responses based on those contracts; no live Apple credentials
 or Apple-service acceptance is claimed.
+
+## Reference-server operations
+
+Set `DM_APPSBOOKS_MDM_ID` to the stable identity for this server. This enables the
+Apps and Books HTTP/CLI composition only with sealed SQLite, PostgreSQL or MySQL
+storage. The process uses the published SDK workflows over its existing protocol
+state and event transactions. Tokens and receiver credentials have no ordinary
+read endpoint. Trusted embedding can supply `AppsBooksConfig.BaseURL` and
+`HTTPClient`; HTTP callers cannot select a credential destination.
+
+The permission catalogue contains six dedicated actions: `readAppsBooks`,
+`manageAppsBooks`, `readAppsBooksEvidence`, `readManagedContent`,
+`manageManagedContent` and `readManagedContentEvidence`. None belongs to a routine
+role action group. The evidence actions allow private raw source/configuration,
+notification, command/declaration and native device evidence. Ordinary reads return
+safe location metadata, licensing job status and managed-content operation status.
+
+The authenticated API is rooted at `/admin/v1`:
+
+| Resource | Explicit operations |
+| --- | --- |
+| `/appsbooks/locations/{location}` | `GET` safe metadata; `PUT` register or replace `{revision,sToken}` |
+| Location `/receiver` | `PUT {token}` separately records/rotates the dedicated callback credential |
+| Location `/configure` | `POST {revision,configuration}` explicitly claims/configures the location; notification credentials must match the saved receiver |
+| Location `/refresh`, `/probe` | `POST {revision,maxPages}` for complete synchronization; `POST {revision}` for stopped configuration reconciliation |
+| Location `/recover-configuration`, `/recover-licensing` | `POST {revision,sToken}`; licensing recovery additionally selects `jobId` |
+| Location `/jobs`, `/jobs/{job}` | `GET` safe paginated status; `PUT {revision,request}` on a selected job queues local SDK licensing intent |
+| Job `/submit`, `/poll` | `POST {worker,leaseSeconds}` explicitly submits or polls that job |
+| Job `/reconcile` | `POST {eventId,note,abandon}` resolves stopped uncertain work without implicit POST replay |
+| `/managed-content/users` | `PUT {enrollment,clientUserId}` explicitly binds an Apple user to a current authenticated native principal |
+| `/managed-content/operations`, `/operations/{operation}` | `GET` safe status; `PUT {mode,plan}` queues `assign`, `install` or `assign-and-install` for one explicitly selected authenticated enrollment |
+| Operation `/step`, `/reconcile` | `POST {worker,leaseSeconds,note,retryAbsent}` advances or explicitly reconciles retained work |
+| Operation `/cancel` | `POST` cancels pre-dispatch intent without revoking a license |
+| Location, job or operation `/evidence` | Separately privileged retained source/native evidence |
+| Location `/notifications/{notification}/evidence` | Separately privileged durable notification receipt |
+
+Lists use the exclusive `cursor` query parameter. SDK request types retain their
+camelCase fields; native enrollment addressing is `{Channel,ID,ParentID}`, with
+`Channel` the SDK's numeric channel. Native opaque identifiers address enrollments;
+physical identity correlation uses only an explicitly supplied matching serial.
+An authenticated User Enrollment target does not need a serial or ABM record.
+Apple `clientUserId` is a separately chosen licensing identity, bound to the current
+native principal/certificate. A queued operation pins that generation, so later
+binding, principal or certificate changes cannot redirect it.
+
+`POST /appsbooks/notifications/{location}` is the public callback route. It accepts
+only the dedicated saved receiver bearer, validates the immutable location UID,
+and commits the authenticated SDK inbox/deduplication and required event capture
+before returning 204. Rotation immediately rejects the previous bearer; retained
+identical notification replays are idempotent. Configure the receiver before the
+explicit configuration request so Apple's synchronous test notification can arrive.
+
+All local SDK writes participate in required event capture; a capture failure
+rolls them back. Remote service calls execute outside local transactions. Durable
+pending reservations remain the source of truth after a remote outcome becomes
+uncertain; local rollback cannot undo a remote Apple request. No ownership or
+licensing POST occurs during ordinary reads, registration or refresh. The
+`managed-content-state` event intentionally contains metadata only; administrator
+access/completion occurrences retain the separately projected action and actor.
+
+The supervised `managed-content` worker resumes queued/prepared operations and
+polls their accepted licensing jobs using the SDK's timing/fencing rules. Uncertain
+submission or dispatch requires explicit stopped-worker reconciliation. Independent
+licensing jobs expose explicit submit/poll/reconcile operations. Immutable native
+receipts bind one dispatch ID, target and wire digest to the MDM queue or DDM
+publication in the shared SQL transaction. Repeated dispatch IDs cannot enqueue
+new work after queue pruning. Conflicting native management paths fail closed.
+
+MDM typed install processing is historical evidence, separate from a bare ACK.
+Current app installation/version requires an applicable authenticated native
+`InstalledApplicationList` joined to the identifier returned by that exact install
+command. A later empty report clears current installation/version without erasing
+historical completion. DDM uses its own exact declaration-token and
+`app.managed.list` evidence; MDM-only managed-app queries do not establish DDM
+installation. Publication alone never establishes app installation. Missing or
+stale native evidence remains unconfirmed. Reinstall/update uses an explicit
+same-method SDK predecessor, never an implicit method switch.
+
+`dmctl appsbooks` exposes `get`, `evidence`, `register`, `receiver`, `configure`,
+`refresh`, `probe`, token recovery, `job-create`, `job-get`, `job-evidence`,
+`submit`, `poll` and `reconcile`. `dmctl managed-content` exposes `create`, `get`,
+`evidence`, `step`, `reconcile` and `cancel`. Mutating JSON comes from `-file` or
+stdin, keeping credentials out of command arguments and URLs. See the maintained
+[explicit operation examples](../../server/examples/managed-content/README.md).

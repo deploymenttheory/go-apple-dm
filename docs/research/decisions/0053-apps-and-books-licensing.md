@@ -154,6 +154,20 @@ remain blocked. Terminal device processing, current installed state and reported
 app version are distinct: removal does not erase an earlier terminal outcome or
 permanently prevent an explicit reinstall.
 
+The reference server composes both SDK workflows over its existing sealed SQL
+state and transaction/event boundary. `DM_APPSBOOKS_MDM_ID` enables dedicated
+HTTP/CLI location, explicit licensing, content, recovery and private evidence
+operations. New grants have no routine-group membership. Actual SDK state writes
+and required metadata-only event capture commit together, including callback
+receipts before HTTP 204. No remote call runs inside that local transaction.
+Native admission pins the selected authenticated principal/certificate and its
+explicit Apple-user binding; later rebinding cannot redirect retained intent.
+The supervised content worker resumes local intent and accepted licensing polls;
+uncertain remote work stays fenced for explicit reconciliation. Native adapters
+atomically bind immutable dispatch identity/wire to the MDM queue or DDM
+publication, retaining receipts after queue removal. Historical install processing
+and current native installation/version remain distinct observations.
+
 ## Rationale
 
 Location isolation prevents credential and ownership state from crossing accounts.

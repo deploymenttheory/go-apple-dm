@@ -1,0 +1,8 @@
+{
+  "revision": 1,
+  "request": {
+    "operation": "ASSOCIATE",
+    "assets": {"assets": [{"adamId": "123456789", "pricingParam": "STDQ"}], "serialNumbers": ["SELECTED-NATIVE-SERIAL"]},
+    "maxPages": 20
+  }
+}
