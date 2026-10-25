@@ -97,3 +97,27 @@ Guide: docs/operations/agentless-inventory.md in GitHub.
 
 Flags (shared across inventory operations; not every flag applies to each verb):
 `
+
+// axmHelp documents named connection operations and independent outcome inspection.
+const axmHelp = `Named Apple connections
+
+  dmctl axm accounts list|create|get|update|delete|verify|sync ACCOUNT [--file request.json]
+  dmctl axm accounts diagnostics ACCOUNT
+  dmctl axm accounts services ACCOUNT
+  dmctl axm accounts device ACCOUNT APPLE_RESOURCE_ID
+  dmctl axm accounts coverage ACCOUNT APPLE_RESOURCE_ID
+  dmctl axm accounts assigned-service ACCOUNT APPLE_RESOURCE_ID
+  dmctl axm accounts assignment-service ACCOUNT
+  dmctl axm accounts configure-service ACCOUNT --file binding.json
+  dmctl axm accounts assign|unassign ACCOUNT --file intent.json
+  dmctl axm accounts operation|operation-log ACCOUNT REQUEST_ID
+  dmctl axm accounts jobs ACCOUNT [--cursor CURSOR]
+  dmctl axm accounts job ACCOUNT JOB_ID
+
+Device and coverage reads need readBusinessManager and readRawInventory.
+Assignment intent contains request_id and serials; binding contains account_revision,
+service_id and log_columns. HTTP acceptance queues durable intent. Inspect the
+operation for Apple acceptance, terminal log outcomes and separate linkage readback.
+Credentials belong in input files and never appear in read responses. Account IDs
+are explicit; opaque Apple resource IDs address device reads, serials address intent.
+`

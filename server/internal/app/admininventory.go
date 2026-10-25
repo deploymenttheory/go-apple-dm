@@ -25,7 +25,10 @@ const (
 // inventoryError maps inventory domain failures to administrative HTTP statuses.
 func inventoryError(w http.ResponseWriter, err error) {
 	status := http.StatusInternalServerError
+	var remote *accountRemoteError
 	switch {
+	case errors.As(err, &remote):
+		status = remote.status
 	case errors.Is(err, ErrBodyTooLarge):
 		status = http.StatusRequestEntityTooLarge
 	case errors.Is(err, inventory.ErrNotFound):
@@ -100,7 +103,7 @@ func publicInventoryQuery(q inventory.ResourceQuery) error {
 func (a *App) inventoryRoutes() []adminRoute {
 	routes := []adminRoute{}
 	add := func(pattern, action string, fn func(http.ResponseWriter, *http.Request) (any, error)) {
-		routes = append(routes, adminRoute{Pattern: pattern, Action: action, Family: "inventory", MaxResponseBytes: 32 << 20, StreamResponse: strings.HasSuffix(pattern, "/exports") || pattern == "GET /inventory/diagnostics", LocalMutation: !strings.HasSuffix(pattern, "/resolve") && !strings.HasPrefix(pattern, "GET ") && !strings.HasSuffix(pattern, "/verify") && !strings.HasSuffix(pattern, "/collect"), Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		routes = append(routes, adminRoute{Pattern: pattern, Action: action, Family: "inventory", CaptureBeforeRead: strings.HasPrefix(pattern, "GET /axm/accounts/{id}/"), MaxResponseBytes: 32 << 20, StreamResponse: strings.HasSuffix(pattern, "/exports") || pattern == "GET /inventory/diagnostics", LocalMutation: !strings.HasSuffix(pattern, "/resolve") && !strings.HasPrefix(pattern, "GET ") && !strings.HasSuffix(pattern, "/verify") && !strings.HasSuffix(pattern, "/collect"), Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			response := &inventoryResponse{ResponseWriter: w}
 			out, e := fn(response, r)
 			if e != nil {
@@ -122,6 +125,7 @@ func (a *App) inventoryRoutes() []adminRoute {
 	}
 	a.inventoryInspectionRoutes(add)
 	a.assignmentRoutes(add)
+	a.accountOperationRoutes(add)
 	add("GET /axm/accounts", ActionReadInventory, func(_ http.ResponseWriter, r *http.Request) (any, error) { return a.Inventory.Accounts(r.Context()) })
 	add("GET /axm/accounts/{id}", ActionReadInventory, func(_ http.ResponseWriter, r *http.Request) (any, error) {
 		return a.Inventory.Account(r.Context(), r.PathValue("id"))

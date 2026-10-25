@@ -1,0 +1,275 @@
+package app
+
+import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"encoding/json"
+	"encoding/pem"
+	"errors"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
+	"net/http"
+	"net/http/httptest"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/inventory"
+)
+
+func accountTestKey(t *testing.T) []byte {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := x509.MarshalECPrivateKey(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: raw})
+}
+
+// TestNamedAccountOperations uses independent origins and opaque IDs to detect
+// accidental default-client routing. Remote bodies and OAuth errors contain a
+// sentinel that must never escape the diagnostic/error boundary.
+func TestNamedAccountOperations(t *testing.T) {
+	calls := 0
+	mode := "present"
+	var onRead func()
+	transport := setupRoundTrip(func(r *http.Request) (*http.Response, error) {
+		calls++
+		if r.URL.Path != "/token" && onRead != nil {
+			callback := onRead
+			onRead = nil
+			callback()
+		}
+		code, body := 200, `{"data":[]}`
+		if r.URL.Path == "/token" {
+			body = `{"access_token":"private-sentinel","token_type":"Bearer","expires_in":3600}`
+			if mode == "revoked" {
+				code = 401
+				body = `{"error":"invalid_client","error_description":"private-sentinel"}`
+			}
+		} else if mode == "permission" {
+			code = 403
+			body = `{"errors":[{"detail":"private-sentinel"}]}`
+		} else if mode == "transport" {
+			return nil, errors.New("private-sentinel")
+		} else if strings.HasPrefix(r.URL.Path, "/v1/orgDevices/") {
+			want := strings.TrimSuffix(r.URL.Host, ".example") + "-opaque"
+			if !strings.Contains(r.URL.Path, want) {
+				code = 404
+				body = `{"errors":[{"detail":"private-sentinel"}]}`
+			} else if strings.HasSuffix(r.URL.Path, "/appleCareCoverage") {
+				body = `{"data":[{"id":"coverage"}]}`
+			} else if strings.HasSuffix(r.URL.Path, "/assignedServer") {
+				body = `{"data":{"type":"mdmServers","id":"bound-service"}}`
+			} else {
+				body = `{"data":{"type":"orgDevices","id":"` + want + `","attributes":{"serialNumber":"SER"}}}`
+			}
+		} else if r.URL.Path == "/v1/orgDevices" && mode != "empty" {
+			body = `{"data":[{"type":"orgDevices","id":"` + strings.TrimSuffix(r.URL.Host, ".example") + `-opaque"}]}`
+		} else if strings.HasPrefix(r.URL.Path, "/v1/mdmServers/") {
+			body = `{"data":{"type":"mdmServers","id":"bound-service"}}`
+		}
+		w := httptest.NewRecorder()
+		w.WriteHeader(code)
+		_, _ = w.WriteString(body)
+		response := w.Result()
+		response.Request = r
+		return response, nil
+	})
+	a, err := Build(t.Context(), Config{Storage: "inmem", BootstrapToken: "bootstrap-secret", AxM: AxMConfig{HTTPClient: &http.Client{Transport: transport}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = a.Close() })
+	root := bootstrapRBAC(t, a)
+	key := accountTestKey(t)
+	for _, id := range []string{"first", "second"} {
+		// #nosec G101 -- The HTTPS origin and token endpoint are in-process fixtures.
+		_, err = a.Inventory.SaveAccount(t.Context(), inventory.Account{ID: id, Name: id, ClientID: "BUSINESSAPI." + id, KeyID: "kid", Enabled: true, BaseURL: "https://" + id + ".example", TokenURL: "https://" + id + ".example/token"}, key, time.Now())
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	request := func(path string) *httptest.ResponseRecorder { t.Helper(); return rbacRequest(a, "GET", path, root, "") }
+	if w := request("/axm/accounts/first/devices/first-opaque"); w.Code != 403 || calls != 0 {
+		t.Fatal("denial contacted Apple", w.Code, calls)
+	}
+	grant := func(source string) {
+		t.Helper()
+		body, _ := json.Marshal(map[string]string{"Source": source})
+		if w := rbacRequest(a, "PUT", "/policies/named", root, string(body)); w.Code != 200 {
+			t.Fatal(w.Code, w.Body.String())
+		}
+	}
+	grant(`permit(principal, action == MDM::Action::"readBusinessManager", resource);`)
+	if w := request("/axm/accounts/first/devices/first-opaque"); w.Code != 403 || calls != 0 {
+		t.Fatal("raw denial contacted Apple", w.Code, calls)
+	}
+	grant(`permit(principal, action in [MDM::Action::"readBusinessManager",MDM::Action::"readRawInventory",MDM::Action::"readInventory"], resource);`)
+	for _, id := range []string{"first", "second"} {
+		for _, suffix := range []string{"devices", "devices/" + id + "-opaque", "devices/" + id + "-opaque/coverage", "devices/" + id + "-opaque/assigned-service", "services", "services/bound-service", "diagnostics", "jobs"} {
+			w := request("/axm/accounts/" + id + "/" + suffix)
+			if w.Code != 200 || strings.Contains(w.Body.String(), "private-sentinel") {
+				t.Fatal(suffix, w.Code, w.Body.String())
+			}
+		}
+	}
+	if w := request("/axm/accounts/second/devices/first-opaque"); w.Code != 404 || strings.Contains(w.Body.String(), "private-sentinel") {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	before := calls
+	for _, path := range []string{"/axm/accounts/missing/devices", "/axm/devices", "/axm/servers", "/axm/activities/id"} {
+		if w := request(path); w.Code != 404 {
+			t.Fatal(path, w.Code)
+		}
+	}
+	if calls != before {
+		t.Fatal("missing account fell back")
+	}
+	for _, tc := range []struct{ mode, connection, inventory string }{{"present", "connected", "present"}, {"empty", "connected", "empty"}, {"revoked", "authentication_failed", "unknown"}, {"permission", "permission_denied", "unknown"}, {"transport", "connection_failed", "unknown"}} {
+		mode = tc.mode
+		w := request("/axm/accounts/first/diagnostics")
+		if w.Code != 200 || !strings.Contains(w.Body.String(), `"connection":"`+tc.connection+`"`) || !strings.Contains(w.Body.String(), `"inventory":"`+tc.inventory+`"`) || !strings.Contains(w.Body.String(), `"synchronization":"incomplete"`) || strings.Contains(w.Body.String(), "private-sentinel") {
+			t.Fatal(tc, w.Code, w.Body.String())
+		}
+	}
+	mode = "present"
+	job, err := a.Inventory.Enqueue(t.Context(), "first", false, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w := request("/axm/accounts/second/jobs/" + job.ID); w.Code != 404 {
+		t.Fatal("cross-account job", w.Code)
+	}
+	if w := request("/axm/accounts/first/jobs/" + job.ID); w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	if w := request("/axm/accounts/first/jobs?limit=bad"); w.Code != 400 {
+		t.Fatal(w.Code)
+	}
+
+	// Finishing a full current-revision sync distinguishes complete empty inventory
+	// from mere successful connectivity. Rotating credentials invalidates it.
+	job.State = "success"
+	rawJob, _ := json.Marshal(job)
+	if err := a.Inventory.Backend.Update(t.Context(), func(tx inventory.Tx) error { return tx.Put(t.Context(), "job/"+job.ID, rawJob) }); err != nil {
+		t.Fatal(err)
+	}
+	if w := request("/axm/accounts/first/diagnostics"); !strings.Contains(w.Body.String(), `"synchronization":"complete"`) {
+		t.Fatal(w.Body.String())
+	}
+	rotate := func() {
+		t.Helper()
+		account, e := a.Inventory.Account(t.Context(), "first")
+		if e != nil {
+			t.Fatal(e)
+		}
+		if _, e = a.Inventory.SaveAccount(t.Context(), account, accountTestKey(t), time.Now()); e != nil {
+			t.Fatal(e)
+		}
+	}
+	rotate()
+	if w := request("/axm/accounts/first/diagnostics"); !strings.Contains(w.Body.String(), `"synchronization":"incomplete"`) {
+		t.Fatal(w.Body.String())
+	}
+	for _, path := range []string{"diagnostics", "devices/first-opaque"} {
+		onRead = rotate
+		if w := request("/axm/accounts/first/" + path); w.Code != 409 || strings.Contains(w.Body.String(), "SER") {
+			t.Fatal("stale credential response escaped", path, w.Code, w.Body.String())
+		}
+	}
+	account, e := a.Inventory.Account(t.Context(), "first")
+	if e != nil {
+		t.Fatal(e)
+	}
+	account.Enabled = false
+	if _, e = a.Inventory.SaveAccount(t.Context(), account, nil, time.Now()); e != nil {
+		t.Fatal(e)
+	}
+	before = calls
+	if w := request("/axm/accounts/first/diagnostics"); w.Code != 409 || calls != before {
+		t.Fatal("disabled account contacted Apple", w.Code)
+	}
+	if w := request("/axm/accounts/first"); strings.Contains(w.Body.String(), "PRIVATE KEY") {
+		t.Fatal("credential exposed")
+	}
+}
+
+func TestAccountFailureRedaction(t *testing.T) {
+	for _, err := range []error{&axm.AuthError{Description: "private"}, &axm.Error{Status: 403, Body: []byte("private")}, &axm.Error{Status: 429}, errors.New("private")} {
+		if strings.Contains(accountFailure(err).Error(), "private") {
+			t.Fatal("remote body leaked")
+		}
+	}
+}
+
+// TestNamedAccountAuditFailure checks capture before remote reads and rollback of
+// durable intent, using sealed SQLite credentials and the shared local transaction.
+func TestNamedAccountAuditFailure(t *testing.T) {
+	calls := 0
+	a, err := Build(t.Context(), Config{Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "accounts.sqlite"), BootstrapToken: "bootstrap-secret", StorageKeys: []string{"test"}, Secrets: secrets.Static{"test": []byte("0123456789abcdef0123456789abcdef")}, Sinks: SinkConfig{Persist: true}, AxM: AxMConfig{HTTPClient: &http.Client{Transport: setupRoundTrip(func(*http.Request) (*http.Response, error) { calls++; return nil, errors.New("unexpected remote call") })}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = a.Close() })
+	root := bootstrapRBAC(t, a)
+	body, _ := json.Marshal(map[string]string{"Source": `permit(principal, action in [MDM::Action::"readBusinessManager",MDM::Action::"assignBusinessManagerDevices"],resource);`})
+	if w := rbacRequest(a, "PUT", "/policies/audit-account", root, string(body)); w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	account, err := a.Inventory.SaveAccount(t.Context(), inventory.Account{ID: "sealed", Name: "Sealed", ClientID: "BUSINESSAPI.test", KeyID: "kid", Enabled: true}, accountTestKey(t), time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = a.Assignments.Configure(t.Context(), account.ID, account.Revision, "this-mdm", axm.ActivityLogColumns{Serial: "serial", Outcome: "status", Success: "SUCCESS"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = a.db.ExecContext(t.Context(), `CREATE TRIGGER refuse_account_capture BEFORE INSERT ON event_records WHEN NEW.type = 'admin-action' BEGIN SELECT RAISE(ABORT, 'private failure'); END`); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct{ method, path, body string }{{"GET", "/axm/accounts/sealed/diagnostics", ""}, {"POST", "/axm/accounts/sealed/assignments", `{"request_id":"must-rollback","serials":["SER"]}`}} {
+		w := rbacRequest(a, tc.method, tc.path, root, tc.body)
+		if w.Code != 503 || calls != 0 || strings.Contains(w.Body.String(), "private") {
+			t.Fatal(w.Code, w.Body.String(), calls)
+		}
+	}
+	// A failure after the remote read keeps the durable access record but withholds
+	// successful response bytes. Fail only the second record for the diagnostics path.
+	if _, err = a.db.ExecContext(t.Context(), "DROP TRIGGER refuse_account_capture"); err != nil {
+		t.Fatal(err)
+	}
+	a.cfg.AxM.HTTPClient = &http.Client{Transport: setupRoundTrip(func(r *http.Request) (*http.Response, error) {
+		calls++
+		body := `{"data":[]}`
+		if r.URL.Path == "/auth/oauth2/token" {
+			body = `{"access_token":"private-token","token_type":"Bearer","expires_in":3600}`
+		}
+		w := httptest.NewRecorder()
+		_, _ = w.WriteString(body)
+		response := w.Result()
+		response.Request = r
+		return response, nil
+	})}
+	if _, err = a.db.ExecContext(t.Context(), `CREATE TRIGGER refuse_completion BEFORE INSERT ON event_records WHEN NEW.type = 'admin-action' AND (SELECT COUNT(*) FROM event_records WHERE type='admin-action' AND CAST(payload AS TEXT) LIKE '%/axm/accounts/sealed/diagnostics%') > 0 BEGIN SELECT RAISE(ABORT, 'private completion failure'); END`); err != nil {
+		t.Fatal(err)
+	}
+	w := rbacRequest(a, "GET", "/axm/accounts/sealed/diagnostics", root, "")
+	if w.Code != 503 || calls == 0 || strings.Contains(w.Body.String(), "connected") {
+		t.Fatal("completion failure released data", w.Code, w.Body.String(), calls)
+	}
+	var starts int
+	if err = a.db.QueryRowContext(t.Context(), `SELECT COUNT(*) FROM event_records WHERE type='admin-action' AND CAST(payload AS TEXT) LIKE '%/axm/accounts/sealed/diagnostics%'`).Scan(&starts); err != nil || starts != 1 {
+		t.Fatal("start evidence missing", starts, err)
+	}
+
+	if _, err = a.Assignments.Get(t.Context(), account.ID, "must-rollback"); !errors.Is(err, inventory.ErrNotFound) {
+		t.Fatal("unaudited intent persisted", err)
+	}
+}

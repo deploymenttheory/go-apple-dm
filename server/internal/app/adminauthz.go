@@ -226,6 +226,9 @@ type adminRoute struct {
 	Command            bool
 	RequestType        string
 	Sensitive          bool
+	// CaptureBeforeRead records remote read access before opening credentials or
+	// contacting Apple. It avoids holding a local transaction across the request.
+	CaptureBeforeRead bool
 	// MaxResponseBytes bounds buffered responses; zero uses MaxAdminBody.
 	MaxResponseBytes int
 	// StreamResponse captures access before streaming; completion is audited afterward.
@@ -363,7 +366,13 @@ func (a *App) authorized(route adminRoute) http.Handler {
 			a.localAdmin(w, r, p, rt)
 			return
 		}
-		if rt.Sensitive && !rt.StreamResponse && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
+		if rt.CaptureBeforeRead {
+			if err := a.auditAction(r, p, rt); err != nil {
+				writeError(w, http.StatusServiceUnavailable, event.ErrCapture)
+				return
+			}
+		}
+		if (rt.Sensitive || rt.CaptureBeforeRead) && !rt.StreamResponse && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
 			a.sensitiveAdminRead(w, r, p, rt)
 			return
 		}
@@ -486,7 +495,7 @@ func (a *App) checkPolicy(r *http.Request, p adminauth.Principal, rt adminRoute)
 
 // auditAction records allowed mutations and sensitive reads.
 func (a *App) auditAction(r *http.Request, p adminauth.Principal, rt adminRoute) error {
-	if a.cfg.publisher() == nil || (!rt.Sensitive && (r.Method == http.MethodGet || r.Method == http.MethodHead)) {
+	if a.cfg.publisher() == nil || (!rt.Sensitive && !rt.CaptureBeforeRead && (r.Method == http.MethodGet || r.Method == http.MethodHead)) {
 		return nil
 	}
 	return a.publishAdmin(r, event.AdminAction, p, rt, nil)

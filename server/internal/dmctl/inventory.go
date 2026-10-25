@@ -31,6 +31,9 @@ func runInventory(ctx context.Context, e *env, args []string) error {
 // runInventoryCommand gives all inventory operations the same filter and projection flags.
 func runInventoryCommand(ctx context.Context, e *env, family string, args []string) error {
 	fs := e.verbFlags(family)
+	if family == "axm" {
+		fs.Usage = func() { _, _ = fmt.Fprint(e.stderr, axmHelp); fs.PrintDefaults() }
+	}
 	if family == "devices" {
 		fs.Usage = func() {
 			_, _ = fmt.Fprint(e.stderr, devicesHelp)
@@ -129,6 +132,16 @@ func runInventoryCommand(ctx context.Context, e *env, family string, args []stri
 			case "create":
 				method = http.MethodPost
 				path = "/axm/accounts"
+			case "diagnostics", "services", "device", "coverage", "assigned-service", "assignment-service", "configure-service", "assign", "unassign", "operation", "operation-log", "jobs", "job":
+				if id(2) != "" {
+					path = axmAccountOperation(pos, id)
+					switch pos[1] {
+					case "configure-service":
+						method = http.MethodPut
+					case "assign", "unassign":
+						method = http.MethodPost
+					}
+				}
 			case "get", "update", "delete", "verify", "sync":
 				if id(2) != "" {
 					path = "/axm/accounts/" + id(2)
@@ -193,7 +206,7 @@ func runInventoryCommand(ctx context.Context, e *env, family string, args []stri
 		}
 	}
 	if path == "" {
-		return fmt.Errorf("%w: unknown or incomplete %s operation; use devices list|get|inspect|evidence|resolve|fields|collect, axm accounts list|create|get|update|delete|verify|sync, inventory correlate|sync|jobs|schedules|reports|export|presets|diagnostics", ErrUsage, family)
+		return fmt.Errorf("%w: unknown or incomplete %s operation; use devices list|get|inspect|evidence|resolve|fields|collect, axm accounts list|create|get|update|delete|verify|sync|diagnostics|services|device|coverage|assigned-service|assignment-service|configure-service|assign|unassign|operation|operation-log|jobs|job, inventory correlate|sync|jobs|schedules|reports|export|presets|diagnostics", ErrUsage, family)
 	}
 	if *force {
 		q.Set("force", "true")
@@ -228,7 +241,7 @@ func runInventoryCommand(ctx context.Context, e *env, family string, args []stri
 			q.Set("format", "ndjson")
 		}
 	}
-	if method == http.MethodGet && (strings.HasSuffix(path, "/exports") || strings.HasSuffix(path, "/diagnostics")) {
+	if method == http.MethodGet && (strings.HasSuffix(path, "/exports") || strings.HasSuffix(path, "/diagnostics") && family == "inventory" || strings.HasSuffix(path, "/log")) {
 		return wrapError(cl.Download(ctx, path, q, e.stdout))
 	}
 	resp, err := cl.Do(ctx, method, path, q, body)
@@ -248,7 +261,7 @@ func runInventoryCommand(ctx context.Context, e *env, family string, args []stri
 				return ctx.Err()
 			case <-timer.C:
 			}
-			resp, err = cl.Do(ctx, http.MethodGet, "/inventory/jobs/"+url.PathEscape(job.ID), nil, nil)
+			resp, err = cl.Do(ctx, http.MethodGet, "/axm/accounts/"+id(2)+"/jobs/"+url.PathEscape(job.ID), nil, nil)
 			if err != nil {
 				return wrapError(err)
 			}
@@ -265,4 +278,37 @@ func runInventoryCommand(ctx context.Context, e *env, family string, args []stri
 		return nil
 	}
 	return e.emit(resp, nil)
+}
+
+// axmAccountOperation requires a named account and opaque resource/operation IDs.
+func axmAccountOperation(pos []string, id func(int) string) string {
+	prefix := "/axm/accounts/" + id(2)
+	switch pos[1] {
+	case "diagnostics", "services", "jobs":
+		return prefix + "/" + pos[1]
+	case "assignment-service", "configure-service":
+		return prefix + "/assignment-service"
+	case "assign":
+		return prefix + "/assignments"
+	case "unassign":
+		return prefix + "/unassignments"
+	}
+	if id(3) == "" {
+		return ""
+	}
+	switch pos[1] {
+	case "device":
+		return prefix + "/devices/" + id(3)
+	case "coverage":
+		return prefix + "/devices/" + id(3) + "/coverage"
+	case "assigned-service":
+		return prefix + "/devices/" + id(3) + "/assigned-service"
+	case "operation":
+		return prefix + "/assignments/" + id(3)
+	case "operation-log":
+		return prefix + "/assignments/" + id(3) + "/log"
+	case "job":
+		return prefix + "/jobs/" + id(3)
+	}
+	return ""
 }

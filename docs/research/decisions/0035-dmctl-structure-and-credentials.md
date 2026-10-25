@@ -33,6 +33,12 @@ copy. `blueprints validate -target` shares the existing target parser and passes
 OS/version/channel and capabilities to schema-backed server validation. See the
 [application identity workflow](../../operations/application-identities.md).
 
+`axm accounts` keeps named connection selection in live device/coverage/service
+reads, redacted diagnostics, durable assignment and unassignment, retained
+operation/log inspection and account-scoped synchronization jobs. Mutation bodies
+come from files or stdin; HTTP 202 represents queued intent. `sync --wait` polls
+the named account's job route. See [ABM connection operations](../../operations/abm-assignments.md#named-connection-inspection).
+
 ## Rationale
 
 Separate logic permits direct testing and keeps stdout usable by scripts. Credential references avoid duplicating secrets in ordinary configuration. Local validation gives feedback before a request reaches the server.
