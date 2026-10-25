@@ -110,3 +110,118 @@ func TestResponseCompletionCancellation(t *testing.T) {
 		})
 	}
 }
+
+// TestTokenRequestCancellation classifies caller cancellation during the initial
+// OAuth exchange without advancing collection evidence.
+func TestTokenRequestCancellation(t *testing.T) {
+	for _, mode := range []string{"deadline", "canceled"} {
+		t.Run(mode, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				ctx := context.Background()
+				var cancel context.CancelFunc
+				want, failure := error(context.DeadlineExceeded), "timeout"
+				if mode == "deadline" {
+					ctx, cancel = context.WithTimeout(ctx, time.Second)
+				} else {
+					ctx, cancel = context.WithCancel(ctx)
+					want, failure = context.Canceled, "canceled"
+				}
+				defer cancel()
+				key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+				if err != nil {
+					t.Fatal(err)
+				}
+				tokenCalls, resourceCalls := 0, 0
+				baseURL := "https://fixture.example"
+				client, err := axm.New(context.Background(), axm.Config{
+					ClientID: "BUSINESSAPI.fixture", KeyID: "fixture-key", PrivateKey: key,
+					BaseURL: baseURL, TokenURL: baseURL + "/token",
+					HTTPClient: &http.Client{Transport: deadlineTransport(func(r *http.Request) (*http.Response, error) {
+						if r.URL.Path != "/token" {
+							resourceCalls++
+							return nil, errors.New("unexpected resource request")
+						}
+						tokenCalls++
+						if r.Context().Err() != nil {
+							t.Fatal("request expired before token HTTP")
+						}
+						if mode == "canceled" {
+							cancel()
+						}
+						<-r.Context().Done()
+						return nil, r.Context().Err()
+					})},
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				sink := &memorySink{}
+				before := collection.Checkpoint{}
+				after, err := (collection.Collector{Client: client}).Collect(ctx, request(collection.Coverage), before, sink)
+				if !errors.Is(err, want) || tokenCalls != 1 || resourceCalls != 0 || len(sink.batches) != 1 {
+					t.Fatalf("error=%v want=%v token=%d resource=%d batches=%+v", err, want, tokenCalls, resourceCalls, sink.batches)
+				}
+				batch := sink.batches[0]
+				if batch.Outcome.Failure != failure || batch.Outcome.Success || !errors.Is(batch.Outcome.Err, want) || !reflect.DeepEqual(after, before) || !reflect.DeepEqual(batch.After, before) || len(batch.Resources) != 0 || len(batch.Document) != 0 || batch.EnumerationComplete {
+					t.Fatalf("failure=%q want=%q error=%v failed attempt changed checkpoint/evidence: %+v", batch.Outcome.Failure, failure, err, batch)
+				}
+			})
+		})
+	}
+}
+
+// TestActiveTokenFailures retains authentication classification when the caller
+// context remains live, including token rejection, transport and decode errors.
+func TestActiveTokenFailures(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		status int
+		body   string
+		cause  error
+	}{
+		{"bad-request", http.StatusBadRequest, `{"error":"invalid_client"}`, nil},
+		{"unauthorized", http.StatusUnauthorized, `{"error":"invalid_client"}`, nil},
+		{"transport", 0, "", axm.ErrTransport},
+		{"malformed", http.StatusOK, `{"access_token":`, axm.ErrDecode},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+			if err != nil {
+				t.Fatal(err)
+			}
+			tokenCalls, resourceCalls := 0, 0
+			baseURL := "https://fixture.example"
+			client, err := axm.New(context.Background(), axm.Config{
+				ClientID: "BUSINESSAPI.fixture", KeyID: "fixture-key", PrivateKey: key,
+				BaseURL: baseURL, TokenURL: baseURL + "/token",
+				HTTPClient: &http.Client{Transport: deadlineTransport(func(r *http.Request) (*http.Response, error) {
+					if r.URL.Path != "/token" {
+						resourceCalls++
+						return nil, errors.New("unexpected resource request")
+					}
+					tokenCalls++
+					if test.status == 0 {
+						return nil, errors.New("token connection failed")
+					}
+					return &http.Response{StatusCode: test.status, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(test.body)), Request: r}, nil
+				})},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			sink := &memorySink{}
+			before := collection.Checkpoint{}
+			after, err := (collection.Collector{Client: client}).Collect(ctx, request(collection.Coverage), before, sink)
+			var auth *axm.AuthError
+			if !errors.As(err, &auth) || auth.Status != test.status || !axm.IsUnauthorized(err) || (test.cause != nil && !errors.Is(err, test.cause)) || ctx.Err() != nil || tokenCalls != 1 || resourceCalls != 0 || len(sink.batches) != 1 {
+				t.Fatalf("error=%v token=%d resource=%d batches=%+v", err, tokenCalls, resourceCalls, sink.batches)
+			}
+			batch := sink.batches[0]
+			if batch.Outcome.Failure != "authentication" || batch.Outcome.Success || !errors.Is(batch.Outcome.Err, err) || !reflect.DeepEqual(after, before) || !reflect.DeepEqual(batch.After, before) || len(batch.Resources) != 0 || len(batch.Document) != 0 || batch.EnumerationComplete {
+				t.Fatalf("failed attempt changed checkpoint/evidence: %+v", batch)
+			}
+		})
+	}
+}

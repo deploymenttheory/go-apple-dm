@@ -19,8 +19,10 @@
 // completion marker; it does not make Apple pagination a consistent snapshot.
 //
 // Source resources and list documents retain exact JSON. Failed outcomes retain
-// bounded classifications separately from evidence. Runtime errors are returned
-// for errors.Is/As; avoid logging their URLs or bodies into public status output.
+// bounded classifications separately from evidence. Caller cancellation and
+// deadlines take precedence over authentication classification during token
+// acquisition. Runtime errors are returned for errors.Is/As; avoid logging their
+// URLs or bodies into public status output.
 //
 // # References
 //

@@ -9,6 +9,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/appsbooks"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
 var errLicensingIncomplete = errors.New("licensing incomplete: reconcile before resubmitting")
@@ -116,4 +117,58 @@ func ExampleClient_WalkAssets() {
 		panic(err)
 	}
 	_ = version // Assets do not support incremental queries.
+}
+
+// ExampleWorkflow shows optional atomic location composition. Real applications
+// supply durable sealed state and their own authorization for source exports.
+func ExampleWorkflow() {
+	ctx := context.Background()
+	workflow, err := appsbooks.NewWorkflow(state.NewMemory(), appsbooks.Config{MDMID: "persisted-mdm-identity"})
+	if err != nil {
+		panic(err)
+	}
+	// Register probes identity without claiming ownership. For renewal, pass the
+	// revision from Load and the replacement sToken for this same Apple library.
+	location, err := workflow.Register(ctx, "london", 0, os.Getenv("APPSBOOKS_STOKEN"))
+	if err != nil {
+		return
+	}
+	location, err = workflow.Configure(ctx, location.ID, location.Revision, appsbooks.ClientConfigurationRequest{
+		MDMInfo: appsbooks.MDMInfo{ID: "persisted-mdm-identity", Name: "Example MDM", Metadata: "production"},
+	})
+	if err != nil {
+		return
+	} // Inspect Load; Probe reconciles a stopped pending call.
+	location, err = workflow.Refresh(ctx, location.ID, location.Revision, 100)
+	if err != nil {
+		return
+	} // Prior successful evidence/checkpoints remain intact.
+	_, sources, err := workflow.LoadEvidence(ctx, location.ID) // Privileged source access.
+	if err != nil {
+		return
+	}
+	_ = sources.Assets.Pages // Original JSON, including sentinel/unlimited assets.
+	_ = sources.Assignments  // Ordered full + incremental batches, with checkpoints.
+	// Refresh establishes source evidence; licensing and installation are separate.
+}
+
+// ExampleWorkflow_RecoverConfiguration runs only after the original configuration
+// call/process has stopped. Use the existing durable store containing its pending
+// reservation; memory below illustrates the caller-owned storage interface.
+func ExampleWorkflow_RecoverConfiguration() {
+	ctx := context.Background()
+	workflow, err := appsbooks.NewWorkflow(state.NewMemory(), appsbooks.Config{MDMID: "persisted-mdm-identity"})
+	if err != nil {
+		panic(err)
+	}
+	location, err := workflow.Load(ctx, "london")
+	if err != nil {
+		return
+	}
+	// The replacement must identify the same Apple library, including when the
+	// stored token expired. No configuration POST is replayed.
+	_, err = workflow.RecoverConfiguration(ctx, location.ID, location.Revision, os.Getenv("APPSBOOKS_REPLACEMENT_STOKEN"))
+	if err != nil {
+		return
+	} // Pending state and prior evidence remain available.
 }

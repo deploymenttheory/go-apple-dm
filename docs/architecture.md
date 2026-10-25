@@ -110,6 +110,17 @@ records separately, with original page and record JSON. Missing counts remain
 optional; the documented maximum-integer sentinel represents unlimited stock.
 Bounded traversal retains filters and location scope. Inventory availability,
 licensing completion, command dispatch and installation are separate outcomes.
+Optional `appsbooks.Workflow` composes the existing atomic `state.Store` with
+per-location metadata, separate credentials and sensitive raw source snapshots.
+Stable MDM identity and Apple's library UID survive token replacement; monotonic
+revisions fence stale work. Explicit configuration reserves durable pending state
+before HTTP; read-only probes reconcile after stopped operations. Explicit
+`RecoverConfiguration` supplies a validated replacement token if expiry blocks
+pending recovery, atomically retaining source journals and fencing older work.
+Full assets and
+incremental assignment/user page batches publish together only after complete
+traversal. Safe metadata reads are separate from privileged source exports. No
+inventory model, automatic licensing or installation is required.
 See [Apps and Books licensing](operations/apps-and-books.md).
 
 ADE profile authoring can call `dep.Profile.ValidateForTarget` before submission.

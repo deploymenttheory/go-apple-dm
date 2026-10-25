@@ -35,7 +35,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "33df3b6a7b4c2dc45c075f6eacedff440c62c1bc"
+      "revision": "1fc9f965bb0876a5907efa06f1943e8babd51379"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -277,8 +277,8 @@
     {
       "id": "appsbooksclient",
       "type": "backend",
-      "label": "appsbooks.Client",
-      "sublabel": "Finite and unlimited inventory",
+      "label": "appsbooks",
+      "sublabel": "Client + optional Workflow",
       "pos": [
         345,
         560
@@ -291,15 +291,40 @@
       "sources": [
         {
           "path": "devicemanagement/appleplatformservices/appsbooks/client.go",
-          "label": "Apps and Books client"
+          "label": "HTTP client"
         },
         {
-          "path": "devicemanagement/appleplatformservices/appsbooks/assets.go",
-          "label": "stock and original evidence"
+          "path": "devicemanagement/appleplatformservices/appsbooks/workflow.go",
+          "label": "Location workflows"
         },
         {
-          "path": "devicemanagement/appleplatformservices/appsbooks/pages.go",
-          "label": "filtered bounded traversal"
+          "path": "devicemanagement/appleplatformservices/appsbooks/refresh.go",
+          "label": "Atomic source refresh"
+        }
+      ]
+    },
+    {
+      "id": "appsbooksstate",
+      "type": "database",
+      "label": "state.Store",
+      "sublabel": "Caller-owned location records",
+      "pos": [
+        945,
+        560
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "purpose": "storage",
+      "sources": [
+        {
+          "path": "devicemanagement/state/state.go",
+          "label": "Atomic caller-owned state"
+        },
+        {
+          "path": "server/statestore/sqlstore.go",
+          "label": "Sealed SQL adapter"
         }
       ]
     }
@@ -406,6 +431,13 @@
         305,
         644
       ]
+    },
+    {
+      "id": "appsbooks-state",
+      "from": "appsbooksclient",
+      "to": "appsbooksstate",
+      "label": "Optional location transactions",
+      "purpose": "storage"
     }
   ],
   "cards": [
@@ -433,7 +465,7 @@
         "The collection package emits raw organization-device, detail, assignment and coverage resources without importing inventory. Raw list documents retain included resources and unknown envelope fields.",
         "The host selects streams and owns account credentials, scheduling, leases and an atomic evidence/outcome/checkpoint sink. Inventory synchronization composes the same collector.",
         "A new collector resumes committed versioned checkpoints. Failures retain successful evidence; only an exhausted successful list stream emits completion. Completion does not promise an Apple-side snapshot.",
-        "Collector persistence and resumption \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/557c464864be88a7a2e60afa4cc6c6139e03e094/devicemanagement/appleplatformservices/axm/collection/collection.go",
+        "Collector persistence and resumption \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/axm/collection/collection.go",
         "Explicit correlation accepts an actual organization-device resource and authenticated matching serials for ADE, account-driven Device Enrollment or profile-based Device Enrollment. User Enrollment receives no serial-based hardware enrichment. Opaque IDs retain protocol addressing and provenance roles.",
         "Optional resolution requires caller-declared equivalent meanings and units. Latest successful native field evidence wins before Apple regardless of Apple refresh time; omissions retain prior native reports, and originals and disagreements remain inspectable. Neither operation requires an inventory repository.",
         "Standalone serial correlation and optional resolution \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/57e67022f98e9df9b75863020fc466b7c8af596f/devicemanagement/correlation/correlation.go",
@@ -465,13 +497,27 @@
       ]
     },
     {
+      "dot": "storage",
+      "title": "Apps and Books location state",
+      "items": [
+        "Optional caller composition uses state.Store with a stable MDM ID and Apple library UID, separate metadata, sToken credentials and sensitive raw evidence. Load is safe metadata; LoadEvidence requires privileged access.",
+        "Register validates a same-location token through a read-only probe. Reads never claim foreign ownership; aliases cannot share one library UID.",
+        "Full asset pages and ordered assignment/user delta journals publish checkpoints together only after complete traversal. Failed refreshes retain successful evidence; revisions fence older work and token ABA.",
+        "Configure reserves durable pending state before an explicit POST. After the original call/process stops, Probe reconciles through GET; RecoverConfiguration validates a replacement token if expiry blocks recovery. Neither recovery path replays a POST.",
+        "Atomic location workflows \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2a149558826712758d6a69f3cf69f315011fdddb/devicemanagement/appleplatformservices/appsbooks/workflow.go",
+        "Complete source refresh \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2a149558826712758d6a69f3cf69f315011fdddb/devicemanagement/appleplatformservices/appsbooks/refresh.go",
+        "Finite and unlimited source representation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/appsbooks/assets.go",
+        "Filtered bounded page traversal \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/appsbooks/pages.go"
+      ]
+    },
+    {
       "dot": "warning",
       "title": "DEP renewal, reset and cooldowns",
       "items": [
         "Ordinary token imports reject established Apple identity or consumer-key changes. Force permits an atomic identity reset only with a validated server UUID; same-identity renewals preserve inventory and local settings.",
         "Old responses cannot restore reset inventory or sessions. A still-owned lease may retain HTTP 429 or device THROTTLED cooldowns across a same-identity token or desired-profile change; identity reset discards the old server\u2019s cooldowns.",
         "Local checks cannot undo requests already accepted by Apple. Later reconciliation reads current Apple state.",
-        "Token validation and atomic reset \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/557c464864be88a7a2e60afa4cc6c6139e03e094/devicemanagement/appleplatformservices/dep/token.go"
+        "Token validation and atomic reset \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/dep/token.go"
       ]
     },
     {
@@ -493,7 +539,7 @@
         "Assignment throttling \u2014 https://developer.apple.com/documentation/devicemanagement/assign-profile",
         "Unlimited asset schema \u2014 https://developer.apple.com/documentation/devicemanagement/unlimitedresponseasset",
         "AxM authentication implementation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c5689b02bccba330c082d7bc78fd8320cc922517/devicemanagement/appleplatformservices/axm/auth.go",
-        "Source collection implementation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c5689b02bccba330c082d7bc78fd8320cc922517/devicemanagement/appleplatformservices/axm/collection/collection.go",
+        "Source collection implementation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/axm/collection/collection.go",
         "Activity-log implementation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c5689b02bccba330c082d7bc78fd8320cc922517/devicemanagement/appleplatformservices/axm/activitylog.go"
       ]
     }
