@@ -356,6 +356,7 @@ func (v contentDelivery) nativeCommands(ctx context.Context, id mdm.EnrollmentID
 // Historical terminal processing survives a later empty/uninstalled report.
 func currentNativeApplication(out managedcontent.Observation, bundle string, rows []storage.QueuedCommand, since time.Time) (managedcontent.Observation, error) {
 	var latest *storage.QueuedCommand
+	var removal *storage.QueuedCommand
 	for i := range rows {
 		q := &rows[i]
 		if q.State != storage.StateAcknowledged || q.Result == nil || q.CompletedAt.Before(since) {
@@ -373,6 +374,9 @@ func currentNativeApplication(out managedcontent.Observation, bundle string, row
 			}
 			if app, ok := payload.ManagedApplicationList[bundle]; ok && (app.Status == "Managed" || app.Status == "ManagedButUninstalled" || app.Status == "Failed" || app.Status == "UserRejected") {
 				out.Terminal = true
+				if app.Status == "ManagedButUninstalled" && (removal == nil || removal.CompletedAt.Before(q.CompletedAt)) {
+					removal = q
+				}
 			}
 		case "InstalledApplicationList":
 			decoded, err := mdm.DecodeCommand(q.Command.Raw)
@@ -391,32 +395,48 @@ func currentNativeApplication(out managedcontent.Observation, bundle string, row
 			}
 		}
 	}
-	if latest == nil {
+	if latest == nil && removal == nil {
 		return out, nil
 	}
-	response, err := mdm.DecodeResponse(latest.Result.Raw, "InstalledApplicationList")
-	if err != nil {
-		return out, err
-	}
-	payload, ok := response.Payload.(*commands.InstalledApplicationListResponse)
-	if !ok {
-		return out, managedcontent.ErrProtocol
-	}
-	out.ObservedAt = latest.CompletedAt
-	for _, app := range payload.InstalledApplicationList {
-		if app.Identifier == nil || *app.Identifier != bundle {
-			continue
+	var currentReport, removalReport []byte
+	if latest != nil {
+		response, err := mdm.DecodeResponse(latest.Result.Raw, "InstalledApplicationList")
+		if err != nil {
+			return out, err
 		}
-		out.Installed = app.Installing != nil && !*app.Installing
-		if out.Installed && app.Version != nil {
-			out.AppVersion = *app.Version
+		payload, ok := response.Payload.(*commands.InstalledApplicationListResponse)
+		if !ok {
+			return out, managedcontent.ErrProtocol
+		}
+		out.ObservedAt = latest.CompletedAt
+		currentReport = latest.Result.Raw
+		for _, app := range payload.InstalledApplicationList {
+			if app.Identifier == nil || *app.Identifier != bundle {
+				continue
+			}
+			out.Installed = app.Installing != nil && !*app.Installing
+			if out.Installed && app.Version != nil {
+				out.AppVersion = *app.Version
+			}
+		}
+	}
+	if removal != nil {
+		removalReport = removal.Result.Raw
+		// Apple defines ManagedButUninstalled as an app the user removed.
+		// That current native absence invalidates an older installed/version
+		// report. A later installed-app query can prove reinstallation.
+		if latest == nil || !removal.CompletedAt.Before(latest.CompletedAt) {
+			out.Installed = false
+			out.AppVersion = ""
+			out.ObservedAt = removal.CompletedAt
 		}
 	}
 	raw, err := json.Marshal(struct {
 		BundleID             string `json:"bundleId"`
 		InstallationResponse []byte `json:"installationResponse"`
 		CurrentReport        []byte `json:"currentReport"`
-	}{bundle, out.Raw, latest.Result.Raw})
+		RemovalReport        []byte `json:"removalReport,omitempty"`
+	}{bundle, out.Raw, currentReport, removalReport})
 	if err != nil {
 		return out, err
 	}

@@ -166,7 +166,10 @@ The supervised content worker resumes local intent and accepted licensing polls;
 uncertain remote work stays fenced for explicit reconciliation. Native adapters
 atomically bind immutable dispatch identity/wire to the MDM queue or DDM
 publication, retaining receipts after queue removal. Historical install processing
-and current native installation/version remain distinct observations. A privileged
+and current native installation/version remain distinct observations. Newer
+authenticated `ManagedButUninstalled` app status invalidates an older installed
+query and version; a subsequent installed-app query can establish reinstallation.
+A privileged
 read-only native observation endpoint reads current owned facts without stepping
 or mutating the SDK. Explicit status refresh queues stable bounded app/media query
 batches, using actual native identifiers. Scoped durable outbox wake delivery follows
