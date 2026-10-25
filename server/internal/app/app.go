@@ -43,6 +43,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/applicationpackages"
 	"github.com/deploymenttheory/go-apple-dm/server/apppush"
 	"github.com/deploymenttheory/go-apple-dm/server/audit"
+	"github.com/deploymenttheory/go-apple-dm/server/axmassignment"
 	"github.com/deploymenttheory/go-apple-dm/server/blueprints"
 	"github.com/deploymenttheory/go-apple-dm/server/configurationprofile"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/inproc"
@@ -222,8 +223,9 @@ type App struct {
 	Store                 storage.Store
 	keyring               *crypt.Keyring
 	// AxM is the Business Manager client when configured.
-	AxM       *axm.Client
-	Inventory *inventory.Repository
+	AxM         *axm.Client
+	Inventory   *inventory.Repository
+	Assignments *axmassignment.Controller
 	// DEP is the device enrollment service when configured.
 	DEP *dep.Client
 	// Push wakes devices; nil when no push source is configured.

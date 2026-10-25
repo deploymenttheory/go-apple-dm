@@ -43,6 +43,12 @@ host. The inventory synchronizer composes this collector; neither the Apple clie
 collector imports inventory. See [source collection](operations/agentless-inventory.md#standalone-source-collection)
 for continuation and completion contracts.
 
+The server composes explicit named-account ABM assignments through
+`server/axmassignment`, using the inventory backend for atomic intent, leases and
+evidence. Configured-service scope, account/credential fencing, uncertain-submission
+reconciliation, terminal logs and separate assignment readback are described in
+[ABM assignments](operations/abm-assignments.md). Synchronization never assigns.
+
 `devicemanagement/source.Reference` supplies account-scoped opaque provenance with the
 same stored JSON and key encoding used by inventory. Independent
 `devicemanagement/correlation` accepts a collected organization-device resource and

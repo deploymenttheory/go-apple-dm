@@ -17,10 +17,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/inventory"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/ca"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
+	"github.com/deploymenttheory/go-apple-dm/server/axmassignment"
 )
 
 // issuedDevice issues a simulator identity from the selected fixture CA and configures
@@ -208,26 +209,51 @@ func abmAssign(ctx context.Context, e *Environment, _ string) error {
 		return fmt.Errorf("%w: ABM page limit differs", errOperation)
 	}
 	serials := []string{"BENCH-ABM-1", "BENCH-ABM-2", "BENCH-ABM-3"}
-	var act axm.OrgDeviceActivity
-	if err := e.api(
-		ctx,
-		"POST",
-		"/axm/assign",
-		map[string]any{"server": servers.Items[0].ID, "serials": serials, "wait": true},
-		&act,
-	); err != nil {
+	var account struct {
+		Revision int64 `json:"revision"`
+	}
+	if err := e.api(ctx, "GET", "/axm/accounts/default", nil, &account); err != nil {
 		return wrapError(err)
 	}
-	if act.Attributes.Status != axm.ActivityCompleted {
-		return fmt.Errorf("%w: ABM assignment did not complete", errOperation)
+	if err := e.api(ctx, "PUT", "/axm/accounts/default/assignment-service", map[string]any{"account_revision": account.Revision, "service_id": servers.Items[0].ID, "log_columns": map[string]string{"Serial": "serialNumber", "Outcome": "status", "Success": "SUCCESS"}}, nil); err != nil {
+		return wrapError(err)
 	}
-	return e.api(
-		ctx,
-		"POST",
-		"/axm/unassign",
-		map[string]any{"serials": serials, "wait": true},
-		nil,
-	)
+	for _, operation := range []string{"assignments", "unassignments"} {
+		id := inventory.ID()
+		var queued axmassignment.Workflow
+		if err := e.api(ctx, "POST", "/axm/accounts/default/"+operation, map[string]any{"request_id": id, "serials": serials}, &queued); err != nil {
+			return wrapError(err)
+		}
+		if queued.ID != id || queued.State != "queued" {
+			return fmt.Errorf("%w: ABM intent was not retained", errOperation)
+		}
+		for {
+			var w axmassignment.Workflow
+			if err := e.api(ctx, "GET", "/axm/accounts/default/assignments/"+id, nil, &w); err != nil {
+				return wrapError(err)
+			}
+			if w.State == "complete" {
+				if w.AcceptedAt == nil || w.TerminalStatus != "COMPLETED" || !w.LogComplete || !w.LogSucceeded {
+					return fmt.Errorf("%w: incomplete ABM activity evidence", errOperation)
+				}
+				for _, target := range w.Targets {
+					if !target.Converged {
+						return fmt.Errorf("%w: ABM assignment did not converge", errOperation)
+					}
+				}
+				break
+			}
+			if w.State == "uncertain" || w.State == "fenced" {
+				return fmt.Errorf("%w: unresolved ABM assignment", errOperation)
+			}
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(10 * time.Millisecond):
+			}
+		}
+	}
+	return nil
 }
 
 // factoryDevice creates a simulator with an identity signed by the fixture device CA.

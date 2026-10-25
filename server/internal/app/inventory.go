@@ -21,6 +21,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
+	"github.com/deploymenttheory/go-apple-dm/server/axmassignment"
 	"github.com/deploymenttheory/go-apple-dm/server/inventorystore"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
@@ -43,6 +44,8 @@ func (a *App) openInventory(ctx context.Context) error {
 		return e
 	}
 	a.Inventory = r
+	a.Assignments = &axmassignment.Controller{Repository: r, Client: a.inventoryClient}
+	a.addWorker("axm-assignments", a.Assignments.Run)
 	if c := a.cfg.AxM; c.Enabled() {
 		if _, e := r.Account(ctx, "default"); errors.Is(e, inventory.ErrNotFound) {
 			key := c.KeyPEM

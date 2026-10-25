@@ -7,10 +7,11 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
+	"io"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,7 +22,8 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm/axmtest"
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/clock"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/inventory"
+	"github.com/deploymenttheory/go-apple-dm/server/axmassignment"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 )
 
@@ -91,68 +93,60 @@ func (ctx *axmWaitDeadlineContext) Err() error {
 // expire delivers the request deadline exactly once.
 func (ctx *axmWaitDeadlineContext) expire() { ctx.once.Do(func() { close(ctx.expired) }) }
 
-// axmWaitDeadlineClock expires the request when activity polling parks, keeping
-// the test independent of a wall-clock timeout or an HTTP round-trip duration.
-type axmWaitDeadlineClock struct {
-	clock.Real
-	expire func()
-	waits  atomic.Int32
-}
-
-// After observes the actual polling sleep and leaves its timer pending while
-// the request deadline wakes the client's context-cancellation branch.
-func (c *axmWaitDeadlineClock) After(time.Duration) <-chan time.Time {
-	c.waits.Add(1)
-	c.expire()
-	return nil
-}
-
-// TestAxMWaitDeadline verifies that waited assignments report the same timeout
-// whether their deadline expires inside an HTTP request or between polls.
+// TestAxMWaitDeadline checks cancellation inside a remote read and between durable observations.
+// An accepted activity remains queryable and is never submitted again.
 func TestAxMWaitDeadline(t *testing.T) {
 	for _, blockRead := range []bool{true, false} {
-		name := "poll_sleep"
-		if blockRead {
-			name = "activity_read"
-		}
-		t.Run(name, func(t *testing.T) {
+		t.Run(map[bool]string{true: "activity_read", false: "between_observations"}[blockRead], func(t *testing.T) {
 			key, keyPEM := axmKey(t)
 			fake := axmtest.NewServer()
 			t.Cleanup(fake.Close)
 			fake.RegisterKey("BUSINESSAPI.abc", "kid-1", &key.PublicKey)
-			server := fake.AddMDMServer("go-apple-dm", nil)
+			service := fake.AddMDMServer("go-apple-dm", nil)
 			fake.AddOrgDevice("DEADLINE", nil)
-			fake.SetConsistencyLag(time.Hour)
 			deadline := &axmWaitDeadlineContext{Context: t.Context(), expired: make(chan struct{})}
-			clk := &axmWaitDeadlineClock{expire: deadline.expire}
 			client := fake.Client()
 			transport := &axmActivityDeadlineTransport{base: client.Transport, blockRead: blockRead, activityIDs: make(chan string, 1), expire: deadline.expire}
 			client.Transport = transport
-			a := build(t, app.Config{Storage: "inmem", BootstrapToken: "t", Clock: clk, AxM: app.AxMConfig{ClientID: "BUSINESSAPI.abc", KeyID: "kid-1", KeyPEM: keyPEM, BaseURL: fake.URL, TokenURL: fake.TokenURL, HTTPClient: client}})
-			req := httptest.NewRequestWithContext(deadline, "POST", "/admin/v1/axm/assign", bytes.NewReader([]byte(`{"server":"`+server+`","serials":["DEADLINE"],"wait":true}`)))
-			req.Header.Set("Authorization", "Bearer t")
-			res := httptest.NewRecorder()
-			a.Handler.ServeHTTP(res, req)
-			if transport.reads.Load() != 1 {
-				t.Fatalf("activity reads = %d, want 1", transport.reads.Load())
+			a := build(t, app.Config{Storage: "inmem", BootstrapToken: "t", AxM: app.AxMConfig{ClientID: "BUSINESSAPI.abc", KeyID: "kid-1", KeyPEM: keyPEM, BaseURL: fake.URL, TokenURL: fake.TokenURL, HTTPClient: client}})
+			account, e := a.Inventory.Account(t.Context(), "default")
+			if e != nil {
+				t.Fatal(e)
 			}
-			wantWaits := int32(1)
+			if _, e = a.Assignments.Configure(t.Context(), "default", account.Revision, service, axm.ActivityLogColumns{Serial: "serialNumber", Outcome: "status", Success: "SUCCESS"}); e != nil {
+				t.Fatal(e)
+			}
+			if _, e = a.Assignments.Request(t.Context(), "default", "deadline", []string{"DEADLINE"}, time.Now()); e != nil {
+				t.Fatal(e)
+			}
+			e = a.Assignments.Step(deadline, "deadline")
 			if blockRead {
-				wantWaits = 0
+				if !errors.Is(e, context.DeadlineExceeded) {
+					t.Fatal(e)
+				}
+			} else {
+				if e != nil {
+					t.Fatal(e)
+				}
+				deadline.expire()
+				if e = a.Assignments.Step(deadline, "deadline"); !errors.Is(e, context.DeadlineExceeded) {
+					t.Fatal(e)
+				}
 			}
-			if clk.waits.Load() != wantWaits || !errors.Is(deadline.Err(), context.DeadlineExceeded) {
-				t.Fatal("deadline did not reach the intended observation boundary")
-			}
-			if res.Code != http.StatusGatewayTimeout {
-				t.Fatalf("waited assignment deadline = %d, want %d", res.Code, http.StatusGatewayTimeout)
+			if transport.reads.Load() != 1 || !errors.Is(deadline.Err(), context.DeadlineExceeded) {
+				t.Fatal("deadline missed observation boundary")
 			}
 			id := <-transport.activityIDs
-			activity, err := a.AxM.GetOrgDeviceActivity(t.Context(), id, axm.GetOptions{})
-			if err != nil || activity.ID != id || activity.Attributes.Status != axm.ActivityInProgress {
-				t.Fatal("accepted activity did not remain queryable after timeout", activity, err)
+			activity, e := a.AxM.GetOrgDeviceActivity(t.Context(), id, axm.GetOptions{})
+			if e != nil || activity.ID != id || activity.Attributes.Status != axm.ActivityInProgress {
+				t.Fatal(activity, e)
+			}
+			w, e := a.Assignments.Get(t.Context(), "default", "deadline")
+			if e != nil || w.ActivityID != id || w.AcceptedAt == nil || w.TerminalStatus != "" {
+				t.Fatal(w, e)
 			}
 			if transport.mutations.Load() != 1 {
-				t.Fatal("wait timeout repeated an accepted mutation")
+				t.Fatal("cancellation repeated mutation")
 			}
 		})
 	}
@@ -204,8 +198,6 @@ func TestAxM(t *testing.T) {
 		}
 	})
 	t.Run("AdminAssign", func(t *testing.T) {
-		oldInterval, oldTimeout := app.AxMWaitInterval, app.AxMWaitTimeout
-		t.Cleanup(func() { app.AxMWaitInterval, app.AxMWaitTimeout = oldInterval, oldTimeout })
 		key, keyPEM := axmKey(t)
 		fake := axmtest.NewServer()
 		t.Cleanup(fake.Close)
@@ -215,7 +207,6 @@ func TestAxM(t *testing.T) {
 			fake.AddOrgDevice(s, nil)
 		}
 		fake.AutoAdvance(10 * time.Millisecond)
-		app.AxMWaitInterval = 10 * time.Millisecond
 		a := build(t, app.Config{Storage: "inmem", BootstrapToken: "t", AxM: app.AxMConfig{ClientID: "BUSINESSAPI.abc", KeyID: "kid-1", KeyPEM: keyPEM, BaseURL: fake.URL, TokenURL: fake.TokenURL, HTTPClient: fake.Client()}})
 		srv := serve(t, a)
 		if got := get(t, srv.URL+"/admin/v1/axm/servers", ""); got != http.StatusUnauthorized {
@@ -231,53 +222,117 @@ func TestAxM(t *testing.T) {
 		if len(devices.Items) != 2 || devices.Meta.Paging.NextCursor == "" {
 			t.Fatalf("devices page = %+v", devices)
 		}
-		// An oversized body is refused before it is parsed.
+
+		account, e := a.Inventory.Account(t.Context(), "default")
+		if e != nil {
+			t.Fatal(e)
+		}
+		columns := axm.ActivityLogColumns{Serial: "serialNumber", Outcome: "status", Success: "SUCCESS"}
+		config, _ := json.Marshal(map[string]any{"account_revision": account.Revision, "service_id": server, "log_columns": columns})
+		var binding axmassignment.Binding
+		decode(t, do(t, srv, "PUT", "/admin/v1/axm/accounts/default/assignment-service", "t", config), http.StatusOK, &binding)
+		path := "/admin/v1/axm/accounts/default/assignments"
 		big := bytes.Repeat([]byte("x"), app.MaxAdminBody+1)
-		for _, route := range []string{"assign", "unassign"} {
-			res := do(t, srv, "POST", "/admin/v1/axm/"+route, "t", big)
+		for _, route := range []string{"assignments", "unassignments"} {
+			res := do(t, srv, "POST", "/admin/v1/axm/accounts/default/"+route, "t", big)
 			if res.StatusCode != http.StatusRequestEntityTooLarge {
 				t.Fatalf("%s oversized = %d", route, res.StatusCode)
 			}
+			_ = res.Body.Close()
+		}
+		var w axmassignment.Workflow
+		decode(t, do(t, srv, "POST", path, "t", []byte(`{"request_id":"assign","serials":["SER1","SER2"]}`)), http.StatusAccepted, &w)
+		if w.State != "queued" || w.AcceptedAt != nil {
+			t.Fatal(w)
+		}
+		if e = a.Assignments.Step(t.Context(), w.ID); e != nil {
+			t.Fatal(e)
+		}
+		w, e = a.Assignments.Get(t.Context(), "default", w.ID)
+		if e != nil || w.ActivityID == "" {
+			t.Fatal(w, e)
 		}
 		var act axm.OrgDeviceActivity
-		decode(t, do(t, srv, "POST", "/admin/v1/axm/assign", "t", []byte(`{"server":"`+server+`","serials":["SER1","SER2"],"wait":true}`)), http.StatusAccepted, &act)
-		if act.Attributes.Status != axm.ActivityCompleted {
-			t.Fatalf("activity = %+v", act.Attributes)
-		}
-		for _, s := range []string{"SER1", "SER2"} {
-			if fake.AssignedServer(s) != server {
-				t.Fatalf("%s assigned to %q", s, fake.AssignedServer(s))
+		decode(t, do(t, srv, "GET", "/admin/v1/axm/activities/"+w.ActivityID, "t", nil), http.StatusOK, &act)
+		fake.Complete()
+		for _, serial := range []string{"SER1", "SER2"} {
+			if fake.AssignedServer(serial) != server {
+				t.Fatalf("%s assignment missing", serial)
 			}
 		}
-		decode(t, do(t, srv, "GET", "/admin/v1/axm/activities/"+act.ID, "t", nil), http.StatusOK, &act)
-		// A fault at Apple is relayed as a gateway error rather than
-		// reported as an empty inventory.
+
+		advance := func(id string) {
+			t.Helper()
+			if e := a.Inventory.Backend.Update(t.Context(), func(tx inventory.Tx) error {
+				raw, e := tx.Get(t.Context(), "assignment/"+id)
+				if e != nil {
+					return e
+				}
+				var next axmassignment.Workflow
+				if e = json.Unmarshal(raw, &next); e != nil {
+					return e
+				}
+				next.NextAttempt = time.Time{}
+				raw, e = json.Marshal(next)
+				if e != nil {
+					return e
+				}
+				return tx.Put(t.Context(), "assignment/"+id, raw)
+			}); e != nil {
+				t.Fatal(e)
+			}
+			if e := a.Assignments.Step(t.Context(), id); e != nil {
+				t.Fatal(e)
+			}
+		}
+		advance("assign")
+		decode(t, do(t, srv, "GET", "/admin/v1/axm/accounts/default/assignment-service", "t", nil), http.StatusOK, &binding)
+		resLog := do(t, srv, "GET", "/admin/v1/axm/accounts/default/assignments/assign/log", "t", nil)
+		rawLog, e := io.ReadAll(resLog.Body)
+		_ = resLog.Body.Close()
+		if e != nil || resLog.StatusCode != 200 || !strings.Contains(string(rawLog), "SER1,ASSIGN_DEVICES,SUCCESS") {
+			t.Fatal(string(rawLog), e, resLog.StatusCode)
+		}
+		decode(t, do(t, srv, "GET", "/admin/v1/axm/accounts/default/assignments/assign", "t", nil), http.StatusOK, &w)
+		if w.State != "complete" || !w.LogSucceeded {
+			t.Fatal(w)
+		}
+		decode(t, do(t, srv, "POST", "/admin/v1/axm/accounts/default/unassignments", "t", []byte(`{"request_id":"unassign","serials":["SER1"]}`)), http.StatusAccepted, &w)
+		if e := a.Assignments.Step(t.Context(), w.ID); e != nil {
+			t.Fatal(e)
+		}
+		fake.Complete()
+		advance(w.ID)
+		if fake.AssignedServer("SER1") != "" {
+			t.Fatal("explicit scoped unassignment failed")
+		}
 		fake.ExpireTokens()
 		fake.RejectNextTokenRequests(1)
-		if res := do(t, srv, "GET", "/admin/v1/axm/devices", "t", nil); res.StatusCode < 400 {
-			t.Fatalf("devices during an outage = %d", res.StatusCode)
+		res := do(t, srv, "GET", "/admin/v1/axm/devices", "t", nil)
+		if res.StatusCode < 400 {
+			t.Fatal("outage hidden")
 		}
-		decode(t, do(t, srv, "POST", "/admin/v1/axm/unassign", "t", []byte(`{"serials":["SER1"]}`)), http.StatusAccepted, &act)
-		if act.Attributes.Status != axm.ActivityInProgress && act.Attributes.Status != axm.ActivityCompleted {
-			t.Fatalf("unassign = %+v", act.Attributes)
-		}
-		for name, body := range map[string][]byte{"empty": []byte(`{"serials":[]}`), "garbage": []byte(`{`)} {
-			if res := do(t, srv, "POST", "/admin/v1/axm/assign", "t", body); res.StatusCode != http.StatusBadRequest {
-				t.Fatalf("%s = %d", name, res.StatusCode)
+		_ = res.Body.Close()
+		for name, body := range map[string][]byte{"empty": []byte(`{"request_id":"invalid","serials":[]}`), "garbage": []byte(`{`), "missing_id": []byte(`{"serials":["SER9"]}`)} {
+			res := do(t, srv, "POST", path, "t", body)
+			if res.StatusCode != http.StatusBadRequest {
+				t.Fatalf("%s=%d", name, res.StatusCode)
 			}
+			_ = res.Body.Close()
 		}
-		if res := do(t, srv, "POST", "/admin/v1/axm/assign", "t", []byte(`{"serials":["SER9"]}`)); res.StatusCode != http.StatusBadRequest {
-			t.Fatalf("assign without server = %d", res.StatusCode)
+		for _, route := range []string{"assign", "unassign"} {
+			res := do(t, srv, "POST", "/admin/v1/axm/"+route, "t", []byte(`{"serials":["SER1"]}`))
+			if res.StatusCode != http.StatusNotFound {
+				t.Fatal("global mutation bypass remains", res.StatusCode)
+			}
+			_ = res.Body.Close()
 		}
-		if res := do(t, srv, "GET", "/admin/v1/axm/activities/nope", "t", nil); res.StatusCode != http.StatusNotFound {
-			t.Fatalf("unknown activity = %d", res.StatusCode)
+		res = do(t, srv, "GET", "/admin/v1/axm/activities/nope", "t", nil)
+		if res.StatusCode != http.StatusNotFound {
+			t.Fatal(res.StatusCode)
 		}
-		app.AxMWaitTimeout = 50 * time.Millisecond
-		fake.SetConsistencyLag(time.Hour)
-		if res := do(t, srv, "POST", "/admin/v1/axm/assign", "t", []byte(`{"server":"`+server+`","serials":["SER3"],"wait":true}`)); res.StatusCode != http.StatusAccepted && res.StatusCode != http.StatusGatewayTimeout {
-			t.Fatalf("waited assign = %d", res.StatusCode)
-		}
-		app.AxMWaitTimeout = 5 * time.Minute
+		_ = res.Body.Close()
+
 		fake.RateLimit(5, "1")
 		if res := do(t, srv, "GET", "/admin/v1/axm/servers?limit=1", "t", nil); res.StatusCode != http.StatusOK && res.StatusCode != http.StatusTooManyRequests {
 			t.Fatalf("rate limited = %d", res.StatusCode)

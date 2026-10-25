@@ -26,6 +26,8 @@ const (
 func inventoryError(w http.ResponseWriter, err error) {
 	status := http.StatusInternalServerError
 	switch {
+	case errors.Is(err, ErrBodyTooLarge):
+		status = http.StatusRequestEntityTooLarge
 	case errors.Is(err, inventory.ErrNotFound):
 		status = http.StatusNotFound
 	case errors.Is(err, inventory.ErrInvalid):
@@ -110,11 +112,16 @@ func (a *App) inventoryRoutes() []adminRoute {
 				return
 			}
 			if out != nil {
-				writeJSON(w, http.StatusOK, out)
+				status := http.StatusOK
+				if r.Method == http.MethodPost && (strings.HasSuffix(r.URL.Path, "/assignments") || strings.HasSuffix(r.URL.Path, "/unassignments")) {
+					status = http.StatusAccepted
+				}
+				writeJSON(w, status, out)
 			}
 		})})
 	}
 	a.inventoryInspectionRoutes(add)
+	a.assignmentRoutes(add)
 	add("GET /axm/accounts", ActionReadInventory, func(_ http.ResponseWriter, r *http.Request) (any, error) { return a.Inventory.Accounts(r.Context()) })
 	add("GET /axm/accounts/{id}", ActionReadInventory, func(_ http.ResponseWriter, r *http.Request) (any, error) {
 		return a.Inventory.Account(r.Context(), r.PathValue("id"))

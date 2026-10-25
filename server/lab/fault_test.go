@@ -1,6 +1,7 @@
 package lab
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -14,14 +15,16 @@ import (
 )
 
 type scenarioFault struct {
-	base      http.RoundTripper
-	at, count int
-	hit       bool
-	paths     []string
+	base         http.RoundTripper
+	at, count    int
+	hit          bool
+	paths        []string
+	record       bool
+	observations []faultObservation
 }
 
 // RoundTrip fails the selected scenario request while excluding cleanup and the unauthorized probe
-// from its count.
+// from its count. Optional recording retains complete fixture responses for coverage classification.
 func (f *scenarioFault) RoundTrip(r *http.Request) (*http.Response, error) {
 	// Cleanup and the explicit unauthorized probe are outside scenario success evidence.
 	if r.Method != "DELETE" && r.Header.Get("Authorization") != "Bearer invalid" {
@@ -32,7 +35,21 @@ func (f *scenarioFault) RoundTrip(r *http.Request) (*http.Response, error) {
 			return nil, errors.New("fixture connection lost")
 		}
 	}
-	return f.base.RoundTrip(r)
+	response, err := f.base.RoundTrip(r)
+	if err != nil || !f.record {
+		return response, err
+	}
+	raw, readErr := io.ReadAll(io.LimitReader(response.Body, (32<<20)+1))
+	closeErr := response.Body.Close()
+	if len(raw) > 32<<20 {
+		return nil, errors.New("fixture response exceeded trace bound")
+	}
+	if readErr != nil || closeErr != nil {
+		return nil, errors.Join(readErr, closeErr)
+	}
+	response.Body = io.NopCloser(bytes.NewReader(raw))
+	f.observations = append(f.observations, faultObservation{Method: r.Method, Path: r.URL.Path, Status: response.StatusCode, Header: response.Header.Clone(), Body: raw})
+	return response, nil
 }
 
 // testWorkspace initializes and loads an in-memory lab workspace for the supplied mode.
@@ -58,6 +75,10 @@ func TestScenariosRejectInterruptedExchanges(t *testing.T) {
 			continue
 		}
 		t.Run(s.ID, func(t *testing.T) {
+			if s.ID == "E2E-021" {
+				checkABMInterruptedExchanges(t, s)
+				return
+			}
 			w := testWorkspace(t, "simulated")
 			w.Settings = s.Settings
 			e, err := Start(t.Context(), w, "", io.Discard)
