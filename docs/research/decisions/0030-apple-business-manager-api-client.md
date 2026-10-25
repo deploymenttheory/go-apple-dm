@@ -54,7 +54,9 @@ Named-account administration uses current sealed inventory credentials for each
 live device, coverage and service read. A short local transaction snapshots
 metadata and its key before client construction; network I/O follows afterward.
 Account incarnation, revision and key
-checks fence responses after network I/O. The HTTP API has no global live-read
+checks fence responses after network I/O. Connection verification atomically
+checks the same snapshot and stamps only that exact incarnation and key; a
+delete/recreate cannot inherit a successful stale verification. The HTTP API has no global live-read
 fallback. Raw Apple device and coverage resources require explicit raw-inventory
 authority in addition to business-manager read authority. Named reads capture
 access before credential opening and remote calls when capture is configured;

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/inventory"
@@ -71,20 +72,62 @@ func (a *App) accountSnapshot(ctx context.Context, id string) (inventory.Account
 	var account inventory.Account
 	var key []byte
 	err := a.Inventory.Backend.Update(ctx, func(tx inventory.Tx) error {
-		raw, err := tx.Get(ctx, "account/"+id)
-		if err != nil {
-			return err
-		}
-		if err = json.Unmarshal(raw, &account); err != nil {
-			return err
-		}
-		raw, err = tx.Get(ctx, "credential/"+id)
-		if err != nil {
-			return err
-		}
-		return json.Unmarshal(raw, &key)
+		var err error
+		account, key, err = readAccountSnapshot(ctx, tx, id)
+		return err
 	})
 	return account, key, err
+}
+
+// readAccountSnapshot decodes metadata and its key from the same locked view.
+func readAccountSnapshot(ctx context.Context, reader inventory.Reader, id string) (inventory.Account, []byte, error) {
+	var account inventory.Account
+	var key []byte
+	raw, err := reader.Get(ctx, "account/"+id)
+	if err != nil {
+		return account, nil, err
+	}
+	if err = json.Unmarshal(raw, &account); err != nil {
+		return account, nil, err
+	}
+	raw, err = reader.Get(ctx, "credential/"+id)
+	if err != nil {
+		return account, nil, err
+	}
+	err = json.Unmarshal(raw, &key)
+	return account, key, err
+}
+
+// verifyNamedAccount authenticates outside a transaction, then atomically stamps
+// only the exact account incarnation, revision and key that reached Apple.
+func (a *App) verifyNamedAccount(ctx context.Context, id string) error {
+	account, key, err := a.accountSnapshot(ctx, id)
+	if err != nil {
+		return err
+	}
+	client, err := a.inventoryClient(ctx, account, key)
+	if err != nil {
+		return &accountRemoteError{status: http.StatusBadGateway, category: "credential_unavailable"}
+	}
+	if _, err = client.ListOrgDevices(ctx, axm.ListOptions{Limit: 1}); err != nil {
+		return accountFailure(err)
+	}
+	return a.Inventory.Backend.Update(ctx, func(tx inventory.Tx) error {
+		current, currentKey, err := readAccountSnapshot(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+		if current.Revision != account.Revision || !current.CreatedAt.Equal(account.CreatedAt) || !bytes.Equal(currentKey, key) {
+			return inventory.ErrConflict
+		}
+		at := time.Now().UTC()
+		current.VerifiedAt = &at
+		raw, err := json.Marshal(current)
+		if err != nil {
+			return err
+		}
+		return tx.Put(ctx, "account/"+id, raw)
+	})
 }
 
 // accountOperationRoutes keeps every live read and durable operation inspection

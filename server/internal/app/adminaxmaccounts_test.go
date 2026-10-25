@@ -116,7 +116,7 @@ func TestNamedAccountOperations(t *testing.T) {
 	if w := request("/axm/accounts/first/devices/first-opaque"); w.Code != 403 || calls != 0 {
 		t.Fatal("raw denial contacted Apple", w.Code, calls)
 	}
-	grant(`permit(principal, action in [MDM::Action::"readBusinessManager",MDM::Action::"readRawInventory",MDM::Action::"readInventory"], resource);`)
+	grant(`permit(principal, action in [MDM::Action::"readBusinessManager",MDM::Action::"readRawInventory",MDM::Action::"readInventory",MDM::Action::"manageAxMAccounts"], resource);`)
 	for _, id := range []string{"first", "second"} {
 		for _, suffix := range []string{"devices", "devices/" + id + "-opaque", "devices/" + id + "-opaque/coverage", "devices/" + id + "-opaque/assigned-service", "services", "services/bound-service", "diagnostics", "jobs"} {
 			w := request("/axm/accounts/" + id + "/" + suffix)
@@ -148,6 +148,14 @@ func TestNamedAccountOperations(t *testing.T) {
 	job, err := a.Inventory.Enqueue(t.Context(), "first", false, time.Now())
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	peerJob, err := a.Inventory.Enqueue(t.Context(), "second", false, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w := request("/axm/accounts/first/jobs?limit=1"); w.Code != 200 || strings.Contains(w.Body.String(), peerJob.ID) || !strings.Contains(w.Body.String(), job.ID) {
+		t.Fatal("cross-account list/cursor", w.Code, w.Body.String())
 	}
 	if w := request("/axm/accounts/second/jobs/" + job.ID); w.Code != 404 {
 		t.Fatal("cross-account job", w.Code)
@@ -189,6 +197,35 @@ func TestNamedAccountOperations(t *testing.T) {
 			t.Fatal("stale credential response escaped", path, w.Code, w.Body.String())
 		}
 	}
+
+	if w := rbacRequest(a, "POST", "/axm/accounts/first/verify", root, ""); w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	mode = "revoked"
+	if w := rbacRequest(a, "POST", "/axm/accounts/first/verify", root, ""); w.Code != 502 || !strings.Contains(w.Body.String(), "authentication_failed") || strings.Contains(w.Body.String(), "private-sentinel") {
+		t.Fatal("verification leaked revocation", w.Code, w.Body.String())
+	}
+	mode = "present"
+	onRead = func() {
+		old, e := a.Inventory.Account(t.Context(), "second")
+		if e != nil {
+			t.Fatal(e)
+		}
+		if e = a.Inventory.DeleteAccount(t.Context(), old.ID, old.Revision, time.Now()); e != nil {
+			t.Fatal(e)
+		}
+		old.Revision = 0
+		if _, e = a.Inventory.SaveAccount(t.Context(), old, accountTestKey(t), time.Now()); e != nil {
+			t.Fatal(e)
+		}
+	}
+	if w := rbacRequest(a, "POST", "/axm/accounts/second/verify", root, ""); w.Code != 409 {
+		t.Fatal("verification stamped replacement", w.Code, w.Body.String())
+	}
+	replacement, e := a.Inventory.Account(t.Context(), "second")
+	if e != nil || replacement.VerifiedAt != nil {
+		t.Fatal("replacement inherited verification", replacement, e)
+	}
 	account, e := a.Inventory.Account(t.Context(), "first")
 	if e != nil {
 		t.Fatal(e)
@@ -229,6 +266,7 @@ func TestNamedAccountAuditFailure(t *testing.T) {
 	if w := rbacRequest(a, "PUT", "/policies/audit-account", root, string(body)); w.Code != 200 {
 		t.Fatal(w.Code, w.Body.String())
 	}
+	// #nosec G101 -- The token URL is an in-process HTTPS fixture; credentials are generated at runtime.
 	account, err := a.Inventory.SaveAccount(t.Context(), inventory.Account{ID: "sealed", Name: "Sealed", ClientID: "BUSINESSAPI.test", KeyID: "kid", Enabled: true, BaseURL: "https://sealed.example", TokenURL: "https://sealed.example/token"}, accountTestKey(t), time.Now())
 	if err != nil {
 		t.Fatal(err)

@@ -110,7 +110,10 @@ All live Apple reads select `/axm/accounts/{id}` explicitly. Each request opens
 an atomic snapshot of that account's metadata and current sealed credential,
 builds an isolated connector and checks
 its account revision, incarnation and credential again before returning evidence.
-A concurrent replacement returns HTTP 409. A missing or disabled connection never
+A concurrent replacement returns HTTP 409. Verification authenticates outside
+the transaction and stamps success only after an atomic incarnation, revision and
+credential check; deleting and recreating an account with the same revision cannot
+inherit the old verification result. A missing or disabled connection never
 uses the startup client. No credential-read route exists.
 
 | Route below `/axm/accounts/{id}` | Result | Required grants |
@@ -140,7 +143,7 @@ commit together, so failed capture leaves no queued request. Apple calls run
 outside the local transaction.
 
 Diagnostics returns independent fields: `connection` is `connected`,
-`authentication_failed`, `permission_denied`, `rate_limited`, or
+`authentication_failed`, `permission_denied`, `resource_not_found`, `rate_limited`, or
 `connection_failed`; `inventory` is `present`, `empty`, or `unknown`.
 `synchronization` is `complete` only after the latest job for the current account
 revision succeeds; it is otherwise `incomplete`. Connectivity and a successful
