@@ -147,10 +147,39 @@ affected relationships require a new explicit correlation.
 
 Native history retains partial reports and their reported per-item times. Omission
 leaves prior successful observations available to an explicit resolver; storage does
-not fabricate a replacement full report. Unknown authentication or enrollment-method
-provenance remains incomplete. Current reference adapters preserve their available
-native evidence without inventing that provenance or automatically linking hardware.
-User Enrollment cannot establish a serial-based hardware relationship.
+not fabricate a replacement full report. The reference server records the profile
+issuance flow and carries it into issued certificate evidence. Only fresh authenticated
+check-ins, acknowledged command receipts and validated status receipts attach the
+pinned certificate's recorded ADE, account-driven Device Enrollment, profile-based
+Device Enrollment or User Enrollment provenance. The service supplies the original
+successful Authenticate receipt separately from its connection-state observer.
+`mdm.identity` retains that receipt's exact plist and only its reported fields,
+including unknown members. An accepted replacement-candidate Authenticate is retained
+by the controlled replacement handshake while the old pin remains active; it projects
+no candidate identity or certificate inventory. TokenUpdate and command acknowledgement
+commit the new pin before fresh receipts can qualify candidate hardware facts.
+Neither an Idle poll nor a command connection authenticates
+older stored device fields. A same-certificate Authenticate may leave operational
+`DeviceInfo` unchanged; inventory still records only the current receipt, at its receipt
+time. Omitted older unverified fields remain unchecked; previously qualified native
+fields remain in history for explicit resolution. A native serial comes from an actual
+Authenticate `SerialNumber` or DeviceInformation `QueryResponses.SerialNumber` receipt,
+or a previously retained authenticated report of that serial for the same enrollment.
+A serial-omitting command or DDM receipt cannot borrow an unchecked `DeviceInfo` serial
+merely because a newer certificate's method is known. Such originals stay outside
+hardware correlation; a later serial receipt never retroactively qualifies them.
+Subsequent fresh receipts may use the genuine retained binding. Stored device state,
+channels and account names supply neither a serial proof nor an enrollment method.
+
+Background sweeps retain historical enrollment, acknowledged-command and effective
+status evidence without consulting the current certificate for report authentication.
+Exact originals and receipt times already retained are reused atomically on
+backfill, preserving their captured fields, per-item times, provenance and checked links. Missing historical authentication or method evidence stays incomplete even after
+new certificate issuance. A genuinely fresh authenticated receipt can establish its
+own provenance with unchanged reported values, including an identical injected receipt
+time; fresh receipts retain the library's normal observation/history semantics.
+Native evidence is never automatically linked to hardware. User Enrollment cannot
+establish a serial-based hardware relationship.
 
 Account removal disconnects its sources without disabling enrollment or deleting
 original evidence. An absent Apple resource is marked only after complete enumeration
@@ -173,6 +202,72 @@ validation, deduplication and APNs notifier. Without APNs credentials, requests 
 until the device contacts the server. Authenticated enrollment certificates supply their
 own expiry metadata; arbitrary installed certificates are not treated as enrollment identity.
 No cross-platform RAM field or implicit field equivalence is introduced.
+
+## Serial inspection and explicit enrichment
+
+All paths below are relative to `/admin/v1`. `GET /inventory/serials/{serial}` and
+`dmctl devices inspect SERIAL` find independent organization-device resources before
+enrollment. After enrollment they also find native sources carrying that authenticated
+serial. A matching serial in this inspection is a discovery result; only `links` are
+checked relationships. Reads perform no correlation or resolution. Multiple Apple
+accounts and enrollments remain separately addressed.
+
+`GET /devices/{id}/evidence` returns source metadata and checked links. Its raw counterpart
+`GET /inventory/raw/devices/{id}/evidence`, exposed by `devices evidence ID --raw`,
+additionally returns successful `history`, separate classified `attempts`, opaque
+`legacy_envelopes`, and base64 `original_json` byte arrays aligned with `history`.
+Decoding each base64 entry recovers the byte-exact original, including whitespace.
+`GET /inventory/raw/serials/{serial}` provides the same raw evidence for serial inspection.
+All complete-source operations require `readRawInventory`; ordinary inspection requires
+`readInventory`. Record IDs come from `devices list`; old fleet UUIDs have no lookup alias.
+
+Create a checked relationship explicitly with `POST /inventory/correlations`, requiring
+`manageInventory`. Its JSON request contains independent record IDs:
+
+```json
+{"apple":"APPLE_RECORD_ID","native":"NATIVE_RECORD_ID"}
+```
+
+The Apple record must contain an actual `orgDevices` resource. The native record must
+carry authenticated eligible method and serial provenance. User Enrollment is excluded,
+even when serials match. A new original, absence or disconnection invalidates the link;
+repeat explicit correlation after a refresh. Correlation changes no source originals.
+Use a native Authenticate (`mdm.identity`), command or DDM receipt record for the native
+side. The separate `enrollment` lifecycle metadata is not a hardware report.
+
+Resolve only current checked links with `POST /inventory/raw/devices/{apple_id}/resolve`.
+This is a read operation requiring `readRawInventory`. Supply `mappings`, whose named
+`inputs` contain `resource_id` (the independent record ID) and `path` (the exact source
+field). Apple paths are relative to `attributes`; native command paths keep protocol
+containers such as `QueryResponses.SerialNumber`. Each mapping asserts semantic and unit
+equivalence; the server introduces no automatic aliases, unit conversion or fleet policy.
+For example, comparing the two documented serial fields requires this explicit request:
+
+```json
+{"mappings":[{"name":"reported_serial","inputs":[
+  {"resource_id":"APPLE_RECORD_ID","path":"serialNumber"},
+  {"resource_id":"NATIVE_RECORD_ID","path":"QueryResponses.SerialNumber"}
+]}]}
+```
+
+Results return `selected`, every `candidates` entry, and `disagrees`. Each value retains original
+JSON, source reference, path, observation time and native provenance. Latest successful
+native evidence wins regardless of a later ABM sync. Omitted values retain prior native
+history; false, zero, null and empty arrays remain meaningful. DDM field times belong to
+the retained individual item. Unlinked or rejected sources cannot enter resolution.
+Arbitrary original paths and candidate values are restricted to raw authority, including
+when a mapping's chosen result name looks like an ordinary metadata column.
+
+```sh
+dmctl devices inspect SERIAL
+dmctl devices inspect SERIAL --raw
+dmctl devices evidence NATIVE_RECORD_ID --raw
+dmctl inventory correlate --file correlation.json
+dmctl devices resolve APPLE_RECORD_ID --raw --file mappings.json
+```
+
+The [source inventory diagram](../diagrams/inventory-inspection.html) shows the independent
+collection, checked relationship and explicit resolution boundaries.
 
 ## CLI: `devices collect`
 
@@ -415,6 +510,14 @@ Lists, reports and exports share `account`, `source`, `focus`, `search`, `where`
 source records. Search examines source identities and kind. Predicates scan bounded
 pages over original field paths or metadata. Numeric comparisons retain exact integer
 precision. `as_of` records the query time and is not a historical database snapshot.
+HTTP `next_cursor` binds continuation to the original account, source, focus, search
+and conditions. Preserve those predicates; changing only page size is permitted.
+Malformed, old bare record/UUID cursors and continuations from another query return 400.
+Malformed query pairs, including unescaped semicolons and invalid percent escapes,
+also return 400 before any filters execute. CLI values are encoded as literal values;
+a semicolon within an encoded account ID never removes the account scope.
+Unknown parameters such as retired `serial`, `uuid` and normalized fleet filters also
+return 400; use the serial inspection path and explicit source selectors.
 
 Selectors are explicitly namespaced. `meta.id` is the repository's resource identity;
 `meta.resource_id` is the opaque source address; `data.id` is the original source field
@@ -441,7 +544,11 @@ CSV columns retain requested order and encode nested values as JSON cells. Netwo
 cellular identifiers are excluded from the default column set. CSV formula-leading values
 are escaped. JSON/NDJSON raw exports retain complete stored source evidence. Save reusable
 ordered columns and filters with `dmctl inventory presets save NAME --file preset.json`;
-list them with `dmctl inventory presets`. Presets contain `name`, `format`, `columns` and
+list them with `dmctl inventory presets`. Ordinary preset routes accept only metadata
+conditions and columns, and exclude raw presets from reads. Use `--raw` for raw preset
+reads and saves (`/inventory/raw/presets`); saving requires both `manageInventory` and
+`readRawInventory`. Original-source filter literals never appear in ordinary preset reads.
+Presets contain `name`, `format`, `columns` and
 `query`. The preexisting enrollment export/import format is unchanged.
 
 Diagnostics emit deliberately limited NDJSON summaries with consistent `<resource N>`

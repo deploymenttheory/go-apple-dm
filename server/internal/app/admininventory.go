@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
@@ -44,7 +45,9 @@ func inventoryBody(r *http.Request, out any) error {
 	if len(raw) > MaxAdminBody {
 		return inventory.ErrInvalid
 	}
-	if json.Unmarshal(raw, out) != nil {
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.DisallowUnknownFields()
+	if decoder.Decode(out) != nil || decoder.Decode(new(any)) != io.EOF {
 		return inventory.ErrInvalid
 	}
 	return nil
@@ -52,9 +55,11 @@ func inventoryBody(r *http.Request, out any) error {
 
 // inventoryQuery parses the common list, report and export filter contract.
 func inventoryQuery(r *http.Request) (inventory.ResourceQuery, error) {
-	v := r.URL.Query()
+	v, err := validateInventoryParameters(r, "account", "source", "focus", "search", "cursor", "limit", "where", "as_of", "format", "columns")
+	if err != nil {
+		return inventory.ResourceQuery{}, err
+	}
 	q := inventory.ResourceQuery{AccountID: v.Get("account"), Source: v.Get("source"), Focus: v.Get("focus"), Search: v.Get("search"), Cursor: v.Get("cursor")}
-	var err error
 	if v.Get("limit") != "" {
 		q.Limit, err = strconv.Atoi(v.Get("limit"))
 		if err != nil {
@@ -72,7 +77,11 @@ func inventoryQuery(r *http.Request) (inventory.ResourceQuery, error) {
 			return q, inventory.ErrInvalid
 		}
 	}
-	return q, q.Validate()
+	if err := q.Validate(); err != nil {
+		return q, err
+	}
+	err = decodeInventoryCursor(&q)
+	return q, err
 }
 
 // publicInventoryQuery rejects filters on fields requiring raw-inventory authority.
@@ -89,7 +98,7 @@ func publicInventoryQuery(q inventory.ResourceQuery) error {
 func (a *App) inventoryRoutes() []adminRoute {
 	routes := []adminRoute{}
 	add := func(pattern, action string, fn func(http.ResponseWriter, *http.Request) (any, error)) {
-		routes = append(routes, adminRoute{Pattern: pattern, Action: action, Family: "inventory", MaxResponseBytes: 32 << 20, StreamResponse: pattern == "GET /inventory/raw/exports", LocalMutation: !strings.HasPrefix(pattern, "GET ") && !strings.HasSuffix(pattern, "/verify") && !strings.HasSuffix(pattern, "/collect"), Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		routes = append(routes, adminRoute{Pattern: pattern, Action: action, Family: "inventory", MaxResponseBytes: 32 << 20, StreamResponse: strings.HasSuffix(pattern, "/exports") || pattern == "GET /inventory/diagnostics", LocalMutation: !strings.HasSuffix(pattern, "/resolve") && !strings.HasPrefix(pattern, "GET ") && !strings.HasSuffix(pattern, "/verify") && !strings.HasSuffix(pattern, "/collect"), Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			response := &inventoryResponse{ResponseWriter: w}
 			out, e := fn(response, r)
 			if e != nil {
@@ -105,6 +114,7 @@ func (a *App) inventoryRoutes() []adminRoute {
 			}
 		})})
 	}
+	a.inventoryInspectionRoutes(add)
 	add("GET /axm/accounts", ActionReadInventory, func(_ http.ResponseWriter, r *http.Request) (any, error) { return a.Inventory.Accounts(r.Context()) })
 	add("GET /axm/accounts/{id}", ActionReadInventory, func(_ http.ResponseWriter, r *http.Request) (any, error) {
 		return a.Inventory.Account(r.Context(), r.PathValue("id"))
@@ -254,6 +264,7 @@ func (a *App) inventoryRoutes() []adminRoute {
 				}
 			}
 			page, e := a.Inventory.Resources(r.Context(), q)
+			page.NextCursor = encodeInventoryCursor(page.NextCursor, q)
 			if !raw {
 				for i := range page.Items {
 					page.Items[i] = inventory.PublicRecord(page.Items[i])
@@ -286,27 +297,17 @@ func (a *App) inventoryRoutes() []adminRoute {
 		if e != nil {
 			return nil, e
 		}
-		count := 0
-		o := d.Snapshot
-		{
-			if o.Source.Kind == "enrollment" && !o.Disconnected {
-				var fields struct {
-					ID      string `json:"enrollment_id"`
-					Channel string `json:"enrollment_channel"`
-				}
-				if json.Unmarshal(o.Raw, &fields) != nil {
-					return nil, inventory.ErrInvalid
-				}
-				channel := mdm.ChannelDevice
-				if fields.Channel == mdm.ChannelUserEnrollmentDevice.String() {
-					channel = mdm.ChannelUserEnrollmentDevice
-				}
-				n, e := a.collectNative(r.Context(), mdm.EnrollmentID{Channel: channel, ID: fields.ID}, true)
-				if e != nil {
-					return nil, e
-				}
-				count += n
-			}
+		id, channelName, e := collectionEnrollment(d)
+		if e != nil {
+			return nil, e
+		}
+		channel := mdm.ChannelDevice
+		if channelName == mdm.ChannelUserEnrollmentDevice.String() {
+			channel = mdm.ChannelUserEnrollmentDevice
+		}
+		count, e := a.collectNative(r.Context(), mdm.EnrollmentID{Channel: channel, ID: id}, true)
+		if e != nil {
+			return nil, e
 		}
 		return map[string]int{"queued": count}, nil
 	})
@@ -351,11 +352,38 @@ func (a *App) inventoryRoutes() []adminRoute {
 			return nil, a.Inventory.Export(r.Context(), w, q, format, columns, raw)
 		})
 	}
-	add("GET /inventory/presets", ActionReadInventory, func(_ http.ResponseWriter, r *http.Request) (any, error) { return a.Inventory.Presets(r.Context()) })
+	add("GET /inventory/presets", ActionReadInventory, func(_ http.ResponseWriter, r *http.Request) (any, error) {
+		presets, err := a.Inventory.Presets(r.Context())
+		if err != nil {
+			return nil, err
+		}
+		public := []inventory.ExportPreset{}
+		for _, p := range presets {
+			if publicInventoryPreset(p) == nil {
+				public = append(public, p)
+			}
+		}
+		return public, nil
+	})
+	add("GET /inventory/raw/presets", ActionReadRawInventory, func(_ http.ResponseWriter, r *http.Request) (any, error) { return a.Inventory.Presets(r.Context()) })
 	add("PUT /inventory/presets/{id}", ActionManageInventory, func(_ http.ResponseWriter, r *http.Request) (any, error) {
 		var p inventory.ExportPreset
 		if e := inventoryBody(r, &p); e != nil {
 			return nil, e
+		}
+		p.ID = r.PathValue("id")
+		if err := publicInventoryPreset(p); err != nil {
+			return nil, err
+		}
+		return a.Inventory.SavePreset(r.Context(), p)
+	})
+	add("PUT /inventory/raw/presets/{id}", ActionManageInventory, func(w http.ResponseWriter, r *http.Request) (any, error) {
+		if !a.authorizeInventoryRaw(w, r) {
+			return nil, nil
+		}
+		var p inventory.ExportPreset
+		if err := inventoryBody(r, &p); err != nil {
+			return nil, err
 		}
 		p.ID = r.PathValue("id")
 		return a.Inventory.SavePreset(r.Context(), p)

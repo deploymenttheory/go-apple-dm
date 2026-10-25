@@ -95,6 +95,22 @@ func runInventoryCommand(ctx context.Context, e *env, family string, args []stri
 			path = prefix
 		case "fields":
 			path = prefix + "/fields"
+		case "inspect":
+			if id(1) != "" {
+				path = "/inventory/serials/" + id(1)
+				if *raw {
+					path = "/inventory/raw/serials/" + id(1)
+				}
+			}
+		case "evidence":
+			if id(1) != "" {
+				path = prefix + "/" + id(1) + "/evidence"
+			}
+		case "resolve":
+			if id(1) != "" && *raw {
+				method = http.MethodPost
+				path = prefix + "/" + id(1) + "/resolve"
+			}
 		case "get":
 			if id(1) != "" {
 				path = prefix + "/" + id(1)
@@ -131,11 +147,17 @@ func runInventoryCommand(ctx context.Context, e *env, family string, args []stri
 		}
 	case "inventory":
 		switch pos[0] {
+		case "correlate":
+			method = http.MethodPost
+			path = "/inventory/correlations"
 		case "sync":
 			method = http.MethodPost
 			path = "/inventory/sync"
 		case "reports", "diagnostics", "presets":
 			path = "/inventory/" + pos[0]
+			if *raw && pos[0] == "presets" {
+				path = "/inventory/raw/presets"
+			}
 			if pos[0] == "presets" && len(pos) > 2 && pos[1] == "save" {
 				method = http.MethodPut
 				path += "/" + id(2)
@@ -171,7 +193,7 @@ func runInventoryCommand(ctx context.Context, e *env, family string, args []stri
 		}
 	}
 	if path == "" {
-		return fmt.Errorf("%w: unknown or incomplete %s operation; use devices list|get|fields|collect, axm accounts list|create|get|update|delete|verify|sync, inventory sync|jobs|schedules|reports|export|presets|diagnostics", ErrUsage, family)
+		return fmt.Errorf("%w: unknown or incomplete %s operation; use devices list|get|inspect|evidence|resolve|fields|collect, axm accounts list|create|get|update|delete|verify|sync, inventory correlate|sync|jobs|schedules|reports|export|presets|diagnostics", ErrUsage, family)
 	}
 	if *force {
 		q.Set("force", "true")

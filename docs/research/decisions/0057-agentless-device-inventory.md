@@ -100,8 +100,31 @@ field equivalence. Missing historical originals remain visible as recovery needs
 The reference server supervises collection and exposes resource metadata under
 `readInventory`; original source data requires `readRawInventory`. Credentials never
 appear in account read responses. Named Apple accounts are sources in one fleet, not
-authorization tenants. Current native adapters retain their available evidence without
-inventing missing enrollment-method provenance. Native collection requires enrollment
+authorization tenants. The server records the actual ADE, account-driven or profile-based issuance flow,
+including User Enrollment, and carries it into issued certificate evidence. Native
+adapters attach the enrollment's pinned issued certificate method and serial only to
+fresh Authenticate, command and validated status receipts. A server-owned Authenticate
+observer receives the successful original within the protocol/event transaction, separately
+from lifecycle-state projection. Identity facts come only from that receipt's supplied
+fields and original plist, never merged persistent device state. Accepted pending
+replacement receipts remain in the replacement handshake and do not project candidate
+hardware or certificate facts before the active pin commits. A fresh receipt under
+the committed pin may qualify those facts. Idle polls, other
+connections and omitted Authenticate fields cannot rebadge historical hardware facts.
+Native serial context requires an actual Authenticate or DeviceInformation serial field,
+or a retained authenticated report of that serial in the same enrollment. Certificate
+method provenance and an unchecked stored serial never qualify serial-omitting command
+or DDM facts. A later actual serial receipt cannot retrospectively qualify old reports.
+Historical backfills never obtain report authentication from the current certificate. They atomically
+reuse already-retained originals and receipt times, preserving captured fields and per-item
+times without downgrading or duplicating provenance; missing historical provenance stays incomplete after new issuance.
+Fresh authenticated receipts retain normal library history semantics even when original
+values and injected receipt times are unchanged.
+Serial inspection and evidence routes preserve source boundaries. Correlation is an
+explicit managed mutation; resolution is an explicit raw-authorized read over checked
+links and caller-declared equivalent paths. Arbitrary mappings, complete history and
+original bytes require `readRawInventory`. Metadata queries reject malformed raw query pairs, retired filters and
+predicate-mismatched cursors; raw saved predicates never leak through ordinary presets. Native collection requires enrollment
 and connectivity. Automated tests do not establish populated live Apple workflows or
 physical-device outcomes.
 

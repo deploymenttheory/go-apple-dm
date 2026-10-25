@@ -55,7 +55,26 @@ repository. Inventory persists one record per source identity, successful origin
 separate outcomes. Its explicit `Link` operation invokes the standalone correlator;
 optional resolution remains caller-owned. Stored native evidence without authenticated
 enrollment-method provenance stays incomplete and cannot establish a hardware link.
-The reference adapters retain protocol evidence independently of this relationship. See [explicit correlation](operations/agentless-inventory.md#standalone-serial-correlation-and-resolution).
+The reference adapters retain protocol evidence independently of this relationship.
+The server records actual profile-issuance methods with issued certificate evidence and
+attaches that provenance only on fresh native receipts through the enrollment's pinned
+certificate. The service provides an explicit original Authenticate receipt observer,
+separate from connection-state projection. Identity inventory retains only fields supplied
+by that receipt; Idle polls and omitted fields cannot qualify older merged device facts.
+Accepted replacement-candidate Authenticate receipts remain in the controlled handshake
+until TokenUpdate and acknowledgement commit the new pin; only a fresh receipt under
+the active pin can qualify identity facts.
+Serial-omitting native receipts require a previously captured authenticated serial binding,
+not an unchecked stored device serial or a newly known certificate method.
+Background replay preserves captured report provenance and leaves missing
+historical authentication or method evidence unchecked. Backfill atomically reuses exact
+retained originals; fresh authenticated receipts retain normal history semantics even
+when reported values and injected receipt times are unchanged. Serial inspection exposes separate resources before enrollment and checked
+links afterward. HTTP/CLI correlation and raw native-first resolution are explicit
+operations; arbitrary mappings and complete evidence require `readRawInventory`.
+Public source queries expose metadata only, reject malformed query pairs and retired
+filters, and bind continuation
+tokens to their predicates. See the [inspection flow](diagrams/inventory-inspection.html). See [explicit correlation](operations/agentless-inventory.md#standalone-serial-correlation-and-resolution).
 
 The [content-cache receiver](research/decisions/0051-content-cache-metrics.md) is
 an embeddable library at the service-client tier. It installs no reference-server

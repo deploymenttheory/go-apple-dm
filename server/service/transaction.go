@@ -5,6 +5,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
@@ -33,6 +34,11 @@ func (c *Core) Checkin(ctx context.Context, r *mdm.Request, ck *mdm.Checkin) (*C
 	err := event.Run(ctx, c.bus, func(ctx context.Context) error {
 		var err error
 		out, err = c.checkin(ctx, r, ck)
+		if err == nil && c.observeAuthenticate != nil && r != nil && ck != nil {
+			if _, ok := ck.Message.(*checkin.Authenticate); ok {
+				err = c.observeAuthenticate(ctx, r, ck, c.clock.Now())
+			}
+		}
 		if err == nil && c.observeEnrollment != nil && r != nil {
 			err = c.observeEnrollment(ctx, r.ID)
 		}

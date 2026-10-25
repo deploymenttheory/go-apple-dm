@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/correlation"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/accountdriven"
@@ -343,6 +344,7 @@ func (a *App) wireEnrollment(ctx context.Context, mux *http.ServeMux) ([]service
 		Signer:          ade.Signer{Cert: e.caCert, Key: e.caKey},
 		SigningIdentity: a.profileSigningIdentity(e),
 		Profile: func(ctx context.Context, p *ade.Parsed, id ade.Identity) (*enroll.Profile, error) {
+			ctx = context.WithValue(ctx, inventoryMethodKey{}, correlation.AutomatedDeviceEnrollment)
 			cn := p.SERIAL
 			if email, _ := id.Claims["email"].(string); email != "" {
 				cn = email + "/" + p.SERIAL
@@ -562,6 +564,9 @@ func (e *enrollment) profileWithIdentity(
 	}
 	grant, err := e.admit(ctx, b)
 	if err != nil {
+		return nil, err
+	}
+	if err := e.retainInventoryMethod(ctx, b, grant); err != nil {
 		return nil, err
 	}
 	subjectCN := b.CommonName

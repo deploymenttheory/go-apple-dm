@@ -707,7 +707,7 @@ func (a *App) wire(ctx context.Context) error {
 		}
 		core, err := service.New(service.Config{
 			Store:         a.Store,
-			ObserveResult: a.observeInventoryResult, ObserveEnrollment: a.observeInventoryEnrollment, ObserveCertificate: a.observeInventoryCertificate,
+			ObserveResult: a.observeInventoryResult, ObserveEnrollment: a.observeInventoryEnrollment, ObserveAuthenticate: a.observeInventoryAuthenticate, ObserveCertificate: a.observeInventoryCertificate,
 			EnableReplacements: a.replacementStore() != nil && a.enroll != nil,
 			Bus:                cfg.publisher(),
 			Clock:              cfg.Clock,
