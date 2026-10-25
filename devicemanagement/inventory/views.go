@@ -145,6 +145,13 @@ func (r *Repository) Export(ctx context.Context, w io.Writer, q ResourceQuery, f
 			}
 		}
 		first = false
+		if raw {
+			// Carry exact original bytes alongside the readable JSON representation.
+			return json.NewEncoder(w).Encode(struct {
+				ResourceRecord
+				Original []byte `json:"original_json,omitempty"`
+			}{d, append([]byte(nil), d.Snapshot.Raw...)})
+		}
 		return json.NewEncoder(w).Encode(d)
 	})
 	if e != nil {

@@ -323,6 +323,11 @@ func Catalogue() []Module {
 			Steps: scenario(liveMDM),
 		},
 	}
+	modules = append(modules,
+		Module{ID: "LIVE-007", Name: "Populated ABM small-page discovery, coverage, synchronization and exact source export", Theme: "abm", Modes: []string{"live"}, Prerequisites: []string{"private abm/acceptance.json", "designated populated device and coverage", "raw inventory and synchronization grants", "private evidence directory"}, Steps: []Step{{Name: "collect and export", Run: liveABMCollection}}},
+		Module{ID: "LIVE-008", Name: "Explicit authenticated native serial correlation with retained ABM evidence", Theme: "abm", Modes: []string{"live"}, Prerequisites: []string{"private abm/acceptance.json", "matching authenticated native resource", "inventory correlation grants", "private evidence directory"}, Steps: []Step{{Name: "correlate serial", Run: liveABMCorrelation}}},
+		Module{ID: "LIVE-009", Name: "Designated reversible ABM assignment with per-device log, readback and restoration", Theme: "abm", Modes: []string{"live"}, Prerequisites: []string{"private abm/acceptance.json with explicit assignment opt-in", "designated MDM binding and device", "assignment, unassignment and raw-log grants", "private evidence directory"}, Steps: []Step{{Name: "assignment and restoration", Run: liveABMAssignment}}},
+	)
 	for i := range modules {
 		if modules[i].Stage == 0 {
 			modules[i].Stage = themeStages[modules[i].Theme]

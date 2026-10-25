@@ -130,6 +130,16 @@ protocol rejection; a transport error or unavailable service is a failure.
 Coverage retains the repository's 95% overall and per-package gates, with no
 additional exemptions for the lab.
 
+Apple Business acceptance uses `LIVE-007` for populated collection and exact
+export, `LIVE-008` for explicit authenticated serial correlation, and `LIVE-009`
+for designated assignment, per-device log/readback and original-assignment
+restoration. A private workspace file supplies the account and resource scope;
+mutation requires separate explicit opt-in. Missing or empty prerequisites are
+blocked/unexercised; authorization failures are failures. Cleanup has its own
+bounded context and retains unresolved restoration instead of reporting success.
+Fixture execution follows the actual runtime and SDK workers, and cannot prove
+live Apple or hardware compatibility.
+
 ## References
 
 - [Testing guide](../../testing/lab.md)

@@ -85,6 +85,16 @@ supervisor after acceptance, during a lost submission and after lease expiry; th
 parent/sibling workers survive and no second POST occurs. SQL fixtures also retain
 fenced-submission overlap locks and reject binding replacement/restoration.
 
+The opt-in lab modules `LIVE-007` through `LIVE-009` exercise named SDK reads,
+durable synchronization, exact source export, explicit serial correlation and a
+designated reversible assignment. Original assignment and cleanup are retained
+privately. Empty populated scenarios remain unexercised, and HTTP acceptance
+cannot replace per-device CSV and linkage evidence. Raw JSON/NDJSON export carries
+base64 original bytes independently from its readable JSON snapshot. The
+[operations guide](../../operations/abm-assignments.md#opt-in-populated-acceptance)
+defines selection, grants and restoration limits. Live interoperability remains
+pending until these modules execute against designated Apple resources.
+
 ## References
 
 - [appleplatformservices/axm](../../../devicemanagement/appleplatformservices/axm)

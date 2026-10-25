@@ -181,3 +181,79 @@ explicit `request_id` and `serials`. CLI assignment returns queued intent; inspe
 the durable operation for acceptance, terminal per-device outcomes and independent
 linkage convergence. `axm accounts sync ACCOUNT --wait` polls the named account's
 job route. None of these commands imply assignment policy or general ABM administration.
+
+## Opt-in populated acceptance
+
+`dmctl lab run -modules LIVE-007,LIVE-008,LIVE-009` uses the ordinary named-account
+SDK reads, synchronization worker, inventory persistence/export and assignment
+controller. The default simulated catalogue remains fixture evidence. A live run
+requires a private live workspace and configured named account; authentication and
+empty discovery alone do not exercise populated compatibility. Keep ticket #314
+open until designated live runs have been reviewed. Fixture passes are not live proof.
+
+Create `abm/acceptance.json` inside the private workspace with mode `0600`:
+
+```json
+{
+  "account": "LAB_ACCOUNT",
+  "serial": "DESIGNATED_LAB_SERIAL",
+  "native_resource_id": "AUTHENTICATED_NATIVE_INVENTORY_RESOURCE",
+  "service_id": "THIS_MDM_SERVICE_ID",
+  "allow_assignment": false
+}
+```
+
+The file contains explicit resource designations, never credentials. `LIVE-007`
+enumerates organization devices with one item per page, checks designated detail,
+enumerates populated coverage and checks its exact resource-ID set against retained
+coverage, waits for a terminal durable synchronization job and
+compares that generation’s retained originals with raw exports for device, detail
+and coverage; older successful history cannot satisfy the current assertion.
+Raw JSON and NDJSON exports include base64 `original_json` alongside the readable
+snapshot; decode that field for byte-exact source JSON, including whitespace,
+unknown members, null, false and large integer tokens. Ordinary safe exports omit it.
+Empty device or coverage collections report blocked/unexercised. Authorization or
+Apple permission failures report failed/permission denied, separately from missing
+configuration, account or designated resources. Required device, detail and coverage must carry that exact job generation. A partial
+job still exercises and exports those current required sources, then reports blocked
+with the retained synchronization outcome. In particular, assigned-service HTTP 404
+remains a failed attempt rather than invented JSON null; held unassigned devices
+can collect source evidence and independently pass serial correlation without any
+assignment mutation. Partial whole-account synchronization never passes.
+
+`LIVE-008` locates the independent evidence by serial and performs an explicit
+correlation against the configured native inventory resource. The production
+correlator requires authenticated eligible Device Enrollment evidence and excludes
+User Enrollment; opaque Apple IDs and enrollment IDs remain protocol addresses.
+This check does not manufacture device evidence or change field-resolution policy.
+
+`LIVE-009` additionally requires `allow_assignment: true`, an existing matching MDM
+assignment binding, assignment and unassignment grants, and raw activity-log access.
+Select a device originally unassigned or assigned to this MDM. Devices assigned to
+another service are blocked, because this integration cannot restore arbitrary
+third-party service bindings. The check records original assignment before mutation,
+changes assignment, requires persisted Apple acceptance, terminal activity, complete
+successful per-device CSV and independent linkage readback, then restores the original
+assignment through the durable controller. It never performs release, erase or disown.
+
+```sh
+dmctl lab run -workspace "$PRIVATE_LAB" -modules LIVE-007,LIVE-008 \
+  -report-dir "$PRIVATE_EVIDENCE" -revision "$REVIEWED_COMMIT"
+# Set allow_assignment explicitly only for the designated reversible scenario.
+dmctl lab run -workspace "$PRIVATE_LAB" -modules LIVE-009 \
+  -report-dir "$PRIVATE_ASSIGNMENT_EVIDENCE" -revision "$REVIEWED_COMMIT"
+```
+
+Each assignment invocation creates an exclusive request-ID evidence directory, so
+reusing a report directory preserves prior original-assignment and unresolved
+cleanup manifests. The runner retains source originals, exports, exact-generation source assertions,
+synchronization outcome, correlation, original assignment,
+request IDs, workflows, CSV and cleanup outcome in private evidence directories.
+Restoration has an independent two-minute cleanup context after run cancellation.
+An unresolved or fenced submission prevents inverse mutation and records
+`pending_manual_reconciliation`; matching current linkage cannot establish that
+an outstanding mutation is settled. Inspect the retained workflow before recovery.
+A process kill can interrupt cleanup: retain original assignment and request IDs
+for manual read-only reconciliation. Publish only redacted revision, assertion,
+scenario and cleanup summaries; keep serials, organization IDs and raw evidence private.
+API assignment evidence does not establish physical enrollment or hardware outcomes.

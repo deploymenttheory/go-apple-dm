@@ -206,7 +206,7 @@ func TestAxM(t *testing.T) {
 		for _, s := range []string{"SER1", "SER2", "SER3"} {
 			fake.AddOrgDevice(s, nil)
 		}
-		fake.AutoAdvance(10 * time.Millisecond)
+		// Explicit completion keeps acceptance separate from terminal evidence.
 		a := build(t, app.Config{Storage: "inmem", BootstrapToken: "t", AxM: app.AxMConfig{ClientID: "BUSINESSAPI.abc", KeyID: "kid-1", KeyPEM: keyPEM, BaseURL: fake.URL, TokenURL: fake.TokenURL, HTTPClient: fake.Client()}})
 		srv := serve(t, a)
 		if got := get(t, srv.URL+"/admin/v1/axm/accounts/default/services", ""); got != http.StatusUnauthorized {
@@ -249,7 +249,7 @@ func TestAxM(t *testing.T) {
 			t.Fatal(e)
 		}
 		w, e = a.Assignments.Get(t.Context(), "default", w.ID)
-		if e != nil || w.ActivityID == "" {
+		if e != nil || w.ActivityID == "" || w.AcceptedAt == nil || w.State != "accepted" {
 			t.Fatal(w, e)
 		}
 		var act axmassignment.Workflow

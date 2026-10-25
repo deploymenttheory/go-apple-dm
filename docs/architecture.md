@@ -347,6 +347,12 @@ profile issuance, command results, OTA, user authentication and server-managed a
 pushes are reusable server capabilities. Contract suites and detailed component
 regressions keep their direct observation points; the shared scenarios use APIs.
 
+The live Apple Business modules exercise populated named-account discovery,
+synchronization, byte-exact source export, explicit serial correlation and a
+designated reversible assignment with retained per-device outcomes and original
+assignment restoration. Private configuration separately opts into mutation;
+empty collections remain unexercised. See [ABM acceptance](operations/abm-assignments.md#opt-in-populated-acceptance).
+
 See [lab and server operations](operations/reference-lab.md) for configuration,
 API authorization and persistence, and [the catalogue](testing/lab-catalogue.md)
 for execution modes and retained regression mappings.

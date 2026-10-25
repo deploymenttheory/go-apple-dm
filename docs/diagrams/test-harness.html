@@ -5148,7 +5148,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 <button type="button" data-purpose-filter-button="neutral" aria-pressed="false" style="--entry:var(--purpose-neutral)"><span class="purpose-key-dot" aria-hidden="true"></span>Actors, structure, neutral states</button>
     </div>
     <div class="purpose-key-detail" aria-live="polite" aria-atomic="true"><div><strong id="purpose-key-selection"></strong><span id="purpose-key-counts"></span></div><p id="purpose-key-description"></p></div>
-    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Fuzz smoke tests","Unit and contract tests","Embedded runtime","Process acceptance"],"connections":[]},{"key":"policy","label":"Authorization and policy","meaning":"Authorization and policy decisions that determine whether an action is allowed.","nodes":["Coverage policy"],"connections":[]},{"key":"artifact","label":"Configuration and artifacts","meaning":"Configuration and artifacts that the system consumes or produces.","nodes":["Shared scenario catalogue","Process evidence","Live evidence"],"connections":["Coverage profiles","Coverage profiles","Embedded mode","Process mode","Supported live mode","Record outcomes","Verify actual receipt"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":["Real device or app"],"connections":[]}],"nodes":9,"connections":7}</script>
+    <script id="purpose-key-data" type="application/json">{"entries":[{"key":"service","label":"Services and processing","meaning":"Services and processing steps that perform the work shown in the diagram.","nodes":["Fuzz smoke tests","Unit and contract tests","Embedded runtime","Process acceptance"],"connections":[]},{"key":"policy","label":"Authorization and policy","meaning":"Authorization and policy decisions that determine whether an action is allowed.","nodes":["Coverage policy"],"connections":[]},{"key":"artifact","label":"Configuration and artifacts","meaning":"Configuration and artifacts that the system consumes or produces.","nodes":["Shared scenario catalogue","Process evidence","Live scoped evidence"],"connections":["Coverage profiles","Coverage profiles","Embedded mode","Process mode","Supported live mode","Record outcomes","Verify actual outcome"]},{"key":"neutral","label":"Actors, structure, neutral states","meaning":"Actors, structural boundaries, and states that do not imply success, warning, or failure.","nodes":["Live Apple or device"],"connections":[]}],"nodes":9,"connections":7}</script>
   </section>
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
@@ -5199,7 +5199,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <text x="54" y="326" class="t-dim" font-size="10" font-weight="600">03 / Process acceptance</text>
 
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-3" x="40" y="430" width="1259" height="106" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="54" y="452" class="t-dim" font-size="10" font-weight="600">04 / Live device and app checks</text>
+        <text x="54" y="452" class="t-dim" font-size="10" font-weight="600">04 / Live Apple and device checks</text>
 
         <!-- Phase headers -->
 
@@ -5209,7 +5209,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
 
         <!-- Edge paths -->
         <path data-edge-from="e2e" data-edge-to="coverage" data-edge-label="Coverage profiles" data-edge-key="0" data-edge-id="embeddedcoverage" data-purpose="artifact" data-composition-points="636,246;880.5,246;880.5,154" d="M 636 246 L 880.5 246 L 880.5 154" class="a-default purpose-arrow purpose-artifact" stroke-width="1.4" marker-end="url(#purpose-arrowhead-artifact)"/>
-        <path data-edge-from="live" data-edge-to="liveproof" data-edge-label="Verify actual receipt" data-edge-key="1" data-edge-id="liveresult" data-purpose="artifact" data-composition-points="513.5,464;513.5,448;880.5,448;880.5,464" d="M 513.5 464 L 513.5 448 L 880.5 448 L 880.5 464" class="a-default purpose-arrow purpose-artifact" stroke-width="1.4" marker-end="url(#purpose-arrowhead-artifact)"/>
+        <path data-edge-from="live" data-edge-to="liveproof" data-edge-label="Verify actual outcome" data-edge-key="1" data-edge-id="liveresult" data-purpose="artifact" data-composition-points="513.5,464;513.5,448;880.5,448;880.5,464" d="M 513.5 464 L 513.5 448 L 880.5 448 L 880.5 464" class="a-default purpose-arrow purpose-artifact" stroke-width="1.4" marker-end="url(#purpose-arrowhead-artifact)"/>
         <path data-edge-from="process" data-edge-to="acceptance" data-edge-label="Record outcomes" data-edge-key="2" data-edge-id="processresult" data-purpose="artifact" data-composition-points="636,372;758,372" d="M 636 372 L 758 372" class="a-default purpose-arrow purpose-artifact" stroke-width="1.4" marker-end="url(#purpose-arrowhead-artifact)"/>
         <path data-edge-from="catalogue" data-edge-to="e2e" data-edge-label="Embedded mode" data-edge-key="3" data-edge-id="sharedembedded" data-purpose="artifact" data-composition-points="293,246;391,246" d="M 293 246 L 391 246" class="a-default purpose-arrow purpose-artifact" stroke-width="1.4" marker-end="url(#purpose-arrowhead-artifact)"/>
         <path data-edge-from="catalogue" data-edge-to="live" data-edge-label="Supported live mode" data-edge-key="4" data-edge-id="sharedlive" data-purpose="artifact" data-composition-points="293,246;309,246;309,552;513.5,552;513.5,532" d="M 293 246 L 309 246 L 309 552 L 513.5 552 L 513.5 532" class="a-default purpose-arrow purpose-artifact" stroke-width="1.4" marker-end="url(#purpose-arrowhead-artifact)"/>
@@ -5294,26 +5294,26 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <text data-detail="context" x="880.5" y="376" class="t-muted" font-size="11" text-anchor="middle">Exit status and protocol outcomes</text>
         </g>
 
-        <g id="node-live" data-node-id="live" data-node-label="Real device or app" tabindex="0" role="button" aria-label="Focus Real device or app, Credentials and registration, Live device and app checks" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Credentials and registration" data-node-context="Live device and app checks" data-purpose="neutral">
-          <title>Real device or app · Credentials and registration · Live device and app checks</title>
+        <g id="node-live" data-node-id="live" data-node-label="Live Apple or device" tabindex="0" role="button" aria-label="Focus Live Apple or device, Explicit prerequisites and scope, Live Apple and device checks" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Explicit prerequisites and scope" data-node-context="Live Apple and device checks" data-purpose="neutral">
+          <title>Live Apple or device · Explicit prerequisites and scope · Live Apple and device checks</title>
           <rect x="391" y="464" width="245" height="68" rx="6" class="c-mask"/>
           <rect x="391" y="464" width="245" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(397 470) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="513.5" y="485" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Real device or app</text>
-          <text data-detail="context" x="513.5" y="502" class="t-muted" font-size="11" text-anchor="middle">Credentials and registration</text>
+          <text data-node-label="" data-detail-anchor="" x="513.5" y="485" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Live Apple or device</text>
+          <text data-detail="context" x="513.5" y="502" class="t-muted" font-size="11" text-anchor="middle">Explicit prerequisites and scope</text>
         </g>
 
-        <g id="node-liveproof" data-node-id="liveproof" data-node-label="Live evidence" tabindex="0" role="button" aria-label="Focus Live evidence, Correlated device or app results, Live device and app checks" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Correlated device or app results" data-node-context="Live device and app checks" data-purpose="artifact">
-          <title>Live evidence · Correlated device or app results · Live device and app checks</title>
+        <g id="node-liveproof" data-node-id="liveproof" data-node-label="Live scoped evidence" tabindex="0" role="button" aria-label="Focus Live scoped evidence, API outcomes · device receipts, Live Apple and device checks" aria-pressed="false" data-node-kind="backend" data-node-sublabel="API outcomes · device receipts" data-node-context="Live Apple and device checks" data-purpose="artifact">
+          <title>Live scoped evidence · API outcomes · device receipts · Live Apple and device checks</title>
           <rect x="758" y="464" width="245" height="68" rx="6" class="c-mask"/>
           <rect x="758" y="464" width="245" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(764 470) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="880.5" y="485" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Live evidence</text>
-          <text data-detail="context" x="880.5" y="502" class="t-muted" font-size="11" text-anchor="middle">Correlated device or app results</text>
+          <text data-node-label="" data-detail-anchor="" x="880.5" y="485" class="t-primary" font-size="14" font-weight="600" text-anchor="middle">Live scoped evidence</text>
+          <text data-detail="context" x="880.5" y="502" class="t-muted" font-size="11" text-anchor="middle">API outcomes · device receipts</text>
         </g>
 
         <!-- Edge labels -->
@@ -5321,9 +5321,9 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <rect x="701.25" y="226" width="114" height="14" rx="3" class="c-mask"/>
           <text x="758.25" y="236" class="t-muted" font-size="10" text-anchor="middle">Coverage profiles</text>
         </g>
-        <g data-detail="context" data-edge-from="live" data-edge-to="liveproof" data-edge-label="Verify actual receipt" data-edge-key="1" data-edge-id="liveresult" data-purpose="artifact">
+        <g data-detail="context" data-edge-from="live" data-edge-to="liveproof" data-edge-label="Verify actual outcome" data-edge-key="1" data-edge-id="liveresult" data-purpose="artifact">
           <rect x="628" y="428" width="138" height="14" rx="3" class="c-mask"/>
-          <text x="697" y="438" class="t-muted" font-size="10" text-anchor="middle">Verify actual receipt</text>
+          <text x="697" y="438" class="t-muted" font-size="10" text-anchor="middle">Verify actual outcome</text>
         </g>
         <g data-detail="context" data-edge-from="process" data-edge-to="acceptance" data-edge-label="Record outcomes" data-edge-key="2" data-edge-id="processresult" data-purpose="artifact">
           <rect x="646" y="352" width="102" height="14" rx="3" class="c-mask"/>
@@ -5550,6 +5550,7 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         <ul>
           <li>&bull; Unit and backend-contract tests check code behaviour. Embedded and process scenarios exercise the maintained reference server and shared catalogue.</li>
           <li>&bull; Simulated scenarios use fixtures. Physical-device acceptance requires an eligible device and live credentials. Synthetic offline enrollments and SQL recovery contracts do not establish device continuity or off-machine recovery.</li>
+          <li>&bull; ABM checks exercise current-generation source bytes, coverage membership and explicit serial correlation. Designated assignment requires per-device CSV, linkage and original-service restoration; API outcomes do not prove hardware enrollment.</li>
         </ul>
       </div>
 
@@ -5570,7 +5571,8 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Catalogue consistency</h3>
         </div>
         <ul>
-          <li>&bull; The executable scenario catalogue defines supported modes. bench-docs-check verifies that the documentation matches it.</li>
+          <li>&bull; The executable scenario catalogue defines supported modes. lab-docs-check verifies that the documentation matches it.</li>
+          <li>&bull; Empty populated scenarios remain unexercised. Required source assertions are retained separately from a blocked partial synchronization result; private request scopes preserve unresolved cleanup evidence.</li>
         </ul>
       </div>
 
@@ -5581,8 +5583,8 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
         </div>
         <ul>
           <li>&bull; <a href="https://pkg.go.dev/cmd/go#hdr-Test_packages" target="_blank" rel="noopener noreferrer">Go command: Test packages</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/lab.md" target="_blank" rel="noopener noreferrer">Testing procedures</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/testing/ci.md" target="_blank" rel="noopener noreferrer">CI responsibilities</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/docs/testing/lab.md" target="_blank" rel="noopener noreferrer">Testing procedures</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/docs/testing/ci.md" target="_blank" rel="noopener noreferrer">CI responsibilities</a></li>
         </ul>
       </div>
 
@@ -5592,12 +5594,12 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/Makefile" target="_blank" rel="noopener noreferrer">fuzz: Fuzz smoke tests</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/storage/storagetest/suite.go" target="_blank" rel="noopener noreferrer">unit: Unit and contract tests</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/Makefile" target="_blank" rel="noopener noreferrer">coverage: Coverage policy</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/catalog.go" target="_blank" rel="noopener noreferrer">catalogue: Shared scenario catalogue</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/environment.go" target="_blank" rel="noopener noreferrer">e2e: Embedded runtime</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/environment.go" target="_blank" rel="noopener noreferrer">process: Process acceptance</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/Makefile" target="_blank" rel="noopener noreferrer">fuzz: Fuzz smoke tests</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/devicemanagement/storage/storagetest/suite.go" target="_blank" rel="noopener noreferrer">unit: Unit and contract tests</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/Makefile" target="_blank" rel="noopener noreferrer">coverage: Coverage policy</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/catalog.go" target="_blank" rel="noopener noreferrer">catalogue: Shared scenario catalogue</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/environment.go" target="_blank" rel="noopener noreferrer">e2e: Embedded runtime</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/environment.go" target="_blank" rel="noopener noreferrer">process: Process acceptance</a></li>
         </ul>
       </div>
 
@@ -5607,10 +5609,11 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <h3>Implementation references (continued)</h3>
         </div>
         <ul>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/catalog.go" target="_blank" rel="noopener noreferrer">acceptance: Process evidence</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/live.go" target="_blank" rel="noopener noreferrer">live: Real device or app</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/internal/bench/live.go" target="_blank" rel="noopener noreferrer">liveproof: Live evidence</a></li>
-          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/scripts/coverage-exempt.txt" target="_blank" rel="noopener noreferrer">Coverage exemptions</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/catalog.go" target="_blank" rel="noopener noreferrer">acceptance: Process evidence</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/live.go" target="_blank" rel="noopener noreferrer">live: Real device or app</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/live.go" target="_blank" rel="noopener noreferrer">liveproof: Live evidence</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/scripts/coverage-exempt.txt" target="_blank" rel="noopener noreferrer">Coverage exemptions</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/live_abm.go" target="_blank" rel="noopener noreferrer">ABM acceptance and restoration</a></li>
         </ul>
       </div>
     </div>
