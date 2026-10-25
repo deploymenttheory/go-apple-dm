@@ -99,15 +99,34 @@ ownership compare-and-swap. Set all three attestations
 The module snapshots configuration, ownership, location revision, capabilities
 and the complete original target assignment before its first Apple POST. A
 persistent exclusive `appsbooks/pending-licensing.json` fence retains the exact
-absolute private evidence directory. SDK completion, reference worker completion,
+absolute private evidence directory. The direct SDK path has no authenticated callback confirmation channel, so its
+initial status query and cleanup query always observe Apple’s five-minute
+notification fallback; PENDING responses wait at least 30 seconds. This is a
+conservative acceptance policy, not a claim that Apple mandates waiting after
+a confirmed callback. SDK completion, reference worker completion,
 authenticated per-target callback and independent assignment readback are
 separate checks. Polling respects the SDK's five-minute fallback and minimum
 30-second interval; allow the run sufficient time for actual callbacks/status.
-LIVE-014 has an eight-minute protocol-specific default to accommodate the
-five-minute fallback and subsequent status requests; explicit library run options
-can supply a different bound. Other modules retain the two-minute default.
+LIVE-014 has a thirty-minute protocol-specific default. Its direct SDK assignment
+and reference phases each reserve five minutes before initial status polling,
+one 30-second PENDING interval and four minutes for bounded API/readback work.
+Each primary phase has an actual nine-minute-thirty-second deadline. Direct
+cleanup independently reserves five minutes for notification fallback,
+one 30-second PENDING interval and three minutes for requests/readback. Before
+the first Apple mutation the remaining deadline must cover these 27 minutes
+and 30 seconds; shorter explicit library run options are blocked. `lab run -module-timeout 45m` overrides the outer module deadline; `0` uses the module
+default. This flag is independent of the global `-timeout` for individual HTTP
+requests. The primary phase and cleanup caps remain in force. Other modules
+retain the two-minute default. The planned total is thirty minutes including preflight.
+Cleanup has its own context and can continue for at most eight minutes and
+thirty seconds after cancellation; the outer module deadline alone is not a
+combined process-and-cleanup deadline. The API/request allowances are project
+budgets, while five-minute fallback and 30-second PENDING spacing follow the
+[notification contract](https://developer.apple.com/documentation/devicemanagement/subscribing-to-notifications).
+Slow or persistently PENDING requests can still
+exceed these bounded allowances and retain the recovery fence.
 
-Cleanup uses a separate bounded context. If the original assignment was absent,
+Cleanup uses a separate eight-minute-thirty-second bounded context. If the original assignment was absent,
 the module disassociates only this app from this target and independently confirms
 absence. It never uses broad target revocation. A preexisting assignment is never
 disassociated. Cleanup must succeed before the invocation's own fence is removed.
@@ -169,3 +188,13 @@ licenses. It does not claim the environment was restored after external setup.
 Real-location and physical device acceptance remain pending until these procedures
 run successfully against the explicitly designated resources; automated fixture
 results do not close that requirement.
+
+Automated orchestration acceptance uses the genuine TLS reference runtime,
+sealed SQLite, the SDK HTTP fixture, authenticated callback composition and signed
+native simulator exchanges. Its private due-state fixture first proves the real
+SQL early-poll barrier, then changes only the selected job's `NextPollAt` while
+preserving all other job/receipt/fence state. This constructs simulated scheduler
+timing; it does not prove five elapsed wall minutes or PostgreSQL/MySQL timing.
+Shared SDK storage contracts and reference transaction tests separately exercise
+all three SQL backends. These automated scopes do not establish live Apple or
+physical installation acceptance.

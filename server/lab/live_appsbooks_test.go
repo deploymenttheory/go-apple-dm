@@ -1,6 +1,7 @@
 package lab
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -15,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/appsbooks"
 )
@@ -23,32 +25,64 @@ import (
 // additionally starts the shipped SQL-backed runtime; it does not use this
 // fixture's preliminary negative-test administration handler as proof.
 type appsFixture struct {
-	mu             sync.Mutex
-	config         appsbooks.Config
-	location       appsbooks.Location
-	assigned       bool
-	posts          int
-	pageFailure    bool
-	partial        bool
-	statusFailure  bool
-	foreign        bool
-	duplicate      bool
-	callback       string
-	callbackClient *http.Client
-	events         int
-	requests       []string
-	rewrite        func(*http.Request, map[string]any)
+	mu                   sync.Mutex
+	config               appsbooks.Config
+	location             appsbooks.Location
+	assigned             bool
+	posts                int
+	pageFailure          bool
+	partial              bool
+	statusFailure        bool
+	foreign              bool
+	duplicate            bool
+	callback             string
+	callbackClient       *http.Client
+	callbackAuth         string
+	assignment           appsbooks.Assignment
+	dropCallback         bool
+	dropCallbackEvent    int
+	lateReferenceFailure bool
+	beforeLicensing      func() error
+	events               int
+	requests             []string
+	rewrite              func(*http.Request, map[string]any)
+}
+
+// appsTestClock advances private simulated delays without wall-clock minutes.
+// It never changes the SQL transaction clock or invents an API outcome.
+type appsTestClock struct {
+	mu    sync.Mutex
+	now   time.Time
+	waits []time.Duration
+}
+
+func (c *appsTestClock) Now() time.Time                  { c.mu.Lock(); defer c.mu.Unlock(); return c.now }
+func (c *appsTestClock) Since(t time.Time) time.Duration { return c.Now().Sub(t) }
+func (c *appsTestClock) After(d time.Duration) <-chan time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.now = c.now.Add(d)
+	c.waits = append(c.waits, d)
+	ch := make(chan time.Time, 1)
+	ch <- c.now
+	return ch
 }
 
 func (f *appsFixture) postCount() int { f.mu.Lock(); defer f.mu.Unlock(); return f.posts }
 
-func appsFixtureSession(t *testing.T) (*Session, *appsFixture) {
+func appsSDKFixture(t *testing.T) *appsFixture {
 	t.Helper()
-	f := &appsFixture{location: appsbooks.Location{ID: "lab", UID: "library", MDMID: "mdm", Revision: 1}}
+	f := &appsFixture{location: appsbooks.Location{ID: "lab", UID: "library", MDMID: "mdm", Revision: 1}, assignment: appsbooks.Assignment{Asset: appsbooks.Asset{AdamID: "123", PricingParam: "STDQ"}, ClientUserID: "private-user", UserStatus: "Associated"}}
 	var srv *httptest.Server
 	srv = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { f.serve(t, srv.URL, w, r) }))
 	t.Cleanup(srv.Close)
-	f.config = appsbooks.Config{MDMID: "mdm", UID: "library", SToken: base64.StdEncoding.EncodeToString([]byte(`{"token":"private-token","expDate":"2035-01-01T00:00:00Z"}`)), BaseURL: srv.URL, HTTPClient: srv.Client()}
+	f.config = appsbooks.Config{MDMID: "mdm", UID: "library", SToken: base64.StdEncoding.EncodeToString([]byte(`{"token":"private-token","expDate":"2035-01-01T00:00:00Z"}`)), BaseURL: srv.URL, HTTPClient: srv.Client(), Clock: &appsTestClock{now: time.Now()}}
+	return f
+}
+
+func appsFixtureSession(t *testing.T) (*Session, *appsFixture) {
+	t.Helper()
+	f := appsSDKFixture(t)
 	var queued appsbooks.LicensingJob
 	admin := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "/jobs/") {
@@ -102,19 +136,31 @@ func (f *appsFixture) serve(t *testing.T, base string, w http.ResponseWriter, r 
 		for key, path := range map[string]string{"clientConfig": "config", "getAssets": "assets", "getAssignments": "assignments", "getUsers": "users", "associateAssets": "associate", "disassociateAssets": "disassociate", "eventStatus": "status"} {
 			urls[key] = base + "/" + path
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"urls": urls, "limits": map[string]int{"maxAssets": 1, "maxClientUserIds": 1, "maxSerialNumbers": 1, "maxRequestPerSecond": 100000}})
+		_ = json.NewEncoder(w).Encode(map[string]any{"urls": urls, "limits": map[string]int{"maxAssets": 1, "maxClientUserIds": 1, "maxSerialNumbers": 1, "maxRequestPerSecond": 100000, "maxMdmIdLength": 100, "maxMdmNameLength": 100, "maxMdmMetadataLength": 256, "maxNotificationLength": 4096}})
 		return
 	}
 	if r.Header.Get("Authorization") != "Bearer "+f.config.SToken {
 		t.Error("wrong outer location sToken")
 	}
-	meta := map[string]any{"uId": "library", "mdmInfo": map[string]string{"id": "mdm", "name": "lab", "metadata": "lab"}}
+	meta := map[string]any{"uId": f.location.UID, "mdmInfo": map[string]string{"id": "mdm", "name": "lab", "metadata": "lab"}}
 	if f.foreign {
 		meta["mdmInfo"] = map[string]string{"id": "foreign"}
 	}
 	switch r.URL.Path {
 	case "/config":
 		meta["notificationUrl"], meta["notificationAuthToken"], meta["subscribedNotificationTypes"] = base+"/callback", "private-callback", []string{"ASSET_MANAGEMENT"}
+		if r.Method == "POST" {
+			var in appsbooks.ClientConfigurationRequest
+			if json.NewDecoder(r.Body).Decode(&in) != nil {
+				w.WriteHeader(400)
+				return
+			}
+			f.callback, f.callbackAuth = in.NotificationURL, in.NotificationAuthToken
+			f.notify(t, r, "test-config", "TEST_NOTIFICATION", map[string]any{})
+		}
+		if f.callback != "" {
+			meta["notificationUrl"], meta["notificationAuthToken"] = f.callback, f.callbackAuth
+		}
 	case "/assets", "/users", "/assignments":
 		if f.pageFailure {
 			http.Error(w, "private-token private-user", 500)
@@ -123,7 +169,7 @@ func (f *appsFixture) serve(t *testing.T, base string, w http.ResponseWriter, r 
 		index, _ := strconv.Atoi(r.URL.Query().Get("pageIndex"))
 		meta["currentPageIndex"], meta["versionId"], meta["totalPages"] = index, "version", 1
 		if r.URL.Path == "/assets" {
-			meta["assets"] = []any{map[string]any{"adamId": "123", "pricingParam": "STDQ", "productType": "App", "deviceAssignable": true, "revocable": true, "availableCount": 10, "future": nil}}
+			meta["assets"] = []any{map[string]any{"adamId": "123", "pricingParam": "STDQ", "productType": "App", "deviceAssignable": true, "revocable": true, "availableCount": 10, "supportedPlatforms": []string{"macOS", "iOS", "tvOS", "visionOS"}, "future": nil}}
 		}
 		if r.URL.Path == "/users" {
 			meta["users"] = []any{map[string]string{"clientUserId": "private-user", "status": "Associated"}}
@@ -131,7 +177,7 @@ func (f *appsFixture) serve(t *testing.T, base string, w http.ResponseWriter, r 
 		if r.URL.Path == "/assignments" {
 			rows := []appsbooks.Assignment{}
 			if f.assigned {
-				rows = append(rows, appsbooks.Assignment{Asset: appsbooks.Asset{AdamID: "123", PricingParam: "STDQ"}, ClientUserID: "private-user", UserStatus: "Associated"})
+				rows = append(rows, f.assignment)
 				if f.duplicate {
 					rows = append(rows, rows[0])
 				}
@@ -142,10 +188,38 @@ func (f *appsFixture) serve(t *testing.T, base string, w http.ResponseWriter, r 
 		if r.Method != "POST" {
 			t.Error("licensing mutation must POST")
 		}
+		if f.beforeLicensing != nil {
+			if err := f.beforeLicensing(); err != nil {
+				t.Error(err)
+				w.WriteHeader(500)
+				return
+			}
+		}
 		f.posts++
 		f.events++
 		f.assigned = r.URL.Path == "/associate"
+		var in appsbooks.ManageAssetsRequest
+		if json.NewDecoder(r.Body).Decode(&in) != nil || len(in.Assets) != 1 || len(in.SerialNumbers)+len(in.ClientUserIDs) != 1 {
+			t.Error("invalid fixture licensing request")
+			w.WriteHeader(400)
+			return
+		}
+		f.assignment = appsbooks.Assignment{Asset: in.Assets[0]}
+		if len(in.SerialNumbers) == 1 {
+			f.assignment.SerialNumber = in.SerialNumbers[0]
+		} else {
+			f.assignment.ClientUserID = in.ClientUserIDs[0]
+			f.assignment.UserStatus = "Associated"
+		}
 		meta["eventId"] = fmt.Sprintf("event-%d", f.events)
+		operation := "ASSOCIATE"
+		if !f.assigned {
+			operation = "DISASSOCIATE"
+		}
+		f.notify(t, r, fmt.Sprintf("notification-%d", f.events), "ASSET_MANAGEMENT", appsbooks.AssetManagementNotification{EventID: fmt.Sprintf("event-%d", f.events), Result: "SUCCESS", Type: operation, Assignments: []appsbooks.Assignment{f.assignment}})
+		if !f.assigned && f.lateReferenceFailure {
+			f.notify(t, r, "late-failure", "ASSET_MANAGEMENT", appsbooks.AssetManagementNotification{EventID: "event-2", Result: "FAILURE", Type: "ASSOCIATE", Assignments: []appsbooks.Assignment{f.assignment}})
+		}
 	case "/status":
 		if f.statusFailure {
 			http.Error(w, "private-token", 500)
@@ -166,6 +240,35 @@ func (f *appsFixture) serve(t *testing.T, base string, w http.ResponseWriter, r 
 		f.rewrite(r, meta)
 	}
 	_ = json.NewEncoder(w).Encode(meta)
+}
+
+func (f *appsFixture) notify(t *testing.T, r *http.Request, id, kind string, payload any) {
+	t.Helper()
+	if f.callback == "" || f.callbackClient == nil || f.dropCallback || f.dropCallbackEvent == f.events && kind == "ASSET_MANAGEMENT" {
+		return
+	}
+	b, err := json.Marshal(map[string]any{"notificationId": id, "notificationType": kind, "uId": f.location.UID, "notification": payload, "future": nil})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	req, err := http.NewRequestWithContext(r.Context(), "POST", f.callback, bytes.NewReader(b))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	req.Header.Set("Authorization", "Bearer "+f.callbackAuth)
+	response, err := f.callbackClient.Do(req)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if err = response.Body.Close(); err != nil {
+		t.Error(err)
+	}
+	if response.StatusCode != http.StatusNoContent {
+		t.Errorf("callback did not commit: %d", response.StatusCode)
+	}
 }
 
 func TestAppsBooksReadOnlyCollectionAndPrivateEvidence(t *testing.T) {

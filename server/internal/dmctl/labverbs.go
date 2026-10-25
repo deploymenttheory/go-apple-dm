@@ -25,6 +25,7 @@ type labFlags struct {
 	device, user, identity, destination, format *string
 	revision, report, attachURL, run            *string
 	destructive                                 *bool
+	moduleTimeout                               *time.Duration
 }
 
 // newLabFlags declares the lab flag set for the named subcommand.
@@ -49,6 +50,7 @@ func newLabFlags(e *env, name string) *labFlags {
 	f.attachURL = fs.String("attach-url", "", "existing HTTPS server origin for a live run")
 	f.run = fs.String("run", "", "run evidence directory to render (report)")
 	f.destructive = fs.Bool("destructive", false, "run modules tagged destructive (run)")
+	f.moduleTimeout = fs.Duration("module-timeout", 0, "module deadline; 0 uses each module's protocol default (run)")
 	return f
 }
 
@@ -62,6 +64,9 @@ func (f *labFlags) parse(args []string) (bool, error) {
 	}
 	if f.fs.NArg() != 0 {
 		return false, fmt.Errorf("%w: unexpected arguments", ErrUsage)
+	}
+	if *f.moduleTimeout < 0 {
+		return false, fmt.Errorf("%w: module-timeout must be nonnegative", ErrUsage)
 	}
 	return false, nil
 }
@@ -195,6 +200,7 @@ func labRun(ctx context.Context, e *env, w *lab.Workspace, instance *lab.Environ
 	}
 	opts := lab.Options{
 		Adapter: "process", Revision: *f.revision, Destructive: *f.destructive, Evidence: output,
+		Timeout: *f.moduleTimeout,
 	}
 	failed := false
 	var writeErr error

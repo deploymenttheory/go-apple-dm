@@ -1,8 +1,6 @@
 package lab
 
 import (
-	"time"
-
 	"github.com/deploymenttheory/go-apple-dm/server/lab/target"
 )
 
@@ -355,7 +353,7 @@ func Catalogue() []Module {
 			Steps: []Step{{Name: "native platform acceptance", Run: liveADEHardware}},
 		},
 		Module{ID: "LIVE-013", Name: "Dedicated Apps and Books location read-only service, assets, users and assignments", Theme: "appsbooks", Modes: []string{"live"}, Prerequisites: []string{"private appsbooks/acceptance.json and dedicated stoken", "registered reference location and readAppsBooks grant", "private evidence directory"}, Steps: []Step{{Name: "read-only location API acceptance", Run: liveAppsBooksCollection}}},
-		Module{ID: "LIVE-014", Timeout: 8 * time.Minute, Name: "Explicit free-app licensing through SDK and reference callbacks with original-state restoration", Theme: "appsbooks", Modes: []string{"live"}, Prerequisites: []string{"private Apps and Books scope with explicit licensing opt-in", "designated free revocable app and one target", "exclusive quiescent location and configured authenticated callback", "manageAppsBooks and readAppsBooksEvidence grants", "private evidence directory"}, Steps: []Step{{Name: "licensing, callback, readback and cleanup", Run: liveAppsBooksLicensing}}},
+		Module{ID: "LIVE-014", Timeout: appsModuleTimeout, Name: "Explicit free-app licensing through SDK and reference callbacks with original-state restoration", Theme: "appsbooks", Modes: []string{"live"}, Prerequisites: []string{"private Apps and Books scope with explicit licensing opt-in", "designated free revocable app and one target", "exclusive quiescent location and configured authenticated callback", "manageAppsBooks and readAppsBooksEvidence grants", "private evidence directory"}, Steps: []Step{{Name: "licensing, callback, readback and cleanup", Run: liveAppsBooksLicensing}}},
 		Module{ID: "LIVE-015", Name: "Independent native installation and version evidence for selected managed app", Theme: "appsbooks", Modes: []string{"live"}, Prerequisites: []string{"private appsbooks/installation.json with selected prepared operation", "actual enrolled Apple device and native managed-app status", "readManagedContentEvidence, command and push grants", "private evidence directory"}, Applies: func(info target.Info) string {
 			if info.Kind != target.KindDevice {
 				return "a native enrolled Apple device target is required"

@@ -157,7 +157,7 @@ func liveAppsBooksInstallation(ctx context.Context, session *Session) (result er
 	if op.Plan.LocationID != a.config.Location || op.LocationUID != a.config.UID || op.MDMID != a.config.MDMID || op.Plan.Content.Asset != a.config.Asset || op.Plan.Content.Kind != "App" || op.Plan.Target.Serial != a.config.Serial || op.Plan.Target.ClientUserID != a.config.User {
 		return appsError(ctx, "designated content operation")
 	}
-	if err = appsInstallationSource(op, evidence, c, appsNow(s)); err != nil {
+	if err = appsInstallationSource(op, evidence, c, time.Now()); err != nil {
 		return err
 	}
 	id := op.Plan.Target.Enrollment

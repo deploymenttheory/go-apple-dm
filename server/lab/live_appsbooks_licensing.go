@@ -14,6 +14,45 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/appsbooks"
 )
 
+const (
+	appsNotificationFallback = 5 * time.Minute
+	appsPendingInterval      = 30 * time.Second
+	// The SDK and reference phases each reserve eight 30-second HTTP windows
+	// plus one PENDING interval, in addition to their separate fallback gates.
+	appsPrimaryBudget = 2 * (appsNotificationFallback + appsPendingInterval + 4*time.Minute)
+	// Cleanup uses the direct client, with its own fallback, one PENDING
+	// interval and six HTTP/readback windows. Longer uncertainty stays fenced.
+	appsCleanupBudget = appsNotificationFallback + appsPendingInterval + 3*time.Minute
+	appsMinimumBudget = appsPrimaryBudget + appsCleanupBudget
+	appsModuleTimeout = 30 * time.Minute
+)
+
+func appsRequireBudget(ctx context.Context) error {
+	if deadline, ok := ctx.Deadline(); ok && time.Until(deadline) < appsMinimumBudget {
+		return fmt.Errorf("%w: licensing deadline cannot cover notification fallback and restoration budget", ErrBlocked)
+	}
+	return nil
+}
+
+func appsWait(ctx context.Context, s *Session, d time.Duration) error {
+	if s.Env.appsBooksFixture != nil && s.Env.appsBooksFixture.Clock != nil {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-s.Env.appsBooksFixture.Clock.After(d):
+			return nil
+		}
+	}
+	timer := time.NewTimer(d)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
+}
+
 type appsLicensingIntent struct {
 	RunID             string                        `json:"run_id"`
 	EvidenceDirectory string                        `json:"evidence_directory"`
@@ -163,6 +202,12 @@ func (a *appsAccess) sdkJob(ctx context.Context, s *Session, phase string, assoc
 	if err = appsSave(s, phase+"-event.json", json.RawMessage(event.Raw)); err != nil {
 		return err
 	}
+	// This direct SDK path has no authenticated callback confirmation channel.
+	// Observe Apple's fallback before the first aggregate status query, even
+	// when the separately configured reference receiver may have a receipt.
+	if err = appsWait(ctx, s, appsNotificationFallback); err != nil {
+		return appsError(ctx, "SDK notification fallback")
+	}
 	for {
 		status, err := a.client.EventStatus(ctx, event.EventID)
 		if err != nil {
@@ -184,7 +229,7 @@ func (a *appsAccess) sdkJob(ctx context.Context, s *Session, phase string, assoc
 		if status.EventStatus != "PENDING" {
 			return appsError(ctx, "unknown SDK licensing outcome")
 		}
-		if err = appsPause(ctx); err != nil {
+		if err = appsWait(ctx, s, appsPendingInterval); err != nil {
 			return appsError(ctx, "SDK licensing wait")
 		}
 	}
@@ -257,6 +302,12 @@ func (a *appsAccess) referenceJob(ctx context.Context, s *Session, id string) er
 		if job.State == appsbooks.JobFailed || job.State == appsbooks.JobUncertain || job.State == appsbooks.JobAbandoned || job.NotificationFailure {
 			return appsError(ctx, "reference licensing incomplete or uncertain")
 		}
+		if job.State == appsbooks.JobSucceeded {
+			if err := appsSave(s, "reference-incomplete-callback.json", job); err != nil {
+				return err
+			}
+			return fmt.Errorf("%w: authenticated per-target licensing callback unexercised", ErrBlocked)
+		}
 		if !job.NextPollAt.IsZero() && !appsNow(s).Before(job.NextPollAt) {
 			if err := appsRequest(ctx, s, "POST", base+"/poll", worker, &job); err != nil {
 				return err
@@ -266,6 +317,30 @@ func (a *appsAccess) referenceJob(ctx context.Context, s *Session, id string) er
 			return appsError(ctx, "reference callback/status wait")
 		}
 	}
+}
+
+// finalReference catches contradictory callbacks received while direct cleanup
+// was settling. A restored current assignment cannot erase a failed event.
+func (a *appsAccess) finalReference(ctx context.Context, s *Session, id string) error {
+	if err := a.binding(ctx, s); err != nil {
+		return err
+	}
+	var job appsbooks.LicensingJob
+	if err := appsRequest(ctx, s, "GET", appsBase(a.config)+"/jobs/"+id+"/evidence", nil, &job); err != nil {
+		return err
+	}
+	if err := appsSave(s, "reference-final-job.json", job); err != nil {
+		return err
+	}
+	if job.ID != id || job.LocationID != a.config.Location || job.State != appsbooks.JobSucceeded || job.Status == nil || !job.Status.Successful() || job.Status.NumRequested != 1 || job.NotificationFailure || len(job.Targets) != 1 || len(job.NotificationIDs) == 0 {
+		return appsError(ctx, "final reference licensing settlement")
+	}
+	for _, target := range job.Targets {
+		if target.Result != "SUCCESS" || target.Assignment == nil || target.Assignment.Asset != a.config.Asset || target.Assignment.SerialNumber != a.config.Serial || target.Assignment.ClientUserID != a.config.User {
+			return appsError(ctx, "final per-target callback settlement")
+		}
+	}
+	return nil
 }
 
 // liveAppsBooksLicensing changes only one designated free, revocable app for
@@ -351,31 +426,43 @@ func liveAppsBooksLicensing(ctx context.Context, session *Session) (result error
 	if err = appsSave(s, "intent.json", intent); err != nil {
 		return err
 	}
+	if err = appsRequireBudget(ctx); err != nil {
+		return err
+	}
 	if err = a.referencePrepare(ctx, s, id); err != nil {
 		return err
 	}
 	if err = appsFence(s, intent); err != nil {
 		return err
 	}
+	checks["cleanup"] = "unresolved"
 	checks["location_revision"] = a.location.Revision
 	// Any unsuccessful submission, status, callback or readback retains the fence.
 	// Cleanup cannot infer an inverse from a request whose outcome is unknown.
-	if err = a.sdkJob(ctx, s, "sdk-associate", true); err != nil {
+	sdkCtx, cancelSDK := context.WithTimeout(ctx, appsPrimaryBudget/2)
+	if err = a.sdkJob(sdkCtx, s, "sdk-associate", true); err != nil {
+		cancelSDK()
 		return err
 	}
 	checks["sdk"] = "passed"
-	if err = a.readback(ctx, s, "sdk-readback", true); err != nil {
+	err = a.readback(sdkCtx, s, "sdk-readback", true)
+	cancelSDK()
+	if err != nil {
 		return err
 	}
-	if err = a.referenceJob(ctx, s, id); err != nil {
+	referenceCtx, cancelReference := context.WithTimeout(ctx, appsPrimaryBudget/2)
+	if err = a.referenceJob(referenceCtx, s, id); err != nil {
+		cancelReference()
 		return err
 	}
 	checks["reference"], checks["callback"] = "passed", "passed"
-	if err = a.readback(ctx, s, "reference-readback", true); err != nil {
+	err = a.readback(referenceCtx, s, "reference-readback", true)
+	cancelReference()
+	if err != nil {
 		return err
 	}
 	checks["readback"] = "passed"
-	cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Minute)
+	cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), appsCleanupBudget)
 	defer cancel()
 	if len(original) == 0 {
 		if err = a.sdkJob(cleanup, s, "cleanup-disassociate", false); err != nil {
@@ -388,6 +475,12 @@ func liveAppsBooksLicensing(ctx context.Context, session *Session) (result error
 	if err = appsSave(s, "cleanup.json", map[string]any{"restored": true, "preexisting_assignment_preserved": len(original) == 1}); err != nil {
 		return err
 	}
+	checks["cleanup"] = "passed"
+	if err = a.finalReference(cleanup, s, id); err != nil {
+		checks["final_reference"] = "failed"
+		return err
+	}
+	checks["final_reference"] = "passed"
 	if err = appsRelease(s, id); err != nil {
 		return err
 	}
