@@ -11,10 +11,11 @@ import (
 	"testing"
 
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl/adminclient"
 )
 
 // TestCertificateAdministration checks certificate administration requests, offline help, and
-// missing-file or server failures.
+// missing-file or explicitly selected unavailable-server failures.
 func TestCertificateAdministration(t *testing.T) {
 	if _, _, err := run(t, noConfig(t), "certificates", "status", "-h"); err != nil {
 		t.Fatal("help requires server configuration", err)
@@ -78,7 +79,11 @@ func TestCertificateAdministration(t *testing.T) {
 		t.Fatal("server error hidden")
 	}
 	delete(env, "DMCTL_SERVER")
-	if _, _, err := run(t, env, "certificates", "status", "issuer", "abcd"); err == nil {
-		t.Fatal("missing server accepted")
+	status = http.StatusServiceUnavailable
+	if _, _, err := run(t, env, "-server", srv.URL, "certificates", "status", "issuer", "abcd"); !errors.Is(err, adminclient.ErrStatus) {
+		t.Fatal("unavailable explicitly selected server", err)
+	}
+	if got := f.last(); got.method != http.MethodGet || got.path != "/admin/v1/pki/certificates/issuer/abcd" {
+		t.Fatal("unavailable server request", got)
 	}
 }

@@ -7,13 +7,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl/adminclient"
 )
 
-// TestInventoryCLIValidation rejects incomplete commands before issuing administrative requests.
+// TestInventoryCLIValidation rejects incomplete commands and reports a controlled unavailable server.
 func TestInventoryCLIValidation(t *testing.T) {
 	for _, args := range [][]string{{"axm", "accounts", "device", "first"}, {"axm", "accounts", "devices"}, {"axm", "accounts", "service", "first"}, {"devices"}, {"axm"}, {"inventory"}, {"devices", "get"}, {"devices", "collect"}, {"devices", "wrong"}, {"axm", "accounts", "get"}, {"inventory", "wrong"}, {"devices", "list", "--where", "{"}, {"devices", "list", "--unknown"}, {"inventory", "schedules", "set", "a", "--cron", "bad"}} {
 		if _, _, err := run(t, noConfig(t), args...); !errors.Is(err, dmctl.ErrUsage) {
@@ -23,8 +25,17 @@ func TestInventoryCLIValidation(t *testing.T) {
 	if _, _, err := run(t, noConfig(t), "axm", "accounts", "create", "--file", "/nonexistent-inventory-input.json"); err == nil {
 		t.Fatal("missing file accepted")
 	}
-	if _, _, err := run(t, noConfig(t), "devices", "list"); err == nil {
-		t.Fatal("missing connection accepted")
+	var received atomic.Bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		received.Store(r.Method == http.MethodGet && r.URL.Path == "/admin/v1/devices")
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer srv.Close()
+	if _, _, err := run(t, noConfig(t), "-server", srv.URL, "devices", "list"); !errors.Is(err, adminclient.ErrStatus) {
+		t.Fatal("unavailable explicitly selected server", err)
+	}
+	if !received.Load() {
+		t.Fatal("unavailable server did not receive the device query")
 	}
 }
 
