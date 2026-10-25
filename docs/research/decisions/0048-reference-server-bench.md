@@ -70,6 +70,17 @@ component regression tests, not an acceptance layer. Their IDs are linked to the
 shared catalogue; process acceptance does not claim to execute those internal
 assertions. The Makefile exposes both layers and the lab commands.
 
+LIVE-010 uses a separate ADE server token for read-only authentication, account
+binding, full/delta enumeration and designated profile readback. LIVE-011 adds
+explicit profile definition/assignment and restoration through the reference
+worker. An exclusive private fence captures original state and its
+progress-directory locator before mutation; unanswered requests retain uncertainty
+and cannot trigger automatic inverse replay or a later run.
+
+Per-feature generated support governs DDM, including supported tvOS status
+subscriptions; native DDM exchange and cleanup remain independent. Each requested
+platform has its own passed/failed/unexercised row.
+
 ## Rationale
 
 A shared runtime catches configuration and integration failures that standalone
@@ -103,6 +114,12 @@ its configured database and storage-key names, including workspaces written befo
 the lab replaced the bench: `Load` reads the current `lab.json` and the earlier
 `bench.json`, and the retained storage-key name is unchanged. Configuration changes
 require stopping the workspace first.
+
+A dedicated quiescent account is required for ADE assignment acceptance because
+the target API has no compare-and-swap. ADE membership cannot replace missing
+native facts. Fixture and API passes cannot certify physical enrollment. The
+[ADE guide](../../operations/ade-acceptance.md) defines private prerequisites and
+operator steps.
 
 ## Verification
 
@@ -140,6 +157,10 @@ bounded context and retains unresolved restoration instead of reporting success.
 Fixture execution follows the actual runtime and SDK workers, and cannot prove
 live Apple or hardware compatibility.
 
+LIVE-012 requires stored ADE issuance, completed authenticated check-ins, pinned
+identity continuity and fresh APNs-triggered native serial/platform/OS/build and
+typed supervision evidence.
+
 ## References
 
 - [Testing guide](../../testing/lab.md)
@@ -152,22 +173,3 @@ live Apple or hardware compatibility.
 - [Enrollment profiles](0009-enrollment-profiles.md)
 - [ADE enrollment and service configuration](0027-ade-enrollment-machineinfo-and-web-view-auth.md)
 - [Mac enrollment runbook](../../operations/mac-enrollment-testing.md)
-
-## ADE acceptance
-
-LIVE-010 uses a separate ADE server token for read-only authentication, account
-binding, full/delta enumeration and designated profile readback. LIVE-011 adds
-explicit profile definition/assignment and restoration through the reference
-worker. A dedicated quiescent account is required because the target API has no
-compare-and-swap. An exclusive private fence captures original state and its
-progress-directory locator before mutation; unanswered requests retain uncertainty
-and cannot trigger automatic inverse replay or a later run.
-
-LIVE-012 requires stored ADE issuance, completed authenticated check-ins, pinned
-identity continuity and fresh APNs-triggered native serial/platform/OS/build and
-typed supervision evidence. ADE membership cannot replace missing native facts.
-Per-feature generated support governs DDM, including supported tvOS status
-subscriptions; native DDM exchange and cleanup remain independent. Each requested
-platform has its own passed/failed/unexercised row. Fixture and API passes cannot
-certify physical enrollment. The [ADE guide](../../operations/ade-acceptance.md)
-defines private prerequisites and operator steps.
