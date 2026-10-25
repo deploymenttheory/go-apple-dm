@@ -143,6 +143,30 @@ func TestInventoryReplacementWaitsForActivePin(t *testing.T) {
 				return raw
 			}
 			authenticate := map[string]any{"MessageType": "Authenticate", "Topic": "com.apple.mgmt.test", "SerialNumber": "SER", "OSVersion": "27.0"}
+			if backend == "sqlite" {
+				// The actual App callback shares the replacement transaction. A failed
+				// lifecycle projection must roll back candidate Authenticate evidence.
+				authenticate["UDID"] = id.ID
+				failedRaw, err := plist.Marshal(authenticate)
+				if err != nil {
+					t.Fatal(err)
+				}
+				failedReceipt, err := mdm.DecodeCheckin(failedRaw)
+				if err != nil {
+					t.Fatal(err)
+				}
+				backing := a.Inventory.Backend
+				a.Inventory.Backend = inventoryFailureBackend{Backend: backing, updates: true}
+				_, receiptErr := a.Core.Checkin(ctx, &mdm.Request{Certificate: candidate.Cert}, failedReceipt)
+				a.Inventory.Backend = backing
+				if !errors.Is(receiptErr, errInventoryStorage) {
+					t.Fatal("inventory outage appeared successful", receiptErr)
+				}
+				rolledBack, err := transitions.TransitionReplacement(ctx, id, storage.ReplacementChange{Op: "read", At: at})
+				if err != nil || rolledBack.Authenticated || len(rolledBack.AuthenticateRaw) != 0 {
+					t.Fatal("failed observer committed candidate authentication", rolledBack, err)
+				}
+			}
 			raw := checkin(authenticate)
 			pending, err := transitions.TransitionReplacement(ctx, id, storage.ReplacementChange{Op: "read", At: at})
 			if err != nil || !pending.Authenticated || string(pending.AuthenticateRaw) != string(raw) {
