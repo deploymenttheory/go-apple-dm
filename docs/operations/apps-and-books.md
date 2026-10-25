@@ -397,6 +397,8 @@ The authenticated API is rooted at `/admin/v1`:
 | `/managed-content/users` | `PUT {enrollment,clientUserId}` explicitly binds an Apple user to a current authenticated native principal |
 | `/managed-content/operations`, `/managed-content/operations/{operation}` | `GET` safe status; `PUT {mode,plan}` queues `assign`, `install` or `assign-and-install` for one explicitly selected authenticated enrollment |
 | Operation `/step`, `/reconcile` | `POST {worker,leaseSeconds,note,retryAbsent}` advances or explicitly reconciles retained work |
+| Operation `/native-observation` | `GET` reads current retained native facts through the configured adapter under `readManagedContentEvidence`, without stepping/claiming a lease, Apple calls or queue/publication changes |
+| Operation `/status-refresh` | `POST {requestId}` under `manageManagedContent` queues one idempotent bounded native status-query batch for a dispatched MDM operation |
 | Operation `/cancel` | `POST` cancels pre-dispatch intent without revoking a license |
 | Location, job or operation `/evidence` | Separately privileged retained source/native evidence |
 | Location `/notifications/{notification}/evidence` | Separately privileged durable notification receipt |
@@ -432,6 +434,11 @@ licensing jobs expose explicit submit/poll/reconcile operations. Immutable nativ
 receipts bind one dispatch ID, target and wire digest to the MDM queue or DDM
 publication in the shared SQL transaction. Repeated dispatch IDs cannot enqueue
 new work after queue pruning. Conflicting native management paths fail closed.
+Participating generic MDM/DDM administration shares the native ownership fence;
+workflow-owned command identities, app/book scopes, declarations and sets cannot
+be silently adopted through raw administrative mutations. Native enrollment row
+locks revalidate the admitted principal/certificate in the same SQL transaction as
+native queue/publication changes, using the authentication/reset lock ordering.
 
 MDM typed install processing is historical evidence, separate from a bare ACK.
 Current app installation/version requires an applicable authenticated native
@@ -439,13 +446,65 @@ Current app installation/version requires an applicable authenticated native
 command. A later empty report clears current installation/version without erasing
 historical completion. DDM uses its own exact declaration-token and
 `app.managed.list` evidence; MDM-only managed-app queries do not establish DDM
-installation. Publication alone never establishes app installation. Missing or
-stale native evidence remains unconfirmed. Reinstall/update uses an explicit
+installation. The adapter folds the selected owned app's authenticated raw status
+reports: unrelated incremental app entries and same-token declaration heartbeats
+preserve unchanged app facts and their original observation times. An explicit
+complete owned incremental row can establish app proof without a global full
+report. Identifier-only removal tombstones and full reports without the app clear
+current presence; foreign declarations cannot borrow a matching historical bundle.
+Missing retained facts, partial rows and bounded-history gaps remain unconfirmed.
+The privileged DDM envelope is `ManagedContentDDMEvidence`, with the native
+`bundleId`, `declarationIdentifier`, `serverToken`, publication time, current native
+declaration rows and exact retained status reports. Enable the existing
+`DM_SUBSCRIPTIONS` option, or explicitly publish suitable status subscriptions, to
+receive `app.managed.list` on capable DDM clients. Licensing enablement does not
+silently subscribe a device to general inventory.
+
+Publication alone never establishes app installation. Reinstall/update uses an explicit
 same-method SDK predecessor, never an implicit method switch.
 
 `dmctl appsbooks` exposes `get`, `evidence`, `register`, `receiver`, `configure`,
 `refresh`, `probe`, token recovery, `job-create`, `job-get`, `job-evidence`,
 `submit`, `poll` and `reconcile`. `dmctl managed-content` exposes `create`, `get`,
-`evidence`, `step`, `reconcile` and `cancel`. Mutating JSON comes from `-file` or
+`evidence`, `native-observation`, `status-refresh`, `step`, `reconcile` and `cancel`. Mutating JSON comes from `-file` or
 stdin, keeping credentials out of command arguments and URLs. See the maintained
 [explicit operation examples](../../server/examples/managed-content/README.md).
+
+
+### Native completion and wake delivery
+
+`GET /managed-content/operations/{operation}` and `/evidence` retain the SDK's
+stored observations as of their recorded timestamps. `/native-observation` returns
+`ManagedContentNativeObservation` (`operationId` and the SDK `observation`) by
+reading the actual immutable dispatch and currently retained native facts. It
+rejects superseded work and changed native principal/ownership, preserves native
+fact timestamps and leaves operation/evidence bytes, leases and native work
+unchanged. `Observation.Raw` requires the evidence grant and retains private
+protocol sources. The GET never sends a push or requests a new device report.
+
+For a normal MDM `Queued`/`Installing` acknowledgment, explicitly call
+`status-refresh` with a new caller-chosen `requestId`. Apps use the bundle identifier
+returned by that exact install command and queue targeted `InstalledApplicationList`
+and `ManagedApplicationList`; no client-provided bundle/target/payload override is
+accepted. Without a returned native identifier, the request returns conflict and
+queues nothing. Supported books use `ManagedMediaList` and the exact selected
+Apple store identifier, never an app-list parser or a synthetic app version.
+`InstallMedia` remains unavailable on macOS 11 and later; refresh does not license,
+purchase, reclaim or reinstall anything.
+
+The same request ID returns its durable query receipt without enqueueing again,
+including after query completion. After authenticated responses arrive, read
+`native-observation` for current installation/version and terminal processing.
+The supervised content worker updates a pending SDK observation when native facts
+change; it does not rewrite unchanged facts or retimestamp them every tick.
+A terminal stored operation remains an as-of observation; fresh inspection detects
+later removal or foreign DDM management independently.
+
+When APNs is configured, initial MDM dispatch and an explicit query batch capture
+scoped wake delivery in the existing durable event outbox, in the same SQL commit
+as the queue/receipt and required audit occurrence. The existing leased worker
+sends after commit, outside SQL/enrollment locks, and retains transient failures
+for retry across restart. Replaying an accepted dispatch/query receipt creates no
+new wake or native work. DDM publication continues through the existing declarative
+change notifier. With pushes disabled, queue acceptance still requires the device
+to connect; APNs acceptance itself does not prove command processing or installation.
