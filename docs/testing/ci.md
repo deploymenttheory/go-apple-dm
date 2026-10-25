@@ -91,6 +91,23 @@ Use escaped base64 paths for OCSP GET as specified by
 Use fake clocks for consistency-lag and backoff boundaries so scheduling delays
 cannot substitute for the intended state transition.
 
+ABM interrupted-exchange tests replay every write and non-poll administrative exchange
+against a fresh application and Apple fixture. Repeated workflow GETs retain the first
+two and last observation of every complete semantic response class: operation, state,
+terminal/log results, per-device outcomes, convergence, unknown JSON fields and headers.
+Only valid documented observation timestamps are normalized; numbers retain their
+original lexemes. Invalid or unrecognized classifications retain the entire trace.
+Independent contracts cover the selection and actual queued, accepted, terminal-log
+and delayed-convergence boundaries. `DM_LAB_FAULT_TRACE_DIR` optionally retains the
+full original trace and selected-index/class mapping as `abm-fault-selection.json`. An interrupted asynchronous request retains
+durable intent, so reusing its state would test an overlap rejection before the
+selected later exchange. Application workers run under virtual time, administrative
+requests use the actual handlers synchronously, and the existing Apple OAuth, resource,
+activity and CSV fixture remains wired over TLS. Activity completion occurs on a
+subsequent worker observation. Production polling, deadlines, generation fences and
+unresolved-submission locks retain their ordinary behavior. Each fixture cancels and
+joins its workers before closing services.
+
 For workflow edits run `actionlint`, `make verify` and the affected Go tests. For
 supervisor changes include repeated race-enabled restart tests and native Windows
 CI. For backend selection changes require SQL contracts and both E2E jobs. Keep
