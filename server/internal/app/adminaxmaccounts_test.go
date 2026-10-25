@@ -1,6 +1,8 @@
 package app
 
 import (
+	"bytes"
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -8,18 +10,20 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"errors"
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/inventory"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
 )
 
+// accountTestKey generates an independent credential for each selected account.
 func accountTestKey(t *testing.T) []byte {
 	t.Helper()
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -202,6 +206,7 @@ func TestNamedAccountOperations(t *testing.T) {
 	}
 }
 
+// TestAccountFailureRedaction rejects upstream secret disclosure in every category.
 func TestAccountFailureRedaction(t *testing.T) {
 	for _, err := range []error{&axm.AuthError{Description: "private"}, &axm.Error{Status: 403, Body: []byte("private")}, &axm.Error{Status: 429}, errors.New("private")} {
 		if strings.Contains(accountFailure(err).Error(), "private") {
@@ -224,7 +229,7 @@ func TestNamedAccountAuditFailure(t *testing.T) {
 	if w := rbacRequest(a, "PUT", "/policies/audit-account", root, string(body)); w.Code != 200 {
 		t.Fatal(w.Code, w.Body.String())
 	}
-	account, err := a.Inventory.SaveAccount(t.Context(), inventory.Account{ID: "sealed", Name: "Sealed", ClientID: "BUSINESSAPI.test", KeyID: "kid", Enabled: true}, accountTestKey(t), time.Now())
+	account, err := a.Inventory.SaveAccount(t.Context(), inventory.Account{ID: "sealed", Name: "Sealed", ClientID: "BUSINESSAPI.test", KeyID: "kid", Enabled: true, BaseURL: "https://sealed.example", TokenURL: "https://sealed.example/token"}, accountTestKey(t), time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -245,10 +250,14 @@ func TestNamedAccountAuditFailure(t *testing.T) {
 	if _, err = a.db.ExecContext(t.Context(), "DROP TRIGGER refuse_account_capture"); err != nil {
 		t.Fatal(err)
 	}
+	deviceRead := false
 	a.cfg.AxM.HTTPClient = &http.Client{Transport: setupRoundTrip(func(r *http.Request) (*http.Response, error) {
 		calls++
+		if r.URL.Path == "/v1/orgDevices" {
+			deviceRead = true
+		}
 		body := `{"data":[]}`
-		if r.URL.Path == "/auth/oauth2/token" {
+		if r.URL.Path == "/token" {
 			body = `{"access_token":"private-token","token_type":"Bearer","expires_in":3600}`
 		}
 		w := httptest.NewRecorder()
@@ -261,7 +270,7 @@ func TestNamedAccountAuditFailure(t *testing.T) {
 		t.Fatal(err)
 	}
 	w := rbacRequest(a, "GET", "/axm/accounts/sealed/diagnostics", root, "")
-	if w.Code != 503 || calls == 0 || strings.Contains(w.Body.String(), "connected") {
+	if w.Code != 503 || !deviceRead || calls == 0 || strings.Contains(w.Body.String(), "connected") {
 		t.Fatal("completion failure released data", w.Code, w.Body.String(), calls)
 	}
 	var starts int
@@ -271,5 +280,97 @@ func TestNamedAccountAuditFailure(t *testing.T) {
 
 	if _, err = a.Assignments.Get(t.Context(), account.ID, "must-rollback"); !errors.Is(err, inventory.ErrNotFound) {
 		t.Fatal("unaudited intent persisted", err)
+	}
+}
+
+// interleavedAccountBackend attempts a credential replacement immediately after
+// the metadata read, whether the caller uses standalone reads or an atomic view.
+type interleavedAccountBackend struct {
+	inventory.Backend
+	once    sync.Once
+	replace func()
+	started chan struct{}
+	done    chan struct{}
+}
+
+// replaceAfterMetadata starts a competing writer at the exact read boundary.
+func (b *interleavedAccountBackend) replaceAfterMetadata(key string) {
+	if key != "account/atomic" {
+		return
+	}
+	b.once.Do(func() { go func() { close(b.started); b.replace(); close(b.done) }(); <-b.started })
+}
+
+// Get reproduces the unsafe standalone-read interleaving deterministically.
+func (b *interleavedAccountBackend) Get(ctx context.Context, key string) (json.RawMessage, error) {
+	raw, err := b.Backend.Get(ctx, key)
+	b.replaceAfterMetadata(key)
+	if key == "account/atomic" {
+		<-b.done
+	}
+	return raw, err
+}
+
+// Update retains the backend's serialization while arranging the competing writer.
+func (b *interleavedAccountBackend) Update(ctx context.Context, fn func(inventory.Tx) error) error {
+	return b.Backend.Update(ctx, func(tx inventory.Tx) error { return fn(interleavedAccountTx{Tx: tx, backend: b}) })
+}
+
+type interleavedAccountTx struct {
+	inventory.Tx
+	backend *interleavedAccountBackend
+}
+
+// Get starts rotation while the current transaction still owns its snapshot.
+func (tx interleavedAccountTx) Get(ctx context.Context, key string) (json.RawMessage, error) {
+	raw, err := tx.Tx.Get(ctx, key)
+	tx.backend.replaceAfterMetadata(key)
+	return raw, err
+}
+
+// TestNamedAccountAtomicCredentialSnapshot forces rotation between metadata and
+// key access. The old identity retains its old signing key; the new identity is
+// committed independently and causes the old connector's response fence to fail.
+func TestNamedAccountAtomicCredentialSnapshot(t *testing.T) {
+	repo, err := inventory.New(inventory.NewMemory())
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldKey, newKey := accountTestKey(t), accountTestKey(t)
+	// #nosec G101 -- Fixture URLs never leave the supplied in-process transport.
+	account, err := repo.SaveAccount(t.Context(), inventory.Account{ID: "atomic", Name: "Atomic", ClientID: "BUSINESSAPI.old", KeyID: "old", Enabled: true, BaseURL: "https://old.example", TokenURL: "https://old.example/token"}, oldKey, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	rotationError := make(chan error, 1)
+	backend := &interleavedAccountBackend{Backend: repo.Backend, started: make(chan struct{}), done: make(chan struct{})}
+	backend.replace = func() {
+		replacement := account
+		replacement.ClientID = "BUSINESSAPI.new"
+		replacement.KeyID = "new"
+		replacement.BaseURL = "https://new.example"
+		replacement.TokenURL = "https://new.example/token"
+		_, err := repo.SaveAccount(t.Context(), replacement, newKey, time.Now())
+		rotationError <- err
+	}
+	isolated, err := inventory.New(backend)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := &App{Inventory: isolated}
+	snapshot, key, err := a.accountSnapshot(t.Context(), account.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	<-backend.done
+	if err = <-rotationError; err != nil {
+		t.Fatal(err)
+	}
+	if snapshot.ClientID != account.ClientID || snapshot.TokenURL != account.TokenURL || !bytes.Equal(key, oldKey) {
+		t.Fatal("mixed identity/key snapshot", snapshot.ClientID, snapshot.TokenURL)
+	}
+	current, key, err := a.accountSnapshot(t.Context(), account.ID)
+	if err != nil || current.ClientID != "BUSINESSAPI.new" || !bytes.Equal(key, newKey) {
+		t.Fatal("replacement not preserved", current, err)
 	}
 }

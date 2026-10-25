@@ -3,6 +3,7 @@ package app
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -18,8 +19,10 @@ type accountRemoteError struct {
 	category string
 }
 
+// Error returns only the reviewed administrative category.
 func (e *accountRemoteError) Error() string { return "axm: " + e.category }
 
+// accountFailure maps remote failures without retaining credential-bearing details.
 func accountFailure(err error) *accountRemoteError {
 	category := "connection_failed"
 	var api *axm.Error
@@ -39,27 +42,19 @@ func accountFailure(err error) *accountRemoteError {
 // accountClient always reads the selected account's current credential. Neither a
 // missing account nor a revoked credential can fall back to the startup client.
 func (a *App) accountClient(ctx context.Context, id string) (*axm.Client, func() error, error) {
-	account, err := a.Inventory.Account(ctx, id)
+	account, key, err := a.accountSnapshot(ctx, id)
 	if err != nil {
 		return nil, nil, err
 	}
 	if !account.Enabled {
 		return nil, nil, &accountRemoteError{status: http.StatusConflict, category: "account_disabled"}
 	}
-	key, err := a.Inventory.PrivateKey(ctx, id)
-	if err != nil {
-		return nil, nil, err
-	}
 	client, err := a.inventoryClient(ctx, account, key)
 	if err != nil {
 		return nil, nil, &accountRemoteError{status: http.StatusBadGateway, category: "credential_unavailable"}
 	}
 	return client, func() error {
-		current, err := a.Inventory.Account(ctx, id)
-		if err != nil {
-			return err
-		}
-		currentKey, err := a.Inventory.PrivateKey(ctx, id)
+		current, currentKey, err := a.accountSnapshot(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -68,6 +63,28 @@ func (a *App) accountClient(ctx context.Context, id string) (*axm.Client, func()
 		}
 		return nil
 	}, nil
+}
+
+// accountSnapshot reads metadata and its sealed credential in one short local
+// transaction. No connector or remote authentication exists inside this boundary.
+func (a *App) accountSnapshot(ctx context.Context, id string) (inventory.Account, []byte, error) {
+	var account inventory.Account
+	var key []byte
+	err := a.Inventory.Backend.Update(ctx, func(tx inventory.Tx) error {
+		raw, err := tx.Get(ctx, "account/"+id)
+		if err != nil {
+			return err
+		}
+		if err = json.Unmarshal(raw, &account); err != nil {
+			return err
+		}
+		raw, err = tx.Get(ctx, "credential/"+id)
+		if err != nil {
+			return err
+		}
+		return json.Unmarshal(raw, &key)
+	})
+	return account, key, err
 }
 
 // accountOperationRoutes keeps every live read and durable operation inspection

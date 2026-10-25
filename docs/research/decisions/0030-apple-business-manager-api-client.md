@@ -51,7 +51,9 @@ The [operations guide](../../operations/abm-assignments.md) defines states, perm
 configuration and recovery limits.
 
 Named-account administration uses current sealed inventory credentials for each
-live device, coverage and service read. Account incarnation, revision and key
+live device, coverage and service read. A short local transaction snapshots
+metadata and its key before client construction; network I/O follows afterward.
+Account incarnation, revision and key
 checks fence responses after network I/O. The HTTP API has no global live-read
 fallback. Raw Apple device and coverage resources require explicit raw-inventory
 authority in addition to business-manager read authority. Named reads capture

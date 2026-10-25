@@ -48,7 +48,7 @@ The server composes explicit named-account ABM assignments through
 evidence. Configured-service scope, account/credential fencing, uncertain-submission
 reconciliation, terminal logs and separate assignment readback are described in
 [ABM assignments](operations/abm-assignments.md). Synchronization never assigns. Named-account live device, coverage and service
-inspection rebuilds isolated connectors from current sealed credentials and fences
+inspection takes an atomic metadata/credential snapshot, rebuilds isolated connectors and fences
 responses against credential replacement. Pre-read audit capture gates remote
 inspection; redacted diagnostics distinguish authentication, permission, empty
 inventory and incomplete synchronization. CLI operation and job inspection retains

@@ -132,7 +132,7 @@ func runInventoryCommand(ctx context.Context, e *env, family string, args []stri
 			case "create":
 				method = http.MethodPost
 				path = "/axm/accounts"
-			case "diagnostics", "services", "device", "coverage", "assigned-service", "assignment-service", "configure-service", "assign", "unassign", "operation", "operation-log", "jobs", "job":
+			case "diagnostics", "services", "service", "devices", "device", "coverage", "assigned-service", "assignment-service", "configure-service", "assign", "unassign", "operation", "operation-log", "jobs", "job":
 				if id(2) != "" {
 					path = axmAccountOperation(pos, id)
 					switch pos[1] {
@@ -284,7 +284,7 @@ func runInventoryCommand(ctx context.Context, e *env, family string, args []stri
 func axmAccountOperation(pos []string, id func(int) string) string {
 	prefix := "/axm/accounts/" + id(2)
 	switch pos[1] {
-	case "diagnostics", "services", "jobs":
+	case "diagnostics", "services", "devices", "jobs":
 		return prefix + "/" + pos[1]
 	case "assignment-service", "configure-service":
 		return prefix + "/assignment-service"
@@ -297,6 +297,8 @@ func axmAccountOperation(pos []string, id func(int) string) string {
 		return ""
 	}
 	switch pos[1] {
+	case "service":
+		return prefix + "/services/" + id(3)
 	case "device":
 		return prefix + "/devices/" + id(3)
 	case "coverage":

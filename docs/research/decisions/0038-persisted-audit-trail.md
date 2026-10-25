@@ -22,6 +22,15 @@ for status and retry operations.
 
 SQL backends share the application pool but own a migration set and query indexes. An optional worker applies configured age-based retention and retries failed prune operations. Retention is disabled when no duration is configured.
 
+Named Apple connection reads use `CaptureBeforeRead` route metadata. Required
+access capture completes before credentials are opened or Apple is contacted.
+The handler runs outside any local audit transaction, and its bounded response
+remains buffered until completion capture succeeds. Failed completion capture
+returns HTTP 503 and leaves the earlier access occurrence durable; it cannot
+release successful data or imply that the remote read was never attempted.
+A canceled request may prevent its final capture while retaining that start.
+Local assignment intent still shares the existing mutation/capture transaction.
+
 ## Rationale
 
 A shared contract defines ordering and cursor behavior across backends. Actor strings preserve attribution when a principal is removed. Separate migrations keep audit schema lifecycle independent of enrollment schema.

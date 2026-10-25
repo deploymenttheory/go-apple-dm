@@ -15,7 +15,7 @@ import (
 
 // TestInventoryCLIValidation rejects incomplete commands before issuing administrative requests.
 func TestInventoryCLIValidation(t *testing.T) {
-	for _, args := range [][]string{{"devices"}, {"axm"}, {"inventory"}, {"devices", "get"}, {"devices", "collect"}, {"devices", "wrong"}, {"axm", "accounts", "get"}, {"inventory", "wrong"}, {"devices", "list", "--where", "{"}, {"devices", "list", "--unknown"}, {"inventory", "schedules", "set", "a", "--cron", "bad"}} {
+	for _, args := range [][]string{{"axm", "accounts", "device", "first"}, {"axm", "accounts", "devices"}, {"axm", "accounts", "service", "first"}, {"devices"}, {"axm"}, {"inventory"}, {"devices", "get"}, {"devices", "collect"}, {"devices", "wrong"}, {"axm", "accounts", "get"}, {"inventory", "wrong"}, {"devices", "list", "--where", "{"}, {"devices", "list", "--unknown"}, {"inventory", "schedules", "set", "a", "--cron", "bad"}} {
 		if _, _, err := run(t, noConfig(t), args...); !errors.Is(err, dmctl.ErrUsage) {
 			t.Fatal(args, err)
 		}

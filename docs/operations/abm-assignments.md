@@ -107,7 +107,8 @@ they do not establish populated live Apple acceptance or physical enrollment.
 ## Named connection inspection
 
 All live Apple reads select `/axm/accounts/{id}` explicitly. Each request opens
-that account's current sealed credential, builds an isolated connector and checks
+an atomic snapshot of that account's metadata and current sealed credential,
+builds an isolated connector and checks
 its account revision, incarnation and credential again before returning evidence.
 A concurrent replacement returns HTTP 409. A missing or disabled connection never
 uses the startup client. No credential-read route exists.
@@ -153,6 +154,8 @@ The CLI preserves the same account and identifier boundaries:
 ```sh
 dmctl axm accounts diagnostics ACCOUNT
 dmctl axm accounts services ACCOUNT
+dmctl axm accounts service ACCOUNT SERVICE_ID
+dmctl axm accounts devices ACCOUNT
 dmctl axm accounts device ACCOUNT APPLE_RESOURCE_ID
 dmctl axm accounts coverage ACCOUNT APPLE_RESOURCE_ID
 dmctl axm accounts assigned-service ACCOUNT APPLE_RESOURCE_ID

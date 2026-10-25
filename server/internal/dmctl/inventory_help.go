@@ -104,6 +104,8 @@ const axmHelp = `Named Apple connections
   dmctl axm accounts list|create|get|update|delete|verify|sync ACCOUNT [--file request.json]
   dmctl axm accounts diagnostics ACCOUNT
   dmctl axm accounts services ACCOUNT
+  dmctl axm accounts service ACCOUNT SERVICE_ID
+  dmctl axm accounts devices ACCOUNT
   dmctl axm accounts device ACCOUNT APPLE_RESOURCE_ID
   dmctl axm accounts coverage ACCOUNT APPLE_RESOURCE_ID
   dmctl axm accounts assigned-service ACCOUNT APPLE_RESOURCE_ID

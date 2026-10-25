@@ -95,6 +95,19 @@ func TestInventoryCLIWorkflow(t *testing.T) {
 	call("axm", "accounts", "list")
 	call("axm", "accounts", "get", account.ID)
 	call("axm", "accounts", "verify", account.ID)
+	for _, args := range [][]string{
+		{"axm", "accounts", "devices", account.ID},
+		{"axm", "accounts", "device", account.ID, "opaque"},
+		{"axm", "accounts", "coverage", account.ID, "opaque"},
+		{"axm", "accounts", "assigned-service", account.ID, "opaque"},
+		{"axm", "accounts", "services", account.ID},
+		{"axm", "accounts", "service", account.ID, serverID},
+		{"axm", "accounts", "diagnostics", account.ID},
+		{"axm", "accounts", "jobs", account.ID},
+	} {
+		call(args...)
+	}
+
 	input.Account = account
 	input.Account.Name = "Renamed"
 	input.Key = ""
@@ -116,6 +129,7 @@ func TestInventoryCLIWorkflow(t *testing.T) {
 	}
 	for _, j := range jobs {
 		call("inventory", "jobs", "get", j.ID)
+		call("axm", "accounts", "job", account.ID, j.ID)
 		call("inventory", "jobs", "pause", j.ID)
 		call("inventory", "jobs", "resume", j.ID)
 	}
