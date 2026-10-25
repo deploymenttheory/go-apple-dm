@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Source Inventory Inspection",
+    "quality_profile": "showcase",
+    "colour_profile": "purpose-v1",
+    "legend": {
+      "mode": "hidden"
+    },
+    "locale": "en",
+    "viewBox": [
+      1260,
+      540
+    ]
+  },
+  "stages": [
+    {
+      "label": "Collect independently"
+    },
+    {
+      "label": "Retain originals"
+    },
+    {
+      "label": "Check serial relationship"
+    },
+    {
+      "label": "Resolve explicitly"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "apple",
+      "type": "external",
+      "label": "ABM device resource",
+      "sublabel": "Available before enrollment",
+      "stage": 0,
+      "row": 0,
+      "width": 240,
+      "height": 82,
+      "purpose": "transport"
+    },
+    {
+      "id": "native",
+      "type": "backend",
+      "label": "Native device report",
+      "sublabel": "Recorded issuance method",
+      "stage": 0,
+      "row": 2,
+      "width": 240,
+      "height": 82,
+      "purpose": "authentication"
+    },
+    {
+      "id": "cloudEvidence",
+      "type": "database",
+      "label": "Apple source evidence",
+      "sublabel": "Opaque account and resource ID",
+      "stage": 1,
+      "row": 0,
+      "width": 240,
+      "height": 82,
+      "purpose": "storage"
+    },
+    {
+      "id": "nativeEvidence",
+      "type": "database",
+      "label": "Native source evidence",
+      "sublabel": "Enrollment and channel address",
+      "stage": 1,
+      "row": 2,
+      "width": 240,
+      "height": 82,
+      "purpose": "storage"
+    },
+    {
+      "id": "correlate",
+      "type": "security",
+      "label": "Correlate serials",
+      "sublabel": "User Enrollment excluded",
+      "stage": 2,
+      "row": 1,
+      "width": 240,
+      "height": 82,
+      "purpose": "policy"
+    },
+    {
+      "id": "resolve",
+      "type": "backend",
+      "label": "Resolve declared paths",
+      "sublabel": "Latest native value wins",
+      "stage": 3,
+      "row": 1,
+      "width": 240,
+      "height": 82,
+      "purpose": "service"
+    }
+  ],
+  "flows": [
+    {
+      "id": "storeApple",
+      "from": "apple",
+      "to": "cloudEvidence",
+      "label": "Source JSON",
+      "purpose": "artifact",
+      "labelDy": 65
+    },
+    {
+      "id": "storeNative",
+      "from": "native",
+      "to": "nativeEvidence",
+      "label": "Successful history",
+      "purpose": "artifact",
+      "labelDy": 65
+    },
+    {
+      "id": "checkApple",
+      "from": "cloudEvidence",
+      "to": "correlate",
+      "label": "Actual serial",
+      "purpose": "service",
+      "labelDy": 11
+    },
+    {
+      "id": "checkNative",
+      "from": "nativeEvidence",
+      "to": "correlate",
+      "label": "Eligible serial",
+      "purpose": "authentication"
+    },
+    {
+      "id": "resolveLinked",
+      "from": "correlate",
+      "to": "resolve",
+      "label": "Checked sources",
+      "purpose": "service",
+      "labelDy": 65
+    }
+  ],
+  "cards": [
+    {
+      "dot": "policy",
+      "title": "Explicit access",
+      "items": [
+        "readInventory exposes metadata and checked links. readRawInventory permits originals, history and arbitrary source mappings."
+      ]
+    },
+    {
+      "dot": "storage",
+      "title": "Evidence survives resolution",
+      "items": [
+        "Omission retains earlier native values. False, zero, null and empty arrays remain values; all candidates keep provenance."
+      ]
+    },
+    {
+      "dot": "service",
+      "title": "Implementation",
+      "items": [
+        "native: Native device report \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/655506b55b0afa74e78a6a8df2514cec4c8fbc33/server/internal/app/inventory.go",
+        "cloudEvidence: Apple source evidence \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/655506b55b0afa74e78a6a8df2514cec4c8fbc33/devicemanagement/inventory/records.go",
+        "nativeEvidence: Native source evidence \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/655506b55b0afa74e78a6a8df2514cec4c8fbc33/server/internal/app/inventory.go",
+        "correlate: Correlate serials \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/655506b55b0afa74e78a6a8df2514cec4c8fbc33/devicemanagement/inventory/records.go",
+        "resolve: Resolve declared paths \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/655506b55b0afa74e78a6a8df2514cec4c8fbc33/server/internal/app/inventory_inspection.go"
+      ]
+    }
+  ]
+}

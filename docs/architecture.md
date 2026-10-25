@@ -55,7 +55,14 @@ repository. Inventory persists one record per source identity, successful origin
 separate outcomes. Its explicit `Link` operation invokes the standalone correlator;
 optional resolution remains caller-owned. Stored native evidence without authenticated
 enrollment-method provenance stays incomplete and cannot establish a hardware link.
-The reference adapters retain protocol evidence independently of this relationship. See [explicit correlation](operations/agentless-inventory.md#standalone-serial-correlation-and-resolution).
+The reference adapters retain protocol evidence independently of this relationship.
+The server records actual profile-issuance methods with issued certificate evidence and
+attaches that provenance to native observations only through the enrollment's pinned
+certificate. Serial inspection exposes separate resources before enrollment and checked
+links afterward. HTTP/CLI correlation and raw native-first resolution are explicit
+operations; arbitrary mappings and complete evidence require `readRawInventory`.
+Public source queries expose metadata only, reject retired filters and bind continuation
+tokens to their predicates. See the [inspection flow](diagrams/inventory-inspection.html). See [explicit correlation](operations/agentless-inventory.md#standalone-serial-correlation-and-resolution).
 
 The [content-cache receiver](research/decisions/0051-content-cache-metrics.md) is
 an embeddable library at the service-client tier. It installs no reference-server

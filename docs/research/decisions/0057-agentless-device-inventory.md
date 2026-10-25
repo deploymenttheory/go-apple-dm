@@ -100,8 +100,15 @@ field equivalence. Missing historical originals remain visible as recovery needs
 The reference server supervises collection and exposes resource metadata under
 `readInventory`; original source data requires `readRawInventory`. Credentials never
 appear in account read responses. Named Apple accounts are sources in one fleet, not
-authorization tenants. Current native adapters retain their available evidence without
-inventing missing enrollment-method provenance. Native collection requires enrollment
+authorization tenants. The server records the actual ADE, account-driven or profile-based issuance flow,
+including User Enrollment, and carries it into issued certificate evidence. Native
+adapters require the enrollment's pinned issued certificate before attaching that
+method and authenticated serial. Historical missing provenance stays incomplete.
+Serial inspection and evidence routes preserve source boundaries. Correlation is an
+explicit managed mutation; resolution is an explicit raw-authorized read over checked
+links and caller-declared equivalent paths. Arbitrary mappings, complete history and
+original bytes require `readRawInventory`. Metadata queries reject retired filters and
+predicate-mismatched cursors; raw saved predicates never leak through ordinary presets. Native collection requires enrollment
 and connectivity. Automated tests do not establish populated live Apple workflows or
 physical-device outcomes.
 
