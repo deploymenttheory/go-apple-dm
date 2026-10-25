@@ -1,7 +1,7 @@
 // Package appsbooks implements Apple's Apps and Books version 2 licensing API
 // for device/user apps and user books. It owns HTTP encoding, location identity,
 // dynamic request limits, pagination, user lifecycle and notification decoding.
-// Optional Workflow composes caller-owned atomic persistence. The caller owns
+// Optional Workflow composes caller-owned atomic location and licensing-job persistence. The caller owns
 // notification hosting, installation, reconciliation
 // schedules and human acceptance of user invitations. No catalog metadata,
 // subscriptions or automatic installation/uncertain mutation retry is included.
@@ -28,6 +28,14 @@
 // Both recovery paths only read Apple configuration. Refresh publishes
 // full assets and incremental assignment/user source pages and checkpoints only
 // after all traversals succeed. Revisions fence old work after any local change.
+//
+// CreateJob persists explicit requests. SubmitJob reserves a durable location fence
+// before attempting a POST once; uncertain or expired workers require ReconcileJob.
+// RecoverLicensingToken validates token renewal while preserving uncertain intent.
+// ReceiveNotification commits authenticated deduplication and target observations
+// before the host may acknowledge. TEST_NOTIFICATION uses the same path. PollJob
+// checks aggregate event type/counts; partial batches never establish job success.
+// Jobs and raw callback evidence require privileged access and caller retention.
 //
 // Associate/CreateUsers return asynchronous Event IDs. Use authenticated
 // notifications plus EventStatus to establish completion. Registered users need

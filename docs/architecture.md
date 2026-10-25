@@ -120,7 +120,13 @@ pending recovery, atomically retaining source journals and fencing older work.
 Full assets and
 incremental assignment/user page batches publish together only after complete
 traversal. Safe metadata reads are separate from privileged source exports. No
-inventory model, automatic licensing or installation is required.
+inventory model, automatic licensing or installation is required. Explicit durable
+licensing jobs reserve per-location worker fences before one-shot POSTs, retain
+requests/event IDs/raw status and target evidence, and require reconciliation after
+uncertain submissions. Authenticated notifications commit deduplication and job
+observations before acknowledgment; partial batches never establish success.
+Aggregate event polling checks request type and counts. Expired pending licensing
+credentials have explicit read-only validated recovery without mutation replay.
 See [Apps and Books licensing](operations/apps-and-books.md).
 
 ADE profile authoring can call `dep.Profile.ValidateForTarget` before submission.

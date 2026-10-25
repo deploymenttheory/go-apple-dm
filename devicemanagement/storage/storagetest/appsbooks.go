@@ -175,6 +175,7 @@ func requireAppsBooksLocation(t *testing.T, w *appsbooks.Workflow, id string) (a
 // caller-owned memory and sealed SQL. It sends requests only to its TLS fixture.
 func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 	t.Helper()
+	t.Run("licensing jobs", func(t *testing.T) { RunAppsBooksJobs(t, factory) })
 	t.Run("ReadOnlyRegistrationOwnership", func(t *testing.T) {
 		a, _ := factory(t)
 		f, cfg, token := fixtureAppsBooks(t)
