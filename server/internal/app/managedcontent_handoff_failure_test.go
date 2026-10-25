@@ -12,7 +12,6 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/applications/managedcontent"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmsync"
@@ -222,34 +221,12 @@ func TestManagedContentNativeMutationProviderFailure(t *testing.T) {
 				t.Fatal("failed native mutation lost reconcilable intent", op.Phase, err)
 			}
 			dispatch := *evidence.Dispatch
-			keys := []string{deliveryKey(dispatch.ID), contentAssetKey(id, "1")}
-			for _, doc := range dispatch.Declarations {
-				keys = append(keys, contentDeclarationKey(doc.Identifier))
-				if _, err := a.Engine.GetDeclaration(t.Context(), doc.Identifier); !errors.Is(err, ddm.ErrNotFound) {
-					t.Fatal("publication escaped failed native transaction", err)
-				}
-			}
-			for _, key := range keys {
-				if _, err := a.protocol.Get(t.Context(), key); !errors.Is(err, state.ErrNotFound) {
-					t.Fatal("native reservation escaped failed mutation", key, err)
-				}
-			}
+			keys := assertContentNativeRollback(t, a, f, dispatch)
 			if len(dispatch.Declarations) > 0 {
-				set := "managedcontent:" + dispatch.Declarations[0].Identifier
-				if _, err := a.Engine.GetSet(t.Context(), set); !errors.Is(err, ddm.ErrNotFound) {
-					t.Fatal("failed assignment retained publication set", err)
-				}
 				sets, err := a.Engine.EnrollmentSets(t.Context(), id)
 				if err != nil || len(sets) != 0 {
 					t.Fatal("failed assignment retained enrollment membership", sets, err)
 				}
-			}
-			rows, err := a.Store.Commands(t.Context(), id, storage.CommandQuery{}, paging.Page{Limit: 100})
-			if err != nil || len(rows.Items) != 0 {
-				t.Fatal("failed native mutation retained a command", err)
-			}
-			if captures, deliveries := contentNativeMutationCounts(t, a); captures != 0 || deliveries != 0 || f.posts.Load() != 0 {
-				t.Fatal("failed mutation emitted native capture or remote effects", captures, deliveries)
 			}
 			contentFailureReply(t, a, token, "POST", path+"/reconcile", contentWorkerInput{Worker: "operator", LeaseSeconds: 60, RetryAbsent: true, Note: "original worker stopped; native transaction rolled back"}, 200)
 			contentFailureReply(t, a, token, "POST", path+"/step", contentWorkerInput{Worker: "operator", LeaseSeconds: 60}, 200)

@@ -79,6 +79,38 @@ func contentNativeMutationCounts(t *testing.T, a *App) (int, int) {
 	return occurrences, deliveries
 }
 
+// assertContentNativeRollback verifies a failed first native submission left no
+// receipt, scope owner, declaration publication, queued command or dispatch outbox.
+// It returns the exact reservation keys for the caller's successful retry proof.
+func assertContentNativeRollback(t *testing.T, a *App, fixture *contentFixture, dispatch managedcontent.Dispatch) []string {
+	t.Helper()
+	keys := []string{deliveryKey(dispatch.ID), contentAssetKey(dispatch.Enrollment, dispatch.Content.Asset.AdamID)}
+	for _, doc := range dispatch.Declarations {
+		keys = append(keys, contentDeclarationKey(doc.Identifier))
+		if _, err := a.Engine.GetDeclaration(t.Context(), doc.Identifier); !errors.Is(err, ddm.ErrNotFound) {
+			t.Fatal("native declaration escaped transaction rollback", err)
+		}
+	}
+	for _, key := range keys {
+		if _, err := a.protocol.Get(t.Context(), key); !errors.Is(err, state.ErrNotFound) {
+			t.Fatal("native reservation escaped transaction rollback", key, err)
+		}
+	}
+	if len(dispatch.Declarations) > 0 {
+		if _, err := a.Engine.GetSet(t.Context(), "managedcontent:"+dispatch.Declarations[0].Identifier); !errors.Is(err, ddm.ErrNotFound) {
+			t.Fatal("publication set escaped transaction rollback", err)
+		}
+	}
+	rows, err := a.Store.Commands(t.Context(), dispatch.Enrollment, storage.CommandQuery{}, paging.Page{Limit: 100})
+	if err != nil || len(rows.Items) != 0 {
+		t.Fatal("native queue escaped transaction rollback", err)
+	}
+	if occurrences, deliveries := contentNativeMutationCounts(t, a); occurrences != 0 || deliveries != 0 || fixture.posts.Load() != 0 {
+		t.Fatal("failed native transaction emitted outbox or Apple mutation", occurrences, deliveries, fixture.posts.Load())
+	}
+	return keys
+}
+
 // TestManagedContentNativeReservationFailure exercises native admission at
 // distinct transaction stages, with an actual SDK-prepared immutable dispatch.
 // Queue/publication and every reservation must roll back before operator retry.
@@ -131,30 +163,7 @@ func TestManagedContentNativeReservationFailure(t *testing.T) {
 				t.Fatal("SDK did not retain reconcilable prepared intent", op.Phase, err)
 			}
 			dispatch := *evidence.Dispatch
-			keys := []string{deliveryKey(dispatch.ID), contentAssetKey(id, "1")}
-			for _, doc := range dispatch.Declarations {
-				keys = append(keys, contentDeclarationKey(doc.Identifier))
-				if _, err := a.Engine.GetDeclaration(t.Context(), doc.Identifier); !errors.Is(err, ddm.ErrNotFound) {
-					t.Fatal("native declaration escaped transaction", err)
-				}
-			}
-			for _, key := range keys {
-				if _, err := a.protocol.Get(t.Context(), key); !errors.Is(err, state.ErrNotFound) {
-					t.Fatal("native metadata escaped transaction", key, err)
-				}
-			}
-			rows, err := a.Store.Commands(t.Context(), id, storage.CommandQuery{}, paging.Page{Limit: 100})
-			if err != nil || len(rows.Items) != 0 {
-				t.Fatal("native queue escaped metadata rollback", err)
-			}
-			if declarative {
-				if _, err := a.Engine.GetSet(t.Context(), "managedcontent:"+dispatch.Declarations[0].Identifier); !errors.Is(err, ddm.ErrNotFound) {
-					t.Fatal("publication set escaped rollback", err)
-				}
-			}
-			if occurrences, deliveries := contentNativeMutationCounts(t, a); occurrences != 0 || deliveries != 0 || f.posts.Load() != 0 {
-				t.Fatal("failed admission emitted native outbox or Apple mutation", occurrences, deliveries, f.posts.Load())
-			}
+			keys := assertContentNativeRollback(t, a, f, dispatch)
 			// Recovery is explicit and follows actual absence; restoring storage alone
 			// cannot replay the uncertain operation or change its immutable dispatch.
 			contentFailureReply(t, a, token, "POST", path+"/reconcile", contentWorkerInput{Worker: "operator", LeaseSeconds: 60, RetryAbsent: true, Note: "previous worker stopped; native SQL transaction absent"}, 200)
