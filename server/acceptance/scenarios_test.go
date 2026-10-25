@@ -4,7 +4,6 @@ package acceptance
 
 import (
 	"context"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,7 +32,15 @@ func TestScenarios(t *testing.T) {
 			}
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			e, err := lab.Start(ctx, w, binary, io.Discard)
+			output := &failureOutput{}
+			// Cleanup runs after the deferred Close has joined the runtime and
+			// drained child stdout/stderr. Start also closes before returning errors.
+			t.Cleanup(func() {
+				if t.Failed() {
+					t.Logf("server runtime output (bounded tail):\n%s", output.snapshot())
+				}
+			})
+			e, err := lab.Start(ctx, w, binary, output)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -68,8 +68,12 @@ importing public server packages, builds all server packages, and runs `go insta
 for `dmserver` and `dmctl` into a temporary directory. The root library and other
 dependencies resolve through the configured Go proxy with public checksum
 verification; the locally packaged candidate server is exempt from checksum lookup.
-The output reports these four stages and the versions used. This is a build and
-installation compatibility check; runtime behavior has separate test suites.
+A fifth stage runs the installed commands through simulated process acceptance,
+including CLI lifecycle, binary validation and restart. The verifier requires those
+tests to execute and pass, and checks retained scenario adapter/revision evidence.
+Its output reports all five stages and the versions used. This proves scoped
+standalone compatibility and simulated runtime behavior; live Apple and device
+validation remain separate.
 Publish library API additions before raising the server requirement to the version
 containing them. To verify an already published server module, run:
 

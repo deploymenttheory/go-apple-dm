@@ -16,6 +16,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import zipfile
 
@@ -55,6 +56,32 @@ def candidate_proxy(temp, env):
     previous_nosum = run(["go", "env", "GONOSUMDB"], temp, env).strip()
     env["GONOSUMDB"] = ",".join(filter(None, [previous_nosum, SERVER]))
     return version
+
+
+
+def acceptance_evidence(output, directory, version):
+    """Require executed installed-runtime tests and their actual process report."""
+    required = {"TestScenarios", "TestLabCLI", "TestBinaryValidationDelivery"}
+    outcomes = {}
+    for line in output.splitlines():
+        event = json.loads(line)
+        if event.get("Test") in required and event.get("Action") in {"pass", "fail", "skip"}:
+            outcomes[event["Test"]] = event["Action"]
+    if set(outcomes) != required or any(value != "pass" for value in outcomes.values()):
+        raise RuntimeError("installed-runtime acceptance must execute and pass scenarios, CLI lifecycle and binary validation")
+    report = Path(directory) / "process" / "device-management" / "results.json"
+    results = json.loads(report.read_text())
+    if not isinstance(results, list) or not results:
+        raise RuntimeError("installed-runtime acceptance did not retain process scenarios")
+    scenarios = []
+    for result in results:
+        if (not result.get("ID") or result.get("Adapter") != "process" or
+                result.get("Revision") != version or result.get("Status") != "passed"):
+            raise RuntimeError("installed-runtime scenario evidence has the wrong adapter, revision or outcome")
+        scenarios.append({key: result[key] for key in ("ID", "Adapter", "Revision", "Status")})
+    if len({result["ID"] for result in scenarios}) != len(scenarios):
+        raise RuntimeError("installed-runtime scenario evidence contains duplicate module identities")
+    return {"tests": outcomes, "scenarios": scenarios}
 
 
 def main():
@@ -113,19 +140,31 @@ def main():
         print("[5/5] Run process acceptance against the installed binaries, including binary validation and restart", flush=True)
         runtime_env = env.copy()
         suffix = ".exe" if os.name == "nt" else ""
-        for command, key in [("dmserver", "BENCH_DMSERVER"), ("dmctl", "BENCH_DMCTL")]:
+        for command, key in [("dmserver", "LAB_DMSERVER"), ("dmctl", "LAB_DMCTL")]:
             binary = temp / "bin" / (command + suffix)
             metadata = run(["go", "version", "-m", str(binary)], temp, env)
             assert any(line.split()[:3] == ["dep", LIBRARY, declared]
                        for line in metadata.splitlines()), "installed binary has the wrong library dependency"
             runtime_env[key] = str(binary)
-        runtime_env["BENCH_REPORT_DIR"] = str(temp / "runtime-reports")
-        runtime_env["BENCH_REVISION"] = version
+        runtime_env["LAB_REPORT_DIR"] = str(temp / "runtime-reports")
+        runtime_env["LAB_REVISION"] = version
         # The test driver is the current checkout; both server roles and the CLI
         # execute the installed artifacts. Never rebuild them through go.work.
-        subprocess.run(["go", "test", "-mod=readonly", "-count=1", "-timeout", "300s",
-                        "-tags", "acceptance", "./acceptance/..."], cwd=ROOT / "server",
-                       env=runtime_env, check=True, timeout=360)
+        acceptance = subprocess.run(["go", "test", "-json", "-mod=readonly", "-count=1", "-timeout", "300s",
+                                     "-tags", "acceptance", "./acceptance/..."], cwd=ROOT / "server",
+                                    env=runtime_env, check=False, timeout=360, text=True, stdout=subprocess.PIPE)
+        if acceptance.returncode:
+            # Preserve failed-test diagnostics, including the bounded child-output
+            # tail, while successful fixture output stays out of ordinary logs.
+            for line in acceptance.stdout.splitlines():
+                event = json.loads(line)
+                if event.get("Output"):
+                    sys.stdout.write(event["Output"])
+            acceptance.check_returncode()
+        evidence = acceptance_evidence(acceptance.stdout, runtime_env["LAB_REPORT_DIR"], version)
+        evidence.update(server_binary=runtime_env["LAB_DMSERVER"], cli_binary=runtime_env["LAB_DMCTL"],
+                        server_version=version, library_version=declared)
+        print("Installed runtime evidence: " + json.dumps(evidence, sort_keys=True), flush=True)
         print("PASS: declared dependency resolution, public-package integration build, all server package builds, "
               "dmserver/dmctl installation and process acceptance")
         print("Verified server " + version + " against its declared root library " + declared)

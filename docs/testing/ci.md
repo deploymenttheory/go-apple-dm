@@ -62,8 +62,15 @@ tests can therefore exercise library APIs introduced in the same change. The
 independent candidate/published installation checks retain `GOWORK=off` and the
 server's declared library dependency. Their acceptance driver runs the installed
 executables in disposable SQLite/TLS workspaces, including unified device management
-and CLI lifecycle. It does not contact Apple or enroll a physical device. Lint
-cannot replace those consumer checks.
+and CLI lifecycle. The verifier supplies the installed paths through `LAB_DMSERVER`
+and `LAB_DMCTL`, with `LAB_REPORT_DIR` and `LAB_REVISION` for retained process
+provenance. A successful exit also requires scenarios, CLI lifecycle and binary
+validation tests to pass without skipping, plus scenario reports identifying the
+process adapter and exact candidate revision. `make verify` runs the regression
+at the verifier's actual acceptance subprocess boundary. Failed scenario tests
+report only a bounded runtime-output tail, captured after the runtime drains;
+successful fixture output stays private. It does not contact Apple or enroll a
+physical device. Lint cannot replace those consumer checks.
 A compilation error stops analysis even if a tool prints "0 issues". Investigate
 the selected module version and build tags before changing exclusions.
 
