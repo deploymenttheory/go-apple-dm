@@ -103,8 +103,8 @@ github.com/cncf/xds/go v0.0.0-20260202195803-dba9d589def2/go.mod h1:qwXFYgsP6T7X
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/deploymenttheory/go-apfs-v2 v0.14.0 h1:Yu0d1GN/EpWLXA7Y4njlvMWogAn48y2mQpMpClP2xUI=
 github.com/deploymenttheory/go-apfs-v2 v0.14.0/go.mod h1:20LoZVPM0K+JPxaPhFoaTCtFAR709/PhkBqg7AdIUOs=
-github.com/deploymenttheory/go-apple-dm v0.8.7-0.20261025001433-bf6c0203bd6a h1:rrxbuA7erk7XEPr8HG1mdbpU3il8aiQSxILvxIogKLA=
-github.com/deploymenttheory/go-apple-dm v0.8.7-0.20261025001433-bf6c0203bd6a/go.mod h1:pLClIAhRZ/DtMjsUUgqS4u2rYHigZqiN98IQdROqgOc=
+github.com/deploymenttheory/go-apple-dm v0.8.7-0.20261025041334-c1578c4b016e h1:1oWgh60hgAPSqORFmOAqN1tLIkJvKxqzShPgcpxPYiQ=
+github.com/deploymenttheory/go-apple-dm v0.8.7-0.20261025041334-c1578c4b016e/go.mod h1:pLClIAhRZ/DtMjsUUgqS4u2rYHigZqiN98IQdROqgOc=
 github.com/deploymenttheory/go-macos-pkg v0.7.2 h1:c7Ru3BHtvYou9T7ckAvjFXgNXd9Lkl3WfFK+sLqBW9U=
 github.com/deploymenttheory/go-macos-pkg v0.7.2/go.mod h1:NSDY/D4VN5dLcbr9wsR6MhXOovdXlmer5bF18T6WTe4=
 github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=
