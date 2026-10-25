@@ -162,7 +162,9 @@ func (a *App) projectInventoryEnrollment(ctx context.Context, id mdm.EnrollmentI
 }
 
 // observeInventoryAuthenticate retains only fields supplied by the successful
-// current Authenticate receipt. Stored merged device fields never enter its facts.
+// current Authenticate receipt under the active certificate pin. Accepted pending
+// replacement receipts remain in the handshake store until that pin commits.
+// Stored merged device fields never enter these facts.
 func (a *App) observeInventoryAuthenticate(ctx context.Context, request *mdm.Request, receipt *mdm.Checkin, at time.Time) error {
 	if request == nil {
 		return inventory.ErrInvalid
@@ -175,7 +177,23 @@ func (a *App) observeInventoryAuthenticate(ctx context.Context, request *mdm.Req
 	if err != nil {
 		return err
 	}
-	if request.Certificate == nil || e.CertHash != cms.Fingerprint(request.Certificate) {
+	if request.Certificate == nil {
+		return inventory.ErrConflict
+	}
+	hash := cms.Fingerprint(request.Certificate)
+	if e.CertHash != hash {
+		// Core has accepted this receipt, but a controlled replacement candidate
+		// authenticates before its token/ack handshake commits the active pin.
+		// Preserve that handshake without projecting candidate hardware facts.
+		if store := a.replacementStore(); store != nil {
+			x, err := store.TransitionReplacement(ctx, id, storage.ReplacementChange{Op: "read", At: at})
+			if err != nil && !errors.Is(err, storage.ErrNotFound) {
+				return err
+			}
+			if receipt != nil && x != nil && x.State == storage.ReplacementPending && x.Authenticated && x.OldHash == e.CertHash && x.CandidateHash == hash && bytes.Equal(x.AuthenticateRaw, receipt.Raw) {
+				return nil
+			}
+		}
 		return inventory.ErrConflict
 	}
 	var body map[string]any
@@ -432,6 +450,10 @@ func (a *App) observeInventoryCertificate(ctx context.Context, id mdm.Enrollment
 	}
 	if e != nil {
 		return e
+	}
+	if enrollment.CertHash != cms.Fingerprint(cert) {
+		// Pending replacement certificates are accepted for the handshake only.
+		return nil
 	}
 	raw, e := json.Marshal(map[string]any{"identity_certificate_expiry": cert.NotAfter, "identity_certificate_issued": cert.NotBefore})
 	if e != nil {

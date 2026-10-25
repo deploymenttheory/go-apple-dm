@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/inventory"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
@@ -31,7 +32,7 @@ func nativeInventoryApp(t *testing.T) (*App, mdm.EnrollmentID) {
 	}
 	t.Cleanup(func() { _ = a.Close() })
 	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "native"}
-	if err := a.Store.Import(t.Context(), storage.EnrollmentExport{Enrollment: storage.Enrollment{ID: id, Enabled: true, Device: storage.DeviceInfo{SerialNumber: "SER", ProductName: "Mac16,1", OSVersion: "27.0"}, EnrolledAt: time.Now().UTC()}}); err != nil {
+	if err := a.Store.Import(t.Context(), storage.EnrollmentExport{Enrollment: storage.Enrollment{ID: id, Enabled: true, CertHash: cms.Fingerprint(&x509.Certificate{}), Device: storage.DeviceInfo{SerialNumber: "SER", ProductName: "Mac16,1", OSVersion: "27.0"}, EnrolledAt: time.Now().UTC()}}); err != nil {
 		t.Fatal(err)
 	}
 	return a, id

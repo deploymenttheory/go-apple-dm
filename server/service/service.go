@@ -177,8 +177,11 @@ type Config struct {
 	// ObserveEnrollment projects current enrollment state after check-ins and connections.
 	// It carries no claim that stored device facts were supplied by that request.
 	ObserveEnrollment func(context.Context, mdm.EnrollmentID) error
-	// ObserveAuthenticate receives the successful original Authenticate receipt within
-	// the event transaction. Other check-ins and command/Idle connections never call it.
+	// ObserveAuthenticate receives an accepted original Authenticate receipt within
+	// the event transaction, including pending replacement candidates. Acceptance
+	// does not assert the certificate is the active enrollment pin; observers must
+	// verify that separately before qualifying identity facts. Other check-ins and
+	// command/Idle connections never call it.
 	ObserveAuthenticate func(context.Context, *mdm.Request, *mdm.Checkin, time.Time) error
 	// ObserveCertificate records public certificate metadata after device authentication.
 	ObserveCertificate func(context.Context, mdm.EnrollmentID, *x509.Certificate, time.Time) error
