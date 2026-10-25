@@ -28,7 +28,7 @@ func privateFile(path string, data []byte) error {
 		path,
 		os.O_WRONLY|os.O_CREATE|os.O_EXCL,
 		0o600,
-	) // #nosec G304 -- explicit local lab path
+	) // #nosec G304 G703 -- Explicit operator-selected local workspace path; identity creation is exclusive and private (0600).
 	if err != nil {
 		return fmt.Errorf("%w: create %s: %w", errLab, path, err)
 	}

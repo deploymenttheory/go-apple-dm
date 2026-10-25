@@ -28,6 +28,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/crypt"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
 	"github.com/deploymenttheory/go-apple-dm/server/lab/target"
 	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlite"
 	"github.com/deploymenttheory/go-apple-dm/server/statestore"
@@ -172,7 +173,7 @@ func appsDueFixture(t *testing.T, s *Session, f *appsFixture, st state.Store, lo
 	}
 	statusBefore := f.requestCount("GET /status")
 	body := strings.NewReader(`{"worker":"early-fixture","leaseSeconds":30}`)
-	_, code, err := HTTP(t.Context(), s.Env.Client, s.Env.URL, s.Env.Token, "POST", "/appsbooks/locations/"+location+"/jobs/"+id+"/poll", body)
+	_, code, err := HTTP(t.Context(), s.Env.Client, s.Env.URL, s.Env.Token, "POST", "/appsbooks/locations/"+location+"/jobs/"+id+"/poll", body, http.Header{"X-Lab-Fixture": {"early-poll-barrier"}})
 	if err == nil || code != http.StatusConflict || f.requestCount("GET /status") != statusBefore {
 		t.Fatal("real SQL poll gate did not reject early query before HTTP")
 	}
@@ -308,18 +309,18 @@ func TestAppsBooksPreparedJobHasNoAutomaticSubmission(t *testing.T) {
 
 // TestAppsBooksNativeInstallationThroughReferenceRuntime proves installation through signed native exchanges and real SQL composition.
 func TestAppsBooksNativeInstallationThroughReferenceRuntime(t *testing.T) {
-	appsNativeInstallationRuntime(t, managedcontent.MDM)
+	appsNativeInstallationRuntime(t, managedcontent.MDM, false)
 }
 
 // TestAppsBooksDeclarativeInstallationThroughReferenceRuntime proves current owned
 // declarative app status independently of publication and historical processing.
 func TestAppsBooksDeclarativeInstallationThroughReferenceRuntime(t *testing.T) {
-	appsNativeInstallationRuntime(t, managedcontent.DDM)
+	appsNativeInstallationRuntime(t, managedcontent.DDM, false)
 }
 
 // appsNativeInstallationRuntime exercises the real worker, authenticated native
 // reports and read-only acceptance with an APNs-driven protocol simulator.
-func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method) {
+func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method, endpointFailures bool) {
 	t.Helper()
 	s, f, c := appsRuntime(t)
 	capture := appsNativeStackCapture(t, s)
@@ -520,8 +521,24 @@ func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method) {
 		capture("native-proof-error")
 		t.Fatal(err)
 	}
+	if endpointFailures {
+		appsNativeEndpointFailures(t, ctx, s, base)
+		if f.postCount() != 0 {
+			t.Fatal("native inspection failure changed licensing")
+		}
+		installs := 0
+		for _, command := range d.Commands() {
+			if command.RequestType == "InstallApplication" {
+				installs++
+			}
+		}
+		if installs != 1 {
+			t.Fatal("read-only failure queued another installation")
+		}
+		return
+	}
 	if method == managedcontent.MDM {
-		for _, name := range []string{"wrong serial", "missing build", "invalid OS", "unsupported OS", "foreign platform", "wrong app version", "missing app version", "installing", "missing app", "not managed"} {
+		for _, name := range []string{"wrong serial", "missing build", "invalid OS", "foreign platform", "wrong app version", "missing app version", "installing", "missing app", "not managed"} {
 			t.Run(name, func(t *testing.T) {
 				nativeFault.Store(name)
 				if err := liveAppsBooksInstallation(ctx, s); err == nil {
@@ -558,8 +575,21 @@ func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method) {
 		t.Fatal("inspection repeated installation or DDM used an MDM install")
 	}
 	rows := adeTestEvidence(t, s, "appsbooks-installation-*/assertions.json")
-	if len(rows) != 1 || !bytes.Contains(rows[0], []byte(`"macOS":"simulated"`)) || !bytes.Contains(rows[0], []byte(`"iOS":"unexercised"`)) {
-		t.Fatal("simulator evidence claimed physical or other-platform acceptance")
+	simulated := 0
+	for _, row := range rows {
+		if bytes.Contains(row, []byte(`"macOS":"passed"`)) || !bytes.Contains(row, []byte(`"iOS":"unexercised"`)) {
+			t.Fatal("simulator evidence claimed physical or other-platform acceptance")
+		}
+		if bytes.Contains(row, []byte(`"macOS":"simulated"`)) {
+			simulated++
+		}
+	}
+	expectedProofs := 1
+	if method == managedcontent.MDM {
+		expectedProofs = 2
+	}
+	if simulated != expectedProofs {
+		t.Fatal("initial or recovered simulated proof missing")
 	}
 	if method == managedcontent.DDM {
 		// Keep the physical app present: only the current management owner changes.
@@ -587,6 +617,16 @@ func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method) {
 	}
 	if err = liveAppsBooksInstallation(ctx, s); !errors.Is(err, ErrBlocked) {
 		t.Fatal("historical processing passed as current installation", err)
+	}
+	installed.Store(true)
+	if _, err = appsNativeQuery(ctx, s, pathOf(d), &commands.InstalledApplicationList{Identifiers: []string{"com.example.selected"}}); err != nil {
+		t.Fatal(err)
+	}
+	// A truly unsupported OS prevents subsequent command admission as well.
+	// Exercise it last; do not manufacture a recovery through unsupported APIs.
+	nativeFault.Store("unsupported OS")
+	if err = liveAppsBooksInstallation(ctx, s); err == nil {
+		t.Fatal("unsupported native OS passed installation acceptance")
 	}
 }
 
@@ -783,7 +823,7 @@ func TestAppsBooksShortDeadlineBlocksBeforeAppleMutation(t *testing.T) {
 // TestAppsBooksRuntimeExchangeFailuresPreserveRecovery proves rejected and lost
 // exchanges never become success or authorize a guessed cleanup mutation.
 func TestAppsBooksRuntimeExchangeFailuresPreserveRecovery(t *testing.T) {
-	for _, name := range []string{"preflight unavailable", "before SDK submit", "accepted SDK response lost", "SDK status unavailable", "SDK target readback unavailable", "reference submit unavailable", "accepted reference response lost", "reference status unavailable", "reference target readback unavailable", "cleanup rejected", "accepted cleanup response lost", "cleanup status unavailable", "cleanup target readback unavailable"} {
+	for _, name := range []string{"reference location unavailable", "reference intent denied", "reference evidence denied", "reference submit endpoint unavailable", "reference polling endpoint unavailable", "reference callback evidence denied", "reference completed evidence unavailable", "final location unavailable", "final job evidence unavailable", "preflight unavailable", "before SDK submit", "accepted SDK response lost", "SDK status unavailable", "SDK target readback unavailable", "reference submit unavailable", "accepted reference response lost", "reference status unavailable", "reference target readback unavailable", "cleanup rejected", "accepted cleanup response lost", "cleanup status unavailable", "cleanup target readback unavailable"} {
 		t.Run(name, func(t *testing.T) {
 			var armed, hit atomic.Bool
 			s, f, c := appsRuntimeWith(t, func(f *appsFixture) {
@@ -819,6 +859,31 @@ func TestAppsBooksRuntimeExchangeFailuresPreserveRecovery(t *testing.T) {
 				})
 			})
 			appsInstallDueFixture(t, s, f, c)
+			referenceTransport := s.Env.Client.Transport
+			s.Env.Client.Transport = transportFunc(func(r *http.Request) (*http.Response, error) {
+				// The Apple fixture delivers callbacks while holding its state mutex.
+				// Only administrative requests participate in this fault matrix.
+				if !strings.HasPrefix(r.URL.Path, "/admin/v1/") || r.Header.Get("X-Lab-Fixture") == "early-poll-barrier" {
+					return referenceTransport.RoundTrip(r)
+				}
+				f.mu.Lock()
+				events := f.events
+				f.mu.Unlock()
+				path := r.URL.Path
+				selected := armed.Load() && ((name == "reference location unavailable" && strings.HasSuffix(path, appsBase(c)) && events == 0) ||
+					(name == "reference intent denied" && r.Method == "PUT" && strings.Contains(path, "/jobs/") && events == 0) ||
+					(name == "reference evidence denied" && strings.Contains(path, "/jobs/") && strings.HasSuffix(path, "/evidence") && events == 0) ||
+					(name == "reference submit endpoint unavailable" && strings.HasSuffix(path, "/submit")) ||
+					(name == "reference polling endpoint unavailable" && strings.HasSuffix(path, "/poll")) ||
+					(name == "reference callback evidence denied" && strings.Contains(path, "/notifications/") && events == 2) ||
+					(name == "reference completed evidence unavailable" && strings.Contains(path, "/jobs/") && strings.HasSuffix(path, "/evidence") && events == 2) ||
+					(name == "final location unavailable" && strings.HasSuffix(path, appsBase(c)) && events == 3) ||
+					(name == "final job evidence unavailable" && strings.Contains(path, "/jobs/") && strings.HasSuffix(path, "/evidence") && events == 3))
+				if selected && hit.CompareAndSwap(false, true) {
+					return nil, errors.New("private-token private-user reference unavailable")
+				}
+				return referenceTransport.RoundTrip(r)
+			})
 			armed.Store(true)
 			err := liveAppsBooksLicensing(appsLongContext(t), s)
 			if !hit.Load() || err == nil {
@@ -829,7 +894,7 @@ func TestAppsBooksRuntimeExchangeFailuresPreserveRecovery(t *testing.T) {
 			}
 			posts := f.postCount()
 			fence, readErr := os.ReadFile(s.Env.Workspace.path("appsbooks", "pending-licensing.json"))
-			if name == "preflight unavailable" {
+			if name == "preflight unavailable" || name == "reference location unavailable" || name == "reference intent denied" || name == "reference evidence denied" {
 				if posts != 0 || !os.IsNotExist(readErr) {
 					t.Fatal("failed preflight wrote or claimed mutation ownership")
 				}
@@ -842,7 +907,7 @@ func TestAppsBooksRuntimeExchangeFailuresPreserveRecovery(t *testing.T) {
 			if strings.HasPrefix(name, "reference") || name == "accepted reference response lost" {
 				maximum = 2
 			}
-			if strings.HasPrefix(name, "cleanup") || name == "accepted cleanup response lost" {
+			if strings.HasPrefix(name, "cleanup") || strings.HasPrefix(name, "final ") || name == "accepted cleanup response lost" {
 				maximum = 3
 			}
 			if posts > maximum {
@@ -861,6 +926,150 @@ func TestAppsBooksRuntimeExchangeFailuresPreserveRecovery(t *testing.T) {
 			after, err := os.ReadFile(s.Env.Workspace.path("appsbooks", "pending-licensing.json"))
 			if err != nil || !bytes.Equal(fence, after) || f.postCount() != posts {
 				t.Fatal("recovery ownership changed on rerun", err)
+			}
+		})
+	}
+}
+
+// TestAppsBooksNativeInspectionFailures preserves denial and freshness boundaries
+// through the actual reference runtime after genuine native installation.
+func TestAppsBooksNativeInspectionFailures(t *testing.T) {
+	appsNativeInstallationRuntime(t, managedcontent.MDM, true)
+}
+
+// appsBlockEvidence simulates unavailable private storage in the one unfinished
+// acceptance scope, preserving every completed invocation's evidence.
+func appsBlockEvidence(s *Session, name string) error {
+	paths, err := filepath.Glob(filepath.Join(s.Evidence, "appsbooks-installation-*"))
+	if err != nil {
+		return err
+	}
+	var pending []string
+	for _, path := range paths {
+		if _, err := os.Stat(filepath.Join(path, "assertions.json")); os.IsNotExist(err) {
+			pending = append(pending, path)
+		}
+	}
+	if len(pending) != 1 {
+		return fmt.Errorf("fixture requires exactly one unfinished private scope")
+	}
+	return os.Mkdir(filepath.Join(pending[0], name), 0o700)
+}
+
+// appsNativeEndpointFailures fails explicit inspection boundaries while the
+// actual installed app and original licensing remain untouched.
+func appsNativeEndpointFailures(t *testing.T, ctx context.Context, s *Session, base string) {
+	t.Helper()
+	for _, name := range []string{"operation read denied", "dispatch evidence denied", "native observation denied", "foreign observation identity", "initial identity denied", "disabled identity", "device query denied", "installed query denied", "managed query denied", "identity readback denied", "identity continuity changed", "operation readback denied", "native readback denied", "native readback removed", "private SDK evidence unavailable", "private native observation unavailable", "private operation evidence unavailable", "private native source unavailable"} {
+		t.Run(name, func(t *testing.T) {
+			transport := s.Env.Client.Transport
+			var operations, observations, identities atomic.Int32
+			var hit atomic.Bool
+			s.Env.Client.Transport = transportFunc(func(r *http.Request) (*http.Response, error) {
+				path := strings.TrimPrefix(r.URL.Path, "/admin/v1")
+				operation, observation, identity := int32(0), int32(0), int32(0)
+				if path == base {
+					operation = operations.Add(1)
+				}
+				if path == base+"/native-observation" {
+					observation = observations.Add(1)
+				}
+				if strings.HasSuffix(path, "/enrollment-evidence") {
+					identity = identities.Add(1)
+				}
+				denied := (name == "operation read denied" && operation == 1) || (name == "dispatch evidence denied" && path == base+"/evidence") ||
+					(name == "native observation denied" && observation == 1) || (name == "initial identity denied" && identity == 1) ||
+					(name == "identity readback denied" && identity == 2) || (name == "operation readback denied" && operation == 2) || (name == "native readback denied" && observation == 2)
+				if r.Method == "POST" && strings.HasSuffix(path, "/commands") && r.GetBody != nil {
+					body, err := r.GetBody()
+					if err != nil {
+						return nil, err
+					}
+					raw, readErr := io.ReadAll(body)
+					closeErr := body.Close()
+					if err := errors.Join(readErr, closeErr); err != nil {
+						return nil, err
+					}
+					command, err := mdm.DecodeCommand(raw)
+					if err != nil {
+						return nil, err
+					}
+					denied = denied || name == "device query denied" && command.RequestType == "DeviceInformation" || name == "installed query denied" && command.RequestType == "InstalledApplicationList" || name == "managed query denied" && command.RequestType == "ManagedApplicationList"
+				}
+				if denied {
+					hit.Store(true)
+					return nil, errors.New("private-user private-token denied native inspection")
+				}
+				response, err := transport.RoundTrip(r)
+				if err != nil {
+					return response, err
+				}
+				evidence := ""
+				if operation == 1 {
+					switch name {
+					case "private SDK evidence unavailable":
+						evidence = "sdk-evidence.json"
+					case "private operation evidence unavailable":
+						evidence = "operation.json"
+					case "private native source unavailable":
+						evidence = "native-evidence.json"
+					}
+				}
+				if name == "private native observation unavailable" && observation == 1 {
+					evidence = "native-observation-before.json"
+				}
+				if evidence != "" {
+					hit.Store(true)
+					if err := appsBlockEvidence(s, evidence); err != nil {
+						t.Error(err)
+					}
+				}
+				rewrite := name == "foreign observation identity" && observation == 1 || name == "disabled identity" && identity == 1 || name == "identity continuity changed" && identity == 2 || name == "native readback removed" && observation == 2
+				if rewrite {
+					raw, readErr := io.ReadAll(response.Body)
+					closeErr := response.Body.Close()
+					if err := errors.Join(readErr, closeErr); err != nil {
+						return nil, err
+					}
+					if identity > 0 {
+						var identity adeEnrollmentEvidence
+						if err := json.Unmarshal(raw, &identity); err != nil {
+							return nil, err
+						}
+						if name == "disabled identity" {
+							identity.Enabled = false
+						} else {
+							identity.Certificate = "foreign-certificate"
+						}
+						raw, err = json.Marshal(identity)
+					} else {
+						var current app.ManagedContentNativeObservation
+						if err := json.Unmarshal(raw, &current); err != nil {
+							return nil, err
+						}
+						if name == "foreign observation identity" {
+							current.OperationID = "foreign"
+						} else {
+							current.Observation.Installed = false
+						}
+						raw, err = json.Marshal(current)
+					}
+					if err != nil {
+						return nil, err
+					}
+					hit.Store(true)
+					response.Body = io.NopCloser(bytes.NewReader(raw))
+					response.ContentLength = int64(len(raw))
+				}
+				return response, nil
+			})
+			err := liveAppsBooksInstallation(ctx, s)
+			s.Env.Client.Transport = transport
+			if err == nil || !hit.Load() {
+				t.Fatal("named native inspection failure was not rejected", err)
+			}
+			if strings.Contains(err.Error(), "private-token") || strings.Contains(err.Error(), "private-user") {
+				t.Fatal("private upstream error escaped inspection")
 			}
 		})
 	}

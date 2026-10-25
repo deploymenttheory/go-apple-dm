@@ -425,3 +425,107 @@ func TestAppsBooksRawEvidencePreservesExactSourceBytes(t *testing.T) {
 		t.Fatal("invalid source accepted")
 	}
 }
+
+// TestAppsBooksNativeSourceContradictions rejects malformed provenance even when
+// the SDK summary still carries a positive historical observation.
+func TestAppsBooksNativeSourceContradictions(t *testing.T) {
+	for _, name := range []string{"wrong expected version", "empty installed report", "duplicate installed report", "missing declaration", "inactive declaration", "foreign token", "missing native reports", "missing immutable document", "unsupported method", "superseded operation"} {
+		t.Run(name, func(t *testing.T) {
+			method := managedcontent.DDM
+			if strings.Contains(name, "installed report") || name == "wrong expected version" {
+				method = managedcontent.MDM
+			}
+			op, e, c := appsSourceFixture(t, method)
+			switch name {
+			case "wrong expected version":
+				c.Version = "unobserved-version"
+			case "empty installed report", "duplicate installed report":
+				var source struct {
+					BundleID             string `json:"bundleId"`
+					InstallationResponse []byte `json:"installationResponse"`
+					CurrentReport        []byte `json:"currentReport"`
+				}
+				if err := json.Unmarshal(e.Observation.Raw, &source); err != nil {
+					t.Fatal(err)
+				}
+				report := commands.InstalledApplicationListResponse{}
+				if name == "duplicate installed report" {
+					report.InstalledApplicationList = []commands.InstalledApplicationListResponseInstalledApplicationList{{Identifier: new(c.BundleID), Version: new(c.Version), Installing: new(false)}, {Identifier: new(c.BundleID), Version: new(c.Version), Installing: new(false)}}
+				}
+				raw, err := plist.Marshal(&report)
+				if err != nil {
+					t.Fatal(err)
+				}
+				source.CurrentReport = raw
+				e.Observation.Raw, err = json.Marshal(source)
+				if err != nil {
+					t.Fatal(err)
+				}
+			case "unsupported method":
+				op.Plan.Method, e.Dispatch.Method, e.Observation.Method, e.Observation.ManagementMethod = "unsupported", "unsupported", "unsupported", "unsupported"
+			case "superseded operation":
+				op.SupersededBy = "replacement"
+			default:
+				var source app.ManagedContentDDMEvidence
+				if err := json.Unmarshal(e.Observation.Raw, &source); err != nil {
+					t.Fatal(err)
+				}
+				switch name {
+				case "missing declaration":
+					source.Declarations = nil
+				case "inactive declaration":
+					source.Declarations[0].Active = false
+				case "foreign token":
+					source.Declarations[0].ServerToken = "foreign"
+				case "missing native reports":
+					source.Reports = nil
+				case "missing immutable document":
+					e.Dispatch.Declarations = nil
+				}
+				raw, err := json.Marshal(source)
+				if err != nil {
+					t.Fatal(err)
+				}
+				e.Observation.Raw = raw
+			}
+			if err := appsInstallationSource(op, e, c, time.Now()); err == nil {
+				t.Fatal("contradictory native provenance passed")
+			}
+		})
+	}
+}
+
+// TestAppsBooksCollectionRequiresDurablePrivateEvidence rejects storage failures
+// without claiming API acceptance or modifying Apple configuration or licensing.
+func TestAppsBooksCollectionRequiresDurablePrivateEvidence(t *testing.T) {
+	for _, name := range []string{"configuration.json", "service.json", "reference-location.json", "assets-page-0000.json", "users-page-0000.json", "assignments-page-0000.json"} {
+		t.Run(name, func(t *testing.T) {
+			s, f := appsFixtureSession(t)
+			injected := false
+			f.rewrite = func(r *http.Request, _ map[string]any) {
+				if injected || r.URL.Path != "/config" {
+					return
+				}
+				paths, err := filepath.Glob(filepath.Join(s.Evidence, "appsbooks-api-*"))
+				if err != nil || len(paths) != 1 {
+					t.Fatal("missing exclusive evidence scope", err)
+				}
+				if err := os.Mkdir(filepath.Join(paths[0], name), 0o700); err != nil {
+					t.Fatal(err)
+				}
+				injected = true
+			}
+			if err := liveAppsBooksCollection(t.Context(), s); err == nil || !injected {
+				t.Fatal("missing evidence storage passed API acceptance", err)
+			}
+			if f.postCount() != 0 {
+				t.Fatal("read-only evidence failure mutated licensing")
+			}
+			for _, raw := range adeTestEvidence(t, s, "appsbooks-api-*/assertions.json") {
+				if !bytes.Contains(raw, []byte(`"api":"unexercised"`)) {
+					t.Fatal("failure report claimed completed API proof")
+				}
+			}
+		})
+	}
+}

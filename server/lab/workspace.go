@@ -310,7 +310,7 @@ func HTTP(
 	body io.Reader,
 	headers ...http.Header,
 ) ([]byte, int, error) {
-	req, err := http.NewRequestWithContext(ctx, method, base+"/admin/v1"+path, body)
+	req, err := http.NewRequestWithContext(ctx, method, base+"/admin/v1"+path, body) // #nosec G704 -- Explicit operator-selected MDM admin base, not a remotely supplied or discovered URL.
 	if err != nil {
 		return nil, 0, wrapError(err)
 	}
@@ -321,7 +321,7 @@ func HTTP(
 			req.Header[key] = append([]string(nil), values...)
 		}
 	}
-	resp, err := c.Do(req)
+	resp, err := c.Do(req) // #nosec G704 -- Caller supplies the authenticated client for its explicitly selected MDM admin base.
 	if err != nil {
 		return nil, 0, fmt.Errorf("%w: lab: server request failed", errOperation)
 	}
