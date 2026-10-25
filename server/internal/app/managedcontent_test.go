@@ -29,26 +29,32 @@ import (
 )
 
 type contentFixture struct {
-	uid    string
-	config AppsBooksConfig
-	posts  atomic.Int32
-	fail   atomic.Bool
-	owner  atomic.Value
+	uid                string
+	callbackClient     *http.Client
+	notificationSecret atomic.Value
+	config             AppsBooksConfig
+	posts              atomic.Int32
+	assets             atomic.Bool
+	assignments        atomic.Bool
+	fail               atomic.Bool
+	owner              atomic.Value
 }
 
+// contentFixtureService hosts controlled real TLS Apple-service responses and counts mutations.
 func contentFixtureService(t *testing.T) *contentFixture {
 	t.Helper()
 	f := &contentFixture{uid: rand.Text()}
 	f.owner.Store("ours")
+	f.notificationSecret.Store("private-callback")
 	var srv *httptest.Server
 	srv = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.URL.Path == "/service/config" {
 			urls := map[string]string{}
-			for k, p := range map[string]string{"clientConfig": "/config", "getAssets": "/assets", "getAssignments": "/assignments", "getUsers": "/users", "manageAssets": "/manage", "eventStatus": "/status"} {
+			for k, p := range map[string]string{"clientConfig": "/config", "getAssets": "/assets", "getAssignments": "/assignments", "getUsers": "/users", "associateAssets": "/manage", "disassociateAssets": "/manage", "eventStatus": "/status"} {
 				urls[k] = srv.URL + p
 			}
-			_ = json.NewEncoder(w).Encode(map[string]any{"urls": urls, "limits": map[string]int{"maxRequestPerSecond": 100000, "maxMdmIdLength": 100, "maxMdmNameLength": 100, "maxMdmMetadataLength": 100, "maxNotificationLength": 100}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"urls": urls, "limits": map[string]int{"maxAssets": 100, "maxClientUserIds": 100, "maxSerialNumbers": 100, "maxRequestPerSecond": 100000, "maxMdmIdLength": 100, "maxMdmNameLength": 100, "maxMdmMetadataLength": 100, "maxNotificationLength": 100}})
 			return
 		}
 		if r.Method == http.MethodPost {
@@ -57,16 +63,66 @@ func contentFixtureService(t *testing.T) *contentFixture {
 				http.Error(w, "unavailable", 503)
 				return
 			}
+			if r.URL.Path == "/manage" {
+				_, _ = fmt.Fprintf(w, `{"uId":%q,"mdmInfo":{"id":%q},"eventId":"fixture-event"}`, f.uid, f.owner.Load().(string))
+				return
+			}
 			var in appsbooks.ClientConfigurationRequest
 			if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 				t.Error(err)
 				return
 			}
+			if in.NotificationURL != "" {
+				if f.callbackClient == nil {
+					http.Error(w, "notification receiver not available", 503)
+					return
+				}
+				body := fmt.Sprintf(`{"notificationId":"synchronous-%d","notificationType":"TEST_NOTIFICATION","uId":%q,"notification":{}}`, f.posts.Load(), f.uid)
+				request, err := http.NewRequestWithContext(r.Context(), http.MethodPost, in.NotificationURL, strings.NewReader(body))
+				if err != nil {
+					t.Error(err)
+					http.Error(w, "invalid receiver", 503)
+					return
+				}
+				request.Header.Set("Authorization", "Bearer "+in.NotificationAuthToken)
+				response, err := f.callbackClient.Do(request)
+				if err != nil {
+					t.Error(err)
+					http.Error(w, "notification receiver failed", 503)
+					return
+				}
+				if err := response.Body.Close(); err != nil {
+					t.Error(err)
+				}
+				if response.StatusCode/100 != 2 {
+					http.Error(w, "notification rejected", 503)
+					return
+				}
+			}
+			f.notificationSecret.Store(in.NotificationAuthToken)
 			f.owner.Store(in.MDMInfo.ID)
 		}
-		meta := fmt.Sprintf(`"uId":%q,"mdmInfo":{"id":%q}`, f.uid, f.owner.Load().(string))
+		meta := fmt.Sprintf(`"uId":%q`, f.uid)
+		if owner := f.owner.Load().(string); owner != "" {
+			meta += fmt.Sprintf(`,"mdmInfo":{"id":%q}`, owner)
+		}
 		if r.URL.Path == "/config" {
-			_, _ = fmt.Fprintf(w, `{%s,"locationName":"London","notificationAuthToken":"private-callback"}`, meta)
+			_, _ = fmt.Fprintf(w, `{%s,"locationName":"London","notificationAuthToken":%q}`, meta, f.notificationSecret.Load().(string))
+			return
+		}
+		if r.URL.Path == "/assets" && f.assets.Load() {
+			_, _ = fmt.Fprintf(w, `{%s,"currentPageIndex":0,"totalPages":1,"versionId":"assets-v1","assets":[{"adamId":"1","pricingParam":"STDQ","productType":"App","deviceAssignable":true,"revocable":true,"supportedPlatforms":["iOS","macOS"],"totalCount":100,"availableCount":100}]}`, meta)
+			return
+		}
+		if r.URL.Path == "/assignments" && f.assignments.Load() {
+			assignment := map[string]string{"adamId": "1", "pricingParam": "STDQ"}
+			if user := r.URL.Query().Get("clientUserId"); user != "" {
+				assignment["clientUserId"] = user
+				assignment["userStatus"] = "Associated"
+			} else {
+				assignment["serialNumber"] = r.URL.Query().Get("serialNumber")
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{"uId": f.uid, "mdmInfo": map[string]string{"id": f.owner.Load().(string)}, "currentPageIndex": 0, "totalPages": 1, "versionId": "assignments-v1", "assignments": []any{assignment}})
 			return
 		}
 		kind := strings.TrimPrefix(r.URL.Path, "/")
@@ -77,10 +133,13 @@ func contentFixtureService(t *testing.T) *contentFixture {
 	return f
 }
 
+// contentConfig selects an isolated strict-sealed SQLite runtime for the service fixture.
 func contentConfig(t *testing.T, f *contentFixture) Config {
 	t.Helper()
 	return Config{Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "content.db"), Listen: "127.0.0.1:0", StorageKeys: []string{"content"}, StorageKeysStrict: true, Secrets: secrets.Static{"content": bytes.Repeat([]byte{7}, 32)}, AppsBooks: f.config, Logger: slog.New(slog.NewTextHandler(io.Discard, nil)), Sinks: SinkConfig{Persist: true}}
 }
+
+// contentBuild constructs the real runtime and grants its test principal explicit operations.
 func contentBuild(t *testing.T, cfg Config) (*App, string) {
 	t.Helper()
 	a, err := Build(t.Context(), cfg)
@@ -94,6 +153,8 @@ func contentBuild(t *testing.T, cfg Config) (*App, string) {
 	}
 	return a, string(token)
 }
+
+// contentRequest submits bounded JSON through the real authenticated admin handler.
 func contentRequest(t *testing.T, a *App, token, method, path string, body any) *httptest.ResponseRecorder {
 	t.Helper()
 	var raw []byte
@@ -110,9 +171,13 @@ func contentRequest(t *testing.T, a *App, token, method, path string, body any) 
 	a.Handler.ServeHTTP(w, r)
 	return w
 }
+
+// contentToken creates a private fixture content token with a stable future expiry.
 func contentToken(value string) string {
 	return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(`{"token":%q,"expDate":"2035-01-01T00:00:00Z"}`, value)))
 }
+
+// registerContent registers one explicitly named location through authenticated HTTP.
 func registerContent(t *testing.T, a *App, token string) appsbooks.Location {
 	t.Helper()
 	w := contentRequest(t, a, token, "PUT", "/appsbooks/locations/london", map[string]any{"revision": 0, "sToken": contentToken("initial-secret")})
@@ -279,6 +344,7 @@ func TestContentNativeUserBinding(t *testing.T) {
 	}
 }
 
+// seedContentEnrollment seeds an authenticated native fixture without Apple inventory enrichment.
 func seedContentEnrollment(t *testing.T, a *App, id mdm.EnrollmentID, cert, serial string) {
 	t.Helper()
 	if err := a.Store.Import(t.Context(), storage.EnrollmentExport{Enrollment: storage.Enrollment{ID: id, Enabled: true, CertHash: cert, EnrolledAt: time.Now(), Device: storage.DeviceInfo{SerialNumber: serial, ProductName: "iPhone18,1", OSVersion: "27.0"}, Capabilities: storage.Capabilities{Supervised: storage.CapabilityTrue}}}); err != nil {
@@ -349,5 +415,200 @@ func TestManagedContentWorkerLifecycle(t *testing.T) {
 	}
 	if f.posts.Load() != 0 {
 		t.Fatal("failed native asset preflight submitted a mutation")
+	}
+}
+
+// TestManagedContentExplicitConfigurationAndJobRecovery exercises the HTTP SDK
+// composition through ownership, uncertain remote writes, token recovery and
+// stopped licensing reconciliation without replaying a mutation.
+func TestManagedContentExplicitConfigurationAndJobRecovery(t *testing.T) {
+	f := contentFixtureService(t)
+	f.owner.Store("")
+	a, token := contentBuild(t, contentConfig(t, f))
+	location := registerContent(t, a, token)
+	configuration := appsbooks.ClientConfigurationRequest{MDMInfo: appsbooks.MDMInfo{ID: "ours", Name: "Example MDM", Metadata: "operator-owned"}, NotificationTypes: []string{}}
+	f.fail.Store(true)
+	w := contentRequest(t, a, token, "POST", "/appsbooks/locations/london/configure", map[string]any{"revision": location.Revision, "configuration": configuration})
+	if w.Code != 503 || f.posts.Load() != 1 {
+		t.Fatal(w.Code, w.Body.String(), f.posts.Load())
+	}
+	pending, err := a.AppsBooks.Load(t.Context(), "london")
+	if err != nil || !pending.ConfigurationPending {
+		t.Fatal(pending, err)
+	}
+	f.fail.Store(false)
+	w = contentRequest(t, a, token, "POST", "/appsbooks/locations/london/recover-configuration", map[string]any{"revision": pending.Revision, "sToken": contentToken("recovery-secret")})
+	if w.Code != 200 || f.posts.Load() != 1 {
+		t.Fatal("recovery replayed configuration", w.Code, w.Body.String(), f.posts.Load())
+	}
+	location, err = a.AppsBooks.Load(t.Context(), "london")
+	if err != nil {
+		t.Fatal(err)
+	}
+	w = contentRequest(t, a, token, "POST", "/appsbooks/locations/london/configure", map[string]any{"revision": location.Revision, "configuration": configuration})
+	if w.Code != 200 || f.owner.Load().(string) != "ours" {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	location, err = a.AppsBooks.Load(t.Context(), "london")
+	if err != nil {
+		t.Fatal(err)
+	}
+	w = contentRequest(t, a, token, "POST", "/appsbooks/locations/london/probe", map[string]any{"revision": location.Revision})
+	if w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	location, err = a.AppsBooks.Load(t.Context(), "london")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.assets.Store(true)
+	request := appsbooks.JobRequest{Operation: appsbooks.JobAssociate, Assets: &appsbooks.ManageAssetsRequest{Assets: []appsbooks.Asset{{AdamID: "1", PricingParam: "STDQ"}}, SerialNumbers: []string{"chosen-serial"}}, MaxPages: 2}
+	before := f.posts.Load()
+	w = contentRequest(t, a, token, "PUT", "/appsbooks/locations/london/jobs/chosen", map[string]any{"revision": location.Revision, "request": request})
+	if w.Code != 200 || f.posts.Load() != before {
+		t.Fatal("job admission called Apple mutation", w.Code, w.Body.String())
+	}
+	for _, suffix := range []string{"", "/evidence"} {
+		w = contentRequest(t, a, token, "GET", "/appsbooks/locations/london/jobs/chosen"+suffix, nil)
+		if w.Code != 200 {
+			t.Fatal(w.Code, w.Body.String())
+		}
+	}
+	f.fail.Store(true)
+	w = contentRequest(t, a, token, "POST", "/appsbooks/locations/london/jobs/chosen/submit", contentWorkerInput{Worker: "operator", LeaseSeconds: 60})
+	if w.Code != 503 || f.posts.Load() != before+1 {
+		t.Fatal(w.Code, w.Body.String(), f.posts.Load())
+	}
+	job, err := a.AppsBooks.LoadJob(t.Context(), "london", "chosen")
+	if err != nil || job.State != appsbooks.JobUncertain {
+		t.Fatal(job.State, err)
+	}
+	f.fail.Store(false)
+	w = contentRequest(t, a, token, "POST", "/appsbooks/locations/london/recover-licensing", map[string]any{"revision": location.Revision, "jobId": "chosen", "sToken": contentToken("licensing-recovery")})
+	if w.Code != 200 || f.posts.Load() != before+1 {
+		t.Fatal("recovery replayed licensing", w.Code, w.Body.String())
+	}
+	w = contentRequest(t, a, token, "POST", "/appsbooks/locations/london/jobs/chosen/reconcile", map[string]any{"note": "original worker stopped; operator abandons uncertain fixture operation", "abandon": true})
+	if w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	location, err = a.AppsBooks.Load(t.Context(), "london")
+	if err != nil {
+		t.Fatal(err)
+	}
+	w = contentRequest(t, a, token, "PUT", "/appsbooks/locations/london/jobs/accepted", map[string]any{"revision": location.Revision, "request": request})
+	if w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	w = contentRequest(t, a, token, "POST", "/appsbooks/locations/london/jobs/accepted/submit", contentWorkerInput{Worker: "operator", LeaseSeconds: 60})
+	if w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	w = contentRequest(t, a, token, "POST", "/appsbooks/locations/london/jobs/accepted/poll", contentWorkerInput{Worker: "operator", LeaseSeconds: 60})
+	if w.Code != 409 {
+		t.Fatal("early poll not fenced", w.Code, w.Body.String())
+	}
+}
+
+// TestManagedContentAdmissionRejectsRebinding proves a queued native user intent
+// cannot follow a later alias/certificate binding into a different principal.
+func TestManagedContentAdmissionRejectsRebinding(t *testing.T) {
+	f := contentFixtureService(t)
+	a, token := contentBuild(t, contentConfig(t, f))
+	registerContent(t, a, token)
+	id := mdm.EnrollmentID{Channel: mdm.ChannelUserEnrollmentDevice, ID: "bound-user"}
+	seedContentEnrollment(t, a, id, "initial-pin", "")
+	bind := func(alias string) {
+		t.Helper()
+		w := contentRequest(t, a, token, "PUT", "/managed-content/users", map[string]any{"enrollment": id, "clientUserId": alias})
+		if w.Code != 200 {
+			t.Fatal(w.Code, w.Body.String())
+		}
+	}
+	bind("chosen-user")
+	plan := managedcontent.Plan{LocationID: "london", Content: managedcontent.Content{Asset: appsbooks.Asset{AdamID: "1", PricingParam: "STDQ"}, Kind: "App"}, Target: managedcontent.Selection{Enrollment: id, ClientUserID: "chosen-user"}, MaxPages: 2}
+	w := contentRequest(t, a, token, "PUT", "/managed-content/operations/pinned", map[string]any{"mode": "assign", "plan": plan})
+	if w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	bind("other-user")
+	w = contentRequest(t, a, token, "POST", "/managed-content/operations/pinned/step", contentWorkerInput{Worker: "operator", LeaseSeconds: 60})
+	if w.Code < 400 || f.posts.Load() != 0 {
+		t.Fatal("revoked binding submitted remote licensing", w.Code, f.posts.Load())
+	}
+	if err := a.Store.AssociateCert(t.Context(), id, "replacement-pin", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	bind("chosen-user")
+	w = contentRequest(t, a, token, "POST", "/managed-content/operations/pinned/step", contentWorkerInput{Worker: "operator", LeaseSeconds: 60})
+	if w.Code < 400 || f.posts.Load() != 0 {
+		t.Fatal("certificate rotation redirected intent", w.Code, f.posts.Load())
+	}
+	op, err := a.ManagedContent.Load(t.Context(), "pinned")
+	if err != nil || op.License != nil || op.Dispatch != nil {
+		t.Fatal("rebound intent gained effects", op, err)
+	}
+}
+
+// TestManagedContentSynchronousNotificationBootstrap models Apple's actual
+// configuration handshake: the service requires a committed test callback before
+// responding to the configuration POST, including capture failure and recovery.
+func TestManagedContentSynchronousNotificationBootstrap(t *testing.T) {
+	f := contentFixtureService(t)
+	a, token := contentBuild(t, contentConfig(t, f))
+	callbackServer := httptest.NewTLSServer(a.Handler)
+	t.Cleanup(callbackServer.Close)
+	f.callbackClient = callbackServer.Client()
+	f.callbackClient.Timeout = 2 * time.Second
+	location := registerContent(t, a, token)
+	configuration := appsbooks.ClientConfigurationRequest{MDMInfo: appsbooks.MDMInfo{ID: "ours", Name: "Reference MDM", Metadata: "fixture"}, NotificationURL: callbackServer.URL + "/appsbooks/notifications/london", NotificationAuthToken: "bootstrap-secret", NotificationTypes: []string{"TEST_NOTIFICATION"}}
+	w := contentRequest(t, a, token, "POST", "/appsbooks/locations/london/configure", map[string]any{"revision": location.Revision, "configuration": configuration})
+	if w.Code < 400 || f.posts.Load() != 0 {
+		t.Fatal("configuration without durable receiver contacted Apple", w.Code, f.posts.Load())
+	}
+	w = contentRequest(t, a, token, "PUT", "/appsbooks/locations/london/receiver", map[string]any{"token": "bootstrap-secret"})
+	if w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	a.eventPublisher.CaptureAdditional = func(_ context.Context, e event.Event) error {
+		if e.Type == "appsbooks-notification" {
+			return errors.New("required test notification capture failed")
+		}
+		return nil
+	}
+	w = contentRequest(t, a, token, "POST", "/appsbooks/locations/london/configure", map[string]any{"revision": location.Revision, "configuration": configuration})
+	if w.Code != 503 || f.posts.Load() != 1 {
+		t.Fatal("failed synchronous callback accepted", w.Code, w.Body.String(), f.posts.Load())
+	}
+	pending, err := a.AppsBooks.Load(t.Context(), "london")
+	if err != nil || !pending.ConfigurationPending {
+		t.Fatal("uncertain configuration lost reservation", pending, err)
+	}
+	if _, err := a.AppsBooks.LoadNotification(t.Context(), "london", "synchronous-1"); !errors.Is(err, state.ErrNotFound) {
+		t.Fatal("failed callback capture escaped rollback", err)
+	}
+	a.eventPublisher.CaptureAdditional = nil
+	w = contentRequest(t, a, token, "POST", "/appsbooks/locations/london/probe", map[string]any{"revision": pending.Revision})
+	if w.Code != 200 || f.posts.Load() != 1 {
+		t.Fatal("probe replayed POST", w.Code, w.Body.String())
+	}
+	location, err = a.AppsBooks.Load(t.Context(), "london")
+	if err != nil {
+		t.Fatal(err)
+	}
+	w = contentRequest(t, a, token, "POST", "/appsbooks/locations/london/configure", map[string]any{"revision": location.Revision, "configuration": configuration})
+	if w.Code != 200 || f.posts.Load() != 2 {
+		t.Fatal("synchronous notification handshake failed", w.Code, w.Body.String(), f.posts.Load())
+	}
+	if _, err := a.AppsBooks.LoadNotification(t.Context(), "london", "synchronous-2"); err != nil {
+		t.Fatal("successful configuration lacks durable test receipt", err)
+	}
+	location, err = a.AppsBooks.Load(t.Context(), "london")
+	if err != nil || location.ConfigurationPending {
+		t.Fatal("successful configuration remains pending", location, err)
+	}
+	var captured int
+	if err := a.db.QueryRowContext(t.Context(), "SELECT COUNT(*) FROM event_records WHERE type = ?", "appsbooks-notification").Scan(&captured); err != nil || captured != 1 {
+		t.Fatal("test callback audit did not commit exactly once", captured, err)
 	}
 }

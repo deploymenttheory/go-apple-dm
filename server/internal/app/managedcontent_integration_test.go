@@ -59,6 +59,14 @@ func TestManagedContentSealedSQLCapture(t *testing.T) {
 			if code := callback("retained"); code != 204 {
 				t.Fatal("callback not committed", code)
 			}
+			a.eventPublisher.CaptureAdditional = func(_ context.Context, _ event.Event) error { return errors.New("replay capture unavailable") }
+			if code := callback("retained"); code != 503 {
+				t.Fatal("callback replay escaped required capture", code)
+			}
+			if _, err := a.AppsBooks.LoadNotification(t.Context(), location, "retained"); err != nil {
+				t.Fatal("failed replay erased prior durable receipt", err)
+			}
+			a.eventPublisher.CaptureAdditional = nil
 			if err := a.Close(); err != nil {
 				t.Fatal(err)
 			}

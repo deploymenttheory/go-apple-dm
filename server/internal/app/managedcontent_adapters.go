@@ -1,18 +1,19 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"encoding/json/jsontext"
 	"errors"
 	"fmt"
-	"reflect"
 	"slices"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/applications/managedcontent"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/event"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
@@ -27,6 +28,7 @@ import (
 // inventory or cross-source identifier matching. Unknown identity fails closed.
 type contentResolver struct{ a *App }
 
+// Resolve reads only the explicitly selected authenticated native enrollment.
 func (v contentResolver) Resolve(ctx context.Context, s managedcontent.Selection) ([]managedcontent.Target, error) {
 	if expected, ok := ctx.Value(contentIdentityKey{}).(contentIdentity); ok {
 		actual, err := v.a.nativeContentIdentity(ctx, s)
@@ -96,6 +98,7 @@ type contentUserBinding struct {
 	CertHash     string           `json:"certHash"`
 }
 
+// contentUserKey bounds the native enrollment locator in the sealed binding namespace.
 func contentUserKey(id mdm.EnrollmentID) string {
 	b, _ := json.Marshal(id)
 	return fmt.Sprintf("managedcontent/user/%x", sha256.Sum256(b))
@@ -106,6 +109,7 @@ func contentUserKey(id mdm.EnrollmentID) string {
 // queue pruning and prevent a completed dispatch from being submitted again.
 type contentDelivery struct{ a *App }
 
+// deliveryKey bounds immutable native dispatch and admission record keys.
 func deliveryKey(id string) string {
 	return fmt.Sprintf("managedcontent/native/%x", sha256.Sum256([]byte(id)))
 }
@@ -115,6 +119,7 @@ type contentDispatchRecord struct {
 	CreatedAt time.Time               `json:"createdAt"`
 }
 
+// Submit atomically binds immutable dispatch identity to native queue/publication work.
 func (v contentDelivery) Submit(ctx context.Context, d managedcontent.Dispatch) (managedcontent.Observation, error) {
 	var out managedcontent.Observation
 	err := (sqlcommon.UnitOfWork{DB: v.a.db, Dialect: v.a.dialect}).Run(ctx, func(ctx context.Context) error {
@@ -126,18 +131,32 @@ func (v contentDelivery) Submit(ctx context.Context, d managedcontent.Dispatch) 
 			return managedcontent.ErrTarget
 		}
 		key := deliveryKey(d.ID)
-		return v.a.protocol.Update(ctx, []string{key}, func(tx state.Tx) error {
+		assetKey := contentAssetKey(d.Enrollment, d.Content.Asset.AdamID)
+		locks := []string{key, assetKey}
+		for _, doc := range d.Declarations {
+			locks = append(locks, contentDeclarationKey(doc.Identifier))
+		}
+		return v.a.protocol.Update(ctx, locks, func(tx state.Tx) error {
 			prior, err := tx.Get(ctx, key)
 			if err == nil {
 				var saved contentDispatchRecord
-				if json.Unmarshal(prior.Value, &saved) != nil || !reflect.DeepEqual(saved.Dispatch, d) {
+				if json.Unmarshal(prior.Value, &saved) != nil || !sameContentDispatch(saved.Dispatch, d) {
 					return managedcontent.ErrConflict
 				}
 				out = dispatchObservation(d)
+				out.ObservedAt = saved.CreatedAt
 				out.Found = true
 				return nil
 			}
 			if !errors.Is(err, state.ErrNotFound) {
+				return err
+			}
+			var owner nativeContentOwner
+			if record, err := tx.Get(ctx, assetKey); err == nil {
+				if json.Unmarshal(record.Value, &owner) != nil || d.Predecessor == nil || owner.ID != d.Predecessor.ID || owner.Digest != d.Predecessor.Digest || owner.Method != d.Method || owner.Enrollment != d.Enrollment {
+					return managedcontent.ErrConflict
+				}
+			} else if !errors.Is(err, state.ErrNotFound) {
 				return err
 			}
 			if err := v.rejectNativeContentConflict(ctx, tx, d); err != nil {
@@ -158,6 +177,17 @@ func (v contentDelivery) Submit(ctx context.Context, d managedcontent.Dispatch) 
 				}
 				if !observation.Terminal {
 					return managedcontent.ErrConflict
+				}
+			}
+			if d.Method == managedcontent.DDM && d.Predecessor == nil {
+				for _, doc := range d.Declarations {
+					_, err := v.a.Engine.GetDeclaration(ctx, doc.Identifier)
+					if err == nil {
+						return managedcontent.ErrConflict
+					}
+					if !errors.Is(err, ddm.ErrNotFound) {
+						return err
+					}
 				}
 			}
 			if d.Method == managedcontent.MDM {
@@ -199,19 +229,34 @@ func (v contentDelivery) Submit(ctx context.Context, d managedcontent.Dispatch) 
 			if err := tx.Put(ctx, state.Record{Key: key, Value: raw}); err != nil {
 				return err
 			}
+			ownerRaw, err := json.Marshal(nativeContentOwner{ID: d.ID, Digest: d.Digest, Method: d.Method, Enrollment: d.Enrollment})
+			if err != nil {
+				return err
+			}
+			if err := tx.Put(ctx, state.Record{Key: assetKey, Value: ownerRaw}); err != nil {
+				return err
+			}
+			for _, doc := range d.Declarations {
+				if err := tx.Put(ctx, state.Record{Key: contentDeclarationKey(doc.Identifier), Value: ownerRaw}); err != nil {
+					return err
+				}
+			}
 			out = dispatchObservation(d)
 			out.Found = true
 			out.DeclarationPublished = d.Method == managedcontent.DDM
-			return nil
+			out.ObservedAt = tx.Now()
+			return v.a.cfg.publisher().Publish(ctx, event.Event{Type: "managed-content-dispatch", At: tx.Now(), Actor: "managed-content", Data: map[string]any{"Operation": d.ID, "Method": string(d.Method)}})
 		})
 	})
 	return out, err
 }
 
+// dispatchObservation identifies a fully read native ownership boundary without inferring installation.
 func dispatchObservation(d managedcontent.Dispatch) managedcontent.Observation {
 	return managedcontent.Observation{ID: d.ID, Enrollment: d.Enrollment, Method: d.Method, Digest: d.Digest, ManagementMethod: d.Method, Authoritative: true, OwnsIdentity: true, RetrySafe: true}
 }
 
+// Inspect reads retained native ownership and processing without resubmitting work.
 func (v contentDelivery) Inspect(ctx context.Context, d managedcontent.Dispatch) (managedcontent.Observation, error) {
 	var out managedcontent.Observation
 	if _, err := (contentResolver{v.a}).Resolve(ctx, managedcontent.Selection{Enrollment: d.Enrollment, Serial: d.Serial, ClientUserID: d.ClientUserID}); err != nil {
@@ -227,7 +272,7 @@ func (v contentDelivery) Inspect(ctx context.Context, d managedcontent.Dispatch)
 			return err
 		}
 		var saved contentDispatchRecord
-		if json.Unmarshal(record.Value, &saved) != nil || !reflect.DeepEqual(saved.Dispatch, d) {
+		if json.Unmarshal(record.Value, &saved) != nil || !sameContentDispatch(saved.Dispatch, d) {
 			return managedcontent.ErrConflict
 		}
 		out, err = v.inspectNative(ctx, d, saved.CreatedAt)
@@ -342,6 +387,7 @@ func (v contentDelivery) inspectNative(ctx context.Context, d managedcontent.Dis
 	return out, nil
 }
 
+// nativeCommands completely traverses the selected native enrollment command journal.
 func (v contentDelivery) nativeCommands(ctx context.Context, id mdm.EnrollmentID) ([]storage.QueuedCommand, error) {
 	var out []storage.QueuedCommand
 	after := ""
@@ -491,15 +537,12 @@ func (v contentDelivery) rejectNativeContentConflict(ctx context.Context, reader
 			return managedcontent.ErrConflict
 		}
 	}
-	ids, err := v.a.Engine.EnrollmentDeclarations(ctx, d.Enrollment)
+	declarations, err := v.a.Engine.Store().StaticDeclarations(ctx, d.Enrollment)
 	if err != nil {
 		return err
 	}
-	for _, id := range ids {
-		decl, err := v.a.Engine.GetDeclaration(ctx, id)
-		if err != nil {
-			return err
-		}
+	for _, decl := range declarations {
+		id := decl.Identifier
 		if decl.Type != "com.apple.configuration.app.managed" {
 			continue
 		}
@@ -528,4 +571,26 @@ func (v contentDelivery) rejectNativeContentConflict(ctx context.Context, reader
 		}
 	}
 	return nil
+}
+
+// sameContentDispatch compares immutable native identity and exact payload bytes.
+// JSON v2 SDK evidence normalizes nil slices to empty arrays; that storage detail
+// cannot make unchanged wire bytes or an unchanged digest a conflicting request.
+func sameContentDispatch(a, b managedcontent.Dispatch) bool {
+	if a.ID != b.ID || a.Enrollment != b.Enrollment || a.Serial != b.Serial || a.ClientUserID != b.ClientUserID || a.Content != b.Content || a.Method != b.Method || a.Digest != b.Digest || !bytes.Equal(a.MDM, b.MDM) || len(a.Declarations) != len(b.Declarations) {
+		return false
+	}
+	if (a.Predecessor == nil) != (b.Predecessor == nil) {
+		return false
+	}
+	if a.Predecessor != nil && *a.Predecessor != *b.Predecessor {
+		return false
+	}
+	for i := range a.Declarations {
+		left, right := a.Declarations[i], b.Declarations[i]
+		if left.Identifier != right.Identifier || left.ServerToken != right.ServerToken || !bytes.Equal(left.Raw, right.Raw) {
+			return false
+		}
+	}
+	return true
 }
