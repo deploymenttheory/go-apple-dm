@@ -227,6 +227,12 @@ func liveMDM(ctx context.Context, e *Environment, device string) error {
 
 // liveInventory collects the live inventory evidence required by the scenario.
 func liveInventory(ctx context.Context, e *Environment, device string) (map[string]string, error) {
+	return liveInventoryEvidence(ctx, e, device, "")
+}
+
+// liveInventoryEvidence optionally retains the command, wake and acknowledgment
+// in the caller's private evidence directory.
+func liveInventoryEvidence(ctx context.Context, e *Environment, device, evidence string) (map[string]string, error) {
 	if strings.TrimSpace(device) == "" {
 		return nil, fmt.Errorf("%w: -device-id is required", ErrBlocked)
 	}
@@ -247,18 +253,20 @@ func liveInventory(ctx context.Context, e *Environment, device string) (map[stri
 	if err != nil {
 		return nil, wrapError(err)
 	}
-	response, err := liveCommand(ctx, e, path, cmd)
+	response, err := Command(ctx, e, path, cmd, evidence)
 	if err != nil {
 		return nil, err
 	}
-	var answer struct{ QueryResponses map[string]string }
+	var answer struct {
+		QueryResponses struct{ OSVersion, BuildVersion string }
+	}
 	if err = plist.Unmarshal(response, &answer); err != nil {
 		return nil, wrapError(err)
 	}
-	if answer.QueryResponses["OSVersion"] == "" || answer.QueryResponses["BuildVersion"] == "" {
+	if answer.QueryResponses.OSVersion == "" || answer.QueryResponses.BuildVersion == "" {
 		return nil, fmt.Errorf("%w: acknowledgement missing requested inventory", errOperation)
 	}
-	return answer.QueryResponses, nil
+	return map[string]string{"OSVersion": answer.QueryResponses.OSVersion, "BuildVersion": answer.QueryResponses.BuildVersion}, nil
 }
 
 // liveCommand requires a wake and a response from the exact enrollment channel

@@ -78,6 +78,11 @@ and [persisted assignment state](../../../devicemanagement/appleplatformservices
 coordinate retry eligibility; the [syncer](../../../devicemanagement/appleplatformservices/dep/syncer.go)
 owns inventory generations and stale-response rejection.
 
+The maintained lab reuses this client and reference assignment worker for scoped
+ADE acceptance. Read-only full/delta checks are separate from explicit profile
+mutation. An additional private lab fence preserves original state and unknown
+outcomes without changing SDK retry semantics.
+
 ## Rationale
 
 Committing a cursor with its data supports at-least-once page delivery. Assignment based on current state handles re-fetches and server moves as well as newly added devices. Typed errors distinguish operator action from transient retry.
@@ -85,6 +90,9 @@ Committing a cursor with its data supports at-least-once page delivery. Assignme
 ## Constraints
 
 API types are maintained from Apple's documentation because this service's JSON schemas are not in the pinned YAML submodule. `dep` is retained as an API/package identifier; user-facing enrollment terminology is Automated Device Enrollment. Live Apple service behavior requires integration validation.
+
+Dedicated-account quiescence is required for the lab's assignment acceptance.
+API success supplies no physical-device certification.
 
 ## Verification
 
@@ -104,6 +112,9 @@ exercise all generated skip keys against every schema platform at introduction,
 deprecation and removal boundaries, ADE field release floors, explicit false
 values, iOS/iPadOS distinctions, missing facts and unchanged caller content.
 These are automated protocol checks, not live Apple or physical-device evidence.
+
+Live validation follows the [scoped ADE acceptance guide](../../operations/ade-acceptance.md),
+with API checks and physical-device evidence recorded independently.
 
 ## References
 

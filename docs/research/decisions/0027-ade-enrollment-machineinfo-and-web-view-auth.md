@@ -49,6 +49,9 @@ value follows Apple's example, not a normative length requirement. Password
 changes require the GUID of the administrator created during ADE. Callers choose
 iteration policy and protect credentials; the helper does not create accounts.
 
+Native acceptance retains supervision as a typed native observation. Applicable
+DDM proof and cleanup have independent evidence.
+
 ## Rationale
 
 Separating cryptographic verification, device enrichment, admission and profile composition lets consumers select their own ownership rules. Bound state connects the browser result with the enrollment request.
@@ -63,6 +66,10 @@ the retained signature, serial and UDID; it does not reload a later request's
 per-serial record. Missing, corrupt, expired, unverified or mismatched browser
 evidence fails closed. The reference minimum-version settings are literal targets;
 no dynamic latest-version policy or tvOS gate is composed. Replicas need the same state backend, issuer configuration and admission policy. SAML is not implemented.
+
+Missing historical ADE issuance cannot be inferred from an existing certificate
+or account membership. Each device/platform/release requires its own
+operator-observed Setup Assistant acceptance.
 
 ## Verification
 
@@ -79,6 +86,10 @@ invalid certificates and URLs, and agreement between anchors and the trust
 profile. These checks and manual enrollment do not prove ADE Setup Assistant
 activation; that requires an assigned device and Apple Business Manager or
 Apple School Manager.
+
+[LIVE-012](../../operations/ade-acceptance.md#validate-real-enrollment-on-each-platform)
+requires the actual stored ADE issuance method and serial/protocol bindings,
+trusted native Authenticate/TokenUpdate and fresh push-triggered inventory.
 
 ## References
 

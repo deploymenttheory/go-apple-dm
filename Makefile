@@ -50,6 +50,7 @@ verify: submodule
 	$(GO) test ./internal/layout -run TestWorkflowSecurity
 	python3 -B -m unittest discover -s .github/scripts -p '*_test.py'
 	python3 -B -m unittest discover -s scripts -p 'device_management_schema_contracts_test.py'
+	python3 -B -m unittest discover -s scripts -p 'verify_server_module_installation_test.py'
 	$(GO) run ./cmd/schemagen verify
 
 ## lint: compile and lint both workspace modules, including tagged tests, without rewriting

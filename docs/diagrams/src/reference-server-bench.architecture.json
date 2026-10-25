@@ -15,7 +15,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01"
+      "revision": "2f001b847a91f78704ee6b69c9e71ba05420e9bd"
     }
   },
   "components": [
@@ -24,7 +24,7 @@
       "type": "database",
       "purpose": "artifact",
       "label": "Workspace",
-      "sublabel": "Configuration · credentials · identity",
+      "sublabel": "Configuration \u00b7 credentials \u00b7 identity",
       "pos": [
         70,
         70
@@ -44,7 +44,7 @@
       "type": "backend",
       "purpose": "service",
       "label": "Lab harness",
-      "sublabel": "CLI · catalogue · supervisor",
+      "sublabel": "CLI \u00b7 catalogue \u00b7 supervisor",
       "pos": [
         620,
         70
@@ -61,7 +61,7 @@
           "path": "server/lab/catalog.go"
         },
         {
-          "path": "server/lab/live_abm.go"
+          "path": "server/lab/live_ade_hardware.go"
         }
       ]
     },
@@ -70,7 +70,7 @@
       "type": "database",
       "purpose": "artifact",
       "label": "Scenario reports",
-      "sublabel": "Private JSON · JUnit · HTML",
+      "sublabel": "Private JSON \u00b7 JUnit \u00b7 HTML",
       "pos": [
         1170,
         70
@@ -133,7 +133,7 @@
       "type": "external",
       "purpose": "neutral",
       "label": "Real device or app",
-      "sublabel": "Real identity · observed receipt",
+      "sublabel": "Real identity \u00b7 observed receipt",
       "pos": [
         1170,
         430
@@ -208,7 +208,7 @@
       "type": "external",
       "purpose": "neutral",
       "label": "Live Apple services",
-      "sublabel": "Named account · explicit assignment",
+      "sublabel": "Named account \u00b7 explicit assignment",
       "pos": [
         70,
         710
@@ -216,6 +216,29 @@
       "size": [
         300,
         100
+      ]
+    },
+    {
+      "id": "ade-acceptance-client",
+      "type": "backend",
+      "purpose": "service",
+      "label": "Lab ADE client",
+      "sublabel": "Harness-owned \u00b7 separate server token",
+      "pos": [
+        70,
+        580
+      ],
+      "size": [
+        300,
+        90
+      ],
+      "sources": [
+        {
+          "path": "server/lab/live_ade.go"
+        },
+        {
+          "path": "server/lab/live_ade_collection.go"
+        }
       ]
     }
   ],
@@ -299,7 +322,7 @@
       "id": "operate-server",
       "from": "bench-harness",
       "to": "shared-system",
-      "label": "Start · control · inspect",
+      "label": "Start \u00b7 control \u00b7 inspect",
       "purpose": "service",
       "labelAt": [
         770,
@@ -340,6 +363,17 @@
       "to": "live-apple",
       "label": "Live Apple APIs",
       "purpose": "transport"
+    },
+    {
+      "id": "ade-client-apple",
+      "from": "ade-acceptance-client",
+      "to": "live-apple",
+      "label": "API \u00b7 readback \u00b7 restoration",
+      "purpose": "transport",
+      "labelAt": [
+        220,
+        686
+      ]
     }
   ],
   "cards": [
@@ -348,7 +382,8 @@
       "items": [
         "The reference server is the system under test. Surrounding boxes identify who controls it, which actors exchange protocols with it, and where evidence goes.",
         "The lab harness groups the CLI, scenario runner and supervisor. The server groups the shared runtime and application; these are logical roles, not extra processes.",
-        "Owned runtimes can run embedded or as a built process. The supervisor waits for readiness and stops the runtime before closing fixtures; attaching to an existing HTTPS server skips runtime ownership."
+        "Owned runtimes can run embedded or as a built process. The supervisor waits for readiness and stops the runtime before closing fixtures; attaching to an existing HTTPS server skips runtime ownership.",
+        "The Lab ADE client belongs to the harness and calls Apple directly for API checks, independent readback and explicit restoration. Profile definition, local selection and one-shot assignment use the separate reference-server administration path."
       ],
       "dot": "neutral"
     },
@@ -358,18 +393,21 @@
         "Simulated runs combine a synthetic device with local Apple-service fixtures. Live runs use real credentials and the appropriate real services.",
         "Contract suites exercise interfaces directly and write their own Go test output. Their results do not flow into lab JSON/JUnit reports.",
         "ABM checks retain current-generation originals and exact exports, verify coverage membership and explicitly correlate authenticated serials. Empty sources remain unexercised; partial synchronization remains blocked.",
-        "Designated assignment requires per-device CSV and linkage readback, then restores the original service. Each request keeps separate private recovery evidence; fixture passes do not prove live Apple compatibility."
+        "Designated assignment requires per-device CSV and linkage readback, then restores the original service. Each request keeps separate private recovery evidence; fixture passes do not prove live Apple compatibility.",
+        "ADE uses a separate server token: read-only API checks, explicit one-serial profile assignment with an unresolved-outcome fence, and independent native hardware evidence. The fence points to immutable original state and private progress.",
+        "Each of macOS, iOS, iPadOS, visionOS and tvOS retains its own result. Stored ADE issuance and fresh native identity, serial, OS/build and supervision observations precede applicable DDM proof; API and fixture success cannot certify hardware."
       ],
       "dot": "neutral"
     },
     {
       "title": "Reading and protocol references",
       "items": [
-        "Lab scope and operation — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/docs/testing/lab.md",
-        "ABM acceptance — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/docs/operations/abm-assignments.md",
-        "Go test behavior — https://pkg.go.dev/cmd/go#hdr-Test_packages",
-        "Sending MDM commands — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
-        "Sending APNs requests — https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns"
+        "Lab scope and operation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/docs/testing/lab.md",
+        "ABM acceptance \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/docs/operations/abm-assignments.md",
+        "ADE acceptance implementation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/server/lab/live_ade_hardware.go",
+        "Go test behavior \u2014 https://pkg.go.dev/cmd/go#hdr-Test_packages",
+        "Sending MDM commands \u2014 https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
+        "Sending APNs requests \u2014 https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns"
       ],
       "dot": "transport"
     }

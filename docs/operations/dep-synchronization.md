@@ -176,3 +176,11 @@ account-scoped definition references, maintain `ProfileRevision` with
 selected-definition deletion. They must also implement the stronger [`Tx.LockAccount`](../../devicemanagement/appleplatformservices/dep/store.go) contract: lock the account name until transaction completion even when the account is absent and `ErrNotFound` is returned, and retain that lock through deletion/recreation. Keypair staging/promotion and account creation must serialize through the same lock. A process-local mutex alone is insufficient for a shared database used by multiple processes.
 
 Implementation evidence: [token validation and reset](../../devicemanagement/appleplatformservices/dep/token.go), [account/credential checks](../../devicemanagement/appleplatformservices/dep/accountfence.go), [assignment lease and cooldowns](../../devicemanagement/appleplatformservices/dep/assignmentstate.go), [SQL name locking](../../server/depstore/sqlstore/syncstate.go), and [reference-server routes and schedules](../../server/internal/app/dep.go).
+
+## Scoped live acceptance
+
+Use [ADE acceptance](ade-acceptance.md) for separate-token read-only API checks,
+explicit designated profile assignment/restoration and native platform evidence.
+The assignment check requires a quiescent dedicated account; its private fence
+retains unknown outcomes without automatic inverse replay. API acceptance and
+physical Setup Assistant enrollment have independent evidence.

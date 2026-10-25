@@ -1,5 +1,7 @@
 package lab
 
+import "github.com/deploymenttheory/go-apple-dm/server/lab/target"
+
 // Catalogue returns a fresh module inventory in stable ID order. Modules without an
 // explicit Stage take their theme's lifecycle stage.
 func Catalogue() []Module {
@@ -327,6 +329,27 @@ func Catalogue() []Module {
 		Module{ID: "LIVE-007", Name: "Populated ABM small-page discovery, coverage, synchronization and exact source export", Theme: "abm", Modes: []string{"live"}, Prerequisites: []string{"private abm/acceptance.json", "designated populated device and coverage", "raw inventory and synchronization grants", "private evidence directory"}, Steps: []Step{{Name: "collect and export", Run: liveABMCollection}}},
 		Module{ID: "LIVE-008", Name: "Explicit authenticated native serial correlation with retained ABM evidence", Theme: "abm", Modes: []string{"live"}, Prerequisites: []string{"private abm/acceptance.json", "matching authenticated native resource", "inventory correlation grants", "private evidence directory"}, Steps: []Step{{Name: "correlate serial", Run: liveABMCorrelation}}},
 		Module{ID: "LIVE-009", Name: "Designated reversible ABM assignment with per-device log, readback and restoration", Theme: "abm", Modes: []string{"live"}, Prerequisites: []string{"private abm/acceptance.json with explicit assignment opt-in", "designated MDM binding and device", "assignment, unassignment and raw-log grants", "private evidence directory"}, Steps: []Step{{Name: "assignment and restoration", Run: liveABMAssignment}}},
+		Module{
+			ID: "LIVE-010", Name: "Separate ADE token authentication, full/delta enumeration and designated readback", Theme: "ade", Modes: []string{"live"},
+			Prerequisites: []string{"private ade/acceptance.json and separate ade/tokens.json", "matching reference ADE account and designated serial", "readDEP and listDEPAccounts grants", "private evidence directory"},
+			Steps:         []Step{{Name: "read-only ADE API acceptance", Run: liveADECollection}},
+		},
+		Module{
+			ID: "LIVE-011", Name: "Explicit ADE profile definition, designated assignment and original-state restoration", Theme: "ade", Modes: []string{"live"},
+			Prerequisites: []string{"private ADE scope, token and profile.json", "separate mutation opt-in and exclusive quiescent account", "no account default or other serial targets", "manageDEPProfiles and syncDEPDevices grants", "private evidence directory"},
+			Steps:         []Step{{Name: "profile assignment and restoration", Run: liveADEAssignment}},
+		},
+		Module{
+			ID: "LIVE-012", Name: "Native ADE identity, serial, check-ins, push acknowledgment and applicable DDM", Theme: "ade", Modes: []string{"live"},
+			Prerequisites: []string{"private ADE scope and separate server token", "designated ADE-enrolled Apple device and identity method", "readEnrollment, command, push and applicable DDM grants", "private evidence directory"},
+			Applies: func(info target.Info) string {
+				if info.Kind != target.KindDevice {
+					return "a native enrolled Apple device target is required"
+				}
+				return ""
+			},
+			Steps: []Step{{Name: "native platform acceptance", Run: liveADEHardware}},
+		},
 	)
 	for i := range modules {
 		if modules[i].Stage == 0 {

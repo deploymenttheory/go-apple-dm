@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
@@ -16,7 +18,27 @@ import (
 // liveDDM requires fresh declaration status for a unique subscription. Status
 // values are incremental, so retained OS/build values must match fresh inventory.
 func liveDDM(ctx context.Context, e *Environment, device string) (err error) {
-	inventory, err := liveInventory(ctx, e, device)
+	return liveDDMWithPhases(ctx, e, device, "", &liveDDMPhases{})
+}
+
+type liveDDMPhases struct {
+	Exchange string `json:"exchange"`
+	Cleanup  string `json:"cleanup"`
+}
+
+// liveDDMWithPhases keeps authenticated native proof independent of restoration.
+func liveDDMWithPhases(ctx context.Context, e *Environment, device, evidence string, phases *liveDDMPhases) (err error) {
+	phases.Exchange, phases.Cleanup = "unexercised", "unexercised"
+	defer func() {
+		if evidence != "" {
+			b, encodeErr := json.Marshal(phases)
+			if encodeErr == nil {
+				encodeErr = os.WriteFile(filepath.Join(evidence, "ddm-phases.json"), b, 0o600)
+			}
+			err = errors.Join(err, encodeErr)
+		}
+	}()
+	inventory, err := liveInventoryEvidence(ctx, e, device, evidence)
 	if err != nil {
 		return err
 	}
@@ -27,7 +49,12 @@ func liveDDM(ctx context.Context, e *Environment, device string) (err error) {
 		// Allow the notifier to retry a coalesced wake before requiring native removal.
 		cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Minute)
 		defer cancel()
-		err = errors.Join(err, cleanupLiveDDM(cleanup, e, path, set, configuration, activation))
+		cleanupErr := cleanupLiveDDM(cleanup, e, path, set, configuration, activation)
+		phases.Cleanup = "passed"
+		if cleanupErr != nil {
+			phases.Cleanup = "unresolved"
+		}
+		err = errors.Join(err, cleanupErr)
 	}()
 	names := []string{"device.operating-system.version", "device.operating-system.build-version"}
 	expected := map[string]string{
@@ -73,7 +100,7 @@ func liveDDM(ctx context.Context, e *Environment, device string) (err error) {
 	if err := e.api(ctx, "POST", "/notify", nil, nil); err != nil {
 		return err
 	}
-	return waitLive(ctx, func() (bool, error) {
+	err = waitLive(ctx, func() (bool, error) {
 		var rows []ddm.DeclarationStatus
 		if err := e.api(ctx, "GET", path+"/status", nil, &rows); err != nil {
 			return false, err
@@ -101,8 +128,27 @@ func liveDDM(ctx context.Context, e *Environment, device string) (err error) {
 				value != "" &&
 				value == expected[row.Path]
 		}
-		return matching[names[0]] && matching[names[1]], nil
+		if !matching[names[0]] || !matching[names[1]] {
+			return false, nil
+		}
+		if evidence != "" {
+			for name, value := range map[string]any{"ddm-declaration-status.json": rows, "ddm-status-values.json": values} {
+				b, err := json.Marshal(value)
+				if err != nil {
+					return false, err
+				}
+				if err = os.WriteFile(filepath.Join(evidence, name), b, 0o600); err != nil {
+					return false, err
+				}
+			}
+		}
+		return true, nil
 	})
+	phases.Exchange = "passed"
+	if err != nil {
+		phases.Exchange = "failed"
+	}
+	return err
 }
 
 // cleanupLiveDDM removes the declarations and assignments created by a live DDM scenario.

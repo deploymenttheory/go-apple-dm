@@ -194,3 +194,11 @@ and lab; no separate enrollment spike executable is needed.
 ## macOS 27 preparation and handoff
 
 Use the [feature fixtures](apple-features/README.md) and [device readiness procedure](../docs/operations/mac-enrollment-testing.md#feature-acceptance-and-vm-readiness) for native acceptance prerequisites and cleanup.
+
+## Automated Device Enrollment acceptance
+
+Follow [ADE acceptance](../docs/operations/ade-acceptance.md) for the separate
+server-token file layout, read-only LIVE-010, explicitly opted-in assignment and
+restoration in LIVE-011, and per-platform native hardware proof in LIVE-012.
+Unresolved assignment outcomes retain private recovery fencing and block reruns.
+API and fixture success leave physical enrollment unexercised.
