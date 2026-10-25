@@ -151,3 +151,24 @@ func ExampleWorkflow() {
 	_ = sources.Assignments  // Ordered full + incremental batches, with checkpoints.
 	// Refresh establishes source evidence; licensing and installation are separate.
 }
+
+// ExampleWorkflow_RecoverConfiguration runs only after the original configuration
+// call/process has stopped. Use the existing durable store containing its pending
+// reservation; memory below illustrates the caller-owned storage interface.
+func ExampleWorkflow_RecoverConfiguration() {
+	ctx := context.Background()
+	workflow, err := appsbooks.NewWorkflow(state.NewMemory(), appsbooks.Config{MDMID: "persisted-mdm-identity"})
+	if err != nil {
+		panic(err)
+	}
+	location, err := workflow.Load(ctx, "london")
+	if err != nil {
+		return
+	}
+	// The replacement must identify the same Apple library, including when the
+	// stored token expired. No configuration POST is replayed.
+	_, err = workflow.RecoverConfiguration(ctx, location.ID, location.Revision, os.Getenv("APPSBOOKS_REPLACEMENT_STOKEN"))
+	if err != nil {
+		return
+	} // Pending state and prior evidence remain available.
+}

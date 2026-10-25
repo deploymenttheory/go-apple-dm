@@ -17,7 +17,7 @@ import (
 var ErrRevision = errors.New("appsbooks: location revision changed")
 
 // ErrConfigurationPending requires reconciliation of an unfinished configuration
-// before another configuration or token replacement can start.
+// before another configuration or ordinary token replacement can start.
 var ErrConfigurationPending = errors.New("appsbooks: configuration requires reconciliation")
 
 // Location is credential-free metadata. ID is caller-owned; UID is Apple's uId
@@ -215,7 +215,30 @@ func (w *Workflow) session(ctx context.Context, id string, revision uint64, allo
 // replacement must identify the SAME Apple library and stable MDM. Failed probes
 // or revision races retain the previous credentials, evidence and checkpoints.
 // Register never claims an unclaimed location or overwrites foreign ownership.
+// Pending configuration requires Probe or explicit RecoverConfiguration first.
 func (w *Workflow) Register(ctx context.Context, id string, revision uint64, token string) (Location, error) {
+	return w.register(ctx, id, revision, token, false)
+}
+
+// RecoverConfiguration reconciles a pending configuration using a replacement
+// sToken after the original configuration call/process has stopped. It requires
+// the current nonzero revision and an existing pending reservation. A read-only
+// probe validates the same Apple library UID and stable MDM ownership, then one
+// atomic commit replaces credentials, records the observed configuration and
+// clears pending state. It never replays a configuration POST or claims ownership.
+// Failed validation or persistence retains the pending state and prior credentials,
+// source journals and checkpoints. Stop old processes before invoking recovery:
+// local fencing cannot revoke a remote POST already in flight.
+func (w *Workflow) RecoverConfiguration(ctx context.Context, id string, revision uint64, token string) (Location, error) {
+	if revision == 0 {
+		return Location{}, ErrInput
+	}
+	return w.register(ctx, id, revision, token, true)
+}
+
+// register shares validated token persistence between ordinary registration and
+// explicit recovery, keeping pending-state permission specific to the operation.
+func (w *Workflow) register(ctx context.Context, id string, revision uint64, token string, recoverPending bool) (Location, error) {
 	if id == "" || revision == math.MaxUint64 {
 		return Location{}, ErrInput
 	}
@@ -229,7 +252,10 @@ func (w *Workflow) Register(ctx context.Context, id string, revision uint64, tok
 		if prior.Revision != revision {
 			return Location{}, ErrRevision
 		}
-		if prior.ConfigurationPending {
+		if recoverPending && !prior.ConfigurationPending {
+			return Location{}, ErrInput
+		}
+		if prior.ConfigurationPending && !recoverPending {
 			return Location{}, ErrConfigurationPending
 		}
 	}
@@ -255,7 +281,10 @@ func (w *Workflow) Register(ctx context.Context, id string, revision uint64, tok
 		if current.Revision != revision {
 			return ErrRevision
 		}
-		if current.ConfigurationPending {
+		if recoverPending && !current.ConfigurationPending {
+			return ErrInput
+		}
+		if current.ConfigurationPending && !recoverPending {
 			return ErrConfigurationPending
 		}
 		if current.UID != observed.UID {
@@ -279,6 +308,7 @@ func (w *Workflow) Register(ctx context.Context, id string, revision uint64, tok
 		current.CredentialRevision = current.Revision
 		current.Name, current.TokenExpiresAt, current.UpdatedAt = observed.LocationName, client.expires, tx.Now()
 		current.OwnerID = observedOwner(observed)
+		current.ConfigurationPending = false
 		evidence.Configuration = observed.Raw
 		if err := putState(ctx, tx, binding, id); err != nil {
 			return err
@@ -341,6 +371,7 @@ func (w *Workflow) commit(ctx context.Context, l Location, fn func(state.Tx, *Lo
 // configuration. It first validates identity through a GET, then reserves a durable
 // pending revision before the POST. Errors after reservation leave pending state;
 // use Probe after the original call has terminated to reconcile before retrying.
+// If the stored token has expired, use RecoverConfiguration with a valid replacement.
 // No local lock can provide an ownership CAS across Apple's service: operators
 // must coordinate transfers with other MDMs and stop old processes before recovery.
 func (w *Workflow) Configure(ctx context.Context, id string, revision uint64, in ClientConfigurationRequest) (Location, error) {

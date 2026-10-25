@@ -53,7 +53,14 @@ aliases, and commits only at the expected monotonic revision.
 explicit POST. An uncertain or crashed operation blocks later configuration,
 refresh and replacement. Once the original call/process has stopped, `Probe`
 reconciles observed configuration through a GET without claiming ownership or
-replaying a mutation. Apple has no ownership CAS; local fencing cannot revoke a
+replaying a mutation. If the stored credential expires while pending,
+`RecoverConfiguration` explicitly accepts a replacement sToken after the original
+call/process has stopped. It validates the same Apple UID and stable MDM ownership
+through a GET, then atomically replaces credentials, reconciles pending state and
+advances the revision. Failed recovery preserves the prior pending reservation,
+credentials, evidence and checkpoints. Ordinary registration cannot bypass pending
+state. Both recovery paths retain the asset evidence and ordered assignment/user
+journals, and neither replays a configuration POST. Apple has no ownership CAS; local fencing cannot revoke a
 remote POST already in flight. Operators coordinate ownership transfers and stop
 old processes before recovery.
 

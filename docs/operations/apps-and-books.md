@@ -63,9 +63,20 @@ before sending the POST. Other configuration, refresh and token replacement
 operations reject pending state. A failed or crashed call leaves this reservation
 durable. After the original call/process has stopped, `Probe` performs a GET and
 publishes the observed configuration, clearing pending state without replaying
-any write. It also rejects foreign ownership. Operators must stop old processes
-before recovery and coordinate transfers: Apple offers no ownership CAS, and a
-local revision cannot fence a remote POST already in flight.
+any write. It also rejects foreign ownership. If the stored token has expired,
+`RecoverConfiguration(ctx, id, revision, replacementSToken)` is the explicit recovery
+operation: after the original call/process has stopped, it probes with the valid
+replacement token and requires the same persisted Apple UID and MDM identity.
+One atomic commit replaces credentials, retains the observed raw configuration,
+clears pending state and advances the revision. Existing asset evidence and ordered
+assignment/user journals and checkpoints remain intact. Failed probes, persistence
+or stale revisions preserve the pending reservation, credentials and evidence.
+Recovery requires an existing pending reservation and never replays a POST;
+ordinary `Register` remains blocked while pending. The
+[compiled recovery example](../../devicemanagement/appleplatformservices/appsbooks/example_test.go)
+uses `Load` to obtain the revision after the caller stops the original operation.
+Operators must stop old processes before recovery and coordinate transfers:
+Apple offers no ownership CAS, and a local revision cannot fence a remote POST already in flight.
 
 `Refresh` reads all assets without filters and assignments/users incrementally
 from the last successful checkpoints. It retains the full asset page set and an

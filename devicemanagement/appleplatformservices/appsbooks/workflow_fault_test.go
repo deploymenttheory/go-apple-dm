@@ -99,16 +99,45 @@ func fixtureWorkflow(t *testing.T) (*appsbooks.Workflow, *workflowFault, *fixtur
 // TestWorkflowPersistenceFailures verifies rollback at each read/write boundary,
 // including partially written token, UID binding, metadata and successful sources.
 func TestWorkflowPersistenceFailures(t *testing.T) {
-	for _, operation := range []string{"register", "replace", "load", "evidence", "probe", "refresh", "configure"} {
+	for _, operation := range []string{"register", "replace", "load", "evidence", "probe", "refresh", "configure", "recover"} {
 		t.Run(operation, func(t *testing.T) {
 			for failAt := 1; failAt < 40; failAt++ {
 				w, s, f := fixtureWorkflow(t)
+				if _, err := w.RecoverConfiguration(t.Context(), "L", 0, f.config.SToken); !errors.Is(err, appsbooks.ErrInput) {
+					t.Fatal(err)
+				}
 				var l appsbooks.Location
 				if operation != "register" {
 					var err error
 					l, err = w.Register(t.Context(), "location", 0, f.config.SToken)
 					if err != nil {
 						t.Fatal(err)
+					}
+				}
+				if operation == "recover" {
+					// The mutating call has terminated before replacement recovery.
+					transport := f.config.HTTPClient.Transport
+					broken := *f.config.HTTPClient
+					broken.Transport = workflowRecoveryTransport(func(r *http.Request) (*http.Response, error) {
+						if r.Method == http.MethodPost {
+							return nil, errors.New("stopped uncertain POST")
+						}
+						return transport.RoundTrip(r)
+					})
+					cfg := f.config
+					cfg.SToken = ""
+					cfg.UID = ""
+					cfg.HTTPClient = &broken
+					bad, err := appsbooks.NewWorkflow(s, cfg)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if _, err := bad.Configure(t.Context(), l.ID, l.Revision, appsbooks.ClientConfigurationRequest{MDMInfo: appsbooks.MDMInfo{ID: "ours", Name: "Ours", Metadata: "stable"}}); err == nil {
+						t.Fatal("POST failure accepted")
+					}
+					l, err = w.Load(t.Context(), l.ID)
+					if err != nil || !l.ConfigurationPending {
+						t.Fatal(l, err)
 					}
 				}
 				baseline, err := s.Store.List(t.Context(), "appsbooks/", "", 100)
@@ -131,6 +160,8 @@ func TestWorkflowPersistenceFailures(t *testing.T) {
 					_, callErr = w.Probe(t.Context(), "location", l.Revision)
 				case "refresh":
 					_, callErr = w.Refresh(t.Context(), "location", l.Revision, 2)
+				case "recover":
+					_, callErr = w.RecoverConfiguration(t.Context(), l.ID, l.Revision, f.config.SToken)
 				case "configure":
 					_, callErr = w.Configure(t.Context(), "location", l.Revision, appsbooks.ClientConfigurationRequest{MDMInfo: appsbooks.MDMInfo{ID: "ours", Name: "Example", Metadata: "stable"}})
 				}
@@ -169,6 +200,9 @@ func TestWorkflowValidationAndCorruption(t *testing.T) {
 		t.Fatal(err)
 	}
 	w, s, f := fixtureWorkflow(t)
+	if _, err := w.RecoverConfiguration(t.Context(), "L", 0, f.config.SToken); !errors.Is(err, appsbooks.ErrInput) {
+		t.Fatal(err)
+	}
 	if _, err := w.Register(t.Context(), "", 0, f.config.SToken); !errors.Is(err, appsbooks.ErrInput) {
 		t.Fatal(err)
 	}
@@ -254,4 +288,12 @@ func TestWorkflowValidationAndCorruption(t *testing.T) {
 			t.Fatal("credential leaked into metadata")
 		}
 	}
+}
+
+// workflowRecoveryTransport injects a terminated uncertain POST during setup.
+type workflowRecoveryTransport func(*http.Request) (*http.Response, error)
+
+// RoundTrip delegates to the recovery setup transport.
+func (r workflowRecoveryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	return r(req)
 }

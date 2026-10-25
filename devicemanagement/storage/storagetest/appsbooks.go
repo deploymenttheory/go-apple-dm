@@ -414,6 +414,129 @@ func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 			t.Fatal("probe changed refresh evidence")
 		}
 	})
+
+	t.Run("ExpiredPendingConfigurationRecovery", func(t *testing.T) {
+		a, b := factory(t)
+		f, cfg, token := fixtureAppsBooks(t)
+		w, other := newAppsBooksWorkflow(t, a, cfg), newAppsBooksWorkflow(t, b, cfg)
+		l, err := w.Register(t.Context(), "London", 0, token)
+		if err != nil {
+			t.Fatal(err)
+		}
+		l, err = w.Refresh(t.Context(), l.ID, l.Revision, 3)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Hold old read-only work across pending reservation, expiry and recovery.
+		// The original mutating call below terminates before recovery begins.
+		f.mu.Lock()
+		f.blockPath = "/config"
+		f.entered = make(chan struct{})
+		f.release = make(chan struct{})
+		entered, release := f.entered, f.release
+		f.mu.Unlock()
+		stale := make(chan error, 1)
+		staleRevision, id := l.Revision, l.ID
+		go func() { _, err := w.Probe(t.Context(), id, staleRevision); stale <- err }()
+		<-entered
+		defer func() {
+			close(release)
+			if err := <-stale; !errors.Is(err, appsbooks.ErrRevision) {
+				t.Errorf("old work was not fenced: %v", err)
+			}
+		}()
+		transport := cfg.HTTPClient.Transport
+		broken := *cfg.HTTPClient
+		attempts := 0
+		broken.Transport = appsBooksRoundTripper(func(r *http.Request) (*http.Response, error) {
+			if r.Method == http.MethodPost {
+				attempts++
+				return nil, errors.New("stopped uncertain POST")
+			}
+			return transport.RoundTrip(r)
+		})
+		badCfg := cfg
+		badCfg.HTTPClient = &broken
+		if _, err := newAppsBooksWorkflow(t, b, badCfg).Configure(t.Context(), l.ID, l.Revision, appsbooks.ClientConfigurationRequest{MDMInfo: appsbooks.MDMInfo{ID: "ours", Name: "Ours", Metadata: "stable"}}); err == nil {
+			t.Fatal("uncertain POST accepted")
+		}
+		l, e := requireAppsBooksLocation(t, other, l.ID)
+		if !l.ConfigurationPending || attempts != 1 {
+			t.Fatal("pending reservation missing", l, attempts)
+		}
+		clk, ok := cfg.Clock.(*appsBooksClock)
+		if !ok {
+			t.Fatal("unexpected fixture clock")
+		}
+		clk.Advance(6 * 365 * 24 * time.Hour)
+		replacement := appsBooksToken("recovery", "2040-01-01T00:00:00Z")
+		if _, err := other.Probe(t.Context(), l.ID, l.Revision); !errors.Is(err, appsbooks.ErrExpired) {
+			t.Fatal(err)
+		}
+		if _, err := other.Register(t.Context(), l.ID, l.Revision, replacement); !errors.Is(err, appsbooks.ErrConfigurationPending) {
+			t.Fatal(err)
+		}
+		for _, failure := range []string{"uid", "owner", "probe", "revision"} {
+			f.mu.Lock()
+			switch failure {
+			case "uid":
+				f.uid = "WRONG"
+			case "owner":
+				f.owner = "foreign"
+			case "probe":
+				f.fail = "/config"
+			}
+			f.mu.Unlock()
+			revision := l.Revision
+			expected := error(nil)
+			switch failure {
+			case "uid":
+				expected = appsbooks.ErrLocation
+			case "owner":
+				expected = appsbooks.ErrOwnership
+			case "revision":
+				revision--
+				expected = appsbooks.ErrRevision
+			}
+			_, err := other.RecoverConfiguration(t.Context(), l.ID, revision, replacement)
+			if err == nil || (expected != nil && !errors.Is(err, expected)) {
+				t.Fatalf("%s: %v", failure, err)
+			}
+			got, kept := requireAppsBooksLocation(t, other, l.ID)
+			if !reflect.DeepEqual(l, got) || !reflect.DeepEqual(e, kept) {
+				t.Fatal("failed recovery changed pending evidence", failure)
+			}
+			f.mu.Lock()
+			f.uid = "UID"
+			f.owner = "ours"
+			f.fail = ""
+			f.mu.Unlock()
+		}
+		recovered, err := other.RecoverConfiguration(t.Context(), l.ID, l.Revision, replacement)
+		if err != nil || recovered.ConfigurationPending || recovered.CredentialRevision <= l.CredentialRevision || recovered.Revision <= l.Revision || !recovered.TokenExpiresAt.After(l.TokenExpiresAt) {
+			t.Fatal(recovered, err)
+		}
+		_, kept := requireAppsBooksLocation(t, other, l.ID)
+		if !reflect.DeepEqual(e.Assets, kept.Assets) || !reflect.DeepEqual(e.Assignments, kept.Assignments) || !reflect.DeepEqual(e.Users, kept.Users) {
+			t.Fatal("recovery changed source journals/checkpoints")
+		}
+		if _, err := other.RecoverConfiguration(t.Context(), l.ID, l.Revision, replacement); !errors.Is(err, appsbooks.ErrRevision) {
+			t.Fatal("old recovery revision accepted", err)
+		}
+		if _, err := other.RecoverConfiguration(t.Context(), l.ID, recovered.Revision, replacement); !errors.Is(err, appsbooks.ErrInput) {
+			t.Fatal("recovery accepted without pending reservation", err)
+		}
+		restarted := newAppsBooksWorkflow(t, b, cfg)
+		if _, err := restarted.Refresh(t.Context(), l.ID, recovered.Revision, 3); err != nil {
+			t.Fatal("replacement credentials unusable after restart", err)
+		}
+		f.mu.Lock()
+		posts := f.posts
+		f.mu.Unlock()
+		if posts != 0 || attempts != 1 {
+			t.Fatal("recovery replayed configuration POST", posts, attempts)
+		}
+	})
 	t.Run("ConcurrentRefreshTokenABA", func(t *testing.T) {
 		a, b := factory(t)
 		f, cfg, token := fixtureAppsBooks(t)

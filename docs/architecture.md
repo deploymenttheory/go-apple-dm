@@ -109,7 +109,10 @@ Optional `appsbooks.Workflow` composes the existing atomic `state.Store` with
 per-location metadata, separate credentials and sensitive raw source snapshots.
 Stable MDM identity and Apple's library UID survive token replacement; monotonic
 revisions fence stale work. Explicit configuration reserves durable pending state
-before HTTP; read-only probes reconcile after stopped operations. Full assets and
+before HTTP; read-only probes reconcile after stopped operations. Explicit
+`RecoverConfiguration` supplies a validated replacement token if expiry blocks
+pending recovery, atomically retaining source journals and fencing older work.
+Full assets and
 incremental assignment/user page batches publish together only after complete
 traversal. Safe metadata reads are separate from privileged source exports. No
 inventory model, automatic licensing or installation is required.

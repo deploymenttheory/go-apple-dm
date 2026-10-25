@@ -23,7 +23,9 @@
 // across renewal. Tokens, safe metadata and sensitive raw evidence occupy separate
 // records. Load returns safe metadata; LoadEvidence requires privileged access.
 // Configure reserves durable pending state before an explicit ownership write;
-// Probe reconciles after the original operation has stopped. Refresh publishes
+// Probe reconciles after the original operation has stopped; RecoverConfiguration
+// supplies a replacement token when the pending operation's token has expired.
+// Both recovery paths only read Apple configuration. Refresh publishes
 // full assets and incremental assignment/user source pages and checkpoints only
 // after all traversals succeed. Revisions fence old work after any local change.
 //
