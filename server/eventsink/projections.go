@@ -19,6 +19,7 @@ func Default() *Registry {
 	r.Register("managed-content-state", passthrough("Objects"))
 	r.Register("appsbooks-notification", passthrough("Location"))
 	r.Register("managed-content-dispatch", passthrough("Operation", "Method"))
+	r.Register("managed-content-status-query", passthrough("Operation", "Count"))
 
 	// Check-in. Authenticate carries the device's own description of itself,
 	// which is what makes an enrollment record worth auditing.

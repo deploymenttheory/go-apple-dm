@@ -32,6 +32,8 @@ type contentFixture struct {
 	uid                string
 	callbackClient     *http.Client
 	notificationSecret atomic.Value
+	requests           atomic.Int32
+	assetKind          atomic.Value
 	config             AppsBooksConfig
 	posts              atomic.Int32
 	assets             atomic.Bool
@@ -47,8 +49,10 @@ func contentFixtureService(t *testing.T) *contentFixture {
 	f := &contentFixture{uid: rand.Text()}
 	f.owner.Store("ours")
 	f.notificationSecret.Store("private-callback")
+	f.assetKind.Store("App")
 	var srv *httptest.Server
 	srv = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		f.requests.Add(1)
 		w.Header().Set("Content-Type", "application/json")
 		if r.URL.Path == "/service/config" {
 			urls := map[string]string{}
@@ -115,7 +119,7 @@ func contentFixtureService(t *testing.T) *contentFixture {
 			f.assetReads.Add(1)
 		}
 		if r.URL.Path == "/assets" && f.assets.Load() {
-			_, _ = fmt.Fprintf(w, `{%s,"currentPageIndex":0,"totalPages":1,"versionId":"assets-v1","assets":[{"adamId":"1","pricingParam":"STDQ","productType":"App","deviceAssignable":true,"revocable":true,"supportedPlatforms":["iOS","macOS"],"totalCount":100,"availableCount":100}]}`, meta)
+			_, _ = fmt.Fprintf(w, `{%s,"currentPageIndex":0,"totalPages":1,"versionId":"assets-v1","assets":[{"adamId":"1","pricingParam":"STDQ","productType":%q,"deviceAssignable":%t,"revocable":%t,"supportedPlatforms":["iOS","macOS"],"totalCount":100,"availableCount":100}]}`, meta, f.assetKind.Load().(string), f.assetKind.Load().(string) == "App", f.assetKind.Load().(string) == "App")
 			return
 		}
 		if r.URL.Path == "/assignments" && f.assignments.Load() {

@@ -122,6 +122,12 @@ type contentDispatchRecord struct {
 func (v contentDelivery) Submit(ctx context.Context, d managedcontent.Dispatch) (managedcontent.Observation, error) {
 	var out managedcontent.Observation
 	err := (sqlcommon.UnitOfWork{DB: v.a.db, Dialect: v.a.dialect}).Run(ctx, func(ctx context.Context) error {
+		if err := v.a.lockNativeContent(ctx); err != nil {
+			return err
+		}
+		if err := v.a.lockContentEnrollment(ctx, d.Enrollment); err != nil {
+			return err
+		}
 		targets, err := (contentResolver{v.a}).Resolve(ctx, managedcontent.Selection{Enrollment: d.Enrollment, Serial: d.Serial, ClientUserID: d.ClientUserID})
 		if err != nil {
 			return err
@@ -244,7 +250,7 @@ func (v contentDelivery) Submit(ctx context.Context, d managedcontent.Dispatch) 
 			out.Found = true
 			out.DeclarationPublished = d.Method == managedcontent.DDM
 			out.ObservedAt = tx.Now()
-			return v.a.cfg.publisher().Publish(ctx, event.Event{Type: "managed-content-dispatch", At: tx.Now(), Actor: "managed-content", Data: map[string]any{"Operation": d.ID, "Method": string(d.Method)}})
+			return v.a.cfg.publisher().Publish(ctx, event.Event{Type: "managed-content-dispatch", At: tx.Now(), Actor: "managed-content", Enrollment: d.Enrollment, Data: map[string]any{"Operation": d.ID, "Method": string(d.Method)}})
 		})
 	})
 	return out, err
@@ -258,10 +264,15 @@ func dispatchObservation(d managedcontent.Dispatch) managedcontent.Observation {
 // Inspect reads retained native ownership and processing without resubmitting work.
 func (v contentDelivery) Inspect(ctx context.Context, d managedcontent.Dispatch) (managedcontent.Observation, error) {
 	var out managedcontent.Observation
-	if _, err := (contentResolver{v.a}).Resolve(ctx, managedcontent.Selection{Enrollment: d.Enrollment, Serial: d.Serial, ClientUserID: d.ClientUserID}); err != nil {
-		return out, err
-	}
+
 	err := (sqlcommon.UnitOfWork{DB: v.a.db, Dialect: v.a.dialect}).Run(ctx, func(ctx context.Context) error {
+		if err := v.a.lockContentEnrollment(ctx, d.Enrollment); err != nil {
+			return err
+		}
+		if _, err := (contentResolver{v.a}).Resolve(ctx, managedcontent.Selection{Enrollment: d.Enrollment, Serial: d.Serial, ClientUserID: d.ClientUserID}); err != nil {
+			return err
+		}
+
 		record, err := v.a.protocol.Get(ctx, deliveryKey(d.ID))
 		if errors.Is(err, state.ErrNotFound) {
 			out = dispatchObservation(d)
@@ -271,6 +282,14 @@ func (v contentDelivery) Inspect(ctx context.Context, d managedcontent.Dispatch)
 			return err
 		}
 		var saved contentDispatchRecord
+		if ownerRecord, ownerErr := v.a.protocol.Get(ctx, contentAssetKey(d.Enrollment, d.Content.Asset.AdamID)); ownerErr != nil {
+			return ownerErr
+		} else {
+			var owner nativeContentOwner
+			if json.Unmarshal(ownerRecord.Value, &owner) != nil || owner.ID != d.ID || owner.Digest != d.Digest || owner.Method != d.Method || owner.Enrollment != d.Enrollment {
+				return managedcontent.ErrConflict
+			}
+		}
 		if json.Unmarshal(record.Value, &saved) != nil || !sameContentDispatch(saved.Dispatch, d) {
 			return managedcontent.ErrConflict
 		}
@@ -285,7 +304,7 @@ func (v contentDelivery) Inspect(ctx context.Context, d managedcontent.Dispatch)
 func (v contentDelivery) inspectNative(ctx context.Context, d managedcontent.Dispatch, created time.Time) (managedcontent.Observation, error) {
 	out := dispatchObservation(d)
 	out.Found = true
-	out.ObservedAt = v.a.cfg.Clock.Now()
+	out.ObservedAt = created
 	if d.Method == managedcontent.DDM {
 		for _, doc := range d.Declarations {
 			decl, err := v.a.Engine.GetDeclaration(ctx, doc.Identifier)
@@ -329,6 +348,7 @@ func (v contentDelivery) inspectNative(ctx context.Context, d managedcontent.Dis
 			if payload.State != nil {
 				out.Terminal = *payload.State == "Managed" || *payload.State == "Installed" || *payload.State == "Failed"
 			}
+			return currentNativeMedia(out, d.Content.Asset.AdamID, rows, q.CompletedAt)
 		}
 		return out, nil
 	}
@@ -360,22 +380,37 @@ func currentNativeApplication(out managedcontent.Observation, bundle string, row
 	var latest *storage.QueuedCommand
 	for i := range rows {
 		q := &rows[i]
-		if q.Command.RequestType != "InstalledApplicationList" || q.State != storage.StateAcknowledged || q.Result == nil || q.CompletedAt.Before(since) {
+		if q.State != storage.StateAcknowledged || q.Result == nil || q.CompletedAt.Before(since) {
 			continue
 		}
-		decoded, err := mdm.DecodeCommand(q.Command.Raw)
-		if err != nil {
-			return out, err
-		}
-		request, ok := decoded.Payload.(*commands.InstalledApplicationList)
-		if !ok {
-			return out, managedcontent.ErrProtocol
-		}
-		if len(request.Identifiers) > 0 && !slices.Contains(request.Identifiers, bundle) {
-			continue
-		}
-		if latest == nil || latest.CompletedAt.Before(q.CompletedAt) {
-			latest = q
+		switch q.Command.RequestType {
+		case "ManagedApplicationList":
+			response, err := mdm.DecodeResponse(q.Result.Raw, q.Command.RequestType)
+			if err != nil {
+				return out, err
+			}
+			payload, ok := response.Payload.(*commands.ManagedApplicationListResponse)
+			if !ok {
+				return out, managedcontent.ErrProtocol
+			}
+			if app, ok := payload.ManagedApplicationList[bundle]; ok && (app.Status == "Managed" || app.Status == "ManagedButUninstalled" || app.Status == "Failed" || app.Status == "UserRejected") {
+				out.Terminal = true
+			}
+		case "InstalledApplicationList":
+			decoded, err := mdm.DecodeCommand(q.Command.Raw)
+			if err != nil {
+				return out, err
+			}
+			request, ok := decoded.Payload.(*commands.InstalledApplicationList)
+			if !ok {
+				return out, managedcontent.ErrProtocol
+			}
+			if len(request.Identifiers) > 0 && !slices.Contains(request.Identifiers, bundle) {
+				continue
+			}
+			if latest == nil || latest.CompletedAt.Before(q.CompletedAt) {
+				latest = q
+			}
 		}
 	}
 	if latest == nil {
@@ -404,6 +439,65 @@ func currentNativeApplication(out managedcontent.Observation, bundle string, row
 		InstallationResponse []byte `json:"installationResponse"`
 		CurrentReport        []byte `json:"currentReport"`
 	}{bundle, out.Raw, latest.Result.Raw})
+	if err != nil {
+		return out, err
+	}
+	out.Raw = raw
+	return out, nil
+}
+
+// currentNativeMedia binds managed book query facts to Apple's exact selected
+// store identifier, retaining terminal processing independently of later absence.
+func currentNativeMedia(out managedcontent.Observation, asset string, rows []storage.QueuedCommand, since time.Time) (managedcontent.Observation, error) {
+	var latest *storage.QueuedCommand
+	for i := range rows {
+		q := &rows[i]
+		if q.Command.RequestType != "ManagedMediaList" || q.State != storage.StateAcknowledged || q.Result == nil || q.CompletedAt.Before(since) {
+			continue
+		}
+		response, err := mdm.DecodeResponse(q.Result.Raw, q.Command.RequestType)
+		if err != nil {
+			return out, err
+		}
+		payload, ok := response.Payload.(*commands.ManagedMediaListResponse)
+		if !ok {
+			return out, managedcontent.ErrProtocol
+		}
+		for _, book := range payload.Books {
+			if fmt.Sprint(book.ITunesStoreID) == asset && book.State != nil && (*book.State == "Managed" || *book.State == "Installed") {
+				out.Terminal = true
+			}
+		}
+		if latest == nil || latest.CompletedAt.Before(q.CompletedAt) {
+			latest = q
+		}
+	}
+	if latest == nil {
+		return out, nil
+	}
+	response, err := mdm.DecodeResponse(latest.Result.Raw, "ManagedMediaList")
+	if err != nil {
+		return out, err
+	}
+	payload, ok := response.Payload.(*commands.ManagedMediaListResponse)
+	if !ok {
+		return out, managedcontent.ErrProtocol
+	}
+	out.ObservedAt = latest.CompletedAt
+	for _, book := range payload.Books {
+		if fmt.Sprint(book.ITunesStoreID) != asset || book.State == nil {
+			continue
+		}
+		out.Installed = *book.State == "Managed" || *book.State == "Installed"
+		if out.Installed && book.Version != nil {
+			out.AppVersion = *book.Version
+		}
+	}
+	raw, err := json.Marshal(struct {
+		AssetID              string `json:"assetId"`
+		InstallationResponse []byte `json:"installationResponse"`
+		CurrentReport        []byte `json:"currentReport"`
+	}{asset, out.Raw, latest.Result.Raw})
 	if err != nil {
 		return out, err
 	}

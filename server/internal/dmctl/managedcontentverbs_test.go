@@ -32,6 +32,8 @@ func TestManagedContentCLI(t *testing.T) {
 		{"appsbooks", "submit", []string{"london", "job"}, "POST /admin/v1/appsbooks/locations/london/jobs/job/submit"},
 		{"appsbooks", "poll", []string{"london", "job"}, "POST /admin/v1/appsbooks/locations/london/jobs/job/poll"},
 		{"appsbooks", "reconcile", []string{"london", "job"}, "POST /admin/v1/appsbooks/locations/london/jobs/job/reconcile"},
+		{"managed-content", "native-observation", []string{"chosen"}, "GET /admin/v1/managed-content/operations/chosen/native-observation"},
+		{"managed-content", "status-refresh", []string{"chosen"}, "POST /admin/v1/managed-content/operations/chosen/status-refresh"},
 		{"managed-content", "get", []string{"chosen"}, "GET /admin/v1/managed-content/operations/chosen"},
 		{"managed-content", "evidence", []string{"chosen"}, "GET /admin/v1/managed-content/operations/chosen/evidence"},
 		{"managed-content", "create", []string{"chosen"}, "PUT /admin/v1/managed-content/operations/chosen"},

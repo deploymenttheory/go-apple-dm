@@ -47,12 +47,15 @@ func runContentOperation(ctx context.Context, e *env, args []string, managed boo
 		switch verb {
 		case "get":
 			method = http.MethodGet
+		case "native-observation":
+			method = http.MethodGet
+			path += "/native-observation"
 		case "evidence":
 			method = http.MethodGet
 			path += "/evidence"
 		case "create":
 			method = http.MethodPut
-		case "step", "reconcile", "cancel":
+		case "step", "reconcile", "cancel", "status-refresh":
 			path += "/" + verb
 		default:
 			return ErrUsage
