@@ -443,8 +443,11 @@ native queue/publication changes, using the authentication/reset lock ordering.
 MDM typed install processing is historical evidence, separate from a bare ACK.
 Current app installation/version requires an applicable authenticated native
 `InstalledApplicationList` joined to the identifier returned by that exact install
-command. A later empty report clears current installation/version without erasing
-historical completion. DDM uses its own exact declaration-token and
+command. A later empty installed-app report or exact-app
+`ManagedApplicationList` status `ManagedButUninstalled` clears current
+installation/version without erasing historical completion. Privileged evidence
+preserves the original removal response as `removalReport`; a newer installed-app
+query can establish reinstallation. DDM uses its own exact declaration-token and
 `app.managed.list` evidence; MDM-only managed-app queries do not establish DDM
 installation. The adapter folds the selected owned app's authenticated raw status
 reports: unrelated incremental app entries and same-token declaration heartbeats

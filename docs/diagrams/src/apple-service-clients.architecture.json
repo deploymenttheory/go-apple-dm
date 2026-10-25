@@ -46,7 +46,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "bb39d3a24680dffbdd4863361c9be1718615d704"
+      "revision": "c58adecfb8f2fa5835973e9ce965538bd216ee0d"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -336,6 +336,10 @@
         {
           "path": "server/statestore/sqlstore.go",
           "label": "Sealed SQL adapter"
+        },
+        {
+          "path": "server/internal/app/managedcontent_adapters.go",
+          "label": "Atomic native dispatch"
         }
       ]
     },
@@ -343,7 +347,7 @@
       "id": "contentdelivery",
       "type": "backend",
       "label": "managedcontent.Workflow",
-      "sublabel": "Explicit assign / install intent",
+      "sublabel": "SDK + server adapters",
       "pos": [
         645,
         560
@@ -363,8 +367,8 @@
           "label": "Target and delivery adapters"
         },
         {
-          "path": "devicemanagement/applications/managedcontent/successor.go",
-          "label": "Fenced same-method handoff"
+          "path": "server/internal/app/managedcontent.go",
+          "label": "Reference-server composition"
         }
       ]
     }
@@ -511,8 +515,8 @@
         "Apps and Books sends the original location sToken as a bearer credential and checks the returned library UID and MDM identity.",
         "AxM serial-based helpers explicitly resolve the full organization list to returned opaque resource IDs before mutation. Ambiguous or missing serials and incomplete enumeration fail closed.",
         "Activity CSV downloads allow the API origin and HTTPS store.blobstore.apple.com on port 443. Downloads use bounded GET retries, Retry-After, backoff and cancellation with sanitized retry logs. API downloads replay once after a 401. Storage gets no API bearer or cookies and never refreshes OAuth; redirects are rejected. Intended serial-set completeness and per-device success are checked separately with an explicit observed CSV schema.",
-        "Apple activity information \u2014 https://developer.apple.com/documentation/applebusinessapi/get-orgdeviceactivity-information",
-        "Explicit serial-to-resource resolution \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/557c464864be88a7a2e60afa4cc6c6139e03e094/devicemanagement/appleplatformservices/axm/serials.go"
+        "Apple activity information — https://developer.apple.com/documentation/applebusinessapi/get-orgdeviceactivity-information",
+        "Explicit serial-to-resource resolution — https://github.com/deploymenttheory/go-apple-dm/blob/557c464864be88a7a2e60afa4cc6c6139e03e094/devicemanagement/appleplatformservices/axm/serials.go"
       ]
     },
     {
@@ -521,15 +525,15 @@
       "items": [
         "Explicit account-scoped assignment intent persists targets, acceptance, terminal CSV outcomes and separate linkage convergence. Every binding replacement has a new generation. Revoked authority retains the overlap lock for submitted work; uncertain submissions never issue another POST. Remote attempt expiry leaves worker-lifetime bookkeeping and sibling application workers running, while lease checks still reject stale commits.",
         "Named-account API and CLI reads atomically snapshot connection metadata and sealed credentials per request, require explicit grants and audit access capture before contacting Apple, and withhold results until completion capture. Account incarnation, revision and credential checks fence replaced connections. Raw device and coverage evidence needs separate raw-inventory authority. Diagnostics distinguish authentication, permission, empty inventory and incomplete synchronization without returning upstream errors or secrets.",
-        "Named account operation routes \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/33df3b6a7b4c2dc45c075f6eacedff440c62c1bc/server/internal/app/adminaxmaccounts.go",
+        "Named account operation routes — https://github.com/deploymenttheory/go-apple-dm/blob/33df3b6a7b4c2dc45c075f6eacedff440c62c1bc/server/internal/app/adminaxmaccounts.go",
         "The collection package emits raw organization-device, detail, assignment and coverage resources without importing inventory. Raw list documents retain included resources and unknown envelope fields.",
         "The host selects streams and owns account credentials, scheduling, leases and an atomic evidence/outcome/checkpoint sink. Inventory synchronization composes the same collector.",
         "A new collector resumes committed versioned checkpoints. Failures retain successful evidence; only an exhausted successful list stream emits completion. Completion does not promise an Apple-side snapshot.",
-        "Collector persistence and resumption \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/axm/collection/collection.go",
+        "Collector persistence and resumption — https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/axm/collection/collection.go",
         "Explicit correlation accepts an actual organization-device resource and authenticated matching serials for ADE, account-driven Device Enrollment or profile-based Device Enrollment. User Enrollment receives no serial-based hardware enrichment. Opaque IDs retain protocol addressing and provenance roles.",
         "Optional resolution requires caller-declared equivalent meanings and units. Latest successful native field evidence wins before Apple regardless of Apple refresh time; omissions retain prior native reports, and originals and disagreements remain inspectable. Neither operation requires an inventory repository.",
-        "Standalone serial correlation and optional resolution \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/57e67022f98e9df9b75863020fc466b7c8af596f/devicemanagement/correlation/correlation.go",
-        "Native-first equivalent-field resolution \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/57e67022f98e9df9b75863020fc466b7c8af596f/devicemanagement/correlation/resolve.go"
+        "Standalone serial correlation and optional resolution — https://github.com/deploymenttheory/go-apple-dm/blob/57e67022f98e9df9b75863020fc466b7c8af596f/devicemanagement/correlation/correlation.go",
+        "Native-first equivalent-field resolution — https://github.com/deploymenttheory/go-apple-dm/blob/57e67022f98e9df9b75863020fc466b7c8af596f/devicemanagement/correlation/resolve.go"
       ]
     },
     {
@@ -540,10 +544,10 @@
         "Explicit serial links retain both source identities without merging records or ranking fields. Newly retained originals, including delayed reports, invalidate affected links; exact replays retain checked links. Absence or disconnection requires a fresh correlation. Optional resolution stays caller-owned.",
         "Migration retains opaque original source envelopes, derives reconstructed facts only from actual raw JSON, and leaves missing originals or authenticated enrollment provenance incomplete and refreshable. Normalized aliases cannot fabricate source values.",
         "Old worker owners are fenced through the existing lease guard. Incompatible checkpoints restart under a new generation while the previous outbound lease deadline prevents overlapping Apple requests. Evidence and checkpoint writes remain atomic.",
-        "Independent source persistence \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/840163310d08110feab368693b8a58c5f69c510f/devicemanagement/inventory/records.go",
-        "Original source and worker migration \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/840163310d08110feab368693b8a58c5f69c510f/devicemanagement/inventory/migration.go",
-        "Complete list document retention \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/840163310d08110feab368693b8a58c5f69c510f/devicemanagement/inventory/collection.go",
-        "SQL migration and restore preserve an active retired-writer fence; MySQL installs only missing guard DDL and uses current locking reads. \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/840163310d08110feab368693b8a58c5f69c510f/server/inventorystore/fence.go"
+        "Independent source persistence — https://github.com/deploymenttheory/go-apple-dm/blob/840163310d08110feab368693b8a58c5f69c510f/devicemanagement/inventory/records.go",
+        "Original source and worker migration — https://github.com/deploymenttheory/go-apple-dm/blob/840163310d08110feab368693b8a58c5f69c510f/devicemanagement/inventory/migration.go",
+        "Complete list document retention — https://github.com/deploymenttheory/go-apple-dm/blob/840163310d08110feab368693b8a58c5f69c510f/devicemanagement/inventory/collection.go",
+        "SQL migration and restore preserve an active retired-writer fence; MySQL installs only missing guard DDL and uses current locking reads. — https://github.com/deploymenttheory/go-apple-dm/blob/840163310d08110feab368693b8a58c5f69c510f/server/inventorystore/fence.go"
       ]
     },
     {
@@ -564,16 +568,16 @@
         "Register validates a same-location token through a read-only probe. Reads never claim foreign ownership; aliases cannot share one library UID.",
         "Full asset pages and ordered assignment/user delta journals publish checkpoints together only after complete traversal. Failed refreshes retain successful evidence; revisions fence older work and token ABA.",
         "Configure reserves durable pending state before an explicit POST. After the original call/process stops, Probe reconciles through GET; RecoverConfiguration validates a replacement token if expiry blocks recovery. Neither recovery path replays a POST.",
-        "Atomic location workflows \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2a149558826712758d6a69f3cf69f315011fdddb/devicemanagement/appleplatformservices/appsbooks/workflow.go",
-        "Complete source refresh \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2a149558826712758d6a69f3cf69f315011fdddb/devicemanagement/appleplatformservices/appsbooks/refresh.go",
-        "Finite and unlimited source representation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/appsbooks/assets.go",
-        "Filtered bounded page traversal \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/appsbooks/pages.go",
+        "Atomic location workflows — https://github.com/deploymenttheory/go-apple-dm/blob/2a149558826712758d6a69f3cf69f315011fdddb/devicemanagement/appleplatformservices/appsbooks/workflow.go",
+        "Complete source refresh — https://github.com/deploymenttheory/go-apple-dm/blob/2a149558826712758d6a69f3cf69f315011fdddb/devicemanagement/appleplatformservices/appsbooks/refresh.go",
+        "Finite and unlimited source representation — https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/appsbooks/assets.go",
+        "Filtered bounded page traversal — https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/appsbooks/pages.go",
         "Explicit licensing and user jobs persist request intent, location revisions, worker fences, event IDs and per-target observations. A per-location reservation precedes the single POST; all Apple HTTP runs outside local transactions.",
         "Expired or uncertain submissions require stopped-worker reconciliation and never become automatically eligible for POST replay. Read-only token recovery preserves uncertainty and existing evidence. Accepted jobs allow ordinary token renewal.",
         "Authenticated TEST_NOTIFICATION and management callbacks commit raw receipts, deduplication and matching job changes before the host acknowledges. Unbound event receipts apply on later event binding. Batches never establish whole-event success; duplicate or older success cannot erase failure.",
         "Polling begins at five minutes and spaces subsequent queries by at least thirty seconds. COMPLETE must match the operation and positive requested/completed counts; ordinary jobs also match the explicit task count. Aggregate success, available target evidence, dispatch and installation remain distinct.",
-        "Durable licensing jobs \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/12aaa32385107bcfe1627b5cb3caf20b7082da5d/devicemanagement/appleplatformservices/appsbooks/jobs.go",
-        "Atomic callback processing \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/12aaa32385107bcfe1627b5cb3caf20b7082da5d/devicemanagement/appleplatformservices/appsbooks/job_notifications.go"
+        "Durable licensing jobs — https://github.com/deploymenttheory/go-apple-dm/blob/12aaa32385107bcfe1627b5cb3caf20b7082da5d/devicemanagement/appleplatformservices/appsbooks/jobs.go",
+        "Atomic callback processing — https://github.com/deploymenttheory/go-apple-dm/blob/12aaa32385107bcfe1627b5cb3caf20b7082da5d/devicemanagement/appleplatformservices/appsbooks/job_notifications.go"
       ]
     },
     {
@@ -581,32 +585,32 @@
       "title": "DEP renewal, reset and cooldowns",
       "items": [
         "Ordinary token imports reject established Apple identity or consumer-key changes. Force permits an atomic identity reset only with a validated server UUID; same-identity renewals preserve inventory and local settings.",
-        "Old responses cannot restore reset inventory or sessions. A still-owned lease may retain HTTP 429 or device THROTTLED cooldowns across a same-identity token or desired-profile change; identity reset discards the old server\u2019s cooldowns.",
+        "Old responses cannot restore reset inventory or sessions. A still-owned lease may retain HTTP 429 or device THROTTLED cooldowns across a same-identity token or desired-profile change; identity reset discards the old server’s cooldowns.",
         "Local checks cannot undo requests already accepted by Apple. Later reconciliation reads current Apple state.",
-        "Token validation and atomic reset \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/dep/token.go"
+        "Token validation and atomic reset — https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/dep/token.go"
       ]
     },
     {
       "dot": "policy",
       "title": "Software updates",
       "items": [
-        "The enrollment handler applies its configured update policy. Software lookup supplies available versions; it does not itself send the device\u2019s HTTP rejection."
+        "The enrollment handler applies its configured update policy. Software lookup supplies available versions; it does not itself send the device’s HTTP rejection."
       ]
     },
     {
       "dot": "transport",
       "title": "Protocol and implementation references",
       "items": [
-        "Device assignment \u2014 https://developer.apple.com/documentation/devicemanagement/device-assignment",
-        "Implementing OAuth for the Apple School Manager and Apple Business APIs \u2014 https://developer.apple.com/documentation/apple-school-and-business-manager-api/implementing-oauth-for-the-apple-school-manager-and-apple-business-api",
-        "ErrorCodeSoftwareUpdateRequired \u2014 https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired",
-        "Apps and Books \u2014 https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api",
-        "ADE session authentication \u2014 https://developer.apple.com/documentation/devicemanagement/authenticating-for-automated-device-enrollment",
-        "Assignment throttling \u2014 https://developer.apple.com/documentation/devicemanagement/assign-profile",
-        "Unlimited asset schema \u2014 https://developer.apple.com/documentation/devicemanagement/unlimitedresponseasset",
-        "AxM authentication implementation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c5689b02bccba330c082d7bc78fd8320cc922517/devicemanagement/appleplatformservices/axm/auth.go",
-        "Source collection implementation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/axm/collection/collection.go",
-        "Activity-log implementation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/c5689b02bccba330c082d7bc78fd8320cc922517/devicemanagement/appleplatformservices/axm/activitylog.go"
+        "Device assignment — https://developer.apple.com/documentation/devicemanagement/device-assignment",
+        "Implementing OAuth for the Apple School Manager and Apple Business APIs — https://developer.apple.com/documentation/apple-school-and-business-manager-api/implementing-oauth-for-the-apple-school-manager-and-apple-business-api",
+        "ErrorCodeSoftwareUpdateRequired — https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired",
+        "Apps and Books — https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api",
+        "ADE session authentication — https://developer.apple.com/documentation/devicemanagement/authenticating-for-automated-device-enrollment",
+        "Assignment throttling — https://developer.apple.com/documentation/devicemanagement/assign-profile",
+        "Unlimited asset schema — https://developer.apple.com/documentation/devicemanagement/unlimitedresponseasset",
+        "AxM authentication implementation — https://github.com/deploymenttheory/go-apple-dm/blob/c5689b02bccba330c082d7bc78fd8320cc922517/devicemanagement/appleplatformservices/axm/auth.go",
+        "Source collection implementation — https://github.com/deploymenttheory/go-apple-dm/blob/1fc9f965bb0876a5907efa06f1943e8babd51379/devicemanagement/appleplatformservices/axm/collection/collection.go",
+        "Activity-log implementation — https://github.com/deploymenttheory/go-apple-dm/blob/c5689b02bccba330c082d7bc78fd8320cc922517/devicemanagement/appleplatformservices/axm/activitylog.go"
       ]
     },
     {
@@ -617,9 +621,15 @@
         "Device assignment requires an authenticated serial match. User licensing retains Apple clientUserId and native user scope; privacy User Enrollment does not require hardware disclosure. Native capabilities and generated command/declaration metadata gate the selected method.",
         "Queued Assign, Install and AssignAndInstall persist intent atomically with required caller capture. Step owns remote effects. Existing licenses need no historical job, but installation always requires a fresh owned, complete per-target association. Licensing, command acknowledgment, declaration publication, terminal device processing and current installed version remain separate.",
         "Stable native identities, exact payload digests, leases and ownership fencing protect restart/readback recovery. Unknown outcomes never authorize blind replay. Explicit same-method successors require fresh terminal predecessor evidence; DDM keeps its owned declaration identities.",
-        "Composition \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/bb39d3a24680dffbdd4863361c9be1718615d704/devicemanagement/applications/managedcontent/workflow.go",
-        "Native delivery and target contracts \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/bb39d3a24680dffbdd4863361c9be1718615d704/devicemanagement/applications/managedcontent/types.go",
-        "Current assignment proof \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/bb39d3a24680dffbdd4863361c9be1718615d704/devicemanagement/appleplatformservices/appsbooks/assignment.go"
+        "Composition — https://github.com/deploymenttheory/go-apple-dm/blob/bb39d3a24680dffbdd4863361c9be1718615d704/devicemanagement/applications/managedcontent/workflow.go",
+        "Native delivery and target contracts — https://github.com/deploymenttheory/go-apple-dm/blob/bb39d3a24680dffbdd4863361c9be1718615d704/devicemanagement/applications/managedcontent/types.go",
+        "Current assignment proof — https://github.com/deploymenttheory/go-apple-dm/blob/bb39d3a24680dffbdd4863361c9be1718615d704/devicemanagement/appleplatformservices/appsbooks/assignment.go",
+        "The reference server exposes explicit location, licensing-job and content operations through dedicated API/CLI grants. Sealed SQL state, required event capture and supervised workers compose the SDK without an ABM inventory prerequisite.",
+        "Native dispatch reserves its declaration or command identity atomically with audit and ownership. MDM wakes use the durable outbox after commit. Privileged native-observation reads fresh retained facts without stepping the workflow; explicit status-refresh queues owned verification queries.",
+        "Reference-server composition — https://github.com/deploymenttheory/go-apple-dm/blob/c58adecfb8f2fa5835973e9ce965538bd216ee0d/server/internal/app/managedcontent.go",
+        "Atomic native adapters — https://github.com/deploymenttheory/go-apple-dm/blob/c58adecfb8f2fa5835973e9ce965538bd216ee0d/server/internal/app/managedcontent_adapters.go",
+        "Read-only native inspection and explicit queries — https://github.com/deploymenttheory/go-apple-dm/blob/c58adecfb8f2fa5835973e9ce965538bd216ee0d/server/internal/app/managedcontent_inspection.go",
+        "A newer authenticated ManagedButUninstalled report clears an older installed/version claim while preserving historical processing and original source evidence. A later installed-app query can establish reinstallation."
       ]
     }
   ]

@@ -5,11 +5,18 @@ package app
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"errors"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
+	"time"
+
+	mysqldriver "github.com/go-sql-driver/mysql"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/appsbooks"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/applications/managedcontent"
@@ -22,7 +29,8 @@ import (
 
 // TestManagedContentSealedSQLCapture exercises the real runtime's callback and
 // SDK mutation/event boundary on each persistent backend, without resetting any
-// shared table. Random location UIDs isolate repeated runs and independent pools.
+// shared table. Each SQL backend owns a separate schema/database because runtime
+// startup scans sealed records, including records outside the selected location.
 func TestManagedContentSealedSQLCapture(t *testing.T) {
 	for _, tc := range []struct{ backend, env string }{{"sqlite", ""}, {"postgres", "TEST_POSTGRES_DSN"}, {"mysql", "TEST_MYSQL_DSN"}} {
 		t.Run(tc.backend, func(t *testing.T) {
@@ -30,10 +38,11 @@ func TestManagedContentSealedSQLCapture(t *testing.T) {
 			cfg := contentConfig(t, f)
 			cfg.Storage = tc.backend
 			if tc.env != "" {
-				cfg.DSN = os.Getenv(tc.env)
-				if cfg.DSN == "" {
+				dsn := os.Getenv(tc.env)
+				if dsn == "" {
 					t.Skip(tc.env + " not set")
 				}
+				cfg.DSN = contentIsolatedSQLDSN(t, tc.backend, dsn)
 			}
 			a, token := contentBuild(t, cfg)
 			location := "content323-" + rand.Text()
@@ -142,4 +151,66 @@ func TestManagedContentSealedSQLCapture(t *testing.T) {
 			}
 		})
 	}
+}
+
+// contentIsolatedSQLDSN gives this sealed fixture its own persistent namespace.
+// Its cleanup removes only the random resource created here, after app pools close.
+func contentIsolatedSQLDSN(t *testing.T, backend, dsn string) string {
+	t.Helper()
+	name := "inventory_test_content_capture_" + strings.ToLower(rand.Text())
+	var control *sql.DB
+	var drop string
+	switch backend {
+	case "postgres":
+		cfg, err := pgx.ParseConfig(dsn)
+		if err != nil {
+			t.Fatal(err)
+		}
+		control = stdlib.OpenDB(*cfg)
+		t.Cleanup(func() { _ = control.Close() })
+		if _, err := control.ExecContext(t.Context(), "CREATE SCHEMA "+name); err != nil {
+			t.Fatal(err)
+		}
+		drop = "DROP SCHEMA " + name + " CASCADE"
+		// pgx.ConnString retains the original text rather than serializing changed
+		// RuntimeParams; pass search_path in the DSN actually opened by the runtime.
+		if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
+			u, err := url.Parse(dsn)
+			if err != nil {
+				t.Fatal(err)
+			}
+			q := u.Query()
+			q.Set("search_path", name)
+			u.RawQuery = q.Encode()
+			dsn = u.String()
+		} else {
+			dsn += " search_path=" + name
+		}
+	case "mysql":
+		cfg, err := mysqldriver.ParseDSN(dsn)
+		if err != nil {
+			t.Fatal(err)
+		}
+		control, err = sql.Open("mysql", cfg.FormatDSN())
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = control.Close() })
+		if _, err := control.ExecContext(t.Context(), "CREATE DATABASE "+name); err != nil {
+			t.Fatal(err)
+		}
+		drop = "DROP DATABASE " + name
+		cfg.DBName = name
+		dsn = cfg.FormatDSN()
+	default:
+		t.Fatalf("unsupported isolated SQL backend %q", backend)
+	}
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if _, err := control.ExecContext(ctx, drop); err != nil {
+			t.Errorf("remove owned SQL fixture: %v", err)
+		}
+	})
+	return dsn
 }

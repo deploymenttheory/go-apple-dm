@@ -298,26 +298,9 @@ func (a *App) bindContentUser(ctx context.Context, id mdm.EnrollmentID, clientUs
 	if clientUser == "" {
 		return managedcontent.ErrInput
 	}
-	e, err := a.Store.Get(ctx, id)
+	e, device, err := a.authenticatedContentEnrollment(ctx, id)
 	if err != nil {
 		return err
-	}
-	if !e.Enabled {
-		return managedcontent.ErrTarget
-	}
-	device := e
-	if id.Channel.IsUser() {
-		ch := mdm.ChannelDevice
-		if id.Channel == mdm.ChannelUserEnrollmentUser {
-			ch = mdm.ChannelUserEnrollmentDevice
-		}
-		device, err = a.Store.Get(ctx, mdm.EnrollmentID{Channel: ch, ID: id.ParentID})
-		if err != nil {
-			return err
-		}
-	}
-	if !device.Enabled || device.CertHash == "" {
-		return managedcontent.ErrTarget
 	}
 	raw, err := json.Marshal(contentUserBinding{Enrollment: id, ClientUserID: clientUser, CertHash: device.CertHash, Principal: e.EnrollmentUserID + "/" + e.UserShortName})
 	if err != nil {

@@ -92,8 +92,11 @@ func TestManagedContentQueuedACKExplicitStatusRefresh(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(t.Context())
 	done := make(chan error, 1)
+	workerStopped := make(chan struct{})
 	driver := make(chan struct{})
 	driverErrors := make(chan error, 1)
+	driverRounds := make(chan []*mdm.Command, 8)
+	var connects atomic.Int32
 	var deliveryRun func(context.Context) error
 	for _, worker := range a.workers {
 		if worker.name == "event-delivery" {
@@ -103,7 +106,10 @@ func TestManagedContentQueuedACKExplicitStatusRefresh(t *testing.T) {
 	if deliveryRun == nil {
 		t.Fatal("real outbox worker missing")
 	}
-	go func() { done <- deliveryRun(ctx) }()
+	go func() {
+		defer close(workerStopped)
+		done <- deliveryRun(ctx)
+	}()
 	go func() {
 		defer close(driver)
 		for {
@@ -111,10 +117,17 @@ func TestManagedContentQueuedACKExplicitStatusRefresh(t *testing.T) {
 			case <-ctx.Done():
 				return
 			case <-wake:
-				if _, err := device.Connect(ctx); err != nil {
+				connects.Add(1)
+				processed, err := device.Connect(ctx)
+				if err != nil {
 					if ctx.Err() == nil {
 						driverErrors <- err
 					}
+					return
+				}
+				select {
+				case driverRounds <- processed:
+				case <-ctx.Done():
 					return
 				}
 			}
@@ -127,24 +140,56 @@ func TestManagedContentQueuedACKExplicitStatusRefresh(t *testing.T) {
 		}
 		<-driver
 	})
-	waitNative := func(predicate func(ManagedContentNativeObservation) bool) {
+	waitNative := func(want []string, predicate func(ManagedContentNativeObservation) bool) {
 		t.Helper()
-		deadline := time.NewTimer(5 * time.Second)
-		defer deadline.Stop()
-		tick := time.NewTicker(20 * time.Millisecond)
-		defer tick.Stop()
-		for {
-			proof, err := a.inspectContent(t.Context(), "status-operation")
-			if err == nil && predicate(proof) {
-				return
+		phase, stop := context.WithTimeout(t.Context(), 5*time.Second)
+		defer stop()
+		var processed []*mdm.Command
+		// Connect completes after posting the signed responses and receiving the
+		// empty next-command response. Wait for that actual exchange before reading
+		// facts: repeated inspection itself takes a SQLite writer reservation.
+		select {
+		case processed = <-driverRounds:
+		case err := <-driverErrors:
+			t.Fatal("native driver failed", err)
+		case <-workerStopped:
+			t.Fatal("outbox worker stopped before native completion")
+		case <-phase.Done():
+			diagnostics, end := context.WithTimeout(t.Context(), time.Second)
+			defer end()
+			queued, err := a.Store.Commands(diagnostics, id, storage.CommandQuery{}, paging.Page{Limit: 100})
+			if err != nil {
+				t.Log("native queue diagnostics failed", err)
 			}
-			select {
-			case err := <-driverErrors:
-				t.Fatal(err)
-			case <-deadline.C:
-				t.Fatal("APNs-driven native observation incomplete", proof, err)
-			case <-tick.C:
+			for _, row := range queued.Items {
+				t.Logf("native command %s %s state=%s hasResult=%t", row.Command.UUID, row.Command.RequestType, row.State, row.Result != nil)
 			}
+			deliveries, err := a.eventStore.List(diagnostics, "", "", "", 100)
+			if err != nil {
+				t.Log("outbox diagnostics failed", err)
+			}
+			for _, delivery := range deliveries {
+				if delivery.Destination == contentWakeDestination {
+					t.Logf("wake state=%s attempts=%d lastCode=%s", delivery.State, delivery.Attempts, delivery.LastCode)
+				}
+			}
+			t.Fatal("APNs-driven native exchange incomplete", "wakes", wakes.Load(), "connections", connects.Load(), phase.Err())
+		}
+		got := make(map[string]int)
+		for _, command := range processed {
+			got[command.RequestType]++
+		}
+		for _, kind := range want {
+			if got[kind] != 1 {
+				t.Fatal("native exchange did not process the expected commands", got, want)
+			}
+		}
+		if len(processed) != len(want) {
+			t.Fatal("native exchange processed unrelated commands", got, want)
+		}
+		proof, err := a.inspectContent(phase, "status-operation")
+		if err != nil || !predicate(proof) {
+			t.Fatal("completed native exchange lacks authoritative observation", err, proof.Observation.CommandAcknowledged, proof.Observation.Installed, proof.Observation.AppVersion)
 		}
 	}
 	plan := managedcontent.Plan{LocationID: "london", Content: managedcontent.Content{Asset: appsbooks.Asset{AdamID: "1", PricingParam: "STDQ"}, Kind: "App"}, Target: managedcontent.Selection{Enrollment: id, Serial: "S-STATUS"}, Method: managedcontent.MDM, MaxPages: 2}
@@ -157,7 +202,7 @@ func TestManagedContentQueuedACKExplicitStatusRefresh(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatal(w.Code, w.Body.String())
 	}
-	waitNative(func(proof ManagedContentNativeObservation) bool { return proof.Observation.CommandAcknowledged })
+	waitNative([]string{"InstallApplication"}, func(proof ManagedContentNativeObservation) bool { return proof.Observation.CommandAcknowledged })
 	before, err := a.protocol.List(t.Context(), "managedcontent/", "", 100)
 	if err != nil {
 		t.Fatal(err)
@@ -202,7 +247,7 @@ func TestManagedContentQueuedACKExplicitStatusRefresh(t *testing.T) {
 	if err != nil || len(queued.Items) != 3 {
 		t.Fatal("status refresh duplicated native queries", len(queued.Items), err)
 	}
-	waitNative(func(proof ManagedContentNativeObservation) bool {
+	waitNative([]string{"InstalledApplicationList", "ManagedApplicationList"}, func(proof ManagedContentNativeObservation) bool {
 		return proof.Observation.Installed && proof.Observation.Terminal
 	})
 	before, err = a.protocol.List(t.Context(), "managedcontent/", "", 100)

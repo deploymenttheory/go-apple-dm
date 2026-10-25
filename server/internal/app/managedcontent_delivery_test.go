@@ -57,6 +57,8 @@ func TestManagedContentNativeDeliverySimulator(t *testing.T) {
 				items = append(items, commands.InstalledApplicationListResponseInstalledApplicationList{Identifier: new("com.example.selected"), Version: new("2.4"), Installing: new(false)})
 			}
 			return simulator.Reply{Status: mdm.StatusAcknowledged, Payload: &commands.InstalledApplicationListResponse{InstalledApplicationList: items}}
+		case "ManagedApplicationList":
+			return simulator.Reply{Status: mdm.StatusAcknowledged, Payload: &commands.ManagedApplicationListResponse{ManagedApplicationList: map[string]commands.ManagedApplicationListManagedApplicationItem{"com.example.selected": {Status: "ManagedButUninstalled"}}}}
 		default:
 			return simulator.AcknowledgeAll(c)
 		}
@@ -96,6 +98,64 @@ func TestManagedContentNativeDeliverySimulator(t *testing.T) {
 	if err != nil || !observation.Installed || !observation.Terminal || observation.AppVersion != "2.4" || !bytes.Contains(observation.Raw, []byte("bundleId")) {
 		t.Fatal("native installation missing", observation, err)
 	}
+	installedAt := observation.ObservedAt
+	// A later management report explicitly says the user removed the app.
+	// The earlier installed-app query must not continue to claim installation.
+	installed = false
+	removed, err := mdm.NewCommand(&commands.ManagedApplicationList{Identifiers: []string{"com.example.selected"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.Core.Enqueue(t.Context(), []mdm.EnrollmentID{id}, removed, storage.EnqueueOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := device.Connect(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	journal, err := a.Store.Commands(t.Context(), id, storage.CommandQuery{}, paging.Page{Limit: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var removedAt time.Time
+	var removedRaw []byte
+	for _, row := range journal.Items {
+		if row.Command.UUID != removed.UUID {
+			continue
+		}
+		if row.State != storage.StateAcknowledged || row.Result == nil || row.CompletedAt.Before(installedAt) {
+			t.Fatal("removal response was not durably observed after installation", row.State, row.CompletedAt, installedAt)
+		}
+		response, err := mdm.DecodeResponse(row.Result.Raw, "ManagedApplicationList")
+		if err != nil {
+			t.Fatal(err)
+		}
+		payload, ok := response.Payload.(*commands.ManagedApplicationListResponse)
+		if !ok || payload.ManagedApplicationList["com.example.selected"].Status != "ManagedButUninstalled" {
+			t.Fatal("wrong native removal response")
+		}
+		removedAt = row.CompletedAt
+		removedRaw = row.Result.Raw
+	}
+	if removedAt.IsZero() {
+		t.Fatal("signed native removal missing from the real command journal")
+	}
+	observation, err = adapter.Inspect(t.Context(), dispatch)
+	if err != nil || observation.Installed || observation.AppVersion != "" || !observation.Terminal || !observation.ObservedAt.Equal(removedAt) {
+		t.Fatal("new native removal retained an older installation claim", observation.Installed, observation.AppVersion, observation.Terminal, err)
+	}
+	var removalEvidence struct {
+		RemovalReport []byte `json:"removalReport"`
+	}
+	if err := json.Unmarshal(observation.Raw, &removalEvidence); err != nil || !bytes.Equal(removalEvidence.RemovalReport, removedRaw) {
+		t.Fatal("native removal evidence did not preserve the original response", err)
+	}
+	// A subsequent positive device query can establish a real reinstallation.
+	installed = true
+	query()
+	observation, err = adapter.Inspect(t.Context(), dispatch)
+	if err != nil || !observation.Installed || observation.AppVersion != "2.4" {
+		t.Fatal("new native reinstallation did not replace historical removal", observation.Installed, observation.AppVersion, err)
+	}
 	installed = false
 	query()
 	observation, err = adapter.Inspect(t.Context(), dispatch)
@@ -103,11 +163,15 @@ func TestManagedContentNativeDeliverySimulator(t *testing.T) {
 		t.Fatal("removal erased historical processing or retained current version", observation, err)
 	}
 	// Repeated same identity does not enqueue again, even after acknowledgment.
+	beforeReplay, err := a.Store.Commands(t.Context(), id, storage.CommandQuery{}, paging.Page{Limit: 100})
+	if err != nil {
+		t.Fatal(err)
+	}
 	if _, err := adapter.Submit(t.Context(), dispatch); err != nil {
 		t.Fatal(err)
 	}
 	rows, err := a.Store.Commands(t.Context(), id, storage.CommandQuery{}, paging.Page{Limit: 100})
-	if err != nil || len(rows.Items) != 3 {
+	if err != nil || len(rows.Items) != len(beforeReplay.Items) {
 		t.Fatal("dispatch duplicated", len(rows.Items), err)
 	}
 	changed := dispatch
