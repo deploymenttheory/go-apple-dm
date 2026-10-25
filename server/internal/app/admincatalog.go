@@ -67,9 +67,9 @@ func AdminActions() []adminauth.Action {
 	add("syncDEPDevices", "Synchronize automated enrollment devices.", adminauth.EntityDEPAccount)
 	add("readConfigurationProfile", "Read one configuration profile metadata record.", adminauth.EntityConfigurationProfile)
 	add(ActionReadDEP, "Read devices in a device enrollment service account.", adminauth.EntityDEPAccount)
-	add(ActionReadBusinessMgr, "Read Apple Business Manager hardware, servers, and activities.", adminauth.EntitySystem)
-	add(ActionAssignBusinessMgr, "Assign Apple Business Manager hardware to a server.", adminauth.EntitySystem)
-	add(ActionUnassignBusinessMgr, "Unassign Apple Business Manager hardware.", adminauth.EntitySystem)
+	add(ActionReadBusinessMgr, "Inspect named Apple connections, service linkage, diagnostics and assignment operations. Raw device and coverage reads also require readRawInventory.", adminauth.EntitySystem)
+	add(ActionAssignBusinessMgr, "Request explicit named-account assignment to this MDM’s configured Apple service.", adminauth.EntitySystem)
+	add(ActionUnassignBusinessMgr, "Request explicit named-account unassignment from this MDM’s configured Apple service.", adminauth.EntitySystem)
 	for _, id := range commands.IDs() {
 		add("enqueueCommand."+id, "Send the "+id+" command to a device.", adminauth.EntityEnrollment)
 	}

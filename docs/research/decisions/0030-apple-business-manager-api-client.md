@@ -50,6 +50,25 @@ protect the read-before-unassign check against concurrent external administratio
 The [operations guide](../../operations/abm-assignments.md) defines states, permissions,
 configuration and recovery limits.
 
+Named-account administration uses current sealed inventory credentials for each
+live device, coverage and service read. A short local transaction snapshots
+metadata and its key before client construction; network I/O follows afterward.
+Account incarnation, revision and key
+checks fence responses after network I/O. Connection verification atomically
+checks the same snapshot and stamps only that exact incarnation and key; a
+delete/recreate cannot inherit a successful stale verification. The HTTP API has no global live-read
+fallback. Raw Apple device and coverage resources require explicit raw-inventory
+authority in addition to business-manager read authority. Named reads capture
+access before credential opening and remote calls when capture is configured;
+network I/O does not hold the local audit transaction. Connection diagnostics
+return reviewed categories independently from inventory presence and the latest
+current-revision synchronization outcome. Diagnostic job selection also requires
+a job enqueue time at or after the current account’s server-stamped creation time;
+recreating an ID and revision cannot borrow old successful synchronization.
+Successful job history remains retained and inspectable. CLI verbs preserve the account through
+assignment intent, retained operation/log inspection and synchronization jobs.
+See [named inspection](../../operations/abm-assignments.md#named-connection-inspection).
+
 ## Rationale
 
 Explicit pagination and retry policy give callers control over work and side effects. Separate activity completion and assignment convergence reflect asynchronous service behavior.

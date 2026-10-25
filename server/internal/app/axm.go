@@ -74,45 +74,6 @@ func (a *App) newAxM(ctx context.Context) (*axm.Client, error) {
 	return client, nil
 }
 
-// axmHandler is the admin API for Business Manager (mounted under the
-// admin prefix as /axm/...):
-//
-//	GET  /axm/servers                        list device management servers
-//	GET  /axm/devices?cursor=&limit=          list organisation devices
-//	GET  /axm/activities/{id}
-func (a *App) axmRoutes(client *axm.Client) []adminRoute {
-	var routes []adminRoute
-	actions := map[string]string{"GET /axm/servers": ActionReadBusinessMgr, "GET /axm/devices": ActionReadBusinessMgr, "GET /axm/activities/{id}": ActionReadBusinessMgr}
-	add := func(pattern string, handler http.HandlerFunc) {
-		routes = append(routes, adminRoute{Pattern: pattern, Action: actions[pattern], Family: "axm", Handler: handler})
-	}
-	add("GET /axm/servers", func(w http.ResponseWriter, r *http.Request) {
-		page, err := client.ListMDMServers(r.Context(), listOptions(r))
-		if err != nil {
-			writeError(w, axmStatus(err), err)
-			return
-		}
-		writeJSON(w, http.StatusOK, page)
-	})
-	add("GET /axm/devices", func(w http.ResponseWriter, r *http.Request) {
-		page, err := client.ListOrgDevices(r.Context(), listOptions(r))
-		if err != nil {
-			writeError(w, axmStatus(err), err)
-			return
-		}
-		writeJSON(w, http.StatusOK, page)
-	})
-	add("GET /axm/activities/{id}", func(w http.ResponseWriter, r *http.Request) {
-		act, err := client.GetOrgDeviceActivity(r.Context(), r.PathValue("id"), axm.GetOptions{})
-		if err != nil {
-			writeError(w, axmStatus(err), err)
-			return
-		}
-		writeJSON(w, http.StatusOK, act)
-	})
-	return routes
-}
-
 // listOptions reads the cursor and optional numeric page limit for an Apple Business
 // Manager request.
 func listOptions(r *http.Request) axm.ListOptions {
