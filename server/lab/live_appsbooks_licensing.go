@@ -115,7 +115,7 @@ func (a *appsAccess) binding(ctx context.Context, s *Session) error {
 	}
 	c, err := a.client.ClientConfig(ctx)
 	if err != nil {
-		return appsError(ctx, "fresh ownership")
+		return appsSDKError(ctx, "fresh ownership", err)
 	}
 	if c.UID != a.config.UID || c.MDMInfo == nil || c.MDMInfo.ID != a.config.MDMID || !reflect.DeepEqual(c.MDMInfo, a.configuration.MDMInfo) ||
 		c.NotificationURL != a.configuration.NotificationURL || c.NotificationAuthToken != a.configuration.NotificationAuthToken || !reflect.DeepEqual(c.SubscribedNotificationTypes, a.configuration.SubscribedNotificationTypes) {
@@ -197,9 +197,9 @@ func (a *appsAccess) sdkJob(ctx context.Context, s *Session, phase string, assoc
 		event, err = a.client.Disassociate(ctx, r)
 	}
 	if err != nil {
-		return appsError(ctx, "SDK licensing submission; outcome requires reconciliation")
+		return appsSDKError(ctx, "SDK licensing submission; outcome requires reconciliation", err)
 	}
-	if err = appsSave(s, phase+"-event.json", json.RawMessage(event.Raw)); err != nil {
+	if err = appsSaveRaw(s, phase+"-event.json", event.Raw); err != nil {
 		return err
 	}
 	// This direct SDK path has no authenticated callback confirmation channel.
@@ -208,13 +208,16 @@ func (a *appsAccess) sdkJob(ctx context.Context, s *Session, phase string, assoc
 	if err = appsWait(ctx, s, appsNotificationFallback); err != nil {
 		return appsError(ctx, "SDK notification fallback")
 	}
-	for {
+	for number := 0; ; number++ {
 		status, err := a.client.EventStatus(ctx, event.EventID)
 		if err != nil {
-			return appsError(ctx, "SDK licensing status; outcome requires reconciliation")
+			return appsSDKError(ctx, "SDK licensing status; outcome requires reconciliation", err)
+		}
+		if err = appsSaveRaw(s, fmt.Sprintf("%s-observation-%04d.json", phase, number), status.Raw); err != nil {
+			return err
 		}
 		if status.EventStatus == "COMPLETE" {
-			if err = appsSave(s, phase+"-status.json", json.RawMessage(status.Raw)); err != nil {
+			if err = appsSaveRaw(s, phase+"-status.json", status.Raw); err != nil {
 				return err
 			}
 			expected := "ASSOCIATE"
@@ -379,13 +382,22 @@ func liveAppsBooksLicensing(ctx context.Context, session *Session) (result error
 		}
 		associated := 0
 		_, err = a.client.WalkUsers(ctx, appsbooks.UsersQuery{ClientUserID: c.User}, c.MaxPages, func(user appsbooks.User) error {
-			if user.ClientUserID != c.User || user.Status != "Associated" {
+			if user.ClientUserID != c.User {
 				return appsError(ctx, "associated designated user")
+			}
+			if user.Status != "Associated" {
+				return fmt.Errorf("%w: designated associated Apple clientUserId required", ErrBlocked)
 			}
 			associated++
 			return nil
 		})
-		if err != nil || associated != 1 {
+		if err != nil {
+			if errors.Is(err, ErrBlocked) {
+				return err
+			}
+			return appsSDKError(ctx, "designated user collection", err)
+		}
+		if associated != 1 {
 			return fmt.Errorf("%w: designated associated Apple clientUserId required", ErrBlocked)
 		}
 	}
@@ -403,12 +415,12 @@ func liveAppsBooksLicensing(ctx context.Context, session *Session) (result error
 		return nil
 	})
 	if err != nil {
-		return appsError(ctx, "designated asset capabilities")
+		return appsSDKError(ctx, "designated asset capabilities", err)
 	}
 	if len(selected) != 1 || selected[0].Asset != c.Asset || selected[0].ProductType != "App" || !selected[0].Revocable || c.Serial != "" && !selected[0].DeviceAssignable {
 		return fmt.Errorf("%w: one available revocable app with applicable licensing capability required", ErrBlocked)
 	}
-	if err = appsSave(s, "asset.json", json.RawMessage(selected[0].Raw)); err != nil {
+	if err = appsSaveRaw(s, "asset.json", selected[0].Raw); err != nil {
 		return err
 	}
 	p, err := appsPhase(s, "original")
@@ -430,6 +442,9 @@ func liveAppsBooksLicensing(ctx context.Context, session *Session) (result error
 		return err
 	}
 	if err = a.referencePrepare(ctx, s, id); err != nil {
+		return err
+	}
+	if err = appsRequireBudget(ctx); err != nil {
 		return err
 	}
 	if err = appsFence(s, intent); err != nil {

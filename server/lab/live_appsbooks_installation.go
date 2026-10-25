@@ -161,11 +161,16 @@ func liveAppsBooksInstallation(ctx context.Context, session *Session) (result er
 		return err
 	}
 	id := op.Plan.Target.Enrollment
-	device := id.Device().ID
-	if device != s.Info.UDID || id.Channel == mdm.ChannelUser && (s.Info.UserID == "" || id.ID != device+":"+s.Info.UserID) {
+	if id.Validate() != nil {
+		return appsError(ctx, "native enrollment locator")
+	}
+	deviceID := id.Device()
+	device := deviceID.ID
+	if device != s.Info.UDID || id.Channel.IsUser() && (s.Info.UserID == "" || id.ID != device+":"+s.Info.UserID) {
 		return appsError(ctx, "selected native enrollment")
 	}
-	path := "/enrollments/device/" + url.PathEscape(device)
+	devicePath := "/enrollments/" + deviceID.Channel.String() + "/" + url.PathEscape(device)
+	path := devicePath
 	var identity adeEnrollmentEvidence
 	if err = appsRequest(ctx, s, "GET", path+"/enrollment-evidence", nil, &identity); err != nil {
 		return err
@@ -196,11 +201,11 @@ func liveAppsBooksInstallation(ctx context.Context, session *Session) (result er
 	}
 	os, _ := adePlatform(c.Platform)
 	channel := support.ChannelDevice
-	if id.Channel == mdm.ChannelUser {
-		path = "/enrollments/user/" + url.PathEscape(id.ID)
+	if id.Channel.IsUser() {
+		path = "/enrollments/" + id.Channel.String() + "/" + url.PathEscape(id.ID)
 		channel = support.ChannelUser
 	}
-	currentTarget := support.Target{OS: os, Version: version, Channel: channel, UserEnrollment: identity.EnrollmentMethod == "user-enrollment", DEP: identity.EnrollmentMethod == "automated-device-enrollment"}
+	currentTarget := support.Target{OS: os, Version: version, Channel: channel, UserEnrollment: deviceID.Channel == mdm.ChannelUserEnrollmentDevice, DEP: identity.EnrollmentMethod == "automated-device-enrollment"}
 	if native.QueryResponses.IsSupervised != nil {
 		currentTarget.Supervised = *native.QueryResponses.IsSupervised
 	}
@@ -211,7 +216,10 @@ func liveAppsBooksInstallation(ctx context.Context, session *Session) (result er
 	if feature == nil || !feature.Check(currentTarget).Supported {
 		return fmt.Errorf("%w: native app delivery unsupported for current target", ErrBlocked)
 	}
-	list := &commands.InstalledApplicationList{Identifiers: []string{c.BundleID}, Items: []string{"Identifier", "Version", "Installing"}}
+	list := &commands.InstalledApplicationList{Identifiers: []string{c.BundleID}}
+	if entry := commands.Support("InstalledApplicationList.Items"); entry != nil && entry.Check(currentTarget).Supported {
+		list.Items = []string{"Identifier", "Version", "Installing"}
+	}
 	if list.Validate(currentTarget) != nil {
 		return fmt.Errorf("%w: native installed-app query unsupported", ErrBlocked)
 	}
@@ -243,7 +251,7 @@ func liveAppsBooksInstallation(ctx context.Context, session *Session) (result er
 		}
 	}
 	var fresh adeEnrollmentEvidence
-	if err = appsRequest(ctx, s, "GET", "/enrollments/device/"+url.PathEscape(device)+"/enrollment-evidence", nil, &fresh); err != nil {
+	if err = appsRequest(ctx, s, "GET", devicePath+"/enrollment-evidence", nil, &fresh); err != nil {
 		return err
 	}
 	if !reflect.DeepEqual(identity, fresh) {

@@ -156,6 +156,18 @@ func appsSave(s *Session, name string, value any) error {
 	return nil
 }
 
+// appsSaveRaw retains original source bytes, including whitespace, escape
+// spelling and number tokens. It never reserializes Apple's JSON evidence.
+func appsSaveRaw(s *Session, name string, data []byte) error {
+	if !json.Valid(data) {
+		return appsError(context.Background(), "source evidence validation")
+	}
+	if err := privateFile(filepath.Join(s.Evidence, name), data); err != nil {
+		return appsError(context.Background(), "exclusive source evidence persistence")
+	}
+	return nil
+}
+
 // appsOpen never imports a token, configures callbacks, or claims a location.
 func appsOpen(ctx context.Context, s *Session) (*appsAccess, error) {
 	c, err := appsConfig(s)
@@ -219,7 +231,7 @@ func liveAppsBooksCollection(ctx context.Context, session *Session) (result erro
 	if err != nil {
 		return appsSDKError(ctx, "service configuration", err)
 	}
-	if err = appsSave(s, "configuration.json", a.configuration.Raw); err != nil {
+	if err = appsSaveRaw(s, "configuration.json", a.configuration.Raw); err != nil {
 		return err
 	}
 	if err = appsSave(s, "service.json", service); err != nil {
@@ -302,7 +314,7 @@ func (a *appsAccess) pages(ctx context.Context, s *Session, kind string, assignm
 				return appsError(ctx, kind+" incomplete traversal")
 			}
 		}
-		if err = appsSave(s, fmt.Sprintf("%s-page-%04d.json", kind, number), json.RawMessage(raw)); err != nil {
+		if err = appsSaveRaw(s, fmt.Sprintf("%s-page-%04d.json", kind, number), raw); err != nil {
 			return err
 		}
 		if page.NextPageIndex == nil {

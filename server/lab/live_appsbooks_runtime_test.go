@@ -381,7 +381,28 @@ func TestAppsBooksNativeInstallationThroughReferenceRuntime(t *testing.T) {
 	s.Info = target.Info{Kind: target.KindDevice, UDID: d.UDID, Serial: c.Serial}
 	installation := appsInstallation{Operation: id, BundleID: "com.example.selected", Version: "2.4", Platform: "macOS", Identity: "scep", MaxAgeSeconds: 60}
 	adeTestJSON(t, s.Env.Workspace.path("appsbooks", "installation.json"), installation)
+	transport := s.Env.Client.Transport
+	s.Env.Client.Transport = transportFunc(func(r *http.Request) (*http.Response, error) {
+		response, err := transport.RoundTrip(r)
+		if err != nil {
+			t.Logf("native fixture reference transport failed: %s, %T", r.Method, err)
+		} else if response.StatusCode >= 400 {
+			parts := strings.Split(r.URL.Path, "/")
+			t.Logf("native fixture reference status: %s %s %d", r.Method, parts[len(parts)-1], response.StatusCode)
+		}
+		return response, err
+	})
 	if err = liveAppsBooksInstallation(ctx, s); err != nil {
+		paths, _ := filepath.Glob(filepath.Join(s.Evidence, "appsbooks-installation-*", "*-request.plist"))
+		for _, path := range paths {
+			b, readErr := os.ReadFile(path)
+			if readErr == nil {
+				command, decodeErr := mdm.DecodeCommand(b)
+				if decodeErr == nil {
+					t.Log("native query reached", command.RequestType)
+				}
+			}
+		}
 		t.Fatal(err)
 	}
 	if f.postCount() != 0 {
@@ -424,11 +445,26 @@ func appsLongContext(t *testing.T) context.Context {
 }
 
 func TestAppsBooksLicensingThroughReferenceSQLRuntime(t *testing.T) {
-	for _, preexisting := range []bool{false, true} {
-		t.Run(fmt.Sprintf("preexisting=%v", preexisting), func(t *testing.T) {
+	for _, scenario := range []struct {
+		name                   string
+		preexisting, unlimited bool
+	}{{"absent", false, false}, {"preexisting", true, false}, {"unlimited", false, true}} {
+		t.Run(scenario.name, func(t *testing.T) {
+			preexisting := scenario.preexisting
 			s, f, c := appsRuntime(t)
 			f.mu.Lock()
 			f.assigned = preexisting
+			if scenario.unlimited {
+				f.rewrite = func(r *http.Request, m map[string]any) {
+					if r.URL.Path == "/assets" {
+						rows := m["assets"].([]any)
+						asset := rows[0].(map[string]any)
+						delete(asset, "availableCount")
+						m["unlimitedAssets"] = rows
+						m["assets"] = []any{}
+					}
+				}
+			}
 			f.mu.Unlock()
 			appsInstallDueFixture(t, s, f, c)
 			ctx := appsLongContext(t)

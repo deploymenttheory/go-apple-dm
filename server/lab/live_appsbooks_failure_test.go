@@ -1,6 +1,7 @@
 package lab
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -315,5 +316,93 @@ func TestAppsBooksProtocolTimeoutAndExplicitOverride(t *testing.T) {
 				t.Fatal(r.Detail)
 			}
 		})
+	}
+}
+
+func TestAppsBooksDirectNotificationFallbackAndPendingSpacing(t *testing.T) {
+	s, f := appsFixtureSession(t)
+	p, _, err := appsScope(s, "SDK-policy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := appsOpen(t.Context(), p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	clock := f.config.Clock.(*appsTestClock)
+	started := clock.Now()
+	var first time.Time
+	calls := 0
+	f.mu.Lock()
+	f.rewrite = func(r *http.Request, m map[string]any) {
+		if r.URL.Path != "/status" {
+			return
+		}
+		calls++
+		now := clock.Now()
+		if calls == 1 {
+			first = now
+			if now.Sub(started) < appsNotificationFallback {
+				t.Error("direct status query preceded notification fallback")
+			}
+			m["eventStatus"] = "PENDING"
+		} else if now.Sub(first) < appsPendingInterval {
+			t.Error("PENDING status query preceded minimum interval")
+		}
+	}
+	f.mu.Unlock()
+	if err = a.sdkJob(appsLongContext(t), p, "policy", true); err != nil {
+		t.Fatal(err)
+	}
+	f.mu.Lock()
+	observedCalls := calls
+	f.mu.Unlock()
+	if observedCalls != 2 || len(adeTestEvidence(t, p, "policy-observation-*.json")) != 2 {
+		t.Fatal("pending and terminal source observations were not independently retained")
+	}
+}
+
+func TestAppsBooksSDKPermissionPrerequisiteAndWaitCancellation(t *testing.T) {
+	for _, status := range []int{http.StatusUnauthorized, http.StatusForbidden} {
+		if err := appsSDKError(t.Context(), "probe", &appsbooks.APIError{HTTPStatus: status}); !errors.Is(err, ErrBlocked) {
+			t.Fatal("missing permission was not an unmet prerequisite", err)
+		}
+	}
+	if err := appsSDKError(t.Context(), "probe", appsbooks.ErrExpired); !errors.Is(err, ErrBlocked) {
+		t.Fatal("expired token was not an unmet prerequisite", err)
+	}
+	if err := appsSDKError(t.Context(), "probe", &appsbooks.APIError{HTTPStatus: 500}); errors.Is(err, ErrBlocked) {
+		t.Fatal("service failure misreported as prerequisite")
+	}
+	s, _ := appsFixtureSession(t)
+	s.Env.appsBooksFixture = nil
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if !errors.Is(appsWait(ctx, s, time.Hour), context.Canceled) {
+		t.Fatal("real notification wait ignored cancellation")
+	}
+	if err := appsWait(t.Context(), s, 0); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestAppsBooksRawEvidencePreservesExactSourceBytes(t *testing.T) {
+	s, _ := appsFixtureSession(t)
+	raw := []byte("{\n  \"future\":null, \"escaped\":\"\\u0061\", \"large\":9007199254740993, \"false\":false\n}\n")
+	if err := appsSaveRaw(s, "native.json", raw); err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(filepath.Join(s.Evidence, "native.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(raw, b) {
+		t.Fatal("private source evidence was reserialized")
+	}
+	if err = appsSaveRaw(s, "native.json", []byte(`{"replacement":true}`)); err == nil {
+		t.Fatal("source evidence was overwritten")
+	}
+	if err = appsSaveRaw(s, "invalid.json", []byte("{")); err == nil {
+		t.Fatal("invalid source accepted")
 	}
 }
