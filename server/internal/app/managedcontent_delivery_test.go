@@ -197,6 +197,38 @@ func TestManagedContentDeclarativeDelivery(t *testing.T) {
 	if err != nil || !out.Terminal || !out.Installed || out.AppVersion != "3.1" {
 		t.Fatal("native DDM state missing", out, err)
 	}
+	ownedAt := out.ObservedAt
+	report([]map[string]any{{"identifier": "com.example.other", "declaration-identifier": "foreign-declaration", "state": "managed", "version": "99"}})
+	out, err = adapter.Inspect(t.Context(), dispatch)
+	if err != nil || !out.Installed || out.AppVersion != "3.1" || !out.ObservedAt.Equal(ownedAt) {
+		t.Fatal("unrelated incremental app delta erased or retimestamped owned state", out, err)
+	}
+	heartbeat := map[string]any{"management": map[string]any{"declarations": map[string]any{"configurations": []map[string]any{{"identifier": "ddm-selected", "server-token": dispatch.Declarations[0].ServerToken, "active": true, "valid": "valid"}}}}}
+	contentPostNativeStatus(t, device, heartbeat, false)
+	out, err = adapter.Inspect(t.Context(), dispatch)
+	if err != nil || !out.Installed || out.AppVersion != "3.1" || !out.ObservedAt.Equal(ownedAt) {
+		t.Fatal("same-token heartbeat erased or retimestamped app state", out, err)
+	}
+	report([]map[string]any{{"identifier": "com.example.ddm", "declaration-identifier": "foreign-declaration", "state": "managed", "version": "99"}})
+	out, err = adapter.Inspect(t.Context(), dispatch)
+	if err != nil || out.Installed || out.AppVersion != "" || !out.Terminal {
+		t.Fatal("foreign declaration borrowed an owned bundle", out, err)
+	}
+	var full map[string]any
+	if err := json.Unmarshal(device.DDMStatusReport(true), &full); err != nil {
+		t.Fatal(err)
+	}
+	items, ok := full["StatusItems"].(map[string]any)
+	if !ok {
+		t.Fatal("missing full native status")
+	}
+	items["app"] = map[string]any{"managed": map[string]any{"list": []map[string]any{{"identifier": "com.example.other", "declaration-identifier": "foreign-declaration", "state": "managed"}}}}
+	contentPostNativeStatus(t, device, items, true)
+	out, err = adapter.Inspect(t.Context(), dispatch)
+	if err != nil || out.Installed || out.AppVersion != "" || !out.Terminal {
+		t.Fatal("full snapshot without owned app retained current install", out, err)
+	}
+	report([]map[string]any{{"identifier": "com.example.ddm", "declaration-identifier": "ddm-selected", "state": "managed", "version": "3.1"}})
 	report([]map[string]any{{"identifier": "com.example.ddm", "_removed": true}})
 	out, err = adapter.Inspect(t.Context(), dispatch)
 	if err != nil || !out.Terminal || out.Installed || out.AppVersion != "" {
@@ -210,6 +242,44 @@ func TestManagedContentDeclarativeDelivery(t *testing.T) {
 	switched := managedcontent.Dispatch{ID: mdmCommand.UUID, Enrollment: id, Serial: "S-DDM", Method: managedcontent.MDM, MDM: mdmCommand.Raw, Digest: "other-method", Content: dispatch.Content}
 	if _, err := adapter.Submit(t.Context(), switched); !errors.Is(err, managedcontent.ErrConflict) {
 		t.Fatal("native method switch accepted", err)
+	}
+	report([]map[string]any{{"identifier": "com.example.ddm", "declaration-identifier": "ddm-selected", "state": "managed", "version": "3.1"}})
+	out, err = adapter.Inspect(t.Context(), dispatch)
+	if err != nil || !out.Installed {
+		t.Fatal("owned state not restored before retention test", out, err)
+	}
+	retainedRaw := []byte(`{"StatusItems":{"app":{"managed":{"list":[{"identifier":"unrelated","declaration-identifier":"other","state":"managed"}]}}}}`)
+	if err := a.Engine.Store().Update(t.Context(), func(tx ddm.Tx) error {
+		_, err := tx.PutStatus(t.Context(), id, ddm.StatusUpdate{Raw: retainedRaw, ReceivedAt: time.Now(), KeepReports: 1})
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	out, err = adapter.Inspect(t.Context(), dispatch)
+	if err != nil || out.Installed || out.AppVersion != "" {
+		t.Fatal("missing bounded baseline invented installed state", out, err)
+	}
+	report([]map[string]any{{"identifier": "com.example.ddm", "declaration-identifier": "ddm-selected", "version": "partial-without-state"}})
+	out, err = adapter.Inspect(t.Context(), dispatch)
+	if err != nil || out.Installed || out.AppVersion != "" {
+		t.Fatal("partial incremental row invented installation", out, err)
+	}
+	ownedIncremental := map[string]any{"app": map[string]any{"managed": map[string]any{"list": []map[string]any{{"identifier": "com.example.ddm", "declaration-identifier": "ddm-selected", "state": "managed", "version": "3.2"}}}}, "management": heartbeat["management"]}
+	contentPostNativeStatus(t, device, ownedIncremental, false)
+	out, err = adapter.Inspect(t.Context(), dispatch)
+	if err != nil || !out.Installed || out.AppVersion != "3.2" {
+		t.Fatal("complete owned incremental row required a global full report", out, err)
+	}
+	var proof struct {
+		Reports []ddm.StatusReportRecord `json:"reports"`
+	}
+	if err := json.Unmarshal(out.Raw, &proof); err != nil {
+		t.Fatal(err)
+	}
+	for _, source := range proof.Reports {
+		if source.FullReport {
+			t.Fatal("incremental positive fixture retained a hidden full baseline")
+		}
 	}
 	// Another declaration generation cannot borrow the prior app-status proof.
 	changed, _, err := a.Engine.PutDeclaration(t.Context(), []byte(`{"Identifier":"ddm-selected","Type":"com.apple.configuration.app.managed","Payload":{"AppStoreID":"2","InstallBehavior":{"Install":"Required"}}}`))
@@ -268,5 +338,18 @@ func TestManagedContentSDKStepNativeComposition(t *testing.T) {
 	op, err = a.ManagedContent.Load(t.Context(), "full-sdk")
 	if err != nil || op.Phase != managedcontent.Dispatched || op.Observation == nil || op.Observation.Installed {
 		t.Fatal("restart inferred installation", op, err)
+	}
+}
+
+// contentPostNativeStatus sends native status through the authenticated simulator
+// transport, preserving the full/incremental array contract at the real handler.
+func contentPostNativeStatus(t *testing.T, device *simulator.Device, items map[string]any, full bool) {
+	t.Helper()
+	body, err := json.Marshal(map[string]any{"StatusItems": items, "FullReport": full})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := device.DeclarativeManagement(t.Context(), "status", body); err != nil {
+		t.Fatal(err)
 	}
 }
