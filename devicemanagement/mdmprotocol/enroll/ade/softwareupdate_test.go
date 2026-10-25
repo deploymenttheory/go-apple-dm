@@ -150,8 +150,14 @@ func TestSoftwareUpdate(t *testing.T) {
 	})
 	t.Run("UnsupportedTargets", func(t *testing.T) {
 		for _, tc := range []struct{ product, version string }{
-			{"iPhone15,2", "16.6"}, {"iPad13,1", "16.6"}, {"Mac14,7", "13.6"},
-			{"RealityDevice14,1", "2.0"}, {"AppleTV14,1", "26.0"}, {"Watch7,1", "26.0"}, {"future1,1", "26.0"}, {"Mac14,7", ""},
+			{"iPhone15,2", "16.6"},
+			{"iPad13,1", "16.6"},
+			{"Mac14,7", "13.6"},
+			{"RealityDevice14,1", "2.0"},
+			{"AppleTV14,1", "26.0"},
+			{"Watch7,1", "26.0"},
+			{"future1,1", "26.0"},
+			{"Mac14,7", ""},
 		} {
 			p := parsedInfo("s")
 			p.PRODUCT = tc.product
