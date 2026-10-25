@@ -26,6 +26,13 @@ commands require `enqueueUnknownCommand`. FileVault escrow preparation requires
 redacted enrollment status requires `readEnrollmentStatus`. Separate permissions
 cover collection metadata, stored content, credentials and sensitive webhook export.
 
+Named Apple connection routes require explicit business-manager authority and
+separate raw-inventory authority for live device and coverage evidence. Their
+`CaptureBeforeRead` mode records access before connector use, performs network
+reads outside a local transaction, and withholds the bounded response until
+completion capture succeeds. It preserves the committed access occurrence when
+the remote read or ending capture fails.
+
 ## Rationale and constraints
 
 Explicit action groups prevent new capabilities inheriting routine grants.

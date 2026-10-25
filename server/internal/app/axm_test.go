@@ -209,16 +209,16 @@ func TestAxM(t *testing.T) {
 		fake.AutoAdvance(10 * time.Millisecond)
 		a := build(t, app.Config{Storage: "inmem", BootstrapToken: "t", AxM: app.AxMConfig{ClientID: "BUSINESSAPI.abc", KeyID: "kid-1", KeyPEM: keyPEM, BaseURL: fake.URL, TokenURL: fake.TokenURL, HTTPClient: fake.Client()}})
 		srv := serve(t, a)
-		if got := get(t, srv.URL+"/admin/v1/axm/servers", ""); got != http.StatusUnauthorized {
+		if got := get(t, srv.URL+"/admin/v1/axm/accounts/default/services", ""); got != http.StatusUnauthorized {
 			t.Fatalf("axm without token = %d", got)
 		}
 		var servers axm.Page[axm.MDMServer]
-		decode(t, do(t, srv, "GET", "/admin/v1/axm/servers", "t", nil), http.StatusOK, &servers)
+		decode(t, do(t, srv, "GET", "/admin/v1/axm/accounts/default/services", "t", nil), http.StatusOK, &servers)
 		if len(servers.Items) != 1 || servers.Items[0].ID != server {
 			t.Fatalf("servers = %+v", servers.Items)
 		}
 		var devices axm.Page[axm.OrgDevice]
-		decode(t, do(t, srv, "GET", "/admin/v1/axm/devices?limit=2", "t", nil), http.StatusOK, &devices)
+		decode(t, do(t, srv, "GET", "/admin/v1/axm/accounts/default/devices?limit=2", "t", nil), http.StatusOK, &devices)
 		if len(devices.Items) != 2 || devices.Meta.Paging.NextCursor == "" {
 			t.Fatalf("devices page = %+v", devices)
 		}
@@ -252,8 +252,8 @@ func TestAxM(t *testing.T) {
 		if e != nil || w.ActivityID == "" {
 			t.Fatal(w, e)
 		}
-		var act axm.OrgDeviceActivity
-		decode(t, do(t, srv, "GET", "/admin/v1/axm/activities/"+w.ActivityID, "t", nil), http.StatusOK, &act)
+		var act axmassignment.Workflow
+		decode(t, do(t, srv, "GET", "/admin/v1/axm/accounts/default/assignments/"+w.ID, "t", nil), http.StatusOK, &act)
 		fake.Complete()
 		for _, serial := range []string{"SER1", "SER2"} {
 			if fake.AssignedServer(serial) != server {
@@ -308,7 +308,7 @@ func TestAxM(t *testing.T) {
 		}
 		fake.ExpireTokens()
 		fake.RejectNextTokenRequests(1)
-		res := do(t, srv, "GET", "/admin/v1/axm/devices", "t", nil)
+		res := do(t, srv, "GET", "/admin/v1/axm/accounts/default/devices", "t", nil)
 		if res.StatusCode < 400 {
 			t.Fatal("outage hidden")
 		}
@@ -327,14 +327,14 @@ func TestAxM(t *testing.T) {
 			}
 			_ = res.Body.Close()
 		}
-		res = do(t, srv, "GET", "/admin/v1/axm/activities/nope", "t", nil)
+		res = do(t, srv, "GET", "/admin/v1/axm/accounts/default/assignments/nope", "t", nil)
 		if res.StatusCode != http.StatusNotFound {
 			t.Fatal(res.StatusCode)
 		}
 		_ = res.Body.Close()
 
 		fake.RateLimit(5, "1")
-		if res := do(t, srv, "GET", "/admin/v1/axm/servers?limit=1", "t", nil); res.StatusCode != http.StatusOK && res.StatusCode != http.StatusTooManyRequests {
+		if res := do(t, srv, "GET", "/admin/v1/axm/accounts/default/services?limit=1", "t", nil); res.StatusCode != http.StatusOK && res.StatusCode != http.StatusTooManyRequests {
 			t.Fatalf("rate limited = %d", res.StatusCode)
 		}
 	})

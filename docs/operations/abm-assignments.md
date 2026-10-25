@@ -103,3 +103,81 @@ Memory state is process-local. SQL persistence survives restart and uses the
 existing encryption/recovery policy. Back up the inventory documents with the
 server database. Automated fixture and SQL tests establish workflow behavior;
 they do not establish populated live Apple acceptance or physical enrollment.
+
+## Named connection inspection
+
+All live Apple reads select `/axm/accounts/{id}` explicitly. Each request opens
+an atomic snapshot of that account's metadata and current sealed credential,
+builds an isolated connector and checks
+its account revision, incarnation and credential again before returning evidence.
+A concurrent replacement returns HTTP 409. Verification authenticates outside
+the transaction and stamps success only after an atomic incarnation, revision and
+credential check; deleting and recreating an account with the same revision cannot
+inherit the old verification result. A missing or disabled connection never
+uses the startup client. No credential-read route exists.
+
+| Route below `/axm/accounts/{id}` | Result | Required grants |
+|---|---|---|
+| `GET /devices` | Bounded live organization-device page | `readBusinessManager`, `readRawInventory` |
+| `GET /devices/{device}` | Live device addressed by Apple's opaque resource ID | `readBusinessManager`, `readRawInventory` |
+| `GET /devices/{device}/coverage` | Bounded live AppleCare coverage page | `readBusinessManager`, `readRawInventory` |
+| `GET /devices/{device}/assigned-service` | Observed Apple service linkage | `readBusinessManager` |
+| `GET /services` and `/services/{service}` | Available Apple device management services | `readBusinessManager` |
+| `GET /diagnostics` | Redacted connectivity, inventory presence and sync completeness | `readBusinessManager` |
+| `GET /jobs` and `/jobs/{job}` | This account's durable synchronization jobs | `readInventory` |
+
+Live reads use Apple's actual resources and do not write inventory or correlate
+hardware. Serial remains the physical correlation key; the `device` path value is
+an opaque Apple identifier. Assignment uses explicit serial intent and resolves
+that intent to opaque resources through the existing worker. Listing services
+does not select this MDM's assignment service; configure the binding explicitly.
+The former global device, server and activity reads have no routes. Operation
+inspection uses the account's retained assignment workflow instead of a global
+activity client. Cursor and limit select bounded live device, coverage and service
+pages. Account job cursors advance only through that account's matching jobs.
+
+Named connection reads require successful audit access capture before opening the
+connector or contacting Apple when persistent capture is configured. A capture
+failure returns HTTP 503; durable local assignment intent and its audit outcome
+commit together, so failed capture leaves no queued request. Apple calls run
+outside the local transaction.
+
+Diagnostics returns independent fields: `connection` is `connected`,
+`authentication_failed`, `permission_denied`, `resource_not_found`, `rate_limited`, or
+`connection_failed`; `inventory` is `present`, `empty`, or `unknown`.
+`synchronization` is `complete` only after the latest job for the current account
+revision, enqueued at or after this incarnation’s server-stamped creation time,
+succeeds; it is otherwise `incomplete`. Retained successful jobs from a deleted
+connection remain inspectable but cannot establish the recreated connection’s
+synchronization, even when its ID and revision are reused. Connectivity and a successful
+empty live page do not establish complete retained synchronization. OAuth error
+descriptions, upstream bodies, bearer tokens and request URLs are never included.
+Disabled accounts return HTTP 409; missing accounts return HTTP 404. Other live
+read failures return a reviewed category with an upstream-failure HTTP status.
+
+The CLI preserves the same account and identifier boundaries:
+
+```sh
+dmctl axm accounts diagnostics ACCOUNT
+dmctl axm accounts services ACCOUNT
+dmctl axm accounts service ACCOUNT SERVICE_ID
+dmctl axm accounts devices ACCOUNT
+dmctl axm accounts device ACCOUNT APPLE_RESOURCE_ID
+dmctl axm accounts coverage ACCOUNT APPLE_RESOURCE_ID
+dmctl axm accounts assigned-service ACCOUNT APPLE_RESOURCE_ID
+dmctl axm accounts configure-service ACCOUNT --file binding.json
+dmctl axm accounts assignment-service ACCOUNT
+dmctl axm accounts assign ACCOUNT --file intent.json
+dmctl axm accounts operation ACCOUNT change-123
+dmctl axm accounts operation-log ACCOUNT change-123
+dmctl axm accounts unassign ACCOUNT --file unassignment.json
+dmctl axm accounts jobs ACCOUNT
+dmctl axm accounts job ACCOUNT JOB_ID
+```
+
+`binding.json` contains `account_revision`, `service_id` and `log_columns` from the
+configuration example above. `intent.json` and `unassignment.json` contain an
+explicit `request_id` and `serials`. CLI assignment returns queued intent; inspect
+the durable operation for acceptance, terminal per-device outcomes and independent
+linkage convergence. `axm accounts sync ACCOUNT --wait` polls the named account's
+job route. None of these commands imply assignment policy or general ABM administration.

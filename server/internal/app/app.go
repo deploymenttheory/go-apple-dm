@@ -1001,7 +1001,6 @@ func (a *App) wireAdmin(ctx context.Context, mux *http.ServeMux) error {
 			return err
 		}
 		a.AxM = client
-		routes = append(routes, a.axmRoutes(client)...)
 	}
 	if a.dep == nil {
 		if err := a.wireDEP(ctx); err != nil {

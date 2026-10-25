@@ -44,7 +44,20 @@ func (b inventoryFailureBackend) Update(ctx context.Context, fn func(inventory.T
 	if b.updates {
 		return errInventoryStorage
 	}
-	return b.Backend.Update(ctx, fn)
+	return b.Backend.Update(ctx, func(tx inventory.Tx) error { return fn(inventoryFailureTx{Tx: tx, backend: b}) })
+}
+
+type inventoryFailureTx struct {
+	inventory.Tx
+	backend inventoryFailureBackend
+}
+
+// Get applies the same injected namespace failure inside an atomic read snapshot.
+func (tx inventoryFailureTx) Get(ctx context.Context, key string) (json.RawMessage, error) {
+	if tx.backend.reads && strings.HasPrefix(key, tx.backend.prefix) {
+		return nil, errInventoryStorage
+	}
+	return tx.Tx.Get(ctx, key)
 }
 
 // inventoryTestMux mounts real handlers without authorization to isolate their input contracts.

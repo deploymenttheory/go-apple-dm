@@ -195,14 +195,14 @@ func depAssign(ctx context.Context, e *Environment, _ string) error {
 // abmAssign exercises Apple Business device assignment against the configured fixture.
 func abmAssign(ctx context.Context, e *Environment, _ string) error {
 	var servers struct{ Items []struct{ ID string } }
-	if err := e.api(ctx, "GET", "/axm/servers", nil, &servers); err != nil {
+	if err := e.api(ctx, "GET", "/axm/accounts/default/services", nil, &servers); err != nil {
 		return wrapError(err)
 	}
 	if len(servers.Items) != 1 {
 		return fmt.Errorf("%w: ABM server list differs", errOperation)
 	}
 	var devices struct{ Items []struct{ ID string } }
-	if err := e.api(ctx, "GET", "/axm/devices?limit=2", nil, &devices); err != nil {
+	if err := e.api(ctx, "GET", "/axm/accounts/default/devices?limit=2", nil, &devices); err != nil {
 		return wrapError(err)
 	}
 	if len(devices.Items) != 2 {

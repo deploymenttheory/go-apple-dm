@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/inventory"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 )
@@ -25,6 +24,11 @@ const (
 // inventoryError maps inventory domain failures to administrative HTTP statuses.
 func inventoryError(w http.ResponseWriter, err error) {
 	status := http.StatusInternalServerError
+	var remote *accountRemoteError
+	if errors.As(err, &remote) {
+		writeJSON(w, remote.status, map[string]string{"Error": remote.Error()})
+		return
+	}
 	switch {
 	case errors.Is(err, ErrBodyTooLarge):
 		status = http.StatusRequestEntityTooLarge
@@ -100,7 +104,7 @@ func publicInventoryQuery(q inventory.ResourceQuery) error {
 func (a *App) inventoryRoutes() []adminRoute {
 	routes := []adminRoute{}
 	add := func(pattern, action string, fn func(http.ResponseWriter, *http.Request) (any, error)) {
-		routes = append(routes, adminRoute{Pattern: pattern, Action: action, Family: "inventory", MaxResponseBytes: 32 << 20, StreamResponse: strings.HasSuffix(pattern, "/exports") || pattern == "GET /inventory/diagnostics", LocalMutation: !strings.HasSuffix(pattern, "/resolve") && !strings.HasPrefix(pattern, "GET ") && !strings.HasSuffix(pattern, "/verify") && !strings.HasSuffix(pattern, "/collect"), Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		routes = append(routes, adminRoute{Pattern: pattern, Action: action, Family: "inventory", CaptureBeforeRead: strings.HasPrefix(pattern, "GET /axm/accounts/{id}/"), MaxResponseBytes: 32 << 20, StreamResponse: strings.HasSuffix(pattern, "/exports") || pattern == "GET /inventory/diagnostics", LocalMutation: !strings.HasSuffix(pattern, "/resolve") && !strings.HasPrefix(pattern, "GET ") && !strings.HasSuffix(pattern, "/verify") && !strings.HasSuffix(pattern, "/collect"), Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			response := &inventoryResponse{ResponseWriter: w}
 			out, e := fn(response, r)
 			if e != nil {
@@ -122,6 +126,7 @@ func (a *App) inventoryRoutes() []adminRoute {
 	}
 	a.inventoryInspectionRoutes(add)
 	a.assignmentRoutes(add)
+	a.accountOperationRoutes(add)
 	add("GET /axm/accounts", ActionReadInventory, func(_ http.ResponseWriter, r *http.Request) (any, error) { return a.Inventory.Accounts(r.Context()) })
 	add("GET /axm/accounts/{id}", ActionReadInventory, func(_ http.ResponseWriter, r *http.Request) (any, error) {
 		return a.Inventory.Account(r.Context(), r.PathValue("id"))
@@ -182,22 +187,7 @@ func (a *App) inventoryRoutes() []adminRoute {
 		return map[string]bool{"deleted": e == nil}, e
 	})
 	add("POST /axm/accounts/{id}/verify", ActionManageAxMAccounts, func(_ http.ResponseWriter, r *http.Request) (any, error) {
-		account, e := a.Inventory.Account(r.Context(), r.PathValue("id"))
-		if e != nil {
-			return nil, e
-		}
-		key, e := a.Inventory.PrivateKey(r.Context(), account.ID)
-		if e != nil {
-			return nil, e
-		}
-		client, e := a.inventoryClient(r.Context(), account, key)
-		if e != nil {
-			return nil, inventory.ErrInvalid
-		}
-		if _, e = client.ListOrgDevices(r.Context(), axm.ListOptions{Limit: 1}); e != nil {
-			return nil, errors.New("inventory: Apple verification failed")
-		}
-		e = a.Inventory.VerifyAccount(r.Context(), account.ID, account.Revision, time.Now().UTC())
+		e := a.verifyNamedAccount(r.Context(), r.PathValue("id"))
 		return map[string]bool{"verified": e == nil}, e
 	})
 	add("POST /axm/accounts/{id}/sync", ActionManageInventory, func(_ http.ResponseWriter, r *http.Request) (any, error) {
