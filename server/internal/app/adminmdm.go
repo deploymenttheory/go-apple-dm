@@ -198,6 +198,10 @@ func (a *App) enqueueCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := a.guardContentCommand(r.Context(), id, cmd); err != nil {
+		contentError(w, err)
+		return
+	}
 	cmd, err = a.prepareCommandEncryption(r.Context(), id, cmd)
 	if err != nil {
 		status := http.StatusInternalServerError

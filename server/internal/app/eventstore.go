@@ -81,6 +81,10 @@ func (a *App) wirePersistentSinks(ctx context.Context) error {
 		Subscribers:  a.cfg.publisher(),
 		Report:       func(err error) { a.cfg.Logger.Error("event recording or notification failed", "error", err) },
 	}
+	if a.cfg.AppsBooks.MDMID != "" && a.cfg.Push.Enabled() {
+		senders[contentWakeDestination] = a.sendContentWake
+		p.SelectDestinations = contentWakeDestinations
+	}
 	a.eventStore, a.eventPublisher = s, p
 	if err := a.openWebhooks(ctx, s); err != nil {
 		return err

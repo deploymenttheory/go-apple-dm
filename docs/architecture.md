@@ -137,6 +137,19 @@ readback reconciliation; ordinary reads separate raw source/device evidence from
 safe status. Licensing, command acknowledgment, declaration publication and actual
 installation/version reports remain independent. No inventory model, automatic
 application policy or server import is required.
+The reference server enables this composition with `DM_APPSBOOKS_MDM_ID` and
+sealed SQL. Dedicated HTTP/CLI grants distinguish safe status, explicit operations
+and private evidence. A supervised worker resumes persisted content intent;
+authenticated callbacks commit before acknowledgment. Native principal/certificate
+admission pins prevent later rebinding from redirecting operations. MDM queue and
+DDM publication adapters retain immutable dispatch receipts and method-specific
+native observations; neither ABM enrichment nor a universal inventory model is a
+prerequisite. Actual SDK state mutations share required local event capture while
+remote calls remain outside those transactions. Native observation reads are
+separately privileged and pure; explicit app/media status-refresh batches complete
+pending native proof. Configured APNs wakes are scoped leased outbox deliveries
+after native queue/audit commit. Owned DDM app facts follow full/incremental status
+semantics without borrowing a foreign declaration's matching bundle.
 See [Apps and Books licensing](operations/apps-and-books.md).
 
 ADE profile authoring can call `dep.Profile.ValidateForTarget` before submission.

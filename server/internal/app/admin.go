@@ -46,6 +46,10 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 	var routes []adminRoute
 	add := func(action, pattern string, fn http.HandlerFunc) {
 		guarded := func(w http.ResponseWriter, r *http.Request) {
+			if err := a.guardContentDDMRoute(r, pattern); err != nil {
+				contentError(w, err)
+				return
+			}
 			if r.Method != http.MethodGet && (blueprint.OwnsSet(r.PathValue("set")) || blueprint.OwnsIdentifier(r.PathValue("id"))) {
 				writeError(w, http.StatusConflict, ddm.ErrConflict)
 				return
@@ -87,6 +91,10 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 		var envelope struct{ Identifier string }
 		if json.Unmarshal(body, &envelope) == nil && blueprint.OwnsIdentifier(envelope.Identifier) {
 			writeError(w, http.StatusConflict, ddm.ErrConflict)
+			return
+		}
+		if err := a.guardContentDeclaration(r.Context(), envelope.Identifier, body); err != nil {
+			contentError(w, err)
 			return
 		}
 		d, changed, err := e.PutDeclaration(r.Context(), body)

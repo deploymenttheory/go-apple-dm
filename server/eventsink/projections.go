@@ -14,6 +14,12 @@ import (
 // that choice from an unregistered type.
 func Default() *Registry {
 	r := NewRegistry()
+	// Managed content persistence emits metadata only; tokens, source pages,
+	// callback credentials and wire/native response bytes remain sealed evidence.
+	r.Register("managed-content-state", passthrough("Objects"))
+	r.Register("appsbooks-notification", passthrough("Location"))
+	r.Register("managed-content-dispatch", passthrough("Operation", "Method"))
+	r.Register("managed-content-status-query", passthrough("Operation", "Count"))
 
 	// Check-in. Authenticate carries the device's own description of itself,
 	// which is what makes an enrollment record worth auditing.

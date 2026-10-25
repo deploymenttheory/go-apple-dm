@@ -217,6 +217,8 @@ func commands() map[string]command {
 		{"webhooks", "manage native subscriptions, delivery, credentials and replay", runWebhooks},
 		{"enrollments", "list, read, disable, and inspect enrollment status", runEnrollments},
 		{"enrollment-links", "create, list and revoke single-use enrollment links", runEnrollmentLinks},
+		{"appsbooks", "inspect locations and explicitly manage Apps and Books licensing", runAppsBooks},
+		{"managed-content", "queue and inspect explicit content assignment and delivery", runManagedContent},
 		{"content-cache", "issue reporting credentials and inspect content-cache reports", runContentCache},
 		{"commands", "send, read, and clear queued MDM commands", runCommands},
 		{"push", "wake a device now without queueing anything", runPush},

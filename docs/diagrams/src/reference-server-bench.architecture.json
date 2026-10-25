@@ -15,7 +15,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "2f001b847a91f78704ee6b69c9e71ba05420e9bd"
+      "revision": "c58adecfb8f2fa5835973e9ce965538bd216ee0d"
     }
   },
   "components": [
@@ -24,7 +24,7 @@
       "type": "database",
       "purpose": "artifact",
       "label": "Workspace",
-      "sublabel": "Configuration \u00b7 credentials \u00b7 identity",
+      "sublabel": "Configuration · credentials · identity",
       "pos": [
         70,
         70
@@ -44,7 +44,7 @@
       "type": "backend",
       "purpose": "service",
       "label": "Lab harness",
-      "sublabel": "CLI \u00b7 catalogue \u00b7 supervisor",
+      "sublabel": "CLI · catalogue · supervisor",
       "pos": [
         620,
         70
@@ -70,7 +70,7 @@
       "type": "database",
       "purpose": "artifact",
       "label": "Scenario reports",
-      "sublabel": "Private JSON \u00b7 JUnit \u00b7 HTML",
+      "sublabel": "Private JSON · JUnit · HTML",
       "pos": [
         1170,
         70
@@ -125,6 +125,10 @@
         },
         {
           "path": "server/internal/app/app.go"
+        },
+        {
+          "path": "server/internal/app/managedcontent.go",
+          "label": "Managed-content composition"
         }
       ]
     },
@@ -133,7 +137,7 @@
       "type": "external",
       "purpose": "neutral",
       "label": "Real device or app",
-      "sublabel": "Real identity \u00b7 observed receipt",
+      "sublabel": "Real identity · observed receipt",
       "pos": [
         1170,
         430
@@ -208,7 +212,7 @@
       "type": "external",
       "purpose": "neutral",
       "label": "Live Apple services",
-      "sublabel": "Named account \u00b7 explicit assignment",
+      "sublabel": "Named account · explicit assignment",
       "pos": [
         70,
         710
@@ -223,7 +227,7 @@
       "type": "backend",
       "purpose": "service",
       "label": "Lab ADE client",
-      "sublabel": "Harness-owned \u00b7 separate server token",
+      "sublabel": "Harness-owned · separate server token",
       "pos": [
         70,
         580
@@ -322,7 +326,7 @@
       "id": "operate-server",
       "from": "bench-harness",
       "to": "shared-system",
-      "label": "Start \u00b7 control \u00b7 inspect",
+      "label": "Start · control · inspect",
       "purpose": "service",
       "labelAt": [
         770,
@@ -368,7 +372,7 @@
       "id": "ade-client-apple",
       "from": "ade-acceptance-client",
       "to": "live-apple",
-      "label": "API \u00b7 readback \u00b7 restoration",
+      "label": "API · readback · restoration",
       "purpose": "transport",
       "labelAt": [
         220,
@@ -400,14 +404,27 @@
       "dot": "neutral"
     },
     {
+      "title": "Managed content in the shared runtime",
+      "dot": "service",
+      "items": [
+        "The shared server exposes Apps and Books locations, explicit licensing jobs, authenticated callbacks and managed-content operations. API and CLI use dedicated grants; routine principals receive none implicitly. Ordinary reads omit location and callback credentials.",
+        "Required capture joins native queue/publication, ownership and sealed state writes. Callback receipts commit before acknowledgment. External Apple requests and APNs delivery run outside those local transactions; unknown outcomes require explicit reconciliation.",
+        "Licensing, native dispatch, processing and current installation remain separate observations. Fresh privileged native reads preserve source timestamps. Explicit status-refresh queues owned native queries; neither a command acknowledgment nor APNs acceptance establishes installation.",
+        "Runtime composition — https://github.com/deploymenttheory/go-apple-dm/blob/c58adecfb8f2fa5835973e9ce965538bd216ee0d/server/internal/app/managedcontent.go",
+        "Native observation and explicit status queries — https://github.com/deploymenttheory/go-apple-dm/blob/c58adecfb8f2fa5835973e9ce965538bd216ee0d/server/internal/app/managedcontent_inspection.go",
+        "Durable wake delivery — https://github.com/deploymenttheory/go-apple-dm/blob/c58adecfb8f2fa5835973e9ce965538bd216ee0d/server/internal/app/managedcontent_wake.go",
+        "A newer authenticated ManagedButUninstalled report clears an older installed/version claim while preserving historical processing and original source evidence. A later installed-app query can establish reinstallation."
+      ]
+    },
+    {
       "title": "Reading and protocol references",
       "items": [
-        "Lab scope and operation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/docs/testing/lab.md",
-        "ABM acceptance \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/docs/operations/abm-assignments.md",
-        "ADE acceptance implementation \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/server/lab/live_ade_hardware.go",
-        "Go test behavior \u2014 https://pkg.go.dev/cmd/go#hdr-Test_packages",
-        "Sending MDM commands \u2014 https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
-        "Sending APNs requests \u2014 https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns"
+        "Lab scope and operation — https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/docs/testing/lab.md",
+        "ABM acceptance — https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/docs/operations/abm-assignments.md",
+        "ADE acceptance implementation — https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/server/lab/live_ade_hardware.go",
+        "Go test behavior — https://pkg.go.dev/cmd/go#hdr-Test_packages",
+        "Sending MDM commands — https://developer.apple.com/documentation/devicemanagement/sending-mdm-commands-to-a-device",
+        "Sending APNs requests — https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns"
       ],
       "dot": "transport"
     }

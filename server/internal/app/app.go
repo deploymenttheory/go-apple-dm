@@ -15,6 +15,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/appsbooks"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/applications/managedcontent"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/contentcache"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
@@ -74,6 +76,7 @@ const (
 // Config is the process configuration; see ParseEnv for the DM_*
 // variables and cmd/dmserver for the flags.
 type Config struct {
+	AppsBooks             AppsBooksConfig
 	ApplicationPackages   ApplicationPackageConfig
 	Webhooks              webhook.Config
 	ApplicationIdentities ApplicationIdentityConfig
@@ -199,6 +202,8 @@ var ErrConfig = errors.New("invalid configuration")
 
 // App is a built process.
 type App struct {
+	AppsBooks         *appsbooks.Workflow
+	ManagedContent    *managedcontent.Workflow
 	webhooks          *webhook.Store
 	eventStore        *eventstore.Store
 	eventPublisher    *eventstore.Publisher
@@ -663,6 +668,9 @@ func (a *App) wire(ctx context.Context) error {
 		return fmt.Errorf("engine: %w", err)
 	}
 	a.Engine = engine
+	if err := a.wireManagedContent(ctx); err != nil {
+		return err
+	}
 	if err := a.wireApplicationPackages(ctx); err != nil {
 		return err
 	}
@@ -683,6 +691,9 @@ func (a *App) wire(ctx context.Context) error {
 		pusher = a.Push
 	}
 	mux := http.NewServeMux()
+	if a.AppsBooks != nil {
+		mux.HandleFunc("POST /appsbooks/notifications/{location}", a.appsBooksNotification)
+	}
 	if a.webhooks != nil {
 		mux.Handle(webhook.PayloadPath, a.webhooks.PayloadHandler())
 	}
@@ -971,6 +982,7 @@ func (a *App) wireAdmin(ctx context.Context, mux *http.ServeMux) error {
 	}
 	var routes []adminRoute
 	routes = append(routes, a.inventoryRoutes()...)
+	routes = append(routes, a.managedContentRoutes()...)
 	routes = append(routes, a.introspectionRoutes()...)
 	routes = append(routes, a.eventRoutes()...)
 	routes = append(routes, a.webhookRoutes()...)

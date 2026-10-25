@@ -1,0 +1,10 @@
+{
+  "mode": "assign-and-install",
+  "plan": {
+    "locationId": "london",
+    "content": {"asset": {"adamId": "123456789", "pricingParam": "STDQ"}, "kind": "App"},
+    "target": {"enrollment": {"Channel": 1, "ID": "selected-native-enrollment", "ParentID": ""}, "serial": "SELECTED-NATIVE-SERIAL", "clientUserId": ""},
+    "method": "mdm",
+    "maxPages": 20
+  }
+}
