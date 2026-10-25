@@ -9,6 +9,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/adetest"
 )
 
+// TestADEMinimumVersions covers literal selection, disabled settings and unsupported enforcement branches.
 func TestADEMinimumVersions(t *testing.T) {
 	all := ADEMinimumOS{IOS: "27.1", IPadOS: "27.2", MacOS: "27.3", VisionOS: "27.4"}
 	if err := all.validate(); err != nil {

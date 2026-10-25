@@ -153,6 +153,7 @@ func TestADEReplicaRejectsRetainedEvidence(t *testing.T) {
 	}
 }
 
+// rewriteADEBrowserEvidence corrupts one persisted browser grant while preserving unrelated state.
 func rewriteADEBrowserEvidence(t *testing.T, f *enrollFixture, failure string) {
 	t.Helper()
 	store, ok := f.app.Store.(*sqlite.Store)
@@ -321,6 +322,7 @@ func TestADEOverlappingBrowserEvidence(t *testing.T) {
 	}
 }
 
+// startPendingADEBrowser signs in through OIDC and pauses before consuming the ADE callback.
 func startPendingADEBrowser(t *testing.T, f *enrollFixture, d *simulator.Device) string {
 	t.Helper()
 	signed, err := d.SignedMachineInfo(simulator.ADEOptions{})

@@ -15,7 +15,10 @@ import (
 // https://developer.apple.com/documentation/devicemanagement/deploying-software-updates-using-declarative-management
 type ADEMinimumOS struct{ IOS, IPadOS, MacOS, VisionOS string }
 
+// active reports whether an explicit platform requirement is configured.
 func (m ADEMinimumOS) active() bool { return m != (ADEMinimumOS{}) }
+
+// validate rejects nonliteral and unspecified version targets before route construction.
 func (m ADEMinimumOS) validate() error {
 	for name, v := range map[string]string{"iOS": m.IOS, "iPadOS": m.IPadOS, "macOS": m.MacOS, "visionOS": m.VisionOS} {
 		if v == "" {

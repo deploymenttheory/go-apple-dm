@@ -17,6 +17,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/statestore"
 )
 
+// TestADEEvidenceSQLReplicas exercises sealed evidence across independent PostgreSQL and MySQL pools.
 func TestADEEvidenceSQLReplicas(t *testing.T) {
 	for _, tc := range []struct {
 		name, driver, env string

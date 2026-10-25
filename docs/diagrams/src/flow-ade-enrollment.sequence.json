@@ -6,7 +6,7 @@
     "quality_profile": "showcase",
     "viewBox": [
       1320,
-      826
+      870
     ],
     "column_fit": "spread",
     "views": [
@@ -16,9 +16,9 @@
         "focus": [
           "device",
           "ade",
-          "gdmf"
+          "state"
         ],
-        "note": "The handler verifies signed MachineInfo and applies the configured admission and software-update policy."
+        "note": "Verify MachineInfo, apply literal minimum versions, and seal original evidence with one-use browser authentication state."
       },
       {
         "id": "authenticate",
@@ -52,11 +52,11 @@
       "purpose": "transport"
     },
     {
-      "id": "gdmf",
-      "type": "external",
-      "label": "Software data",
-      "sublabel": "Return version data",
-      "purpose": "neutral"
+      "id": "state",
+      "type": "database",
+      "label": "Protocol state",
+      "sublabel": "Shared sealed records",
+      "purpose": "storage"
     },
     {
       "id": "idp",
@@ -91,38 +91,29 @@
       "purpose": "authentication"
     },
     {
-      "id": "gate",
-      "from": "ade",
-      "to": "gdmf",
-      "label": "If needed: latest-version lookup",
-      "y": 211,
-      "variant": "default",
-      "purpose": "transport"
-    },
-    {
-      "id": "gate-back",
-      "from": "gdmf",
-      "to": "ade",
-      "label": "Available software version",
-      "y": 247,
-      "variant": "return",
-      "purpose": "transport"
-    },
-    {
       "id": "reject",
       "from": "ade",
       "to": "device",
       "label": "If update required: HTTP 403; stop",
-      "y": 283,
+      "y": 211,
       "variant": "security",
       "purpose": "failure"
+    },
+    {
+      "id": "retain",
+      "from": "ade",
+      "to": "state",
+      "label": "GET: seal evidence with browser state",
+      "variant": "security",
+      "purpose": "storage",
+      "y": 247
     },
     {
       "id": "begin",
       "from": "ade",
       "to": "device",
       "label": "GET + WebAuth only: sign-in redirect",
-      "y": 319,
+      "y": 283,
       "variant": "default",
       "purpose": "authentication"
     },
@@ -131,7 +122,7 @@
       "from": "device",
       "to": "idp",
       "label": "Browser sign-in",
-      "y": 355,
+      "y": 319,
       "variant": "security",
       "purpose": "authentication"
     },
@@ -140,16 +131,34 @@
       "from": "device",
       "to": "ade",
       "label": "Browser callback: authorization code",
-      "y": 391,
+      "y": 355,
       "variant": "default",
       "purpose": "authentication"
+    },
+    {
+      "id": "consume",
+      "from": "ade",
+      "to": "state",
+      "label": "Consume browser-bound state once",
+      "variant": "security",
+      "purpose": "authentication",
+      "y": 391
+    },
+    {
+      "id": "restore",
+      "from": "state",
+      "to": "ade",
+      "label": "Original evidence + session bindings",
+      "variant": "return",
+      "purpose": "storage",
+      "y": 427
     },
     {
       "id": "exchange",
       "from": "ade",
       "to": "idp",
       "label": "Exchange code; verify ID token",
-      "y": 427,
+      "y": 463,
       "variant": "security",
       "purpose": "authentication"
     },
@@ -157,8 +166,8 @@
       "id": "build",
       "from": "ade",
       "to": "profile",
-      "label": "Admitted: build enrollment profile",
-      "y": 463,
+      "label": "Valid evidence: admit + build profile",
+      "y": 499,
       "variant": "default",
       "purpose": "artifact"
     },
@@ -167,7 +176,7 @@
       "from": "ade",
       "to": "device",
       "label": "Return signed enrollment profile",
-      "y": 499,
+      "y": 535,
       "variant": "return",
       "purpose": "artifact"
     },
@@ -176,7 +185,7 @@
       "from": "device",
       "to": "profile",
       "label": "Request SCEP or ACME identity",
-      "y": 535,
+      "y": 571,
       "variant": "default",
       "purpose": "certificate"
     },
@@ -185,7 +194,7 @@
       "from": "profile",
       "to": "device",
       "label": "Issue device identity certificate",
-      "y": 571,
+      "y": 607,
       "variant": "return",
       "purpose": "certificate"
     },
@@ -194,7 +203,7 @@
       "from": "device",
       "to": "core",
       "label": "Authenticate with identity certificate",
-      "y": 607,
+      "y": 643,
       "variant": "emphasis",
       "purpose": "authentication"
     },
@@ -203,7 +212,7 @@
       "from": "core",
       "to": "device",
       "label": "HTTP 200; identity recorded",
-      "y": 643,
+      "y": 679,
       "variant": "return",
       "purpose": "success"
     },
@@ -212,7 +221,7 @@
       "from": "device",
       "to": "core",
       "label": "TokenUpdate: token, topic, PushMagic",
-      "y": 679,
+      "y": 715,
       "variant": "emphasis",
       "purpose": "transport"
     },
@@ -221,7 +230,7 @@
       "from": "core",
       "to": "device",
       "label": "HTTP 200; enrollment enabled",
-      "y": 715,
+      "y": 751,
       "variant": "return",
       "purpose": "success"
     }
@@ -232,7 +241,7 @@
       "title": "Alternative entry paths",
       "items": [
         "The direct POST returns an enrollment profile after admission. GET enters web authentication only when WebAuth is configured.",
-        "The identity provider redirects the device’s browser back; the server verifies the authentication result before issuing the profile.",
+        "The browser callback may reach another replica. Shared state retains the original CMS and validated signer with the original serial, UDID and browser-grant expiration; consumption is atomic and one-use.",
         "The reference server applies its configured enrollment policy before profile issuance. A policy denial returns HTTP 403; unavailable backend state remains HTTP 500."
       ]
     },
@@ -240,7 +249,7 @@
       "dot": "authentication",
       "title": "Trust and activation",
       "items": [
-        "The profile’s HTTPS anchors are independent of its SCEP or ACME identity issuer. Stable identifiers support later controlled replacement.",
+        "The profile\u2019s HTTPS anchors are independent of its SCEP or ACME identity issuer. Stable identifiers support later controlled replacement.",
         "The device obtains its identity certificate before Authenticate. TokenUpdate supplies push details and enables the enrollment."
       ]
     },
@@ -248,29 +257,30 @@
       "dot": "failure",
       "title": "Update-required outcome",
       "items": [
-        "The ADE handler applies its configured policy and may return Apple’s software-update-required error. The catalogue supplies version data only."
+        "Literal configured versions apply to iOS, iPadOS, macOS and visionOS. Current devices proceed; capable older devices receive the supported update response. Unknown or incapable required targets fail explicitly. No tvOS gate or dynamic latest-version policy is configured."
       ]
     },
     {
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "MachineInfo — https://developer.apple.com/documentation/devicemanagement/machineinfo",
-        "Authenticating through web views — https://developer.apple.com/documentation/devicemanagement/authenticating-through-web-views",
-        "ErrorCodeSoftwareUpdateRequired — https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired",
-        "Deploying device management enrollment profiles — https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles"
+        "MachineInfo \u2014 https://developer.apple.com/documentation/devicemanagement/machineinfo",
+        "Authenticating through web views \u2014 https://developer.apple.com/documentation/devicemanagement/authenticating-through-web-views",
+        "ErrorCodeSoftwareUpdateRequired \u2014 https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired",
+        "Deploying device management enrollment profiles \u2014 https://developer.apple.com/documentation/devicemanagement/deploying-device-management-enrollment-profiles",
+        "Enrollment update support \u2014 https://support.apple.com/guide/deployment/install-and-enforce-software-updates-depd30715cbb/1/web/1.0"
       ]
     },
     {
       "title": "Implementation references",
       "dot": "artifact",
       "items": [
-        "ade: ADE endpoint — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/ade/handler.go",
-        "gdmf: Software data — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/appleplatformservices/gdmf/gdmf.go",
-        "idp: Identity provider — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/devicemanagement/mdmprotocol/enroll/webauth/webauth.go",
-        "profile: Profile / issuer — https://github.com/deploymenttheory/go-apple-dm/blob/63404e698ca323e84c8699e94ae83f89cdb28543/server/internal/app/enroll.go",
-        "core: MDM service — https://github.com/deploymenttheory/go-apple-dm/blob/2b8157efa2c6cbfff459bc44f66736a5d2e7c753/server/service/checkin.go",
-        "Production DEP admission requests — https://github.com/deploymenttheory/go-apple-dm/blob/63404e698ca323e84c8699e94ae83f89cdb28543/server/internal/app/dep_admission_e2e_test.go"
+        "ade: ADE endpoint \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/bf6c0203bd6a329c1351d2a79b9a63ab39480d98/devicemanagement/mdmprotocol/enroll/ade/handler.go",
+        "idp: Identity provider \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/bf6c0203bd6a329c1351d2a79b9a63ab39480d98/devicemanagement/mdmprotocol/enroll/webauth/webauth.go",
+        "profile: Profile / issuer \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1c933d3a76566dbf429e2eaf8f8cd560c229f15d/server/internal/app/enroll.go",
+        "core: MDM service \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1c933d3a76566dbf429e2eaf8f8cd560c229f15d/server/service/checkin.go",
+        "Production DEP admission requests \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1c933d3a76566dbf429e2eaf8f8cd560c229f15d/server/internal/app/dep_admission_e2e_test.go",
+        "state: sealed evidence and browser grant \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/1c933d3a76566dbf429e2eaf8f8cd560c229f15d/server/internal/app/ade_state.go"
       ]
     }
   ]

@@ -22,6 +22,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/statestore"
 )
 
+// testADEParsed produces cryptographically verified device evidence from a dedicated test chain.
 func testADEParsed(t *testing.T) *ade.Parsed {
 	t.Helper()
 	chain := adetest.NewChain(t)
@@ -33,6 +34,7 @@ func testADEParsed(t *testing.T) *ade.Parsed {
 	return p
 }
 
+// TestADEEvidenceState exercises immutable evidence and one-use browser state on memory and SQLite.
 func TestADEEvidenceState(t *testing.T) {
 	for _, backend := range []string{"memory", "sqlite"} {
 		t.Run(backend, func(t *testing.T) {
@@ -222,6 +224,7 @@ func exerciseADEEvidenceState(t *testing.T, first, second state.Store, now time.
 	}
 }
 
+// TestADECompletionRejectsMissingBinding prevents callbacks from dropping or changing serial/UDID bindings.
 func TestADECompletionRejectsMissingBinding(t *testing.T) {
 	p := testADEParsed(t)
 	now := time.Now()
@@ -249,6 +252,7 @@ func TestADECompletionRejectsMissingBinding(t *testing.T) {
 	}
 }
 
+// TestADEEvidenceStorageFailures checks malformed input, canceled writes and atomic browser-grant failures.
 func TestADEEvidenceStorageFailures(t *testing.T) {
 	ctx := t.Context()
 	now := time.Now()
