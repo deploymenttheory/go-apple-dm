@@ -104,10 +104,17 @@ func TestSoftwareUpdate(t *testing.T) {
 		}
 	})
 	t.Run("FulfilledWithoutCapability", func(t *testing.T) {
-		p := parsedInfo("s")
-		p.MDMCANREQUESTSOFTWAREUPDATE = nil
-		if d, err := ade.Gate(ctx, p, requireVersion("17.0"), nil, quiet); err != nil || d.Action != ade.Proceed {
-			t.Fatalf("%+v %v", d, err)
+		for _, product := range []string{"iPhone15,2", "iPad13,1", "Mac14,7", "RealityDevice14,1"} {
+			for _, capability := range []*bool{nil, new(false)} {
+				p := parsedInfo("s")
+				p.PRODUCT, p.Platform, p.OSVERSION = product, ade.PlatformFromProduct(product), "26.0"
+				p.MDMCANREQUESTSOFTWAREUPDATE = capability
+				for _, target := range []string{"17.0", "26.0"} {
+					if d, err := ade.Gate(ctx, p, requireVersion(target), nil, quiet); err != nil || d.Action != ade.Proceed {
+						t.Fatalf("%s target %s: %+v %v", product, target, d, err)
+					}
+				}
+			}
 		}
 	})
 	t.Run("SupportedTargets", func(t *testing.T) {
@@ -118,6 +125,26 @@ func TestSoftwareUpdate(t *testing.T) {
 			p.OSVERSION = tc.version
 			if d, err := ade.Gate(ctx, p, requireVersion("27.0"), nil, quiet); err != nil || d.Action != ade.SoftwareUpdateRequired {
 				t.Fatalf("%+v: %+v %v", tc, d, err)
+			}
+		}
+	})
+	t.Run("UnsupportedSatisfiedTargets", func(t *testing.T) {
+		for _, product := range []string{"future1,1", "AppleTV14,1", "Watch7,1"} {
+			for _, required := range []string{"17.0", "26.0"} {
+				t.Run(product+"/"+required, func(t *testing.T) {
+					p := parsedInfo("unsupported")
+					p.PRODUCT, p.OSVERSION = product, "26.0"
+					p.Platform = ade.PlatformFromProduct(product)
+					inactive := ade.PolicyFunc(func(context.Context, *ade.Parsed) (ade.Target, bool, error) { return ade.Target{}, false, nil })
+					for _, policy := range []ade.Policy{nil, inactive} {
+						if d, err := ade.Gate(ctx, p, policy, nil, quiet); err != nil || d.Action != ade.Proceed {
+							t.Fatalf("inactive requirement rejected: %+v %v", d, err)
+						}
+					}
+					if d, err := ade.Gate(ctx, p, requireVersion(required), nil, quiet); d != nil || !errors.Is(err, ade.ErrGate) {
+						t.Fatalf("unsupported target numerically satisfied requirement: %+v %v", d, err)
+					}
+				})
 			}
 		}
 	})

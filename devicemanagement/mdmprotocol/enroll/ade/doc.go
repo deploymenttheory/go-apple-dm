@@ -9,11 +9,16 @@
 // serial, optionally enrich it through DEP lookup, apply software-update policy
 // and call ProfileHook for admission and profile selection. WebAuth connects the
 // browser flow to Finish. Bound.Parsed exposes the exact validated evidence for
-// immutable storage with the caller's authentication session. Resume loads the
-// latest per-serial record and is not a session binding.
+// immutable storage with the caller's authentication session. The pointer and
+// its reachable data are borrowed read-only values that alias the in-memory
+// record. Callers snapshot them into session state with original identity,
+// expiry and one-use consumption. Resume retrieves the latest per-serial record
+// and cannot bind an original session.
 //
 // A required update fails explicitly when the device cannot execute the response
-// or its OS version is unknown. Fulfilled and unconfigured requirements proceed.
+// or its OS version is unknown. Required policies reject unsupported platforms
+// before comparing versions. Fulfilled requirements on supported platforms and
+// unconfigured requirements proceed.
 // Responses support iOS/iPadOS 17+, macOS 14+, and visionOS 26+; tvOS and watchOS
 // have no supported enrollment update response. Policies remain caller-owned.
 //

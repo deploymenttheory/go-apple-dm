@@ -48,7 +48,10 @@ type ProfileHook func(ctx context.Context, p *Parsed, id Identity) (*enroll.Prof
 // callback can be matched to the device that started it.
 type Bound struct {
 	// Parsed is the exact validated MachineInfo that initiated this handoff.
-	// Callers retaining it must bind it to their authentication state and lifetime.
+	// It is borrowed read-only data, including reachable maps, slices and certificates;
+	// the in-memory store aliases this value. Callers must not mutate it. Retaining
+	// callers must snapshot this evidence into their authentication state and bind
+	// it to that state's original serial, UDID, expiry and consumption.
 	Parsed    *Parsed
 	Serial    string
 	UDID      string
@@ -58,9 +61,11 @@ type Bound struct {
 
 // WebAuth starts web view authentication for a device whose MachineInfo
 // was verified on the configuration_web_url GET. Begin typically
-// redirects to an identity provider; when the user is authenticated the
-// authenticator calls Handler.Resume and Handler.Finish. enroll/webauth
-// satisfies this interface.
+// redirects to an identity provider. The authenticator retains Bound.Parsed in
+// its expiring, one-use authentication state and, after authentication, validates
+// the retained evidence against that state's serial and UDID before calling
+// Handler.Finish. A latest-per-serial lookup cannot bind the original session.
+// WebAuthFunc adapts enroll/webauth's Flow.Begin to this interface.
 type WebAuth interface {
 	// Begin starts browser authentication bound to the verified device and writes the
 	// initial HTTP response.
@@ -213,9 +218,11 @@ func (h *Handler) admit(ctx context.Context, p *Parsed) (Identity, error) {
 	return id, nil
 }
 
-// Resume reloads a device admitted earlier by serial, for the web view
-// callback. It returns the stored MachineInfo and an Identity the caller
-// completes with the authenticated Subject and Claims before Finish.
+// Resume retrieves the latest admitted record for a serial. It returns the stored
+// MachineInfo and identity; the in-memory store's returned data is borrowed and
+// read-only. Another request may have replaced the record since a session began,
+// so Resume is unsuitable for binding an original browser authentication session.
+// Browser callbacks instead use evidence retained from Bound.Parsed.
 func (h *Handler) Resume(ctx context.Context, serial string) (*Parsed, Identity, error) {
 	rec, ok, err := h.store.Get(ctx, serial)
 	if err != nil {

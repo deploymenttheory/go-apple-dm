@@ -8,7 +8,24 @@ Automated Device Enrollment can submit signed `MachineInfo` or use a web view fo
 
 `ade` accepts bounded CMS data from documented request carriers, verifies one signer against configured Apple device anchors and validates presence rules. The default Apple device-chain path ignores certificate validity windows; strict validity and audit options are explicit. A store retains parsed data per serial. Optional DEP lookup and profile hooks support enrichment and admission.
 
-The software update gate uses a minimum-OS policy and device capability flags. The OIDC relying party uses authorization code flow, S256 PKCE, nonce validation and expiring one-use state bound to the supplied device data. Completion returns through the profile hook.
+The software update gate evaluates caller-owned minimum-OS policy before device
+capability. Nil and nonrequired policies are inactive. A required policy rejects
+unknown platforms, tvOS and watchOS before comparing versions. On supported
+platforms, devices that already meet the target proceed even without update
+capability; devices needing an update require both capability and an OS supporting
+the enrollment response: iOS/iPadOS 17+, macOS 14+, or visionOS 26+. Apple's
+[deployment guide](https://support.apple.com/guide/deployment/install-and-enforce-software-updates-depd30715cbb/1/web/1.0)
+and [enrollment update protocol](https://developer.apple.com/documentation/devicemanagement/deploying-software-updates-using-declarative-management)
+define those limits. Generated schema availability does not enable a tvOS gate.
+
+`ade.Bound.Parsed` exposes the exact validated request evidence for the browser
+handoff. Its pointer and reachable maps, slices and certificates are borrowed
+read-only data, aliased by the in-memory store. Callers snapshot the evidence into
+expiring, one-use authentication state bound to the original serial and UDID.
+Callbacks validate that retained evidence before `Finish`. `Resume` retrieves the
+latest record for a serial and cannot bind an original authentication session.
+
+The OIDC relying party uses authorization code flow, S256 PKCE, nonce validation and expiring one-use state bound to the supplied device data. Completion returns through the profile hook.
 
 The reference server publishes unauthenticated HTTPS `/MDMServiceConfig` with
 the configured DEP enrollment URL and a URL serving base64-DER HTTPS trust
