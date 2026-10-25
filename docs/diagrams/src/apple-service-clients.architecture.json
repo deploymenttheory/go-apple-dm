@@ -35,7 +35,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "840163310d08110feab368693b8a58c5f69c510f"
+      "revision": "0bcd985da7d5da6641ebcfa0ae4e046c70850df0"
     },
     "colour_profile": "purpose-v1",
     "legend": {
@@ -278,7 +278,7 @@
       "id": "appsbooksclient",
       "type": "backend",
       "label": "appsbooks.Client",
-      "sublabel": "Licenses, users and event status",
+      "sublabel": "Finite and unlimited inventory",
       "pos": [
         345,
         560
@@ -292,6 +292,14 @@
         {
           "path": "devicemanagement/appleplatformservices/appsbooks/client.go",
           "label": "Apps and Books client"
+        },
+        {
+          "path": "devicemanagement/appleplatformservices/appsbooks/assets.go",
+          "label": "stock and original evidence"
+        },
+        {
+          "path": "devicemanagement/appleplatformservices/appsbooks/pages.go",
+          "label": "filtered bounded traversal"
         }
       ]
     }
@@ -449,7 +457,8 @@
       "items": [
         "Inventory pages and cursors commit atomically after account, credential and cursor checks. Only the final page of the current full-fetch generation reconciles missing devices; interrupted or superseded fetches cannot delete unseen inventory.",
         "Sync and assignment run independently. Assignment outcomes and readback recheck lease ownership, Apple account identity, OAuth credentials and the desired profile before saving; a conflict stops that run.",
-        "Apps and Books returns asynchronous event IDs. The caller persists progress, authenticates notifications and checks completion before installation."
+        "Apps and Books returns asynchronous event IDs. The caller persists progress, authenticates notifications and checks completion before installation.",
+        "Apps and Books preserves finite/sentinel and unlimited asset arrays plus original JSON. Optional counts distinguish missing from zero; totalCount 2147483647 means unlimited. Bounded traversal retains the location filter; stock does not establish licensing, dispatch or installation."
       ]
     },
     {
@@ -478,7 +487,8 @@
         "ErrorCodeSoftwareUpdateRequired \u2014 https://developer.apple.com/documentation/devicemanagement/errorcodesoftwareupdaterequired",
         "Apps and Books \u2014 https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api",
         "ADE session authentication \u2014 https://developer.apple.com/documentation/devicemanagement/authenticating-for-automated-device-enrollment",
-        "Assignment throttling \u2014 https://developer.apple.com/documentation/devicemanagement/assign-profile"
+        "Assignment throttling \u2014 https://developer.apple.com/documentation/devicemanagement/assign-profile",
+        "Unlimited asset schema \u2014 https://developer.apple.com/documentation/devicemanagement/unlimitedresponseasset"
       ]
     }
   ]
