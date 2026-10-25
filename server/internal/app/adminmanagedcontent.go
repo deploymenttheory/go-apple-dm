@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"net/http"
 	"time"
@@ -47,13 +48,13 @@ func managedContentActions() []adminauth.Action {
 func contentError(w http.ResponseWriter, err error) {
 	status := http.StatusServiceUnavailable
 	switch {
-	case errors.Is(err, state.ErrNotFound), errors.Is(err, storage.ErrNotFound):
+	case errors.Is(err, state.ErrNotFound), errors.Is(err, storage.ErrNotFound), errors.Is(err, ddm.ErrNotFound):
 		status = http.StatusNotFound
 	case errors.Is(err, appsbooks.ErrNotificationAuth):
 		status = http.StatusUnauthorized
 	case errors.Is(err, appsbooks.ErrInput), errors.Is(err, appsbooks.ErrConfig), errors.Is(err, managedcontent.ErrInput), errors.Is(err, managedcontent.ErrUnsupported):
 		status = http.StatusBadRequest
-	case errors.Is(err, appsbooks.ErrPollEarly), errors.Is(err, appsbooks.ErrRevision), errors.Is(err, appsbooks.ErrOwnership), errors.Is(err, appsbooks.ErrConfigurationPending), errors.Is(err, appsbooks.ErrJobBusy), errors.Is(err, appsbooks.ErrReconciliation), errors.Is(err, managedcontent.ErrBusy), errors.Is(err, managedcontent.ErrConflict), errors.Is(err, managedcontent.ErrReconciliation):
+	case errors.Is(err, ddm.ErrConflict), errors.Is(err, appsbooks.ErrPollEarly), errors.Is(err, appsbooks.ErrRevision), errors.Is(err, appsbooks.ErrOwnership), errors.Is(err, appsbooks.ErrConfigurationPending), errors.Is(err, appsbooks.ErrJobBusy), errors.Is(err, appsbooks.ErrReconciliation), errors.Is(err, managedcontent.ErrBusy), errors.Is(err, managedcontent.ErrConflict), errors.Is(err, managedcontent.ErrReconciliation):
 		status = http.StatusConflict
 	}
 	writeError(w, status, errors.New(http.StatusText(status)))

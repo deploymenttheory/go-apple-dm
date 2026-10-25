@@ -71,7 +71,7 @@ func (a *App) queueContent(ctx context.Context, id string, mode managedcontent.M
 		return managedcontent.Operation{}, err
 	}
 	admission := contentAdmission{Identity: identity, Plan: p}
-	key := deliveryKey("admission:" + id)
+	key := contentServerKey("admission", id)
 	err = a.protocol.Update(ctx, []string{key}, func(tx state.Tx) error {
 		record, err := tx.Get(ctx, key)
 		if err == nil {
@@ -105,8 +105,9 @@ func (a *App) queueContent(ctx context.Context, id string, mode managedcontent.M
 	}
 }
 
+// contentExecutionContext restores the immutable admitted principal generation for execution.
 func (a *App) contentExecutionContext(ctx context.Context, id string) (context.Context, error) {
-	record, err := a.protocol.Get(ctx, deliveryKey("admission:"+id))
+	record, err := a.protocol.Get(ctx, contentServerKey("admission", id))
 	if err != nil {
 		return ctx, err
 	}

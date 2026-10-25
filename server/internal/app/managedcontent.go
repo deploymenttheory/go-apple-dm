@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/appsbooks"
@@ -69,12 +70,28 @@ func receiverKey(location string) string {
 
 // appsBooksNotification acknowledges only an authenticated, durably committed receipt.
 func (a *App) appsBooksNotification(w http.ResponseWriter, r *http.Request) {
-	record, err := a.protocol.Get(r.Context(), receiverKey(r.PathValue("location")))
-	if err != nil {
-		writeError(w, http.StatusUnauthorized, appsbooks.ErrNotificationAuth)
-		return
-	}
-	_, err = a.AppsBooks.ReceiveNotification(r.Context(), r.PathValue("location"), string(record.Value), r)
+	err := event.Run(r.Context(), a.cfg.publisher(), func(ctx context.Context) error {
+		var token string
+		key := receiverKey(r.PathValue("location"))
+		if err := a.protocol.Update(ctx, []string{key}, func(tx state.Tx) error {
+			record, err := tx.Get(ctx, key)
+			if errors.Is(err, state.ErrNotFound) {
+				return appsbooks.ErrNotificationAuth
+			}
+			if err != nil {
+				return err
+			}
+			token = string(record.Value)
+			return nil
+		}); err != nil {
+			return err
+		}
+		if _, err := a.AppsBooks.ReceiveNotification(ctx, r.PathValue("location"), token, r); err != nil {
+			return err
+		}
+		// Replays still require a durable access occurrence before acknowledgment.
+		return a.cfg.publisher().Publish(ctx, event.Event{Type: "appsbooks-notification", At: a.cfg.Clock.Now(), Actor: "appsbooks-receiver", Data: map[string]any{"Location": key}})
+	})
 	if err != nil {
 		contentError(w, err)
 		return
@@ -170,6 +187,7 @@ type contentTx struct {
 	changed bool
 }
 
+// Put records an actual participating SDK write after storage accepts it.
 func (t *contentTx) Put(ctx context.Context, r state.Record) error {
 	if err := t.Tx.Put(ctx, r); err != nil {
 		return err
@@ -177,6 +195,8 @@ func (t *contentTx) Put(ctx context.Context, r state.Record) error {
 	t.changed = true
 	return nil
 }
+
+// Delete records an actual participating SDK removal after storage accepts it.
 func (t *contentTx) Delete(ctx context.Context, key string) error {
 	if err := t.Tx.Delete(ctx, key); err != nil {
 		return err
@@ -184,6 +204,8 @@ func (t *contentTx) Delete(ctx context.Context, key string) error {
 	t.changed = true
 	return nil
 }
+
+// Update commits SDK mutations and required safe event capture together.
 func (s contentState) Update(ctx context.Context, keys []string, fn func(state.Tx) error) error {
 	return event.Run(ctx, s.a.cfg.publisher(), func(ctx context.Context) error {
 		return s.Store.Update(ctx, keys, func(tx state.Tx) error {
@@ -198,7 +220,7 @@ func (s contentState) Update(ctx context.Context, keys []string, fn func(state.T
 			if p, ok := ctx.Value(actorKey{}).(adminauth.Principal); ok {
 				actor = p.Name
 			}
-			return s.a.cfg.publisher().Publish(ctx, event.Event{Type: "managed-content-state", At: tx.Now(), Actor: actor})
+			return s.a.cfg.publisher().Publish(ctx, event.Event{Type: "managed-content-state", At: tx.Now(), Actor: actor, Data: map[string]any{"Objects": slices.Clone(keys)}})
 		})
 	})
 }

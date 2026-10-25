@@ -20,6 +20,7 @@ func runManagedContent(ctx context.Context, e *env, args []string) error {
 	return runContentOperation(ctx, e, args, true)
 }
 
+// runContentOperation maps an explicit CLI operation and bounded JSON object to its authorized endpoint.
 func runContentOperation(ctx context.Context, e *env, args []string, managed bool) error {
 	if len(args) == 0 {
 		return fmt.Errorf("%w: operation required", ErrUsage)

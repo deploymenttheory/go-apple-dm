@@ -202,6 +202,15 @@ func TestManagedContentDeclarativeDelivery(t *testing.T) {
 	if err != nil || !out.Terminal || out.Installed || out.AppVersion != "" {
 		t.Fatal("DDM removal lost historical processing", out, err)
 	}
+	// A native DDM-owned app cannot silently switch to MDM delivery.
+	mdmCommand, err := mdm.NewCommand(&commands.InstallApplication{ITunesStoreID: new(int64(1))}, mdm.WithUUID("method-switch"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	switched := managedcontent.Dispatch{ID: mdmCommand.UUID, Enrollment: id, Serial: "S-DDM", Method: managedcontent.MDM, MDM: mdmCommand.Raw, Digest: "other-method", Content: dispatch.Content}
+	if _, err := adapter.Submit(t.Context(), switched); !errors.Is(err, managedcontent.ErrConflict) {
+		t.Fatal("native method switch accepted", err)
+	}
 	// Another declaration generation cannot borrow the prior app-status proof.
 	changed, _, err := a.Engine.PutDeclaration(t.Context(), []byte(`{"Identifier":"ddm-selected","Type":"com.apple.configuration.app.managed","Payload":{"AppStoreID":"2","InstallBehavior":{"Install":"Required"}}}`))
 	if err != nil {
@@ -212,5 +221,52 @@ func TestManagedContentDeclarativeDelivery(t *testing.T) {
 	}
 	if _, err := adapter.Inspect(t.Context(), dispatch); !errors.Is(err, managedcontent.ErrConflict) {
 		t.Fatal("changed declaration inherited old proof", err)
+	}
+}
+
+// TestManagedContentSDKStepNativeComposition reaches the actual SDK observation
+// validator through the reference HTTP operation. A durable queue receipt needs
+// an authoritative nonzero observation timestamp, independently of installation.
+func TestManagedContentSDKStepNativeComposition(t *testing.T) {
+	f := contentFixtureService(t)
+	f.assets.Store(true)
+	f.assignments.Store(true)
+	cfg := contentConfig(t, f)
+	a, token := contentBuild(t, cfg)
+	registerContent(t, a, token)
+	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "full-sdk-selected"}
+	seedContentEnrollment(t, a, id, "native-sdk-pin", "S-SDK")
+	plan := managedcontent.Plan{LocationID: "london", Content: managedcontent.Content{Asset: appsbooks.Asset{AdamID: "1", PricingParam: "STDQ"}, Kind: "App"}, Target: managedcontent.Selection{Enrollment: id, Serial: "S-SDK"}, Method: managedcontent.MDM, MaxPages: 2}
+	w := contentRequest(t, a, token, "PUT", "/managed-content/operations/full-sdk", map[string]any{"mode": "install", "plan": plan})
+	if w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	w = contentRequest(t, a, token, "POST", "/managed-content/operations/full-sdk/step", contentWorkerInput{Worker: "operator", LeaseSeconds: 60})
+	if w.Code != 200 {
+		t.Fatal("SDK rejected native dispatch observation", w.Code, w.Body.String())
+	}
+	op, evidence, err := a.ManagedContent.LoadEvidence(t.Context(), "full-sdk")
+	if err != nil || op.Phase != managedcontent.Dispatched || op.Observation == nil || op.Observation.Installed || op.Observation.ObservedAt.IsZero() || evidence.Dispatch == nil {
+		t.Fatal(op, err)
+	}
+	adapter := contentDelivery{a}
+	observation, err := adapter.Submit(t.Context(), *evidence.Dispatch)
+	if err != nil || !observation.Found || observation.ObservedAt.IsZero() || observation.Installed {
+		t.Fatal("idempotent queue receipt rejected", observation, err)
+	}
+	if f.posts.Load() != 0 {
+		t.Fatal("existing licensing triggered synthetic mutation")
+	}
+	if err := a.Close(); err != nil {
+		t.Fatal(err)
+	}
+	a, token = contentBuild(t, cfg)
+	w = contentRequest(t, a, token, "POST", "/managed-content/operations/full-sdk/reconcile", contentWorkerInput{Worker: "operator", LeaseSeconds: 60, Note: "original worker stopped; inspect retained native queue receipt"})
+	if w.Code != 200 {
+		t.Fatal("restart reconciliation failed", w.Code, w.Body.String())
+	}
+	op, err = a.ManagedContent.Load(t.Context(), "full-sdk")
+	if err != nil || op.Phase != managedcontent.Dispatched || op.Observation == nil || op.Observation.Installed {
+		t.Fatal("restart inferred installation", op, err)
 	}
 }

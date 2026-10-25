@@ -389,7 +389,7 @@ The authenticated API is rooted at `/admin/v1`:
 | Job `/submit`, `/poll` | `POST {worker,leaseSeconds}` explicitly submits or polls that job |
 | Job `/reconcile` | `POST {eventId,note,abandon}` resolves stopped uncertain work without implicit POST replay |
 | `/managed-content/users` | `PUT {enrollment,clientUserId}` explicitly binds an Apple user to a current authenticated native principal |
-| `/managed-content/operations`, `/operations/{operation}` | `GET` safe status; `PUT {mode,plan}` queues `assign`, `install` or `assign-and-install` for one explicitly selected authenticated enrollment |
+| `/managed-content/operations`, `/managed-content/operations/{operation}` | `GET` safe status; `PUT {mode,plan}` queues `assign`, `install` or `assign-and-install` for one explicitly selected authenticated enrollment |
 | Operation `/step`, `/reconcile` | `POST {worker,leaseSeconds,note,retryAbsent}` advances or explicitly reconciles retained work |
 | Operation `/cancel` | `POST` cancels pre-dispatch intent without revoking a license |
 | Location, job or operation `/evidence` | Separately privileged retained source/native evidence |
