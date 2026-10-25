@@ -36,7 +36,7 @@ const (
 // AdminActions is the complete permission catalogue. Membership in a routine
 // action group is explicit; new permissions never inherit a routine grant.
 func AdminActions() []adminauth.Action {
-	actions := baseAdminActions()
+	actions := append(baseAdminActions(), managedContentActions()...)
 	add := func(id, help string, resource types.EntityType) {
 		actions = append(actions, adminauth.Action{ID: id, Help: help, Resource: resource})
 	}

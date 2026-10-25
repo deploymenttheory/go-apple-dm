@@ -11,6 +11,7 @@ import (
 
 // Environment variables read by ParseEnv.
 const (
+	EnvAppsBooksMDMID          = "DM_APPSBOOKS_MDM_ID"
 	EnvInventoryNativeInterval = "DM_INVENTORY_NATIVE_INTERVAL"
 	EnvInventoryJobRetention   = "DM_INVENTORY_JOB_RETENTION"
 	EnvListen                  = "DM_LISTEN"
@@ -159,6 +160,7 @@ func ParseEnv(get func(string) string) (Config, error) {
 		Subscriptions: true,
 	}
 
+	cfg.AppsBooks.MDMID = get(EnvAppsBooksMDMID)
 	cfg.ApplicationPackages.File = get("DM_APPLICATION_PACKAGES_CONFIG")
 	cfg.ContentCache.PublicURL = get("DM_CONTENT_CACHE_URL")
 	if v := get("DM_CONTENT_CACHE_RETENTION"); v != "" {
