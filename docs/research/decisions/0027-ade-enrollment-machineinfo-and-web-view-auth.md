@@ -8,7 +8,24 @@ Automated Device Enrollment can submit signed `MachineInfo` or use a web view fo
 
 `ade` accepts bounded CMS data from documented request carriers, verifies one signer against configured Apple device anchors and validates presence rules. The default Apple device-chain path ignores certificate validity windows; strict validity and audit options are explicit. A store retains parsed data per serial. Optional DEP lookup and profile hooks support enrichment and admission.
 
-The software update gate uses a minimum-OS policy and device capability flags. The OIDC relying party uses authorization code flow, S256 PKCE, nonce validation and expiring one-use state bound to the supplied device data. Completion returns through the profile hook.
+The software update gate evaluates caller-owned minimum-OS policy before device
+capability. Nil and nonrequired policies are inactive. A required policy rejects
+unknown platforms, tvOS and watchOS before comparing versions. On supported
+platforms, devices that already meet the target proceed even without update
+capability; devices needing an update require both capability and an OS supporting
+the enrollment response: iOS/iPadOS 17+, macOS 14+, or visionOS 26+. Apple's
+[deployment guide](https://support.apple.com/guide/deployment/install-and-enforce-software-updates-depd30715cbb/1/web/1.0)
+and [enrollment update protocol](https://developer.apple.com/documentation/devicemanagement/deploying-software-updates-using-declarative-management)
+define those limits. Generated schema availability does not enable a tvOS gate.
+
+`ade.Bound.Parsed` exposes the exact validated request evidence for the browser
+handoff. Its pointer and reachable maps, slices and certificates are borrowed
+read-only data, aliased by the in-memory store. Callers snapshot the evidence into
+expiring, one-use authentication state bound to the original serial and UDID.
+Callbacks validate that retained evidence before `Finish`. `Resume` retrieves the
+latest record for a serial and cannot bind an original authentication session.
+
+The OIDC relying party uses authorization code flow, S256 PKCE, nonce validation and expiring one-use state bound to the supplied device data. Completion returns through the profile hook.
 
 The reference server publishes unauthenticated HTTPS `/MDMServiceConfig` with
 the configured DEP enrollment URL and a URL serving base64-DER HTTPS trust
@@ -38,11 +55,24 @@ Separating cryptographic verification, device enrichment, admission and profile 
 
 ## Constraints
 
-Signed `MachineInfo` is not Managed Device Attestation or proof of organizational ownership. Audit mode permits unverified input. A GDMF lookup failure is logged and enrollment proceeds. The reference composition retains MachineInfo in memory but stores browser handoff state in its shared protocol store. Replicas need the same state backend, issuer configuration and admission policy. SAML is not implemented.
+Signed `MachineInfo` is not Managed Device Attestation or proof of organizational ownership. Audit mode permits unverified input. A GDMF lookup failure is logged and enrollment proceeds. The reference composition stores MachineInfo in its existing shared protocol store.
+An ADE browser handoff retains the original CMS and validated signer certificate
+inside its browser grant, with the same expiration and atomic one-use consumption.
+SQL records are sealed by the existing storage keyring. Callback completion checks
+the retained signature, serial and UDID; it does not reload a later request's
+per-serial record. Missing, corrupt, expired, unverified or mismatched browser
+evidence fails closed. The reference minimum-version settings are literal targets;
+no dynamic latest-version policy or tvOS gate is composed. Replicas need the same state backend, issuer configuration and admission policy. SAML is not implemented.
 
 ## Verification
 
-ADE/CMS tests cover carriers, size limits, attributes, chains, presence rules and error responses. OIDC tests cover state replay, expiry, nonce/audience/signature checks and redirects. Simulator and end-to-end scenarios exercise profiles, software-update responses and web authentication.
+ADE/CMS tests cover carriers, size limits, attributes, chains, presence rules and error responses.
+Memory, SQLite, PostgreSQL and MySQL contracts cover shared evidence, expiry,
+corruption, serial/UDID mismatches, replay and rollback. Production route tests
+complete browser authentication on a second build and after closing the initiating
+build, then perform SCEP issuance and MDM check-in. The same callback composition
+rejects invalid evidence without issuance. Literal requirements cover supported
+responses, current and disabled devices, unknown products and unavailable updates. OIDC tests cover state replay, expiry, nonce/audience/signature checks and redirects. Simulator and end-to-end scenarios exercise profiles, software-update responses and web authentication.
 
 Service-configuration tests cover public and private HTTPS, trust separation,
 invalid certificates and URLs, and agreement between anchors and the trust

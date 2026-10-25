@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"net/http"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/enroll/ade"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/simulator"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 	depinmem "github.com/deploymenttheory/go-apple-dm/devicemanagement/storage/dep/inmem"
 )
 
@@ -222,6 +224,13 @@ func TestE2E_DEPAssign(t *testing.T) {
 	// An old OS that can request updates is told to update first.
 	old := f.device("UDID-DEP-3")
 	old.SerialNumber, old.ProductName, old.OSVersion = "C02DEP0003", "Mac16,1", "15.0"
+	originalIdentity := old.Identity
+	profilesBefore := len(f.served)
+	identitiesIssued := 0
+	f.certificateIssued = func(context.Context, *x509.Certificate) error {
+		identitiesIssued++
+		return nil
+	}
 	var sur *simulator.SoftwareUpdateRequired
 	if err := old.ADEEnroll(
 		ctx,
@@ -231,8 +240,29 @@ func TestE2E_DEPAssign(t *testing.T) {
 		sur.OSVersion != "26.0" {
 		t.Fatalf("software update gate = %v", err)
 	}
-	// One that cannot request updates enrols regardless.
+	// An incapable device below the requirement fails explicitly and never
+	// reaches profile construction, identity issuance or MDM enrollment.
+	var unavailable *simulator.HTTPError
+	if err := old.ADEEnroll(ctx, f.server.URL+"/ade", simulator.ADEOptions{}); !errors.As(err, &unavailable) || unavailable.Status != http.StatusInternalServerError {
+		t.Fatalf("unavailable required update = %v", err)
+	}
+	if len(f.served) != profilesBefore || identitiesIssued != 0 || old.Identity != originalIdentity {
+		t.Fatalf("gated device received profile or identity: profiles=%d issued=%d identityChanged=%v", len(f.served)-profilesBefore, identitiesIssued, old.Identity != originalIdentity)
+	}
+	if _, err := f.store.Get(ctx, mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: old.UDID}); !errors.Is(err, storage.ErrNotFound) {
+		t.Fatalf("gated device acquired enrollment: %v", err)
+	}
+
+	// A recognized device already at the literal target does not need update
+	// capability; normal profile delivery and enrollment remain available.
+	old.OSVersion = "26.0"
 	if err := old.ADEEnroll(ctx, f.server.URL+"/ade", simulator.ADEOptions{}); err != nil {
-		t.Fatalf("gate bypass = %v", err)
+		t.Fatalf("current device without update capability = %v", err)
+	}
+	if len(f.served) != profilesBefore+1 || old.Identity == originalIdentity || identitiesIssued == 0 {
+		t.Fatal("current device did not receive its enrollment profile and identity")
+	}
+	if enrolled, err := f.store.Get(ctx, mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: old.UDID}); err != nil || !enrolled.Enabled {
+		t.Fatalf("current device without update capability enrollment = %+v %v", enrolled, err)
 	}
 }

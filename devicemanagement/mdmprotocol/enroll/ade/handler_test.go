@@ -298,11 +298,14 @@ func TestHandler(t *testing.T) {
 		h := ade.New(ade.Config{Parse: chain.Options(), Store: store, Profile: okHook, WebAuth: spy, Logger: quietLogger})
 		// The web view GET with the header starts authentication instead of serving the profile.
 		rec := serve(t, h, adetest.Request(t, target, blob, adetest.LaneHeader))
-		if rec.Code != http.StatusFound || len(spy.bound) != 1 || spy.bound[0] != (ade.Bound{Serial: "C02HANDLER", UDID: info.UDID, Product: "iPhone15,2", OSVersion: "17.5.1"}) {
+		if rec.Code != http.StatusFound || len(spy.bound) != 1 || spy.bound[0] != (ade.Bound{Parsed: spy.bound[0].Parsed, Serial: "C02HANDLER", UDID: info.UDID, Product: "iPhone15,2", OSVersion: "17.5.1"}) {
 			t.Fatalf("%d %+v", rec.Code, spy.bound)
 		}
 		if _, ok, _ := store.Get(context.Background(), "C02HANDLER"); !ok {
 			t.Fatal("not persisted before Begin")
+		}
+		if p := spy.bound[0].Parsed; p == nil || !p.Verified || p.Signer == nil || string(p.Raw) != string(blob) || p.SERIAL != info.SERIAL {
+			t.Fatal("handoff lost validated signing evidence")
 		}
 		// The POST lane is unaffected by WebAuth.
 		if rec := serve(t, h, post(t)); rec.Code != http.StatusOK || len(spy.bound) != 1 {

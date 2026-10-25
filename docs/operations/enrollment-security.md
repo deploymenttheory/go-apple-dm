@@ -6,6 +6,61 @@ Certificate revocation is enabled by default. Enrollment requires explicit
 admission; inbound rate limits are configured separately. The design and supporting references are in
 [decision 0047](../research/decisions/0047-enrollment-authentication-and-optional-security-services.md).
 
+## Automated Device Enrollment
+
+The reference ADE endpoint verifies signed `MachineInfo` before starting browser
+authentication. It snapshots the original CMS, validated signer certificate,
+verification result, request origin and receipt time into the same shared protocol
+record as the browser grant. With SQL storage, the existing storage keyring seals
+both together. The snapshot has the browser grant's exact five-minute expiration
+and is consumed with that grant. No process-local fallback is used for pending ADE
+authentication. The latest-per-serial MachineInfo record is also retained in shared
+protocol state for five minutes; browser completion uses its own original snapshot.
+
+Another replica or a restarted server can complete the callback when it shares
+the database, encryption keys, issuer material, OIDC settings and admission policy.
+The callback verifies the retained CMS against its originally validated signer and
+checks the original serial and UDID before normal profile admission and issuance.
+A later request for the same serial cannot replace the pending browser's evidence.
+Serial remains the physical cross-source correlation key; UDID binds this protocol
+session. Neither identifier establishes authentication or organizational ownership.
+
+Missing, malformed, expired, signature-invalid or identity-mismatched evidence
+returns HTTP 400 without issuing a profile. Browser grants without retained
+signing evidence require a new enrollment attempt. Corrupt sealed state and
+unavailable persistence return HTTP 500; the callback cannot fall back to RAM.
+An invalid initiating browser cookie does not consume the state. Once a matching
+browser callback consumes the grant, it cannot replay, including after a rejected
+evidence check. Audit mode does not allow unverified evidence to finish browser
+authentication. Direct ADE POST retains the explicitly configured audit behavior.
+
+### Literal minimum OS requirements
+
+Configure `DM_ADE_MINIMUM_IOS`, `DM_ADE_MINIMUM_IPADOS`,
+`DM_ADE_MINIMUM_MACOS` or `DM_ADE_MINIMUM_VISIONOS` with a literal numeric dotted
+version. Each empty field is inactive. The server selects the supplied target from
+the device's signed product information and compares its reported OS version;
+ABM purchasing data does not select a platform, minimum version or enrollment
+profile. An unknown product fails explicitly when minimum-version configuration
+is active. No catalogue lookup, dynamic latest-version policy or Platform SSO
+policy is composed by these settings.
+
+Apple supports enrollment update enforcement on iOS/iPadOS 17+, macOS 14+ and
+visionOS 26+. Devices on these supported platform families that already meet the
+requirement proceed even if update capability is absent. An older device receives
+HTTP 403 with `com.apple.softwareupdate.required` and the supplied target only
+when its OS and `MDM_CAN_REQUEST_SOFTWARE_UPDATE` support that response. Missing
+or malformed OS versions, older unsupported OS versions and incapable devices
+needing an update fail with HTTP 500; they do not receive an enrollment profile.
+There is no supported tvOS or watchOS enrollment minimum gate, and supplying
+`DM_ADE_MINIMUM_TVOS` or `DM_ADE_MINIMUM_WATCHOS` is a configuration error.
+Other known families with no configured requirement remain inactive.
+These limits follow [Apple's deployment guide](https://support.apple.com/guide/deployment/install-and-enforce-software-updates-depd30715cbb/1/web/1.0)
+and [enrollment update protocol](https://developer.apple.com/documentation/devicemanagement/deploying-software-updates-using-declarative-management),
+independently of broader generated schema availability. Automated tests verify
+response composition; assigned-device Setup Assistant and physical update outcomes
+remain separate validation under [ADE lab acceptance](https://github.com/deploymenttheory/go-apple-dm/issues/318).
+
 ## Account-driven enrollment
 
 The profile response creates a random enrollment reference. The reference server
