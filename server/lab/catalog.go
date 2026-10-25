@@ -331,7 +331,7 @@ func Catalogue() []Module {
 		Module{ID: "LIVE-009", Name: "Designated reversible ABM assignment with per-device log, readback and restoration", Theme: "abm", Modes: []string{"live"}, Prerequisites: []string{"private abm/acceptance.json with explicit assignment opt-in", "designated MDM binding and device", "assignment, unassignment and raw-log grants", "private evidence directory"}, Steps: []Step{{Name: "assignment and restoration", Run: liveABMAssignment}}},
 		Module{
 			ID: "LIVE-010", Name: "Separate ADE token authentication, full/delta enumeration and designated readback", Theme: "ade", Modes: []string{"live"},
-			Prerequisites: []string{"private ade/acceptance.json and separate ade/tokens.json", "matching reference ADE account and designated serial", "readDEP and listDEP grants", "private evidence directory"},
+			Prerequisites: []string{"private ade/acceptance.json and separate ade/tokens.json", "matching reference ADE account and designated serial", "readDEP and listDEPAccounts grants", "private evidence directory"},
 			Steps:         []Step{{Name: "read-only ADE API acceptance", Run: liveADECollection}},
 		},
 		Module{

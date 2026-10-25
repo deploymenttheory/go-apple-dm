@@ -152,3 +152,22 @@ live Apple or hardware compatibility.
 - [Enrollment profiles](0009-enrollment-profiles.md)
 - [ADE enrollment and service configuration](0027-ade-enrollment-machineinfo-and-web-view-auth.md)
 - [Mac enrollment runbook](../../operations/mac-enrollment-testing.md)
+
+## ADE acceptance
+
+LIVE-010 uses a separate ADE server token for read-only authentication, account
+binding, full/delta enumeration and designated profile readback. LIVE-011 adds
+explicit profile definition/assignment and restoration through the reference
+worker. A dedicated quiescent account is required because the target API has no
+compare-and-swap. An exclusive private fence captures original state and its
+progress-directory locator before mutation; unanswered requests retain uncertainty
+and cannot trigger automatic inverse replay or a later run.
+
+LIVE-012 requires stored ADE issuance, completed authenticated check-ins, pinned
+identity continuity and fresh APNs-triggered native serial/platform/OS/build and
+typed supervision evidence. ADE membership cannot replace missing native facts.
+Per-feature generated support governs DDM, including supported tvOS status
+subscriptions; native DDM exchange and cleanup remain independent. Each requested
+platform has its own passed/failed/unexercised row. Fixture and API passes cannot
+certify physical enrollment. The [ADE guide](../../operations/ade-acceptance.md)
+defines private prerequisites and operator steps.

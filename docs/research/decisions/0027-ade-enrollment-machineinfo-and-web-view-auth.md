@@ -102,3 +102,13 @@ Reference source identifiers and paths (relative to the named project):
 - `korylprince/dep-webview-oidc@bc3fa71`, `header/header.go`, `service/http.go`, `store/mem`, `docs/Architecture.md`
 - `zentralopensource/zentral@b10dd22`, `zentral/contrib/mdm/public_views/dep.py`
 - `micromdm/micromdm@904493b`, `mdm/enroll/endpoint.go`, `pkg/crypto/apple.go`
+
+## Native acceptance evidence
+
+[LIVE-012](../../operations/ade-acceptance.md#validate-real-enrollment-on-each-platform)
+requires the actual stored ADE issuance method and serial/protocol bindings,
+trusted native Authenticate/TokenUpdate and fresh push-triggered inventory.
+Missing historical issuance cannot be inferred from an existing certificate or
+account membership. Supervision remains a typed native observation; applicable
+DDM proof and cleanup have independent evidence. Each device/platform/release
+requires its own operator-observed Setup Assistant acceptance.

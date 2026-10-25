@@ -356,3 +356,17 @@ empty collections remain unexercised. See [ABM acceptance](operations/abm-assign
 See [lab and server operations](operations/reference-lab.md) for configuration,
 API authorization and persistence, and [the catalogue](testing/lab-catalogue.md)
 for execution modes and retained regression mappings.
+
+## ADE acceptance boundaries
+
+The maintained lab separates read-only ADE API evidence (LIVE-010), explicit
+designated assignment and restoration (LIVE-011), and native device enrollment
+proof (LIVE-012). The separate server token authenticates the SDK client; account
+UUIDs bind the service and only serials correlate physical devices. Assignment
+uses the reference worker and requires an operator-quiescent dedicated account;
+private immutable original state and an unresolved-outcome fence prevent silent
+inverse replay. Native proof reads stored issuance under the existing enrollment
+read grant, then verifies fresh native identity/serial/platform/OS/build and typed
+supervision observations. Applicable DDM exchange and cleanup are separate
+phases. [The operating guide](operations/ade-acceptance.md) defines each platform's
+executable procedure and unexercised scope.

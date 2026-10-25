@@ -22,6 +22,12 @@
 // Doctor and the offline preflight report missing prerequisites without enrolling a device
 // or changing its trust settings.
 //
+// ADE modules separate read-only server-token/API evidence, explicitly opted-in
+// designated assignment with private recovery fencing, and actual native enrollment
+// proof. API and fixture passes cannot certify hardware. Per-platform results retain
+// unexercised scope, and DDM exchange and cleanup have independent evidence.
+// See docs/operations/ade-acceptance.md for private inputs and executable live steps.
+//
 // # References
 //
 //   - https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/local_lab_acceptance_testing.md

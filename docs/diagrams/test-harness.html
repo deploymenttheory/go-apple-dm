@@ -5616,6 +5616,20 @@ svg[data-purpose-filter] g[data-purpose-highlight] > path { stroke-width: 2.4; }
           <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/live_abm.go" target="_blank" rel="noopener noreferrer">ABM acceptance and restoration</a></li>
         </ul>
       </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot neutral"></div>
+          <h3>ADE acceptance boundaries</h3>
+        </div>
+        <ul>
+          <li>&bull; LIVE-010 uses its separate server token for authentication, account binding and full/delta enumeration. LIVE-011 additionally requires explicit mutation opt-in and a quiescent dedicated account; uncertainty retains private original state and blocks inverse replay.</li>
+          <li>&bull; LIVE-012 requires actual stored ADE issuance, authenticated check-ins and a fresh native serial/OS/build/supervision acknowledgment. DDM exchange and cleanup have independent results; all other device platforms remain unexercised.</li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/server/lab/live_ade_collection.go" target="_blank" rel="noopener noreferrer">ADE API checks</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/server/lab/live_ade_assignment.go" target="_blank" rel="noopener noreferrer">ADE assignment recovery</a></li>
+          <li>&bull; <a href="https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/server/lab/live_ade_hardware.go" target="_blank" rel="noopener noreferrer">Native ADE acceptance</a></li>
+        </ul>
+      </div>
     </div>
 
   </div>

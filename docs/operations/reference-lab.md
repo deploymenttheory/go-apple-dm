@@ -132,3 +132,11 @@ See the [replacement transition rules](../../devicemanagement/storage/replacemen
 [DDM transaction limits](../research/decisions/0020-ddm-engine-membership-and-storage.md)
 and [Mac enrollment runbook](mac-enrollment-testing.md)
 for ACME, SCEP, replacement and the exact live evidence required.
+
+## ADE API and device acceptance
+
+The [ADE acceptance guide](ade-acceptance.md) uses the same live workspace and
+ordinary administration APIs for LIVE-010 through LIVE-012. Configure the separate
+ADE server token and designated scope privately. Profile assignment requires
+explicit opt-in and a quiescent dedicated account; actual hardware proof requires
+stored ADE issuance and fresh authenticated native observations.

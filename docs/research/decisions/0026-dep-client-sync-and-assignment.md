@@ -140,3 +140,12 @@ Reference source identifiers and paths (relative to the named project):
 - `fleetdm/fleet@b44343c`, `server/mdm/apple/apple_mdm.go`, `RunAssigner`, `processDeviceResponse`, `buildJSONProfile`, `server/mdm/nanodep/`, `4c207e8`, `server/datastore/mysql/apple_mdm.go`, `server/worker/macos_setup_assistant.go`
 - `micromdm/micromdm@904493b`, `dep/`, `platform/dep/sync/depsync.go`, `platform/config/apply_deptoken.go`
 - `zentralopensource/zentral@b10dd22`, `zentral/contrib/mdm/dep.py`, `dep_client.py`
+
+## Acceptance integration
+
+The maintained lab reuses this client and reference assignment worker for
+[scoped ADE acceptance](../../operations/ade-acceptance.md). Read-only full/delta
+checks are separate from explicit profile mutation. Dedicated-account quiescence
+is required; an additional private lab fence preserves original state and
+unknown outcomes without changing SDK retry semantics. API success supplies no
+physical-device certification.

@@ -351,3 +351,15 @@ establishes device acceptance.
 Blueprint live checks validate legacy-profile support against the target OS version.
 The negative `ProfileAssetReference` test runs only before macOS 27; the common
 publication, native status, revision and removal checks also apply to macOS 27.
+
+## ADE API and native enrollment acceptance
+
+[The ADE acceptance guide](../operations/ade-acceptance.md) documents LIVE-010
+(read-only separate-token/account/full+delta evidence), LIVE-011 (explicit
+one-serial profile assignment and original-state restoration) and LIVE-012
+(actual ADE issuance, native identity/check-ins, fresh push acknowledgment and
+applicable DDM). They use this catalogue and the ordinary reference runtime.
+Unknown mutation outcomes retain private recovery fencing; concurrent target
+changes never authorize overwriting another operator's selection. Hardware rows
+remain independent for macOS, iOS, iPadOS, visionOS and tvOS. API checks and local
+fixtures leave physical enrollment unexercised.
