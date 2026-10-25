@@ -38,19 +38,22 @@ func (s *jobTimeStore) Update(ctx context.Context, keys []string, fn func(state.
 func (t jobTimeTx) Now() time.Time { return t.at }
 
 type licensingService struct {
-	mu        sync.Mutex
-	posts     int
-	operation string
-	status    string
-	completed int
-	requested int
-	owner     string
-	product   string
-	retired   bool
-	failure   bool
-	invalid   bool
-	block     chan struct{}
-	entered   chan struct{}
+	missingAssignment   bool
+	notDeviceAssignable bool
+	platforms           []string
+	mu                  sync.Mutex
+	posts               int
+	operation           string
+	status              string
+	completed           int
+	requested           int
+	owner               string
+	product             string
+	retired             bool
+	failure             bool
+	invalid             bool
+	block               chan struct{}
+	entered             chan struct{}
 }
 
 // licensingFixture serves controlled source, asynchronous event and aggregate-status responses over TLS.
@@ -61,6 +64,10 @@ func licensingFixture(t *testing.T) (*licensingService, appsbooks.Config, string
 	server = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
 		owner, product, retired, invalid := f.owner, f.product, f.retired, f.invalid
+		missingAssignment, notDeviceAssignable, platforms := f.missingAssignment, f.notDeviceAssignable, f.platforms
+		if platforms == nil {
+			platforms = []string{"iOS", "macOS", "tvOS", "visionOS", "watchOS"}
+		}
 		operation, status, completed, requested, failure := f.operation, f.status, f.completed, f.requested, f.failure
 		block, entered := f.block, f.entered
 		if r.Method == http.MethodPost {
@@ -70,7 +77,7 @@ func licensingFixture(t *testing.T) (*licensingService, appsbooks.Config, string
 		w.Header().Set("Content-Type", "application/json")
 		if r.URL.Path == "/service/config" {
 			urls := map[string]string{}
-			for _, key := range []string{"clientConfig", "getAssets", "getUsers", "associateAssets", "disassociateAssets", "revokeAssets", "createUsers", "updateUsers", "retireUsers", "eventStatus"} {
+			for _, key := range []string{"clientConfig", "getAssets", "getAssignments", "getUsers", "associateAssets", "disassociateAssets", "revokeAssets", "createUsers", "updateUsers", "retireUsers", "eventStatus"} {
 				urls[key] = server.URL + "/" + key
 			}
 			if err := json.NewEncoder(w).Encode(map[string]any{"urls": urls, "limits": map[string]int{"maxAssets": 100, "maxUsers": 100, "maxClientUserIds": 100, "maxSerialNumbers": 100, "maxRevokeClientUserIds": 100, "maxRevokeSerialNumbers": 100, "maxRequestPerSecond": 1000000}}); err != nil {
@@ -93,11 +100,31 @@ func licensingFixture(t *testing.T) (*licensingService, appsbooks.Config, string
 			return
 		}
 		out := map[string]any{"uId": "UID", "mdmInfo": map[string]string{"id": owner}, "versionId": "v1", "future": json.RawMessage(`{"integer":9007199254740993,"null":null,"false":false}`)}
+		if owner == "" {
+			delete(out, "mdmInfo")
+		}
 		switch r.URL.Path {
 		case "/getAssets":
 			out["currentPageIndex"] = 0
 			out["totalPages"] = 1
-			out["assets"] = []any{map[string]any{"adamId": "1", "pricingParam": "STDQ", "productType": product, "deviceAssignable": true, "revocable": true}}
+			out["assets"] = []any{map[string]any{"adamId": "1", "pricingParam": "STDQ", "productType": product, "deviceAssignable": !notDeviceAssignable, "revocable": true, "supportedPlatforms": platforms}}
+		case "/getAssignments":
+			out["currentPageIndex"] = 0
+			out["totalPages"] = 1
+			assignment := map[string]string{"adamId": "1", "pricingParam": "STDQ"}
+			if user := r.URL.Query().Get("clientUserId"); user != "" {
+				assignment["clientUserId"] = user
+				assignment["userStatus"] = "Associated"
+			} else {
+				assignment["serialNumber"] = r.URL.Query().Get("serialNumber")
+			}
+			out["assignments"] = []any{assignment}
+			if retired && assignment["clientUserId"] != "" {
+				assignment["userStatus"] = "Retired"
+			}
+			if missingAssignment {
+				out["assignments"] = []any{}
+			}
 		case "/getUsers":
 			s := "Associated"
 			if retired {

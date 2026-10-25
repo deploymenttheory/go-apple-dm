@@ -104,6 +104,56 @@ batch does not settle a larger event. Optional bounded GET retries cover 429/5xx
 and honor Retry-After; POST is attempted once. A transport failure can leave an
 unknown mutation outcome, requiring reconciliation before explicit resubmission.
 
+The optional `applications/managedcontent.Workflow` connects explicit licensing
+intent to caller-owned target and delivery adapters. `Assign`, `Install` and
+`AssignAndInstall` atomically queue local intent without Apple or dispatch calls.
+A request and its required audit capture can therefore share the existing state
+transaction boundary. `Step` resolves the explicitly selected authenticated native
+enrollment, validates platform/channel/version and native asset capabilities, and
+requires fresh exact target assignment evidence. Installation of a previously
+licensed asset does not require a synthetic historical job. When a licensing job
+is supplied or created, complete aggregate success and applicability are additional
+requirements; aggregate completion never replaces per-target assignment readback.
+
+`ReadAsset` and `ConfirmAssignment` retain complete native page bytes and local
+revision provenance. Confirmation checks fresh remote client ownership, requires
+one assignment, requires Associated user state and rejects incomplete, duplicate,
+foreign or version-inconsistent traversals. Token renewal or other location
+revision changes fence in-flight proof. User licensing keeps Apple's clientUserId
+separate from physical serial identity and remains usable with privacy-preserving
+User Enrollment. A supplied serial must match the selected authenticated target.
+
+Content operations reserve a native installation scope independently of optional
+serial disclosure, location and licensing aliases. After resolution they also bind
+an authenticated physical serial/native-principal scope when available. Delivery
+adapters atomically bind stable IDs to immutable payloads and targets and reject
+conflicting MDM/DDM management paths. Typed `InstallApplication`, `InstallMedia`
+and `AppManaged` payloads use generated support metadata. tvOS app delivery uses
+MDM; declarative managed-app delivery is unavailable there. Books retain their
+user/platform rules, including removal of InstallMedia on macOS 11 and later.
+
+Before dispatch, intent and exact wire bytes are durable. A crash cannot replay a
+submission automatically. Readback reconciliation fences expired workers; explicit
+same-identity retry requires an operator note and an authoritative adapter guarantee
+of atomic idempotency and ownership, even if an older call arrives later. A known
+completed dispatch cannot be repeated after its queue row disappears. Ordinary
+operation reads contain safe status; source pages, configuration, wire payloads
+and raw device/adapter data require explicit privileged evidence access. Licensing,
+queue dispatch, command acknowledgment, declaration publication and actual device
+installation/version reports remain separate observations.
+
+Explicit same-method reinstall/update intent can name a completed predecessor in
+`Plan.PredecessorID`. Queuing remains local. Fresh authoritative terminal device
+readback gates an atomic lane handoff that supersedes the predecessor and fences
+its worker. MDM successors use new command IDs. DDM successors reuse the owned
+configuration/activation IDs and carry an exact predecessor identity/digest for
+the adapter's atomic native handoff; no second app configuration is introduced.
+Pre-dispatch cancellation restores ownership with increasing lane epochs and
+worker fences, preventing ABA. Uncertain/pending predecessors and method switches
+remain blocked. Terminal device processing, current installed state and reported
+app version are distinct: removal does not erase an earlier terminal outcome or
+permanently prevent an explicit reinstall.
+
 ## Rationale
 
 Location isolation prevents credential and ownership state from crossing accounts.
@@ -119,8 +169,9 @@ acknowledge only after ReceiveNotification succeeds and schedule polling/reconci
 Workflow waits five minutes for fallback polling and spaces subsequent queries by
 at least 30 seconds. No scheduler or automatic POST replay runs in the background.
 Registered users must associate an Apple Account. Books require user assignment
-and cannot be reclaimed or reassigned. Installation, catalog metadata and
-subscriptions are outside this client. Fixture tests do not establish live Apple
+and cannot be reclaimed or reassigned. Installation remains outside the HTTP licensing client; optional managed-content
+composition uses caller-owned native adapters. Catalog metadata and subscriptions
+are outside these workflows. Fixture tests do not establish live Apple
 service acceptance.
 
 ## Verification
@@ -141,6 +192,11 @@ licensing before constructing an installation command. See the
 the [live checks](../../testing/lab.md#apple-management-feature-checks).
 
 ## References
+
+- [Managed content workflow](../../../devicemanagement/applications/managedcontent)
+- [Install Application](https://developer.apple.com/documentation/devicemanagement/install-application-command)
+- [Install Media](https://developer.apple.com/documentation/devicemanagement/install-media-command)
+- [AppManaged](https://developer.apple.com/documentation/devicemanagement/appmanaged)
 
 - [Client and tests](../../../devicemanagement/appleplatformservices/appsbooks)
 - [Authentication and ownership](https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api)

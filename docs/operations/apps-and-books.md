@@ -268,6 +268,84 @@ omit credentials and detailed private Apple failure messages; treat raw evidence
 and errorInfo as sensitive. Fixture checks do not establish live Apple acceptance;
 real-location and hardware validation remain required separately.
 
+## Explicit licensing and installation composition
+
+[`managedcontent.Workflow`](../../devicemanagement/applications/managedcontent/doc.go)
+uses caller-owned authenticated target and delivery adapters with the existing
+`state.Store`. The [compiled example](../../devicemanagement/applications/managedcontent/example_test.go)
+shows queued start and worker advancement. `Assign`, `Install` and
+`AssignAndInstall` make no network or delivery calls. Commit their intent alongside
+required local audit capture before scheduling `Step`.
+
+Select the content, location, exact enrollment and delivery method explicitly.
+Device licensing requires the selected authenticated device serial. User licensing
+uses the associated Apple clientUserId; User Enrollment does not require disclosure
+of a physical serial. If a serial is supplied, it must match. Multiple native
+candidates never imply permission to pick the first one. The resolver supplies
+current OS/version/channel and app-installation authorization, and binds Apple
+user aliases to the authenticated native principal. A native user installation
+scope ID is required when correlating a physical user-channel scope across
+enrollments; it is not an Apple location's licensing alias.
+
+`Step` checks current native asset capabilities and exact assignment readback.
+`ConfirmAssignment` requires fresh remote ownership, complete coherent page sets,
+one matching target and Associated user state. A successful licensing event,
+available stock or a partial callback alone cannot permit installation. `Install`
+can use an already assigned license without naming a historical job; a supplied
+job adds complete-success and applicability checks. Token changes fence in-flight
+source proof without changing the stable Apple UID or MDM identity.
+
+MDM delivery constructs a typed app/book command. DDM app delivery constructs a
+stable AppManaged configuration and activation. Generated support metadata enforces
+versions, scopes and enrollment types. [Install Application](https://developer.apple.com/documentation/devicemanagement/install-application-command)
+supports tvOS; [AppManaged](https://developer.apple.com/documentation/devicemanagement/appmanaged)
+does not. macOS user licenses use the user channel and device licenses use the
+device channel. [Install Media](https://developer.apple.com/documentation/devicemanagement/install-media-command)
+has narrower book rules; its generated support record removes macOS support at
+11.0. Unsupported delivery never silently changes method. Books remain user
+assigned and nonreclaimable.
+
+Delivery adapters must durably and atomically bind the stable dispatch identity,
+payload digest and authenticated target, and reject same-ID mismatches or competing
+management paths. Native scope ownership does not depend on optional serial or
+licensing aliases; authenticated physical scope binding adds cross-enrollment
+protection when serial data is available. Queue acceptance, acknowledgment,
+declaration publication and device installation/version reports remain separate.
+Offline delivery may be queued while actual installation remains unobserved.
+
+After an uncertain dispatch, stop the original worker and wait for its lease to
+expire before `Reconcile`, supplying an operator note. Readback never submits work.
+A not-found result alone cannot enable replay. Explicit retry additionally requires
+an authoritative owned read and the adapter's atomic same-identity idempotency
+guarantee, including a late original call. A subsequent `Step` revalidates licensing
+and the target before using the same persisted bytes and identity. A previously
+observed dispatch cannot be repeated because its queue row was pruned. `Cancel`
+releases only work that never entered delivery; it does not revoke licenses or
+reclaim books.
+
+For an intentional reinstall/update, set `Plan.PredecessorID` to the completed
+operation in the same native installation scope and select the same delivery
+method. Queuing makes no network calls. Promotion requires fresh owned terminal
+device-processing evidence, then atomically hands off the lanes and fences the
+old worker. Competing successor intents have one winner. MDM creates a new command
+ID; DDM keeps the owned configuration/activation IDs and uses the adapter's atomic
+same-method ownership handoff. Canceling a never-submitted successor restores
+ownership with increasing epochs/fences, not an old worker lease. A method switch
+requires a separate explicit migration procedure. Historical terminal processing
+is not a claim that the app is still installed; current installation and version
+remain independently reported.
+
+On macOS, supported non-User-Enrollment app commands explicitly request
+`InstallAsManaged=true` so a reinstall does not silently unmanage the app. The key
+is absent where generated OS/version/enrollment metadata forbids it. This request
+flag is intent, not evidence of native installation or management.
+
+`Load` and `Operations` return ordinary intent and safe status. `LoadEvidence` is a
+separate privileged read for exact source/configuration pages, wire payloads and
+raw device/adapter observations. Adapter/SDK error strings are never copied into
+ordinary operation state. Protect intent and identifiers with appropriate grants,
+seal private state and retain unresolved operations for reconciliation.
+
 ## Sources
 
 The client models the field tables and examples in these Apple contracts:
