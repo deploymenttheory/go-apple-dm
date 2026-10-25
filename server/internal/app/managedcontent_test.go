@@ -69,7 +69,7 @@ func contentFixtureService(t *testing.T) *contentFixture {
 				return
 			}
 			if r.URL.Path == "/manage" {
-				_, _ = fmt.Fprintf(w, `{"uId":%q,"mdmInfo":{"id":%q},"eventId":"fixture-event"}`, f.uid, f.owner.Load().(string))
+				_, _ = fmt.Fprintf(w, `{"uId":%q,"mdmInfo":{"id":%q},"eventId":"fixture-event"}`, f.uid, contentFixtureString(t, &f.owner))
 				return
 			}
 			var in appsbooks.ClientConfigurationRequest
@@ -108,18 +108,18 @@ func contentFixtureService(t *testing.T) *contentFixture {
 			f.owner.Store(in.MDMInfo.ID)
 		}
 		meta := fmt.Sprintf(`"uId":%q`, f.uid)
-		if owner := f.owner.Load().(string); owner != "" {
+		if owner := contentFixtureString(t, &f.owner); owner != "" {
 			meta += fmt.Sprintf(`,"mdmInfo":{"id":%q}`, owner)
 		}
 		if r.URL.Path == "/config" {
-			_, _ = fmt.Fprintf(w, `{%s,"locationName":"London","notificationAuthToken":%q}`, meta, f.notificationSecret.Load().(string))
+			_, _ = fmt.Fprintf(w, `{%s,"locationName":"London","notificationAuthToken":%q}`, meta, contentFixtureString(t, &f.notificationSecret))
 			return
 		}
 		if r.URL.Path == "/assets" {
 			f.assetReads.Add(1)
 		}
 		if r.URL.Path == "/assets" && f.assets.Load() {
-			_, _ = fmt.Fprintf(w, `{%s,"currentPageIndex":0,"totalPages":1,"versionId":"assets-v1","assets":[{"adamId":"1","pricingParam":"STDQ","productType":%q,"deviceAssignable":%t,"revocable":%t,"supportedPlatforms":["iOS","macOS"],"totalCount":100,"availableCount":100}]}`, meta, f.assetKind.Load().(string), f.assetKind.Load().(string) == "App", f.assetKind.Load().(string) == "App")
+			_, _ = fmt.Fprintf(w, `{%s,"currentPageIndex":0,"totalPages":1,"versionId":"assets-v1","assets":[{"adamId":"1","pricingParam":"STDQ","productType":%q,"deviceAssignable":%t,"revocable":%t,"supportedPlatforms":["iOS","macOS"],"totalCount":100,"availableCount":100}]}`, meta, contentFixtureString(t, &f.assetKind), contentFixtureString(t, &f.assetKind) == "App", contentFixtureString(t, &f.assetKind) == "App")
 			return
 		}
 		if r.URL.Path == "/assignments" && f.assignments.Load() {
@@ -130,11 +130,17 @@ func contentFixtureService(t *testing.T) *contentFixture {
 			} else {
 				assignment["serialNumber"] = r.URL.Query().Get("serialNumber")
 			}
-			_ = json.NewEncoder(w).Encode(map[string]any{"uId": f.uid, "mdmInfo": map[string]string{"id": f.owner.Load().(string)}, "currentPageIndex": 0, "totalPages": 1, "versionId": "assignments-v1", "assignments": []any{assignment}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"uId": f.uid, "mdmInfo": map[string]string{"id": contentFixtureString(t, &f.owner)}, "currentPageIndex": 0, "totalPages": 1, "versionId": "assignments-v1", "assignments": []any{assignment}})
 			return
 		}
 		kind := strings.TrimPrefix(r.URL.Path, "/")
-		_, _ = fmt.Fprintf(w, `{%s,"currentPageIndex":0,"totalPages":1,"size":0,"versionId":"v1",%q:[]}`, meta, kind)
+		response := map[string]any{"uId": f.uid, "currentPageIndex": 0, "totalPages": 1, "size": 0, "versionId": "v1", kind: []any{}}
+		if owner := contentFixtureString(t, &f.owner); owner != "" {
+			response["mdmInfo"] = map[string]string{"id": owner}
+		}
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Error(err)
+		}
 	}))
 	t.Cleanup(srv.Close)
 	f.config = AppsBooksConfig{MDMID: "ours", BaseURL: srv.URL, HTTPClient: srv.Client()}
@@ -463,7 +469,7 @@ func TestManagedContentExplicitConfigurationAndJobRecovery(t *testing.T) {
 		t.Fatal(err)
 	}
 	w = contentRequest(t, a, token, "POST", "/appsbooks/locations/london/configure", map[string]any{"revision": location.Revision, "configuration": configuration})
-	if w.Code != 200 || f.owner.Load().(string) != "ours" {
+	if w.Code != 200 || contentFixtureString(t, &f.owner) != "ours" {
 		t.Fatal(w.Code, w.Body.String())
 	}
 	location, err = a.AppsBooks.Load(t.Context(), "london")
@@ -628,4 +634,15 @@ func TestManagedContentSynchronousNotificationBootstrap(t *testing.T) {
 	if err := a.db.QueryRowContext(t.Context(), "SELECT COUNT(*) FROM event_records WHERE type = ?", "appsbooks-notification").Scan(&captured); err != nil || captured != 1 {
 		t.Fatal("test callback audit did not commit exactly once", captured, err)
 	}
+}
+
+// contentFixtureString checks the shared fixture's initialized string values.
+func contentFixtureString(t *testing.T, value *atomic.Value) string {
+	t.Helper()
+	text, ok := value.Load().(string)
+	if !ok {
+		t.Error("fixture string unavailable")
+		return ""
+	}
+	return text
 }

@@ -91,7 +91,7 @@ func TestManagedContentWakeRollbackRetryRestart(t *testing.T) {
 	if err := a.Close(); err != nil {
 		t.Fatal(err)
 	}
-	a, token = contentBuild(t, cfg)
+	a, _ = contentBuild(t, cfg)
 	appRef = a
 	ctx, cancel := context.WithCancel(t.Context())
 	done := make(chan error, 1)
@@ -104,12 +104,17 @@ func TestManagedContentWakeRollbackRetryRestart(t *testing.T) {
 	for {
 		var state string
 		var attempts int
-		if err := a.db.QueryRowContext(t.Context(), "SELECT state, attempts FROM event_deliveries WHERE destination = ?", contentWakeDestination).Scan(&state, &attempts); err != nil {
+		var lease, lastCode string
+		var nextAttempt int64
+		if err := a.db.QueryRowContext(t.Context(), "SELECT state, attempts, lease_token, next_attempt, last_code FROM event_deliveries WHERE destination = ?", contentWakeDestination).Scan(&state, &attempts, &lease, &nextAttempt, &lastCode); err != nil {
 			cancel()
 			<-done
 			t.Fatal(err)
 		}
-		if state == "pending" && attempts == 1 && calls.Load() == 1 {
+		// A claimed delivery is still pending while its sender runs. Restart
+		// only after Finish durably schedules the failed attempt and releases
+		// its lease; cancelling an in-flight sender correctly retains the lease.
+		if state == "pending" && attempts == 1 && calls.Load() == 1 && lease == "" && nextAttempt > 0 && lastCode == "transport" {
 			break
 		}
 		select {

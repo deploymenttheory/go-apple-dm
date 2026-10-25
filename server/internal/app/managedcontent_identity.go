@@ -12,16 +12,19 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
-type contentIdentityKey struct{}
-type contentIdentity struct {
-	Enrollment  mdm.EnrollmentID
-	Principal   string
-	Certificate string
-	UserBinding string
-}
+type (
+	contentIdentityKey struct{}
+	contentIdentity    struct {
+		Enrollment  mdm.EnrollmentID `json:"Enrollment"`
+		Principal   string           `json:"Principal"`
+		Certificate string           `json:"Certificate"`
+		UserBinding string           `json:"UserBinding"`
+	}
+)
+
 type contentAdmission struct {
-	Identity contentIdentity
-	Plan     managedcontent.Plan
+	Identity contentIdentity     `json:"Identity"`
+	Plan     managedcontent.Plan `json:"Plan"`
 }
 
 // nativeContentIdentity identifies the actual authenticated principal generation,

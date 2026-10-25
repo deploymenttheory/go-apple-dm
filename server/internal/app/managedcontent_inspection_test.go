@@ -5,14 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push"
-	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/push"
+	"github.com/deploymenttheory/go-apple-dm/server/sqlstore/sqlcommon"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/appsbooks"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/applications/managedcontent"

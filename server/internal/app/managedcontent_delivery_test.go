@@ -5,11 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
-	"github.com/deploymenttheory/go-apple-dm/server/service"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
+	"github.com/deploymenttheory/go-apple-dm/server/service"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/appsbooks"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/applications/managedcontent"

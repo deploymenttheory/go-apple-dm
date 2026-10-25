@@ -107,7 +107,10 @@ func (a *App) guardContentDeclaration(ctx context.Context, id string, raw []byte
 			AppStoreID string `json:"AppStoreID"`
 		} `json:"Payload"`
 	}
-	if json.Unmarshal(raw, &envelope) != nil || envelope.Type != "com.apple.configuration.app.managed" || envelope.Payload.AppStoreID == "" {
+	if err := json.Unmarshal(raw, &envelope); err != nil {
+		return managedcontent.ErrInput
+	}
+	if envelope.Type != "com.apple.configuration.app.managed" || envelope.Payload.AppStoreID == "" {
 		return nil
 	}
 	targets, err := a.Engine.Store().AffectedEnrollments(ctx, []string{id}, nil)
