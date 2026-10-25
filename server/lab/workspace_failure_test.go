@@ -193,7 +193,7 @@ func TestLabReportsRetainFailureAndBlockedStatus(t *testing.T) {
 		t.Fatal("unknown selection accepted")
 	}
 	selected, err := SelectMode("live", "all")
-	if err != nil || len(selected) != 9 {
+	if err != nil || len(selected) != 12 {
 		t.Fatalf("live selection: %v %v", selected, err)
 	}
 	selected, err = Select("apns")

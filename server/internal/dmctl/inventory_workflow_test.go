@@ -11,6 +11,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -21,6 +22,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/inventory"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/secrets"
 	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/server/lab"
 )
 
 // TestInventoryCLIWorkflow follows Apple discovery through SQLite, permissions and every CLI family.
@@ -183,6 +185,40 @@ func TestInventoryCLIWorkflow(t *testing.T) {
 		t.Fatal(err)
 	}
 	call("inventory", "presets")
+	// Run the shipped lab CLI against this real SDK/sync/API composition.
+	// HTTPS attachment uses a private live workspace; Apple remains the fixture.
+	live := httptest.NewTLSServer(a.Handler)
+	t.Cleanup(live.Close)
+	workspace := t.TempDir()
+	if err = lab.Init(workspace, "live", "sqlite", "127.0.0.1:0", lab.AdapterProcess, nil); err != nil {
+		t.Fatal(err)
+	}
+	for path, data := range map[string][]byte{
+		filepath.Join(workspace, "mdm", "ca.pem"):      pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: live.Certificate().Raw}),
+		filepath.Join(workspace, "mdm", "admin-token"): []byte(env["DMCTL_TOKEN"]),
+	} {
+		if err = os.WriteFile(path, data, 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err = os.Mkdir(filepath.Join(workspace, "abm"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	selection, err := json.Marshal(map[string]string{"account": account.ID, "serial": "SERIAL"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = os.WriteFile(filepath.Join(workspace, "abm", "acceptance.json"), selection, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, stderr, err := run(t, env, "lab", "run", "-workspace", workspace, "-attach-url", live.URL, "-modules", "LIVE-007", "-revision", "fixture-review")
+	if err != nil {
+		t.Fatalf("lab collection: %v %s %s", err, out, stderr)
+	}
+	var acceptance lab.Result
+	if err = json.Unmarshal([]byte(out), &acceptance); err != nil || acceptance.Status != lab.StatusPassed || acceptance.Mode != "live" || acceptance.Revision != "fixture-review" {
+		t.Fatalf("lab result: %s %v", out, err)
+	}
 	call("axm", "accounts", "delete", account.ID, "--revision", strconv.FormatInt(account.Revision, 10))
 	persisted, err := a.Inventory.Resource(t.Context(), device.ID)
 	if err != nil || persisted.ID != device.ID {

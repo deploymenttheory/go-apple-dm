@@ -1,6 +1,7 @@
 package axmtest
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"maps"
@@ -203,7 +204,9 @@ func normalize(attrs map[string]any) map[string]any {
 	if err != nil {
 		panic(err)
 	}
-	if err := json.Unmarshal(b, &out); err != nil {
+	decoder := json.NewDecoder(bytes.NewReader(b))
+	decoder.UseNumber()
+	if err := decoder.Decode(&out); err != nil {
 		panic(err)
 	}
 	return out

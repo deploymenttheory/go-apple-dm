@@ -401,3 +401,41 @@ func TestHistoricalReplayMissingCurrentRecord(t *testing.T) {
 		t.Fatal("corrupt current identity accepted", err)
 	}
 }
+
+// Raw export carries exact source bytes independently of JSON formatting and
+// normal safe export never exposes either representation.
+func TestRawExportOriginalByteTransport(t *testing.T) {
+	r := repository(t)
+	raw := `{ "id" : "opaque", "type":"orgDevices", "future":null,
+ "attributes": { "serialNumber":"S", "large":9007199254740993, "flag":false, "empty":[] } }`
+	record := observe(t, r, "S", "axm.device", "a", "opaque", raw, time.Now().UTC())
+	for _, format := range []string{"json", "ndjson"} {
+		var output bytes.Buffer
+		if err := r.Export(t.Context(), &output, ResourceQuery{}, format, nil, true); err != nil {
+			t.Fatal(err)
+		}
+		var decoded ResourceRecord
+		if format == "json" {
+			var rows []ResourceRecord
+			if err := json.Unmarshal(output.Bytes(), &rows); err != nil {
+				t.Fatal(err)
+			}
+			if len(rows) != 1 {
+				t.Fatal("wrong resource count")
+			}
+			decoded = rows[0]
+		} else if err := json.Unmarshal(output.Bytes(), &decoded); err != nil {
+			t.Fatal(err)
+		}
+		if decoded.ID != record.ID || decoded.Source != record.Source || !bytes.Equal(decoded.Snapshot.Raw, []byte(raw)) {
+			t.Fatal("raw source bytes or provenance changed")
+		}
+		output.Reset()
+		if err := r.Export(t.Context(), &output, ResourceQuery{}, format, nil, false); err != nil {
+			t.Fatal(err)
+		}
+		if bytes.Contains(output.Bytes(), []byte("original_json")) || bytes.Contains(output.Bytes(), []byte("9007199254740993")) {
+			t.Fatal("safe export leaked original evidence")
+		}
+	}
+}
