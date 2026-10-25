@@ -19,6 +19,16 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/state"
 )
 
+// failAppsBooksIf reports a failed workflow assertion at its calling test.
+// Call sites pass only literal diagnostics or already-captured local values:
+// guarded indexing and computed diagnostics remain inside their original guards.
+func failAppsBooksIf(t *testing.T, failed bool, args ...any) {
+	t.Helper()
+	if failed {
+		t.Fatal(args...)
+	}
+}
+
 // AppsBooksFactory supplies independent handles sharing one atomic backend. Each
 // invocation starts with empty state; implementations own database isolation.
 type AppsBooksFactory func(*testing.T) (state.Store, state.Store)
@@ -149,9 +159,7 @@ func fixtureAppsBooks(t *testing.T) (*appsBooksService, appsbooks.Config, string
 func newAppsBooksWorkflow(t *testing.T, s state.Store, cfg appsbooks.Config) *appsbooks.Workflow {
 	t.Helper()
 	w, err := appsbooks.NewWorkflow(s, cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
+	failAppsBooksIf(t, err != nil, err)
 	return w
 }
 
@@ -159,9 +167,7 @@ func newAppsBooksWorkflow(t *testing.T, s state.Store, cfg appsbooks.Config) *ap
 func requireAppsBooksLocation(t *testing.T, w *appsbooks.Workflow, id string) (appsbooks.Location, appsbooks.LocationEvidence) {
 	t.Helper()
 	l, e, err := w.LoadEvidence(t.Context(), id)
-	if err != nil {
-		t.Fatal(err)
-	}
+	failAppsBooksIf(t, err != nil, err)
 	return l, e
 }
 
@@ -176,94 +182,77 @@ func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 		f.mu.Lock()
 		f.owner = "foreign"
 		f.mu.Unlock()
-		if _, err := w.Register(t.Context(), "Foreign", 0, token); !errors.Is(err, appsbooks.ErrOwnership) {
-			t.Fatal(err)
+		{
+			_, err := w.Register(t.Context(), "Foreign", 0, token)
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrOwnership), err)
 		}
-		if _, err := w.Load(t.Context(), "Foreign"); !errors.Is(err, state.ErrNotFound) {
-			t.Fatal("foreign read persisted ownership", err)
+		{
+			_, err := w.Load(t.Context(), "Foreign")
+			failAppsBooksIf(t, !errors.Is(err, state.ErrNotFound), "foreign read persisted ownership", err)
 		}
 		f.mu.Lock()
 		f.owner = ""
 		f.mu.Unlock()
 		l, err := w.Register(t.Context(), "Unclaimed", 0, token)
-		if err != nil || l.OwnerID != "" {
-			t.Fatal(l, err)
-		}
+		failAppsBooksIf(t, err != nil || l.OwnerID != "", l, err)
 		l, err = w.Probe(t.Context(), l.ID, l.Revision)
-		if err != nil || l.OwnerID != "" {
-			t.Fatal(l, err)
-		}
+		failAppsBooksIf(t, err != nil || l.OwnerID != "", l, err)
 		f.mu.Lock()
 		posts := f.posts
 		f.mu.Unlock()
-		if posts != 0 {
-			t.Fatal("read-only setup claimed ownership")
-		}
+		failAppsBooksIf(t, posts != 0, "read-only setup claimed ownership")
 	})
 	t.Run("SnapshotsCheckpointsAndFailure", func(t *testing.T) {
 		a, b := factory(t)
 		f, cfg, token := fixtureAppsBooks(t)
 		w := newAppsBooksWorkflow(t, a, cfg)
 		l, err := w.Register(t.Context(), "London", 0, token)
-		if err != nil {
-			t.Fatal(err)
-		}
+		failAppsBooksIf(t, err != nil, err)
 		l, err = w.Refresh(t.Context(), l.ID, l.Revision, 3)
-		if err != nil {
-			t.Fatal(err)
-		}
+		failAppsBooksIf(t, err != nil, err)
 		_, e := requireAppsBooksLocation(t, w, l.ID)
 		if e.Assets.VersionID != "assets-1-0" || len(e.Assets.Pages) != 2 || len(e.Assignments) != 1 || e.Assignments[0].VersionID != "assignments-1-0" || e.Users[0].VersionID != "users-1-0" {
 			t.Fatalf("checkpoint/evidence: %+v", e)
 		}
-		if !strings.Contains(string(e.Assets.Pages[1]), `9007199254740993`) || !strings.Contains(string(e.Configuration), `"null":null,"false":false`) {
-			t.Fatal("raw source changed")
-		}
+		failAppsBooksIf(t, !strings.Contains(string(e.Assets.Pages[1]), `9007199254740993`) || !strings.Contains(string(e.Configuration), `"null":null,"false":false`), "raw source changed")
 		restart := newAppsBooksWorkflow(t, b, cfg)
 		for _, path := range []string{"/assets", "/assignments", "/users"} {
 			f.mu.Lock()
 			f.fail = path
 			f.mu.Unlock()
-			if _, err := restart.Refresh(t.Context(), l.ID, l.Revision, 3); err == nil {
-				t.Fatal("failure accepted", path)
+			{
+				_, err := restart.Refresh(t.Context(), l.ID, l.Revision, 3)
+				failAppsBooksIf(t, err == nil, "failure accepted", path)
 			}
 			got, kept := requireAppsBooksLocation(t, restart, l.ID)
-			if !reflect.DeepEqual(l, got) || !reflect.DeepEqual(e, kept) {
-				t.Fatal("failed refresh changed successful evidence")
-			}
+			failAppsBooksIf(t, !reflect.DeepEqual(l, got) || !reflect.DeepEqual(e, kept), "failed refresh changed successful evidence")
 		}
 		f.mu.Lock()
 		f.fail = ""
 		f.pageFailure = true
 		f.mu.Unlock()
-		if _, err := restart.Refresh(t.Context(), l.ID, l.Revision, 3); err == nil {
-			t.Fatal("page failure accepted")
+		{
+			_, err := restart.Refresh(t.Context(), l.ID, l.Revision, 3)
+			failAppsBooksIf(t, err == nil, "page failure accepted")
 		}
 		_, kept := requireAppsBooksLocation(t, restart, l.ID)
-		if !reflect.DeepEqual(e, kept) {
-			t.Fatal("partial traversal published")
-		}
+		failAppsBooksIf(t, !reflect.DeepEqual(e, kept), "partial traversal published")
 		f.mu.Lock()
 		f.pageFailure = false
 		f.seq = 2
 		f.queries = nil
 		f.mu.Unlock()
 		l, err = restart.Refresh(t.Context(), l.ID, l.Revision, 3)
-		if err != nil {
-			t.Fatal(err)
-		}
+		failAppsBooksIf(t, err != nil, err)
 		_, e = requireAppsBooksLocation(t, restart, l.ID)
-		if len(e.Assignments) != 2 || e.Assignments[1].SinceVersionID != "assignments-1-0" || e.Users[1].SinceVersionID != "users-1-0" || e.Assets.VersionID != "assets-2-0" {
-			t.Fatal("incremental/full contract", e)
-		}
+		failAppsBooksIf(t, len(e.Assignments) != 2 || e.Assignments[1].SinceVersionID != "assignments-1-0" || e.Users[1].SinceVersionID != "users-1-0" || e.Assets.VersionID != "assets-2-0", "incremental/full contract", e)
 		f.mu.Lock()
 		queries := strings.Join(f.queries, "\n")
 		f.mu.Unlock()
-		if strings.Contains(queries, "unlimited=") || strings.Contains(queries, "assets?pageIndex=0&since") || !strings.Contains(queries, "sinceVersionId=assignments-1-0") || !strings.Contains(queries, "sinceVersionId=users-1-0") {
-			t.Fatal(queries)
-		}
-		if _, err := restart.Refresh(t.Context(), l.ID, l.Revision, 1); !errors.Is(err, appsbooks.ErrLimit) {
-			t.Fatal(err)
+		failAppsBooksIf(t, strings.Contains(queries, "unlimited=") || strings.Contains(queries, "assets?pageIndex=0&since") || !strings.Contains(queries, "sinceVersionId=assignments-1-0") || !strings.Contains(queries, "sinceVersionId=users-1-0"), queries)
+		{
+			_, err := restart.Refresh(t.Context(), l.ID, l.Revision, 1)
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrLimit), err)
 		}
 	})
 	t.Run("IdentityExpiryAndIsolation", func(t *testing.T) {
@@ -271,9 +260,7 @@ func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 		f, cfg, token := fixtureAppsBooks(t)
 		w := newAppsBooksWorkflow(t, a, cfg)
 		l, err := w.Register(t.Context(), "London", 0, token)
-		if err != nil {
-			t.Fatal(err)
-		}
+		failAppsBooksIf(t, err != nil, err)
 		original, e := requireAppsBooksLocation(t, w, l.ID)
 		f.mu.Lock()
 		f.owner = "foreign"
@@ -286,8 +273,9 @@ func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 			},
 			func() error { _, err := w.Register(t.Context(), l.ID, l.Revision, token); return err },
 		} {
-			if err := call(); !errors.Is(err, appsbooks.ErrOwnership) {
-				t.Fatal(err)
+			{
+				err := call()
+				failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrOwnership), err)
 			}
 		}
 		f.mu.Lock()
@@ -295,11 +283,10 @@ func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 		f.owner = "ours"
 		f.uid = "WRONG"
 		f.mu.Unlock()
-		if posts != 0 {
-			t.Fatal("foreign owner was mutated")
-		}
-		if _, err := w.Register(t.Context(), l.ID, l.Revision, token); !errors.Is(err, appsbooks.ErrLocation) {
-			t.Fatal(err)
+		failAppsBooksIf(t, posts != 0, "foreign owner was mutated")
+		{
+			_, err := w.Register(t.Context(), l.ID, l.Revision, token)
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrLocation), err)
 		}
 		other := newAppsBooksWorkflow(t, b, cfg)
 		otherToken := appsBooksToken("other-location", "2035-01-01T00:00:00Z")
@@ -308,56 +295,57 @@ func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 		f.tokens["Bearer "+otherToken] = "OTHER"
 		f.mu.Unlock()
 		alias, err := other.Register(t.Context(), "Alias", 0, otherToken)
-		if err != nil {
-			t.Fatal(err)
+		failAppsBooksIf(t, err != nil, err)
+		{
+			_, err := other.Register(t.Context(), l.ID, l.Revision, otherToken)
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrLocation), "location accepted another location's credential", err)
 		}
-		if _, err := other.Register(t.Context(), l.ID, l.Revision, otherToken); !errors.Is(err, appsbooks.ErrLocation) {
-			t.Fatal("location accepted another location's credential", err)
+		{
+			alias, err = other.Probe(t.Context(), alias.ID, alias.Revision)
+			failAppsBooksIf(t, err != nil, "separate location credential was mixed", err)
 		}
-		if alias, err = other.Probe(t.Context(), alias.ID, alias.Revision); err != nil {
-			t.Fatal("separate location credential was mixed", err)
-		}
-		if _, err := other.Register(t.Context(), "Duplicate", 0, token); !errors.Is(err, appsbooks.ErrLocation) {
-			t.Fatal("duplicate Apple library", err)
+		{
+			_, err := other.Register(t.Context(), "Duplicate", 0, token)
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrLocation), "duplicate Apple library", err)
 		}
 		got, kept := requireAppsBooksLocation(t, w, l.ID)
-		if !reflect.DeepEqual(original, got) || !reflect.DeepEqual(e, kept) {
-			t.Fatal("rejected identity changed data")
-		}
+		failAppsBooksIf(t, !reflect.DeepEqual(original, got) || !reflect.DeepEqual(e, kept), "rejected identity changed data")
 		changed := cfg
 		changed.MDMID = "different"
-		if _, err := newAppsBooksWorkflow(t, b, changed).Load(t.Context(), l.ID); !errors.Is(err, appsbooks.ErrOwnership) {
-			t.Fatal(err)
+		{
+			_, err := newAppsBooksWorkflow(t, b, changed).Load(t.Context(), l.ID)
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrOwnership), err)
 		}
 		expired := appsBooksToken("expired", "2020-01-01T00:00:00Z")
-		if _, err := w.Register(t.Context(), l.ID, l.Revision, expired); !errors.Is(err, appsbooks.ErrExpired) {
-			t.Fatal(err)
+		{
+			_, err := w.Register(t.Context(), l.ID, l.Revision, expired)
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrExpired), err)
 		}
 		renewal := appsBooksToken("renewal", "2040-01-01T00:00:00Z")
 		l, err = w.Register(t.Context(), l.ID, l.Revision, renewal)
-		if err != nil || l.CredentialRevision <= original.CredentialRevision || !l.TokenExpiresAt.After(original.TokenExpiresAt) {
-			t.Fatal(l, err)
-		}
-		if _, err := other.Probe(t.Context(), l.ID, original.Revision); !errors.Is(err, appsbooks.ErrRevision) {
-			t.Fatal(err)
+		failAppsBooksIf(t, err != nil || l.CredentialRevision <= original.CredentialRevision || !l.TokenExpiresAt.After(original.TokenExpiresAt), l, err)
+		{
+			_, err := other.Probe(t.Context(), l.ID, original.Revision)
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrRevision), err)
 		}
 		clk, ok := cfg.Clock.(*appsBooksClock)
-		if !ok {
-			t.Fatal("fixture clock has unexpected type")
-		}
+		failAppsBooksIf(t, !ok, "fixture clock has unexpected type")
 		clk.Advance(6 * 365 * 24 * time.Hour)
-		if _, err := other.Probe(t.Context(), "Alias", alias.Revision); !errors.Is(err, appsbooks.ErrExpired) {
-			t.Fatal(err)
+		{
+			_, err := other.Probe(t.Context(), "Alias", alias.Revision)
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrExpired), err)
 		}
-		if _, err := w.Probe(t.Context(), l.ID, l.Revision); err != nil {
-			t.Fatal("renewed credential expired with old credential", err)
+		{
+			_, err := w.Probe(t.Context(), l.ID, l.Revision)
+			failAppsBooksIf(t, err != nil, "renewed credential expired with old credential", err)
 		}
 		lateRenewal := appsBooksToken("late-renewal", "2040-01-01T00:00:00Z")
 		f.mu.Lock()
 		f.tokens["Bearer "+lateRenewal] = "OTHER"
 		f.mu.Unlock()
-		if _, err := other.Register(t.Context(), alias.ID, alias.Revision, lateRenewal); err != nil {
-			t.Fatal("expired location cannot renew", err)
+		{
+			_, err := other.Register(t.Context(), alias.ID, alias.Revision, lateRenewal)
+			failAppsBooksIf(t, err != nil, "expired location cannot renew", err)
 		}
 	})
 	t.Run("PendingConfigurationAndRestart", func(t *testing.T) {
@@ -365,17 +353,13 @@ func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 		f, cfg, token := fixtureAppsBooks(t)
 		w := newAppsBooksWorkflow(t, a, cfg)
 		l, err := w.Register(t.Context(), "London", 0, token)
-		if err != nil {
-			t.Fatal(err)
-		}
+		failAppsBooksIf(t, err != nil, err)
 		f.mu.Lock()
 		f.owner = ""
 		f.mu.Unlock()
 		in := appsbooks.ClientConfigurationRequest{MDMInfo: appsbooks.MDMInfo{ID: "ours", Name: "Our MDM", Metadata: "stable"}}
 		l, err = w.Configure(t.Context(), l.ID, l.Revision, in)
-		if err != nil || l.ConfigurationPending {
-			t.Fatal(l, err)
-		}
+		failAppsBooksIf(t, err != nil || l.ConfigurationPending, l, err)
 		// A cancelled POST is uncertain. Inject a transport error after the read and
 		// durable reservation; a stopped process can then recover with a GET.
 		transport := cfg.HTTPClient.Transport
@@ -388,31 +372,29 @@ func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 		})
 		badCfg := cfg
 		badCfg.HTTPClient = &broken
-		if _, err := newAppsBooksWorkflow(t, b, badCfg).Configure(t.Context(), l.ID, l.Revision, in); err == nil {
-			t.Fatal("POST failure accepted")
+		{
+			_, err := newAppsBooksWorkflow(t, b, badCfg).Configure(t.Context(), l.ID, l.Revision, in)
+			failAppsBooksIf(t, err == nil, "POST failure accepted")
 		}
 		l, e := requireAppsBooksLocation(t, w, l.ID)
-		if !l.ConfigurationPending {
-			t.Fatal("unfinished operation not durable")
-		}
+		failAppsBooksIf(t, !l.ConfigurationPending, "unfinished operation not durable")
 		restarted := newAppsBooksWorkflow(t, b, cfg)
-		if _, err := restarted.Register(t.Context(), l.ID, l.Revision, token); !errors.Is(err, appsbooks.ErrConfigurationPending) {
-			t.Fatal(err)
+		{
+			_, err := restarted.Register(t.Context(), l.ID, l.Revision, token)
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrConfigurationPending), err)
 		}
-		if _, err := restarted.Configure(t.Context(), l.ID, l.Revision, in); !errors.Is(err, appsbooks.ErrConfigurationPending) {
-			t.Fatal(err)
+		{
+			_, err := restarted.Configure(t.Context(), l.ID, l.Revision, in)
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrConfigurationPending), err)
 		}
-		if _, err := restarted.Refresh(t.Context(), l.ID, l.Revision, 3); !errors.Is(err, appsbooks.ErrConfigurationPending) {
-			t.Fatal(err)
+		{
+			_, err := restarted.Refresh(t.Context(), l.ID, l.Revision, 3)
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrConfigurationPending), err)
 		}
 		l, err = restarted.Probe(t.Context(), l.ID, l.Revision)
-		if err != nil || l.ConfigurationPending {
-			t.Fatal(l, err)
-		}
+		failAppsBooksIf(t, err != nil || l.ConfigurationPending, l, err)
 		_, kept := requireAppsBooksLocation(t, restarted, l.ID)
-		if !reflect.DeepEqual(e.Assets, kept.Assets) || !reflect.DeepEqual(e.Assignments, kept.Assignments) {
-			t.Fatal("probe changed refresh evidence")
-		}
+		failAppsBooksIf(t, !reflect.DeepEqual(e.Assets, kept.Assets) || !reflect.DeepEqual(e.Assignments, kept.Assignments), "probe changed refresh evidence")
 	})
 
 	t.Run("ExpiredPendingConfigurationRecovery", func(t *testing.T) {
@@ -420,13 +402,9 @@ func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 		f, cfg, token := fixtureAppsBooks(t)
 		w, other := newAppsBooksWorkflow(t, a, cfg), newAppsBooksWorkflow(t, b, cfg)
 		l, err := w.Register(t.Context(), "London", 0, token)
-		if err != nil {
-			t.Fatal(err)
-		}
+		failAppsBooksIf(t, err != nil, err)
 		l, err = w.Refresh(t.Context(), l.ID, l.Revision, 3)
-		if err != nil {
-			t.Fatal(err)
-		}
+		failAppsBooksIf(t, err != nil, err)
 		// Hold old read-only work across pending reservation, expiry and recovery.
 		// The original mutating call below terminates before recovery begins.
 		f.mu.Lock()
@@ -457,24 +435,23 @@ func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 		})
 		badCfg := cfg
 		badCfg.HTTPClient = &broken
-		if _, err := newAppsBooksWorkflow(t, b, badCfg).Configure(t.Context(), l.ID, l.Revision, appsbooks.ClientConfigurationRequest{MDMInfo: appsbooks.MDMInfo{ID: "ours", Name: "Ours", Metadata: "stable"}}); err == nil {
-			t.Fatal("uncertain POST accepted")
+		{
+			_, err := newAppsBooksWorkflow(t, b, badCfg).Configure(t.Context(), l.ID, l.Revision, appsbooks.ClientConfigurationRequest{MDMInfo: appsbooks.MDMInfo{ID: "ours", Name: "Ours", Metadata: "stable"}})
+			failAppsBooksIf(t, err == nil, "uncertain POST accepted")
 		}
 		l, e := requireAppsBooksLocation(t, other, l.ID)
-		if !l.ConfigurationPending || attempts != 1 {
-			t.Fatal("pending reservation missing", l, attempts)
-		}
+		failAppsBooksIf(t, !l.ConfigurationPending || attempts != 1, "pending reservation missing", l, attempts)
 		clk, ok := cfg.Clock.(*appsBooksClock)
-		if !ok {
-			t.Fatal("unexpected fixture clock")
-		}
+		failAppsBooksIf(t, !ok, "unexpected fixture clock")
 		clk.Advance(6 * 365 * 24 * time.Hour)
 		replacement := appsBooksToken("recovery", "2040-01-01T00:00:00Z")
-		if _, err := other.Probe(t.Context(), l.ID, l.Revision); !errors.Is(err, appsbooks.ErrExpired) {
-			t.Fatal(err)
+		{
+			_, err := other.Probe(t.Context(), l.ID, l.Revision)
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrExpired), err)
 		}
-		if _, err := other.Register(t.Context(), l.ID, l.Revision, replacement); !errors.Is(err, appsbooks.ErrConfigurationPending) {
-			t.Fatal(err)
+		{
+			_, err := other.Register(t.Context(), l.ID, l.Revision, replacement)
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrConfigurationPending), err)
 		}
 		for _, failure := range []string{"uid", "owner", "probe", "revision"} {
 			f.mu.Lock()
@@ -503,9 +480,7 @@ func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 				t.Fatalf("%s: %v", failure, err)
 			}
 			got, kept := requireAppsBooksLocation(t, other, l.ID)
-			if !reflect.DeepEqual(l, got) || !reflect.DeepEqual(e, kept) {
-				t.Fatal("failed recovery changed pending evidence", failure)
-			}
+			failAppsBooksIf(t, !reflect.DeepEqual(l, got) || !reflect.DeepEqual(e, kept), "failed recovery changed pending evidence", failure)
 			f.mu.Lock()
 			f.uid = "UID"
 			f.owner = "ours"
@@ -513,38 +488,33 @@ func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 			f.mu.Unlock()
 		}
 		recovered, err := other.RecoverConfiguration(t.Context(), l.ID, l.Revision, replacement)
-		if err != nil || recovered.ConfigurationPending || recovered.CredentialRevision <= l.CredentialRevision || recovered.Revision <= l.Revision || !recovered.TokenExpiresAt.After(l.TokenExpiresAt) {
-			t.Fatal(recovered, err)
-		}
+		failAppsBooksIf(t, err != nil || recovered.ConfigurationPending || recovered.CredentialRevision <= l.CredentialRevision || recovered.Revision <= l.Revision || !recovered.TokenExpiresAt.After(l.TokenExpiresAt), recovered, err)
 		_, kept := requireAppsBooksLocation(t, other, l.ID)
-		if !reflect.DeepEqual(e.Assets, kept.Assets) || !reflect.DeepEqual(e.Assignments, kept.Assignments) || !reflect.DeepEqual(e.Users, kept.Users) {
-			t.Fatal("recovery changed source journals/checkpoints")
+		failAppsBooksIf(t, !reflect.DeepEqual(e.Assets, kept.Assets) || !reflect.DeepEqual(e.Assignments, kept.Assignments) || !reflect.DeepEqual(e.Users, kept.Users), "recovery changed source journals/checkpoints")
+		{
+			_, err := other.RecoverConfiguration(t.Context(), l.ID, l.Revision, replacement)
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrRevision), "old recovery revision accepted", err)
 		}
-		if _, err := other.RecoverConfiguration(t.Context(), l.ID, l.Revision, replacement); !errors.Is(err, appsbooks.ErrRevision) {
-			t.Fatal("old recovery revision accepted", err)
-		}
-		if _, err := other.RecoverConfiguration(t.Context(), l.ID, recovered.Revision, replacement); !errors.Is(err, appsbooks.ErrInput) {
-			t.Fatal("recovery accepted without pending reservation", err)
+		{
+			_, err := other.RecoverConfiguration(t.Context(), l.ID, recovered.Revision, replacement)
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrInput), "recovery accepted without pending reservation", err)
 		}
 		restarted := newAppsBooksWorkflow(t, b, cfg)
-		if _, err := restarted.Refresh(t.Context(), l.ID, recovered.Revision, 3); err != nil {
-			t.Fatal("replacement credentials unusable after restart", err)
+		{
+			_, err := restarted.Refresh(t.Context(), l.ID, recovered.Revision, 3)
+			failAppsBooksIf(t, err != nil, "replacement credentials unusable after restart", err)
 		}
 		f.mu.Lock()
 		posts := f.posts
 		f.mu.Unlock()
-		if posts != 0 || attempts != 1 {
-			t.Fatal("recovery replayed configuration POST", posts, attempts)
-		}
+		failAppsBooksIf(t, posts != 0 || attempts != 1, "recovery replayed configuration POST", posts, attempts)
 	})
 	t.Run("ConcurrentRefreshTokenABA", func(t *testing.T) {
 		a, b := factory(t)
 		f, cfg, token := fixtureAppsBooks(t)
 		w, other := newAppsBooksWorkflow(t, a, cfg), newAppsBooksWorkflow(t, b, cfg)
 		l, err := w.Register(t.Context(), "London", 0, token)
-		if err != nil {
-			t.Fatal(err)
-		}
+		failAppsBooksIf(t, err != nil, err)
 		f.mu.Lock()
 		f.blockPath = "/assets"
 		f.entered = make(chan struct{})
@@ -565,22 +535,19 @@ func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 			t.Fatal(err)
 		}
 		close(release)
-		if err := <-result; !errors.Is(err, appsbooks.ErrRevision) {
-			t.Fatal("ABA accepted stale refresh", err)
+		{
+			err := <-result
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrRevision), "ABA accepted stale refresh", err)
 		}
 		got, e := requireAppsBooksLocation(t, other, l.ID)
-		if got.Revision != restored.Revision || len(e.Assets.Pages) != 0 {
-			t.Fatal("stale evidence published", got, e)
-		}
+		failAppsBooksIf(t, got.Revision != restored.Revision || len(e.Assets.Pages) != 0, "stale evidence published", got, e)
 	})
 	t.Run("ConcurrentConfigurationReservation", func(t *testing.T) {
 		a, b := factory(t)
 		_, cfg, token := fixtureAppsBooks(t)
 		w, other := newAppsBooksWorkflow(t, a, cfg), newAppsBooksWorkflow(t, b, cfg)
 		l, err := w.Register(t.Context(), "London", 0, token)
-		if err != nil {
-			t.Fatal(err)
-		}
+		failAppsBooksIf(t, err != nil, err)
 		// Reserve durably, then stop the POST at the transport boundary.
 		entered, release := make(chan struct{}), make(chan struct{})
 		transport := cfg.HTTPClient.Transport
@@ -615,8 +582,9 @@ func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 			t.Fatal(err)
 		}
 		close(release)
-		if err := <-result; err != nil {
-			t.Fatal(err)
+		{
+			err := <-result
+			failAppsBooksIf(t, err != nil, err)
 		}
 	})
 
@@ -625,9 +593,7 @@ func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 		f, cfg, token := fixtureAppsBooks(t)
 		w, other := newAppsBooksWorkflow(t, a, cfg), newAppsBooksWorkflow(t, b, cfg)
 		l, err := w.Register(t.Context(), "London", 0, token)
-		if err != nil {
-			t.Fatal(err)
-		}
+		failAppsBooksIf(t, err != nil, err)
 		f.mu.Lock()
 		f.blockPath = "/config"
 		f.entered = make(chan struct{})
@@ -645,24 +611,21 @@ func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 			t.Fatal(err)
 		}
 		close(release)
-		if err := <-result; !errors.Is(err, appsbooks.ErrRevision) {
-			t.Fatal(err)
+		{
+			err := <-result
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrRevision), err)
 		}
 		f.mu.Lock()
 		posts := f.posts
 		f.mu.Unlock()
-		if posts != 0 {
-			t.Fatal("stale preflight sent configuration POST")
-		}
+		failAppsBooksIf(t, posts != 0, "stale preflight sent configuration POST")
 	})
 	t.Run("TokenValidationFencedByConfiguration", func(t *testing.T) {
 		a, b := factory(t)
 		f, cfg, token := fixtureAppsBooks(t)
 		w, other := newAppsBooksWorkflow(t, a, cfg), newAppsBooksWorkflow(t, b, cfg)
 		l, err := w.Register(t.Context(), "London", 0, token)
-		if err != nil {
-			t.Fatal(err)
-		}
+		failAppsBooksIf(t, err != nil, err)
 		f.mu.Lock()
 		f.blockPath = "/config"
 		f.entered = make(chan struct{})
@@ -680,13 +643,12 @@ func RunAppsBooks(t *testing.T, factory AppsBooksFactory) {
 			t.Fatal(err)
 		}
 		close(release)
-		if err := <-result; !errors.Is(err, appsbooks.ErrRevision) {
-			t.Fatal(err)
+		{
+			err := <-result
+			failAppsBooksIf(t, !errors.Is(err, appsbooks.ErrRevision), err)
 		}
 		got, _ := requireAppsBooksLocation(t, other, l.ID)
-		if got.CredentialRevision != l.CredentialRevision || got.ConfigurationPending {
-			t.Fatal("stale token validation changed credentials", got)
-		}
+		failAppsBooksIf(t, got.CredentialRevision != l.CredentialRevision || got.ConfigurationPending, "stale token validation changed credentials", got)
 	})
 	t.Run("ConcurrentUIDClaim", func(t *testing.T) {
 		a, b := factory(t)
