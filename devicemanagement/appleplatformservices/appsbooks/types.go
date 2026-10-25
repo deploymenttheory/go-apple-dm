@@ -8,17 +8,20 @@ type Asset struct {
 	PricingParam string `json:"pricingParam"`
 }
 
-// AssetRecord contains Apple's counts and assignment restrictions.
+// AssetRecord contains Apple's counts and assignment restrictions. Nil counts are
+// unreported, not zero. Consult Stock before using counts: totalCount may contain
+// Apple's unlimited sentinel. Raw retains the complete source object.
 type AssetRecord struct {
 	Asset
-	ProductType        string   `json:"productType"`
-	DeviceAssignable   bool     `json:"deviceAssignable"`
-	Revocable          bool     `json:"revocable"`
-	AssignedCount      int64    `json:"assignedCount"`
-	AvailableCount     int64    `json:"availableCount"`
-	RetiredCount       int64    `json:"retiredCount"`
-	TotalCount         int64    `json:"totalCount"`
-	SupportedPlatforms []string `json:"supportedPlatforms"`
+	ProductType        string         `json:"productType"`
+	DeviceAssignable   bool           `json:"deviceAssignable"`
+	Revocable          bool           `json:"revocable"`
+	AssignedCount      *int64         `json:"assignedCount,omitempty"`
+	AvailableCount     *int64         `json:"availableCount,omitempty"`
+	RetiredCount       *int64         `json:"retiredCount,omitempty"`
+	TotalCount         *int64         `json:"totalCount,omitempty"`
+	SupportedPlatforms []string       `json:"supportedPlatforms"`
+	Raw                jsontext.Value `json:"-"`
 }
 
 // Assignment identifies a device or user license assignment.
@@ -72,13 +75,13 @@ type Pagination struct {
 	VersionID        string `json:"versionId"`
 }
 
-// AssetsPage is a page of purchased app/book licenses. Unlimited asset responses
-// are preserved as raw data because that separate API is outside this client.
+// AssetsPage preserves Apple's two asset arrays and the complete source response.
 type AssetsPage struct {
 	ResponseMeta
 	Pagination
-	Assets          []AssetRecord  `json:"assets"`
-	UnlimitedAssets jsontext.Value `json:"unlimitedAssets,omitempty"`
+	Assets          []AssetRecord          `json:"assets"`
+	UnlimitedAssets []UnlimitedAssetRecord `json:"unlimitedAssets,omitempty"`
+	Raw             jsontext.Value         `json:"-"`
 }
 
 // AssignmentsPage is a full or incremental assignment page.

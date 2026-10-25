@@ -12,6 +12,11 @@
 // sends TEST_NOTIFICATION before accepting the configuration. Use a separate
 // Client for each content token/location and check errors on every call.
 //
+// AssetsQuery.Unlimited distinguishes true, false and omission. AssetsPage retains
+// typed finite/sentinel and unlimited arrays plus original JSON. WalkAssets visits
+// both representations with a page cap; use Stock to distinguish missing counts,
+// finite availability and unlimited inventory. Availability is not licensing.
+//
 // Associate/CreateUsers return asynchronous Event IDs. Use authenticated
 // notifications plus EventStatus to establish completion. Registered users need
 // to associate an Apple Account before user-assigned content is usable. Books

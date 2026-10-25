@@ -252,7 +252,7 @@ func TestTransportErrorsRedactSecretsAndPreserveCause(t *testing.T) {
 			func() error { _, err := client.ServiceConfig(t.Context()); return err },
 			func() error { _, err := client.InvitationURL(t.Context(), "code"); return err },
 			func() error {
-				_, err := client.WalkAssets(t.Context(), appsbooks.AssetsQuery{}, 1, func(appsbooks.AssetRecord) error { return nil })
+				_, err := client.WalkAssets(t.Context(), appsbooks.AssetsQuery{}, 1, func(appsbooks.AssetInventory) error { return nil })
 				return err
 			},
 		} {
@@ -303,11 +303,11 @@ func TestQueryFiltersAndVisitorFailures(t *testing.T) {
 	})
 	q := appsbooks.AssetsQuery{MinAvailableCount: new(int64(0)), DeviceAssignable: new(false), Revocable: new(true)}
 	stop := errors.New("visitor failed")
-	if version, err := client.WalkAssets(t.Context(), q, 2, func(appsbooks.AssetRecord) error { return stop }); version != "" || !errors.Is(err, stop) {
+	if version, err := client.WalkAssets(t.Context(), q, 2, func(appsbooks.AssetInventory) error { return stop }); version != "" || !errors.Is(err, stop) {
 		t.Fatal("failed walk advanced checkpoint", version, err)
 	}
 	for _, maxPages := range []int{0, -1} {
-		if _, err := client.WalkAssets(t.Context(), q, maxPages, func(appsbooks.AssetRecord) error { return nil }); !errors.Is(err, appsbooks.ErrInput) {
+		if _, err := client.WalkAssets(t.Context(), q, maxPages, func(appsbooks.AssetInventory) error { return nil }); !errors.Is(err, appsbooks.ErrInput) {
 			t.Fatal(err)
 		}
 	}

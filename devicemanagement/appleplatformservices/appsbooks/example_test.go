@@ -86,3 +86,34 @@ func ExampleClient_Associate() {
 	_ = event
 	_ = installationAfterFallback
 }
+
+// ExampleClient_WalkAssets keeps inventory availability separate from licensing completion.
+func ExampleClient_WalkAssets() {
+	c, err := appsbooks.New(appsbooks.Config{SToken: os.Getenv("APPSBOOKS_TOKEN"), MDMID: "your-persisted-mdm-id", UID: "your-location-uid"})
+	if err != nil {
+		panic(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	version, err := c.WalkAssets(ctx, appsbooks.AssetsQuery{Unlimited: new(true)}, 100, func(item appsbooks.AssetInventory) error {
+		switch item.Stock().Kind {
+		case appsbooks.StockUnlimited:
+			// Unlimited stock is not a finite available-license count.
+		case appsbooks.StockFinite:
+			_ = item.Stock().Available // Includes a reported zero.
+		case appsbooks.StockUnknown:
+			// Missing counts require a later observation, not an assumed zero.
+		}
+		if item.Record != nil {
+			_ = item.Record.Raw
+		} else {
+			_ = item.Unlimited.Raw
+		}
+		// Persist the original representation in the same location scope as its sToken.
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	_ = version // Assets do not support incremental queries.
+}
