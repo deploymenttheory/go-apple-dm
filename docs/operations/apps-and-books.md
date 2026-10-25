@@ -348,6 +348,12 @@ seal private state and retain unresolved operations for reconciliation.
 
 ## Sources
 
+For the dedicated-token read-only checks, explicitly opted-in reversible app
+licensing, recovery fencing and independent physical installation evidence, use
+the [Apps and Books acceptance guide](apps-and-books-acceptance.md). Fixtures,
+live licensing and native installation are separate claims; no real-location or
+device acceptance follows from controlled HTTP tests alone.
+
 The client models the field tables and examples in these Apple contracts:
 [authentication and ownership](https://developer.apple.com/documentation/devicemanagement/getting-started-with-the-management-api),
 [assets](https://developer.apple.com/documentation/devicemanagement/managing-assets),

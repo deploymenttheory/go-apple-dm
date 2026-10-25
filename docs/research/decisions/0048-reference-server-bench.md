@@ -161,6 +161,17 @@ LIVE-012 requires stored ADE issuance, completed authenticated check-ins, pinned
 identity continuity and fresh APNs-triggered native serial/platform/OS/build and
 typed supervision evidence.
 
+LIVE-013 performs dedicated Apps and Books sToken authentication and read-only
+location collection without claiming ownership or changing callbacks. LIVE-014
+requires explicit free-app and quiescent-location attestations, captures original
+assignments and revision before mutation, and proves SDK/reference completion,
+authenticated callback, per-target readback and revocable-license restoration.
+Uncertainty retains an immutable private fence across output-directory changes.
+LIVE-015 inspects an operator-selected prepared managed-content operation and
+fresh native installed/version facts without changing apps or licenses. It
+records each platform independently and does not imply external setup cleanup.
+See the [Apps and Books guide](../../operations/apps-and-books-acceptance.md).
+
 ## References
 
 - [Testing guide](../../testing/lab.md)

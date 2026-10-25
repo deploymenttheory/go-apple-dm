@@ -191,6 +191,16 @@ licensing before constructing an installation command. See the
 [operations guide](../../operations/apps-and-books.md) for polling intervals and
 the [live checks](../../testing/lab.md#apple-management-feature-checks).
 
+The maintained [acceptance procedures](../../operations/apps-and-books-acceptance.md)
+separate read-only dedicated-token location evidence, explicitly selected free
+revocable app licensing through SDK/reference jobs and authenticated callbacks,
+and independent current native installation/version observations. Per-target
+assignment readback and original-state cleanup are required independently of
+aggregate completion. Uncertain runs retain a private immutable fence and their
+absolute evidence locator. Preexisting assignments and externally prepared apps
+are preserved. Fixture results remain simulated, with real-location and each
+physical platform pending until designated resources are exercised.
+
 ## References
 
 - [Managed content workflow](../../../devicemanagement/applications/managedcontent)

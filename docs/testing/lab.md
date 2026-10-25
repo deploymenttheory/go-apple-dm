@@ -363,3 +363,18 @@ Unknown mutation outcomes retain private recovery fencing; concurrent target
 changes never authorize overwriting another operator's selection. Hardware rows
 remain independent for macOS, iOS, iPadOS, visionOS and tvOS. API checks and local
 fixtures leave physical enrollment unexercised.
+
+## Apps and Books API, licensing and installation acceptance
+
+[The Apps and Books acceptance guide](../operations/apps-and-books-acceptance.md)
+documents LIVE-013 (read-only dedicated-token configuration and complete location
+collections), LIVE-014 (explicit free-app licensing through SDK and reference
+jobs, authenticated callbacks, target-specific readback and original-state
+cleanup), and LIVE-015 (independent native installation/version inspection).
+API success, simulated delivery and actual installation have separate evidence.
+Missing prerequisites remain blocked. Unknown or partial licensing retains its
+private mutation fence; it never authorizes an automatic inverse or replay.
+Preexisting licensing and externally prepared apps are preserved. Each physical
+inspection reports macOS, iOS, iPadOS, visionOS and tvOS separately, with other
+platforms unexercised. Real-location and hardware checks remain pending until
+they run successfully against designated private resources.

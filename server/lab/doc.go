@@ -28,6 +28,15 @@
 // unexercised scope, and DDM exchange and cleanup have independent evidence.
 // See docs/operations/ade-acceptance.md for private inputs and executable live steps.
 //
+// Apps and Books checks independently collect read-only location evidence,
+// exercise explicitly designated free-app licensing through SDK and reference
+// paths with private original-state fencing, and inspect actual native app
+// installation/version. Licensing callbacks, aggregate status, per-target
+// readback and cleanup are separate requirements. An inspection never removes
+// a preexisting app or claims restoration after external preparation. User
+// licensing retains Apple's clientUserId independently of hardware serials.
+// See docs/operations/apps-and-books-acceptance.md for private inputs and scope.
+//
 // # References
 //
 //   - https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/local_lab_acceptance_testing.md

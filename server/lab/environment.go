@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/appsbooks"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm/axmtest"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep/deptest"
@@ -50,6 +51,9 @@ type Instance struct {
 
 // Environment owns fixture services and the ordinary server runtime(s).
 type Environment struct {
+	// appsBooksFixture is set only by same-package controlled HTTP tests.
+	// Live workspace configuration cannot redirect the credentialed SDK client.
+	appsBooksFixture *appsbooks.Config
 	// InstallingUserID is the local user's GeneratedUID, supplied by the operator
 	// for live enrollment acceptance. It is not inferred from an arbitrary child.
 	InstallingUserID string

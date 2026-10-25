@@ -199,7 +199,7 @@ func TestLabReportsRetainFailureAndBlockedStatus(t *testing.T) {
 		ids[i] = module.ID
 	}
 	slices.Sort(ids)
-	wantIDs := []string{"APP-001", "APP-002", "E2E-027", "LIVE-001", "LIVE-002", "LIVE-003", "LIVE-004", "LIVE-005", "LIVE-006", "LIVE-007", "LIVE-008", "LIVE-009", "LIVE-010", "LIVE-011", "LIVE-012"}
+	wantIDs := []string{"APP-001", "APP-002", "E2E-027", "LIVE-001", "LIVE-002", "LIVE-003", "LIVE-004", "LIVE-005", "LIVE-006", "LIVE-007", "LIVE-008", "LIVE-009", "LIVE-010", "LIVE-011", "LIVE-012", "LIVE-013", "LIVE-014", "LIVE-015"}
 	if err != nil || !slices.Equal(ids, wantIDs) {
 		t.Fatalf("live selection IDs = %v; want %v; err = %v", ids, wantIDs, err)
 	}
