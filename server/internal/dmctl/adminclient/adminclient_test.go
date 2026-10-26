@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -82,6 +83,24 @@ func TestDo(t *testing.T) {
 		}
 		if resp.Status != http.StatusOK {
 			t.Fatalf("status = %d", resp.Status)
+		}
+	})
+
+	// Verbs escape their path segments; the client must not escape them again.
+	t.Run("SendsEscapedSegmentsOnce", func(t *testing.T) {
+		var got []string
+		c, _ := newClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			got = append(got, r.URL.EscapedPath())
+			w.WriteHeader(http.StatusNoContent)
+		}))
+		for _, path := range []string{"/targets/" + url.PathEscape("SERIAL A/1"), "/literal 100%"} {
+			if _, err := c.Do(ctx, http.MethodGet, path, nil, nil); err != nil {
+				t.Fatal(err)
+			}
+		}
+		want := []string{"/admin/v1/targets/SERIAL%20A%2F1", "/admin/v1/literal%20100%25"}
+		if !slices.Equal(got, want) {
+			t.Fatalf("paths = %q, want %q", got, want)
 		}
 	})
 

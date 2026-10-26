@@ -163,12 +163,25 @@ func (c *Client) Do(
 	return c.DoWithHeaders(ctx, method, path, query, body, nil)
 }
 
+// target joins an admin path to the server base. Callers escape path segments,
+// so an escaped path is sent as given rather than escaped a second time; a path
+// that is not a valid escaping is escaped as literal text.
+func (c *Client) target(path string) url.URL {
+	u := *c.base
+	escaped := strings.TrimRight(u.EscapedPath(), "/") + Prefix + path
+	if unescaped, err := url.PathUnescape(escaped); err == nil {
+		u.Path, u.RawPath = unescaped, escaped
+	} else {
+		u.Path, u.RawPath = escaped, ""
+	}
+	return u
+}
+
 // DoWithHeaders supports optimistic revisions and binary uploads. io.Reader
 // bodies are streamed without buffering or JSON encoding; callers select the
 // content type in headers. The HTTP transport closes io.ReadCloser bodies.
 func (c *Client) DoWithHeaders(ctx context.Context, method, path string, query url.Values, body any, headers http.Header) (*Response, error) {
-	u := *c.base
-	u.Path = strings.TrimRight(u.Path, "/") + Prefix + path
+	u := c.target(path)
 	if len(query) > 0 {
 		u.RawQuery = query.Encode()
 	}
@@ -368,8 +381,7 @@ func (c *Client) ServerConfig(ctx context.Context) (*ServerConfig, error) {
 // Download streams an authorized GET to a caller-owned writer without truncating large exports.
 // Status failures are bounded; an incomplete inventory stream returns an error after its bytes.
 func (c *Client) Download(ctx context.Context, path string, query url.Values, dst io.Writer) error {
-	u := *c.base
-	u.Path = strings.TrimRight(u.Path, "/") + Prefix + path
+	u := c.target(path)
 	u.RawQuery = query.Encode()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
