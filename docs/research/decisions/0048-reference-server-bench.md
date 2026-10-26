@@ -166,7 +166,8 @@ location collection without claiming ownership or changing callbacks. LIVE-014
 requires explicit free-app and quiescent-location attestations, captures original
 assignments and revision before mutation, and proves SDK/reference completion,
 authenticated callback, per-target readback and revocable-license restoration.
-Uncertainty retains an immutable private fence across output-directory changes.
+Uncertainty retains an immutable private fence across output-directory changes;
+any unsuccessful outcome after the fence is a failure, never blocked.
 LIVE-015 inspects an operator-selected prepared managed-content operation and
 fresh native installed/version facts without changing apps or licenses. It
 records each platform independently and does not imply external setup cleanup.

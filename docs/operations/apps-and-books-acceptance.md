@@ -63,6 +63,8 @@ Their opaque values bind the location and do not identify physical hardware.
 ```
 
 For device licensing replace `client_user_id` with `serial`, never provide both.
+The serial is trimmed and uppercased before any comparison or Apple request,
+matching the spelling in Apple and native device reports.
 Apple's `clientUserId` is a user licensing identity. It does not require a serial,
 ABM membership or hardware enrichment, and does not select a native management
 channel. Serial is the sole cross-source physical correlation key; opaque
@@ -70,7 +72,9 @@ enrollment identifiers retain their native addressing purpose.
 
 LIVE-013 needs `readAppsBooks`. LIVE-014 additionally needs `manageAppsBooks` and
 `readAppsBooksEvidence`, including job creation/submission/polling and privileged
-callback/job reads. The preflight creates a queued local reference intent and
+callback/job reads. The LIVE-014 preflight reads only the designated user, asset
+and target assignment, so its duration does not grow with the location; LIVE-013
+collects complete pages. It then creates a queued local reference intent and
 checks its evidence authority before any Apple licensing POST. Queuing cannot
 submit a request automatically. No grant is installed by these modules.
 
@@ -115,17 +119,24 @@ a confirmed callback. SDK completion, reference worker completion,
 authenticated per-target callback and independent assignment readback are
 separate checks. Polling respects the SDK's five-minute fallback and minimum
 30-second interval; allow the run sufficient time for actual callbacks/status.
-LIVE-014 has a thirty-minute protocol-specific default. Its direct SDK assignment
-and reference phases each reserve five minutes before initial status polling,
-one 30-second PENDING interval and four minutes for bounded API/readback work.
-Each primary phase has an actual nine-minute-thirty-second deadline. Direct
+Apple's status can complete the reference job at its fallback poll before the
+callback arrives. The receiver still records a late callback against the
+succeeded job, so the module waits up to one minute for it before reporting the
+callback path unexercised.
+LIVE-014 has a protocol-specific default of 33 minutes and 30 seconds. Its direct
+SDK assignment phase reserves five minutes before initial status polling, one
+30-second PENDING interval and four minutes for bounded API/readback work, an
+actual nine-minute-thirty-second deadline. The reference phase reserves the same
+plus the one-minute callback wait, a ten-minute-thirty-second deadline. Direct
 cleanup independently reserves five minutes for notification fallback,
 one 30-second PENDING interval and three minutes for requests/readback. Before
-the first Apple mutation the remaining deadline must cover these 27 minutes
-and 30 seconds; shorter explicit library run options are blocked. `lab run -module-timeout 45m` overrides the outer module deadline; `0` uses the module
+the first Apple mutation the remaining deadline must cover these 28 minutes
+and 30 seconds; a shorter remaining deadline is blocked and the error reports
+the time remaining. The default leaves five minutes for preflight.
+`lab run -module-timeout 45m` overrides the outer module deadline; `0` uses the module
 default. This flag is independent of the global `-timeout` for individual HTTP
 requests. The primary phase and cleanup caps remain in force. Other modules
-retain the two-minute default. The planned total is thirty minutes including preflight.
+retain the two-minute default.
 Cleanup has its own context and can continue for at most eight minutes and
 thirty seconds after cancellation; the outer module deadline alone is not a
 combined process-and-cleanup deadline. The API/request allowances are project
@@ -144,6 +155,11 @@ reference read rejects contradictory callbacks received while cleanup settles.
 
 Any uncertain submission, partial status, conflicting revision, callback failure,
 failed readback or unsuccessful cleanup retains the fence and original evidence.
+Once the fence exists, every unsuccessful outcome is a failure rather than
+blocked, including an sToken or grant that becomes unavailable and an
+unexercised callback: Apple licensing may already have changed, and the fence
+blocks later runs until reconciliation. Prerequisites missing before the fence
+remain blocked. The `cleanup` assertion passes only after the fence is released.
 A rerun under another output directory cannot bypass it. Stop the original
 process and any worker before operator reconciliation. Inspect the retained job,
 native configuration and full assignment evidence through privileged routes;
@@ -188,12 +204,19 @@ and `pushEnrollment`, in addition to location read authority.
 The gate binds privileged wire and native processing to the selected operation,
 rejects stale/foreign processing, observes authenticated identity continuity and
 fresh OS/build, and requires positive current installed/managed app state with
-the exact expected bundle and version. Generated feature support governs each
+the exact expected bundle and version. `max_age_seconds` bounds source age. For
+MDM it applies to the operation's native observation, which an installed-app
+query refreshes. A DDM app observation keeps the time of its original app
+report, and DDM status reports carry only changes, so DDM freshness is the latest
+authenticated status report for the enrollment. A device that has sent no status
+report within the bound remains blocked. Generated feature support governs each
 platform, OS and channel. ACK and declaration publication alone are insufficient.
-DDM uses current managed-app status joined to its declaration identity. Once the
-current owned generation and managed-app installation are proven, their report
-arrival order does not affect terminal processing; the app observation timestamp
-and native report bytes remain unchanged. Installed
+DDM uses current managed-app status joined to its declaration identity. For a
+new declaration identifier, once the current owned generation and managed-app
+installation are proven, their report arrival order does not affect terminal
+processing; the app observation timestamp and native report bytes remain
+unchanged. A successor reuses its predecessor's identifier, so it settles only
+through an owned app report received after the new generation is confirmed. Installed
 queries do not set the MDM-only managed-app filter. Current native enrollment
 metadata selects generated-supported identity query keys; the ensuing signed
 protocol replies still supply the required fresh OS/build/platform facts. On
@@ -210,7 +233,9 @@ this does not exclude its other supported DDM status features.
 The privileged `native-observation` GET reads current authenticated native facts
 before and after explicit query commands. It does not call SDK `Step`, update
 leases, submit licensing or queue work. Stored operation evidence remains an
-as-of snapshot. The server owns DDM status folding; the lab consumes its typed
+as-of snapshot; the inspection retains the operation as first read
+(`operation-before.json`) and as read for the final provenance check
+(`operation-final.json`). The server owns DDM status folding; the lab consumes its typed
 observation and exact declaration/token/bundle provenance without recreating that
 state engine. A late foreign declaration or removal cannot pass because the app
 still appears in an installed-app list.

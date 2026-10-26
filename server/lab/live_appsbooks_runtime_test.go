@@ -735,7 +735,10 @@ func TestAppsBooksLicensingThroughReferenceSQLRuntime(t *testing.T) {
 			if scenario.serial {
 				c.User, c.Serial = "", "DESIGNATED-SERIAL"
 				f.assignment.ClientUserID, f.assignment.UserStatus, f.assignment.SerialNumber = "", "", c.Serial
-				adeTestJSON(t, s.Env.Workspace.path("appsbooks", "acceptance.json"), c)
+				// Apple reports the canonical serial; the operator's spelling differs.
+				written := c
+				written.Serial = " designated-serial "
+				adeTestJSON(t, s.Env.Workspace.path("appsbooks", "acceptance.json"), written)
 			}
 			if scenario.unlimited {
 				f.rewrite = func(r *http.Request, m map[string]any) {
@@ -817,8 +820,8 @@ func TestAppsBooksRuntimePartialCallbacksAndCleanupRetainFence(t *testing.T) {
 			if err == nil {
 				t.Fatal("partial or callback-free licensing passed")
 			}
-			if name == "missing callback" && !errors.Is(err, ErrBlocked) {
-				t.Fatal("missing callback was not an unmet prerequisite", err)
+			if name == "missing callback" && (errors.Is(err, ErrBlocked) || !errors.Is(err, errOperation)) {
+				t.Fatal("missing callback after Apple licensing was not a failure", err)
 			}
 			before, readErr := os.ReadFile(s.Env.Workspace.path("appsbooks", "pending-licensing.json"))
 			if readErr != nil {
@@ -840,13 +843,55 @@ func TestAppsBooksRuntimePartialCallbacksAndCleanupRetainFence(t *testing.T) {
 	}
 }
 
+// TestAppsBooksRuntimeLateReferenceCallback accepts an authenticated callback
+// that arrives after the reference job's fallback status poll completed it.
+func TestAppsBooksRuntimeLateReferenceCallback(t *testing.T) {
+	t.Parallel()
+	s, f, c := appsRuntime(t)
+	appsInstallDueFixture(t, s, f, c)
+	f.mu.Lock()
+	f.dropCallbackEvent = 2
+	f.mu.Unlock()
+	var polled, delivered atomic.Bool
+	transport := s.Env.Client.Transport
+	s.Env.Client.Transport = transportFunc(func(r *http.Request) (*http.Response, error) {
+		response, err := transport.RoundTrip(r)
+		if err != nil || response.StatusCode != http.StatusOK || !strings.Contains(r.URL.Path, "/jobs/") {
+			return response, err
+		}
+		if strings.HasSuffix(r.URL.Path, "/poll") {
+			polled.Store(true)
+		}
+		// Deliver only after the lab has read the succeeded job without a callback.
+		if r.Method == "GET" && strings.HasSuffix(r.URL.Path, "/evidence") && polled.Load() && delivered.CompareAndSwap(false, true) {
+			f.mu.Lock()
+			f.dropCallbackEvent = 0
+			f.notify(t, r, "notification-2", "ASSET_MANAGEMENT", appsbooks.AssetManagementNotification{EventID: "event-2", Result: "SUCCESS", Type: "ASSOCIATE", Assignments: []appsbooks.Assignment{f.assignment}})
+			f.mu.Unlock()
+		}
+		return response, nil
+	})
+	if err := liveAppsBooksLicensing(appsLongContext(t), s); err != nil {
+		t.Fatal(err)
+	}
+	if !delivered.Load() {
+		t.Fatal("late callback was not exercised")
+	}
+	if _, err := os.Stat(s.Env.Workspace.path("appsbooks", "pending-licensing.json")); !os.IsNotExist(err) {
+		t.Fatal("settled late callback retained fence", err)
+	}
+	if len(adeTestEvidence(t, s, "appsbooks-licensing-*/reference-callback-*.json")) != 1 || len(adeTestEvidence(t, s, "appsbooks-licensing-*/reference-incomplete-callback.json")) != 0 {
+		t.Fatal("late callback evidence missing or reported incomplete")
+	}
+}
+
 // TestAppsBooksShortDeadlineBlocksBeforeAppleMutation rejects an insufficient mutation budget before Apple writes.
 func TestAppsBooksShortDeadlineBlocksBeforeAppleMutation(t *testing.T) {
 	s, f := appsFixtureSession(t)
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(t.Context()), appsMinimumBudget-time.Second)
 	defer cancel()
-	if err := liveAppsBooksLicensing(ctx, s); !errors.Is(err, ErrBlocked) {
-		t.Fatal("insufficient restoration budget accepted", err)
+	if err := liveAppsBooksLicensing(ctx, s); !errors.Is(err, ErrBlocked) || !strings.Contains(err.Error(), "-module-timeout") {
+		t.Fatal("insufficient restoration budget accepted or unexplained", err)
 	}
 	if f.postCount() != 0 {
 		t.Fatal("insufficient budget reached Apple mutation")
@@ -950,6 +995,13 @@ func TestAppsBooksRuntimeExchangeFailuresPreserveRecovery(t *testing.T) {
 			if posts > maximum {
 				t.Fatal("failed phase triggered an unproven inverse")
 			}
+			if strings.HasPrefix(name, "final ") {
+				for _, b := range adeTestEvidence(t, s, "appsbooks-licensing-*/assertions.json") {
+					if !bytes.Contains(b, []byte(`"cleanup":"unresolved"`)) {
+						t.Fatal("cleanup passed while the fence was retained", string(b))
+					}
+				}
+			}
 			f.mu.Lock()
 			assigned := f.assigned
 			f.mu.Unlock()
@@ -1003,7 +1055,7 @@ func appsBlockScopeEvidence(s *Session, phase, name string) error {
 // actual installed app and original licensing remain untouched.
 func appsNativeEndpointFailures(t *testing.T, ctx context.Context, s *Session, base string) {
 	t.Helper()
-	for _, name := range []string{"selected serial mismatch", "different selected native device", "query metadata denied", "query metadata missing", "required query unsupported", "operation read denied", "dispatch evidence denied", "native observation denied", "foreign observation identity", "initial identity denied", "disabled identity", "device query denied", "installed query denied", "managed query denied", "identity readback denied", "identity continuity changed", "operation readback denied", "native readback denied", "native readback removed", "private SDK evidence unavailable", "private native observation unavailable", "private operation evidence unavailable", "private native source unavailable"} {
+	for _, name := range []string{"selected serial mismatch", "different selected native device", "query metadata denied", "query metadata missing", "required query unsupported", "operation read denied", "dispatch evidence denied", "native observation denied", "foreign observation identity", "initial identity denied", "disabled identity", "device query denied", "installed query denied", "managed query denied", "identity readback denied", "identity continuity changed", "operation readback denied", "native readback denied", "native readback removed", "private SDK evidence unavailable", "private native observation unavailable", "private initial operation evidence unavailable", "private operation evidence unavailable", "private native source unavailable"} {
 		t.Run(name, func(t *testing.T) {
 			transport := s.Env.Client.Transport
 			var operations, observations, identities atomic.Int32
@@ -1062,8 +1114,10 @@ func appsNativeEndpointFailures(t *testing.T, ctx context.Context, s *Session, b
 					switch name {
 					case "private SDK evidence unavailable":
 						evidence = "sdk-evidence.json"
+					case "private initial operation evidence unavailable":
+						evidence = "operation-before.json"
 					case "private operation evidence unavailable":
-						evidence = "operation.json"
+						evidence = "operation-final.json"
 					case "private native source unavailable":
 						evidence = "native-evidence.json"
 					}

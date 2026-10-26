@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/appsbooks"
@@ -20,18 +21,30 @@ const (
 	appsPendingInterval      = 30 * time.Second
 	// The SDK and reference phases each reserve eight 30-second HTTP windows
 	// plus one PENDING interval, in addition to their separate fallback gates.
-	appsPrimaryBudget = 2 * (appsNotificationFallback + appsPendingInterval + 4*time.Minute)
+	appsPhaseBudget = appsNotificationFallback + appsPendingInterval + 4*time.Minute
+	// Apple's status can complete the reference job at its fallback poll before
+	// the authenticated callback arrives; the receiver still records a late
+	// callback against the succeeded job, so the reference phase waits for it.
+	appsCallbackGrace     = 2 * appsPendingInterval
+	appsReferenceBudget   = appsPhaseBudget + appsCallbackGrace
+	appsPrimaryBudget     = appsPhaseBudget + appsReferenceBudget
+	appsReferencePollStep = time.Second
 	// Cleanup uses the direct client, with its own fallback, one PENDING
 	// interval and six HTTP/readback windows. Longer uncertainty stays fenced.
 	appsCleanupBudget = appsNotificationFallback + appsPendingInterval + 3*time.Minute
 	appsMinimumBudget = appsPrimaryBudget + appsCleanupBudget
-	appsModuleTimeout = 30 * time.Minute
+	// Preflight reads only designated resources, so a fixed allowance covers it.
+	appsPreflightBudget = 5 * time.Minute
+	appsModuleTimeout   = appsPreflightBudget + appsMinimumBudget
 )
 
-// appsRequireBudget rejects insufficient remaining time before any Apple mutation.
+// appsRequireBudget rejects insufficient remaining time before any Apple
+// mutation and reports the shortfall so the operator can extend the deadline.
 func appsRequireBudget(ctx context.Context) error {
-	if deadline, ok := ctx.Deadline(); ok && time.Until(deadline) < appsMinimumBudget {
-		return fmt.Errorf("%w: licensing deadline cannot cover notification fallback and restoration budget", ErrBlocked)
+	if deadline, ok := ctx.Deadline(); ok {
+		if remaining := time.Until(deadline); remaining < appsMinimumBudget {
+			return fmt.Errorf("%w: licensing needs %s for notification fallback and restoration but %s remains; raise lab run -module-timeout", ErrBlocked, appsMinimumBudget, remaining.Truncate(time.Second))
+		}
 	}
 	return nil
 }
@@ -174,18 +187,6 @@ func (a *appsAccess) readback(ctx context.Context, s *Session, phase string, wan
 	return nil
 }
 
-// appsPause is cancellation-aware; the SDK separately enforces Apple's rate.
-func appsPause(ctx context.Context) error {
-	t := time.NewTimer(time.Second)
-	defer t.Stop()
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-t.C:
-		return nil
-	}
-}
-
 // capability reads current native restrictions before each direct SDK mutation.
 // A previously revocable snapshot cannot authorize a later unsafe cleanup.
 func (a *appsAccess) capability(ctx context.Context, s *Session, name string) (appsbooks.LicenseStock, error) {
@@ -307,7 +308,9 @@ func (a *appsAccess) referencePrepare(ctx context.Context, s *Session, id string
 	return appsSave(s, "reference-intent.json", job)
 }
 
-// referenceJob submits and settles the prepared reference job with callback proof.
+// referenceJob submits and settles the prepared reference job with callback
+// proof. After the job succeeds without a callback, it waits appsCallbackGrace
+// for a late callback before reporting the callback path unexercised.
 func (a *appsAccess) referenceJob(ctx context.Context, s *Session, id string) error {
 	if err := a.binding(ctx, s); err != nil {
 		return err
@@ -318,6 +321,7 @@ func (a *appsAccess) referenceJob(ctx context.Context, s *Session, id string) er
 	if err := appsRequest(ctx, s, "POST", base+"/submit", worker, &job); err != nil {
 		return err
 	}
+	var unconfirmed time.Time
 	for {
 		if err := appsRequest(ctx, s, "GET", base+"/evidence", nil, &job); err != nil {
 			return err
@@ -349,17 +353,21 @@ func (a *appsAccess) referenceJob(ctx context.Context, s *Session, id string) er
 			return appsError(ctx, "reference licensing incomplete or uncertain")
 		}
 		if job.State == appsbooks.JobSucceeded {
-			if err := appsSave(s, "reference-incomplete-callback.json", job); err != nil {
-				return err
+			if unconfirmed.IsZero() {
+				unconfirmed = appsNow(s)
 			}
-			return fmt.Errorf("%w: authenticated per-target licensing callback unexercised", ErrBlocked)
-		}
-		if !job.NextPollAt.IsZero() && !appsNow(s).Before(job.NextPollAt) {
+			if appsNow(s).Sub(unconfirmed) >= appsCallbackGrace {
+				if err := appsSave(s, "reference-incomplete-callback.json", job); err != nil {
+					return err
+				}
+				return fmt.Errorf("%w: authenticated per-target licensing callback unexercised", ErrBlocked)
+			}
+		} else if !job.NextPollAt.IsZero() && !appsNow(s).Before(job.NextPollAt) {
 			if err := appsRequest(ctx, s, "POST", base+"/poll", worker, &job); err != nil {
 				return err
 			}
 		}
-		if err := appsPause(ctx); err != nil {
+		if err := appsWait(ctx, s, appsReferencePollStep); err != nil {
 			return appsError(ctx, "reference callback/status wait")
 		}
 	}
@@ -416,13 +424,9 @@ func liveAppsBooksLicensing(ctx context.Context, session *Session) (result error
 	if err = a.binding(ctx, s); err != nil {
 		return err
 	}
-	if err = a.pages(ctx, s, "assets", nil); err != nil {
-		return err
-	}
+	// Preflight reads only the designated user, asset and assignment so that
+	// its cost does not grow with the location; LIVE-013 collects every page.
 	if c.User != "" {
-		if err = a.pages(ctx, s, "users", nil); err != nil {
-			return err
-		}
 		associated := 0
 		_, err = a.client.WalkUsers(ctx, appsbooks.UsersQuery{ClientUserID: c.User}, c.MaxPages, func(user appsbooks.User) error {
 			if user.ClientUserID != c.User {
@@ -475,11 +479,20 @@ func liveAppsBooksLicensing(ctx context.Context, session *Session) (result error
 	if err = appsFence(s, intent); err != nil {
 		return err
 	}
+	// The fence blocks later runs until stopped-worker reconciliation, and Apple
+	// licensing may already have changed, so no later outcome is an unmet
+	// prerequisite that a report could treat as skipped.
+	defer func() {
+		if errors.Is(result, ErrBlocked) {
+			reason, _ := strings.CutPrefix(result.Error(), ErrBlocked.Error()+": ")
+			result = fmt.Errorf("%w: licensing outcome unresolved with pending fence retained: %s", errOperation, reason)
+		}
+	}()
 	checks["cleanup"] = "unresolved"
 	checks["location_revision"] = a.location.Revision
 	// Any unsuccessful submission, status, callback or readback retains the fence.
 	// Cleanup cannot infer an inverse from a request whose outcome is unknown.
-	sdkCtx, cancelSDK := context.WithTimeout(ctx, appsPrimaryBudget/2)
+	sdkCtx, cancelSDK := context.WithTimeout(ctx, appsPhaseBudget)
 	if err = a.sdkJob(sdkCtx, s, "sdk-associate", true); err != nil {
 		cancelSDK()
 		return err
@@ -490,7 +503,7 @@ func liveAppsBooksLicensing(ctx context.Context, session *Session) (result error
 	if err != nil {
 		return err
 	}
-	referenceCtx, cancelReference := context.WithTimeout(ctx, appsPrimaryBudget/2)
+	referenceCtx, cancelReference := context.WithTimeout(ctx, appsReferenceBudget)
 	if err = a.referenceJob(referenceCtx, s, id); err != nil {
 		cancelReference()
 		return err
@@ -515,7 +528,8 @@ func liveAppsBooksLicensing(ctx context.Context, session *Session) (result error
 	if err = appsSave(s, "cleanup.json", map[string]any{"restored": true, "preexisting_assignment_preserved": len(original) == 1}); err != nil {
 		return err
 	}
-	checks["cleanup"] = "passed"
+	// Cleanup passes only once the fence is released; until then it remains
+	// unresolved even though cleanup.json records the restored assignment.
 	if err = a.finalReference(cleanup, s, id); err != nil {
 		checks["final_reference"] = "failed"
 		return err

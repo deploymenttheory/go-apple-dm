@@ -5,14 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	jsonv2 "encoding/json/v2"
-	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/inventory"
@@ -55,17 +52,7 @@ type adeAccess struct {
 // adeRead bounds private configuration input without including its content or
 // credential path in public errors.
 func adeRead(s *Session, name string) ([]byte, error) {
-	if s.Env == nil || s.Env.Workspace == nil {
-		return nil, fmt.Errorf("%w: private ADE workspace required", ErrBlocked)
-	}
-	b, err := os.ReadFile(s.Env.Workspace.path("ade", name)) // #nosec G304 -- Callers supply fixed filenames beneath the operator-owned private ADE workspace.
-	if errors.Is(err, os.ErrNotExist) {
-		return nil, fmt.Errorf("%w: private ADE configuration or separate server token missing", ErrBlocked)
-	}
-	if err != nil || len(b) > 1<<20 {
-		return nil, fmt.Errorf("%w: private ADE input unreadable or oversized", errOperation)
-	}
-	return b, nil
+	return adeArea.read(s, name, "private ADE configuration or separate server token missing")
 }
 
 // adeConfig rejects incomplete or ambiguous operator scope before Apple requests.
@@ -87,37 +74,25 @@ func adeConfig(s *Session) (adeAcceptance, error) {
 // adeError keeps remote bodies, private identifiers and OAuth request details out
 // of public results. The original context remains observable on cancellation.
 func adeError(ctx context.Context, operation string) error {
-	if ctx.Err() != nil {
-		return fmt.Errorf("%w: ADE %s interrupted", ctx.Err(), operation)
+	return adeArea.fail(ctx, operation)
+}
+
+// adeRejected treats a missing designated resource as an unmet prerequisite and
+// an administration authorization failure as a failed operation.
+func adeRejected(status int) error {
+	switch status {
+	case http.StatusNotFound:
+		return fmt.Errorf("%w: designated ADE prerequisite unavailable", ErrBlocked)
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return fmt.Errorf("%w: ADE administration permission denied", errOperation)
 	}
-	return fmt.Errorf("%w: ADE %s failed", errOperation, operation)
+	return nil
 }
 
 // adeRequest uses only the ordinary authenticated administration API. It does
 // not expose response bodies, paths or designated identifiers in errors.
 func adeRequest(ctx context.Context, s *Session, method, path string, in, out any) error {
-	var body []byte
-	var err error
-	if in != nil {
-		body, err = jsonv2.Marshal(in)
-		if err != nil {
-			return adeError(ctx, "request encoding")
-		}
-	}
-	b, status, err := HTTP(ctx, s.Env.Client, s.Env.URL, s.Env.Token, method, path, bytes.NewReader(body))
-	if err != nil {
-		if status == http.StatusNotFound {
-			return fmt.Errorf("%w: designated ADE prerequisite unavailable", ErrBlocked)
-		}
-		if status == http.StatusUnauthorized || status == http.StatusForbidden {
-			return fmt.Errorf("%w: ADE administration permission denied", errOperation)
-		}
-		return adeError(ctx, "administration request")
-	}
-	if out != nil && jsonv2.Unmarshal(b, out) != nil {
-		return adeError(ctx, "administration response")
-	}
-	return nil
+	return adeArea.request(ctx, s, "administration", adeRejected, method, path, in, out)
 }
 
 // adeSave stores identifiable evidence only in the private run directory.
@@ -135,19 +110,7 @@ func adeSave(s *Session, name string, value any) error {
 // adeScope creates an exclusive evidence scope for every invocation, including
 // reruns beneath the same report directory.
 func adeScope(s *Session, prefix string) (*Session, string, error) {
-	if s.Evidence == "" {
-		return nil, "", fmt.Errorf("%w: private ADE evidence directory required", ErrBlocked)
-	}
-	if err := os.MkdirAll(s.Evidence, 0o700); err != nil {
-		return nil, "", fmt.Errorf("%w: private ADE evidence directory unavailable", errOperation)
-	}
-	id := randomID()
-	copy := *s
-	copy.Evidence = filepath.Join(s.Evidence, prefix+"-"+id)
-	if err := os.Mkdir(copy.Evidence, 0o700); err != nil {
-		return nil, "", fmt.Errorf("%w: exclusive ADE evidence directory unavailable", errOperation)
-	}
-	return &copy, id, nil
+	return adeArea.scope(s, prefix)
 }
 
 // adeBase addresses the configured reference account with an escaped name.
