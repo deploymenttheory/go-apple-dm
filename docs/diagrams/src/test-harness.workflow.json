@@ -259,11 +259,11 @@
         "On macOS User Enrollment, forbidden InstalledApplicationList queries remain unexercised. Current owned DDM app.managed.list and the exact actual version before and after identity queries provide the privacy-preserving path; user licensing requires no hardware serial.",
         "Each physical report records macOS, iOS, iPadOS, visionOS and tvOS separately. Missing live credentials, permissions, callbacks, designated content or devices remain unmet prerequisites. Simulated TLS/runtime/SQL and signed-simulator results do not prove live Apple or physical-device acceptance.",
         "Files containing identity, evidence or pending-fence data receive private access before writes. Unix files use mode 0600 and directories 0700; Windows uses protected native ACLs for the current user, LocalSystem and administrators. Fresh scope and phase directories preserve existing parent permissions.",
-        "Apps and Books runbook — https://github.com/deploymenttheory/go-apple-dm/blob/f857cb0522a5012d09905ed8628d0dbfb01ebc6d/docs/operations/apps-and-books-acceptance.md",
-        "Licensing orchestration — https://github.com/deploymenttheory/go-apple-dm/blob/f857cb0522a5012d09905ed8628d0dbfb01ebc6d/server/lab/live_appsbooks_licensing.go",
-        "Native evidence gate — https://github.com/deploymenttheory/go-apple-dm/blob/f857cb0522a5012d09905ed8628d0dbfb01ebc6d/server/lab/live_appsbooks_installation.go",
-        "Native evidence privacy — https://github.com/deploymenttheory/go-apple-dm/blob/f857cb0522a5012d09905ed8628d0dbfb01ebc6d/server/internal/privatefile/doc.go",
-        "Owned DDM installation and terminal processing — https://github.com/deploymenttheory/go-apple-dm/blob/f857cb0522a5012d09905ed8628d0dbfb01ebc6d/server/internal/app/managedcontent_ddm.go"
+        "Apps and Books runbook — https://github.com/deploymenttheory/go-apple-dm/blob/6a13613dbd10b726f84a46676062896eabfd260f/docs/operations/apps-and-books-acceptance.md",
+        "Licensing orchestration — https://github.com/deploymenttheory/go-apple-dm/blob/6a13613dbd10b726f84a46676062896eabfd260f/server/lab/live_appsbooks_licensing.go",
+        "Native evidence gate — https://github.com/deploymenttheory/go-apple-dm/blob/6a13613dbd10b726f84a46676062896eabfd260f/server/lab/live_appsbooks_installation.go",
+        "Native evidence privacy — https://github.com/deploymenttheory/go-apple-dm/blob/6a13613dbd10b726f84a46676062896eabfd260f/server/internal/privatefile/doc.go",
+        "Owned DDM installation and terminal processing — https://github.com/deploymenttheory/go-apple-dm/blob/6a13613dbd10b726f84a46676062896eabfd260f/server/internal/app/managedcontent_ddm.go"
       ]
     }
   ]

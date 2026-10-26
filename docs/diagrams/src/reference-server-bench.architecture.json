@@ -15,7 +15,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "f857cb0522a5012d09905ed8628d0dbfb01ebc6d"
+      "revision": "6a13613dbd10b726f84a46676062896eabfd260f"
     }
   },
   "components": [
@@ -415,7 +415,7 @@
         "Native observation and explicit status queries — https://github.com/deploymenttheory/go-apple-dm/blob/c58adecfb8f2fa5835973e9ce965538bd216ee0d/server/internal/app/managedcontent_inspection.go",
         "Durable wake delivery — https://github.com/deploymenttheory/go-apple-dm/blob/c58adecfb8f2fa5835973e9ce965538bd216ee0d/server/internal/app/managedcontent_wake.go",
         "A newer authenticated ManagedButUninstalled report clears an older installed/version claim while preserving historical processing and original source evidence. A later installed-app query can establish reinstallation.",
-        "Owned DDM installation and terminal processing — https://github.com/deploymenttheory/go-apple-dm/blob/f857cb0522a5012d09905ed8628d0dbfb01ebc6d/server/internal/app/managedcontent_ddm.go"
+        "Owned DDM installation and terminal processing — https://github.com/deploymenttheory/go-apple-dm/blob/6a13613dbd10b726f84a46676062896eabfd260f/server/internal/app/managedcontent_ddm.go"
       ]
     },
     {
@@ -428,11 +428,11 @@
         "LIVE-015 inspects an externally prepared operation through privileged native observations and signed identity/OS/build queries. Exact owned app, bundle and version facts are required before and after queries; the module neither installs nor removes apps and makes no restoration claim.",
         "Generated feature support governs each platform, OS and channel. macOS User Enrollment uses fresh owned DDM app.managed.list/version proof without InstalledApplicationList or hardware serial. macOS, iOS, iPadOS, visionOS and tvOS retain separate results; unsupported or missing prerequisites stay unexercised or blocked. Fixture and API success do not establish live device installation.",
         "Files containing identity, evidence or pending-fence data receive private access before writes. Unix files use mode 0600 and directories 0700; Windows uses protected native ACLs for the current user, LocalSystem and administrators. Fresh scope and phase directories preserve existing parent permissions.",
-        "Location reads — https://github.com/deploymenttheory/go-apple-dm/blob/f857cb0522a5012d09905ed8628d0dbfb01ebc6d/server/lab/live_appsbooks.go",
-        "Licensing and cleanup fence — https://github.com/deploymenttheory/go-apple-dm/blob/f857cb0522a5012d09905ed8628d0dbfb01ebc6d/server/lab/live_appsbooks_licensing.go",
-        "Native installation inspection — https://github.com/deploymenttheory/go-apple-dm/blob/f857cb0522a5012d09905ed8628d0dbfb01ebc6d/server/lab/live_appsbooks_installation.go",
-        "Private acceptance prerequisites — https://github.com/deploymenttheory/go-apple-dm/blob/f857cb0522a5012d09905ed8628d0dbfb01ebc6d/docs/operations/apps-and-books-acceptance.md",
-        "Native evidence privacy — https://github.com/deploymenttheory/go-apple-dm/blob/f857cb0522a5012d09905ed8628d0dbfb01ebc6d/server/internal/privatefile/doc.go"
+        "Location reads — https://github.com/deploymenttheory/go-apple-dm/blob/6a13613dbd10b726f84a46676062896eabfd260f/server/lab/live_appsbooks.go",
+        "Licensing and cleanup fence — https://github.com/deploymenttheory/go-apple-dm/blob/6a13613dbd10b726f84a46676062896eabfd260f/server/lab/live_appsbooks_licensing.go",
+        "Native installation inspection — https://github.com/deploymenttheory/go-apple-dm/blob/6a13613dbd10b726f84a46676062896eabfd260f/server/lab/live_appsbooks_installation.go",
+        "Private acceptance prerequisites — https://github.com/deploymenttheory/go-apple-dm/blob/6a13613dbd10b726f84a46676062896eabfd260f/docs/operations/apps-and-books-acceptance.md",
+        "Native evidence privacy — https://github.com/deploymenttheory/go-apple-dm/blob/6a13613dbd10b726f84a46676062896eabfd260f/server/internal/privatefile/doc.go"
       ]
     },
     {
