@@ -18,6 +18,7 @@ import (
 // TestADEHardwareRejectsIncompleteNativeEvidence keeps actual device evidence
 // independent of API success, certificate presence and caller-entered identifiers.
 func TestADEHardwareRejectsIncompleteNativeEvidence(t *testing.T) {
+	t.Parallel()
 	for _, fault := range []string{"platform", "device address", "target address", "issuance method", "issuance serial", "certificate", "expired certificate", "disabled", "Authenticate", "TokenUpdate", "missing binding", "foreign binding", "foreign enrollment binding", "identity method", "no profile", "profile state", "effective profile", "permission", "not queued", "command error", "missing serial", "wrong serial", "missing OS", "missing build", "wrong platform", "missing supervision", "false supervision", "identity changed", "DDM unexercised", "DDM unsupported"} {
 		t.Run(fault, func(t *testing.T) {
 			c := adeAcceptance{}

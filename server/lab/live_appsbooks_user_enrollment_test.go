@@ -101,6 +101,7 @@ func appsUserEnrollmentPump(t *testing.T, ctx context.Context, s *Session, d *si
 // TestAppsBooksMacUserEnrollmentUsesOwnedDeclarativeVersion proves the privacy
 // path with a real signed native user, user licensing and SQL-backed SDK workflow.
 func TestAppsBooksMacUserEnrollmentUsesOwnedDeclarativeVersion(t *testing.T) {
+	t.Parallel()
 	s, f, c := appsRuntimeWith(t, nil, map[string]string{"DM_DISCOVERY": "Mac=mdm-byod"})
 	ctx, cancel := context.WithTimeout(t.Context(), time.Minute)
 	defer cancel()

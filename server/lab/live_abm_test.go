@@ -38,6 +38,7 @@ func abmTestConfig(t *testing.T, s *Session, c abmAcceptance) {
 // Real SDK OAuth, pagination, synchronization workers, SQL persistence, source
 // export and retained assignment operations execute behind the actual runtime.
 func TestABMLiveWorkflowsThroughRuntime(t *testing.T) {
+	t.Parallel()
 	w := testWorkspace(t, "simulated")
 	e, err := Start(t.Context(), w, "", io.Discard)
 	if err != nil {
