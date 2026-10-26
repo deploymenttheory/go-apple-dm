@@ -273,7 +273,7 @@ func (d *depService) routes() []adminRoute {
 			paging.Page{Cursor: r.URL.Query().Get("cursor")},
 		)
 		if err != nil {
-			writeError(w, depStatus(err), err)
+			d.writeError(w, r, err)
 			return
 		}
 		type row struct {
@@ -314,7 +314,7 @@ func (d *depService) routes() []adminRoute {
 				}
 				return tx.PutKeypair(r.Context(), name, dep.StageStaged, kp)
 			}); err != nil {
-				writeError(w, depStatus(err), err)
+				d.writeError(w, r, err)
 				return
 			}
 			w.Header().Set("Content-Type", "application/x-pem-file")
@@ -340,7 +340,7 @@ func (d *depService) routes() []adminRoute {
 			dep.ImportOptions{Force: force},
 		)
 		if err != nil {
-			writeError(w, depStatus(err), err)
+			d.writeError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, detail)
@@ -358,7 +358,7 @@ func (d *depService) routes() []adminRoute {
 		}
 		detail, err := d.client.StoreTokens(r.Context(), r.PathValue("name"), tokens)
 		if err != nil {
-			writeError(w, depStatus(err), err)
+			d.writeError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, detail)
@@ -377,7 +377,7 @@ func (d *depService) routes() []adminRoute {
 				page,
 			)
 			if err != nil {
-				writeError(w, depStatus(err), err)
+				d.writeError(w, r, err)
 				return
 			}
 			writeJSON(w, http.StatusOK, res)
@@ -410,12 +410,12 @@ func (d *depService) routes() []adminRoute {
 			}
 			baseline, err := d.store.GetAccount(r.Context(), name)
 			if err != nil {
-				writeError(w, depStatus(err), err)
+				d.writeError(w, r, err)
 				return
 			}
 			resp, err := d.client.DefineProfile(r.Context(), name, &p)
 			if err != nil {
-				writeError(w, depStatus(err), err)
+				d.writeError(w, r, err)
 				return
 			}
 			ctx := r.Context()
@@ -442,7 +442,7 @@ func (d *depService) routes() []adminRoute {
 				return nil
 			})
 			if err != nil {
-				writeError(w, depStatus(err), err)
+				d.writeError(w, r, err)
 				return
 			}
 			writeJSON(w, http.StatusOK, resp)
@@ -451,7 +451,7 @@ func (d *depService) routes() []adminRoute {
 	add("GET /dep/accounts/{name}/profiles", func(w http.ResponseWriter, r *http.Request) {
 		profiles, err := d.store.ListProfiles(r.Context(), r.PathValue("name"), paging.Page{Cursor: r.URL.Query().Get("cursor")})
 		if err != nil {
-			writeError(w, depStatus(err), err)
+			d.writeError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, profiles)
@@ -459,7 +459,7 @@ func (d *depService) routes() []adminRoute {
 	add("GET /dep/accounts/{name}/targets", func(w http.ResponseWriter, r *http.Request) {
 		account, err := d.store.GetAccount(r.Context(), r.PathValue("name"))
 		if err != nil {
-			writeError(w, depStatus(err), err)
+			d.writeError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, struct {
@@ -475,7 +475,7 @@ func (d *depService) routes() []adminRoute {
 	add("POST /dep/accounts/{name}/sync", func(w http.ResponseWriter, r *http.Request) {
 		sres, ares, err := d.runOnce(r.Context(), r.PathValue("name"))
 		if err != nil {
-			writeError(w, depStatus(err), err)
+			d.writeError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"Sync": sres, "Assign": ares})
@@ -489,6 +489,28 @@ func sameDEPAccount(a, b *dep.Account) bool {
 	return a.ConsumerKey == b.ConsumerKey && a.ConsumerSecret == b.ConsumerSecret &&
 		a.AccessToken == b.AccessToken && a.AccessSecret == b.AccessSecret &&
 		a.ServerUUID == b.ServerUUID && a.OrgID == b.OrgID
+}
+
+// writeError reports a failed DEP operation. Apple's HTTP status and error code
+// identify an upstream rejection without its body or credentials, so a 502 names
+// them; other server failures keep the fixed message and are logged.
+func (d *depService) writeError(w http.ResponseWriter, r *http.Request, err error) {
+	status := depStatus(err)
+	if status < http.StatusInternalServerError {
+		writeError(w, status, err)
+		return
+	}
+	d.app.cfg.Logger.WarnContext(r.Context(), "DEP administration failed", "route", r.Pattern, "error", err)
+	var derr *dep.Error
+	if status == http.StatusBadGateway && errors.As(err, &derr) {
+		msg := fmt.Sprintf("Apple device enrollment service returned HTTP %d", derr.Status)
+		if derr.Code != "" {
+			msg += " " + derr.Code
+		}
+		writeJSON(w, status, map[string]string{"Error": msg})
+		return
+	}
+	writeError(w, status, err)
 }
 
 // depStatus maps client and store errors to admin API statuses.
@@ -584,7 +606,7 @@ func (d *depService) setProfileTarget(w http.ResponseWriter, r *http.Request) {
 		return tx.PutAccount(ctx, account)
 	})
 	if err != nil {
-		writeError(w, depStatus(err), err)
+		d.writeError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

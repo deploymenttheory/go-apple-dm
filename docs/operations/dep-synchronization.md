@@ -120,7 +120,9 @@ are assigned to it in the portal. The account name is local; `abm-lab` is an exa
    output is the account Apple returned. Check that its server name is the one
    entered in the portal and its organization is yours. A token for another key,
    expired credentials or unaccepted terms fail without changing stored
-   credentials; accept new terms in the portal, then retry.
+   credentials; accept new terms in the portal, then retry. Any other rejection
+   by Apple's service fails with status 502 and names Apple's HTTP status and
+   error code, such as `400 USER_AGENT_INVALID`; the server log records the same.
 
 4. Confirm the binding and read the server's devices:
 
