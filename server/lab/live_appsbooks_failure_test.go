@@ -23,6 +23,9 @@ import (
 )
 
 // TestAppsBooksIncompletePagesAndPrerequisitesNeverMutate rejects incomplete collection and missing licensing prerequisites before writes.
+// LIVE-014 preflight reads only the designated user, asset and assignment, so
+// incoherent complete collections are LIVE-013 failures; incoherent pages that
+// the designated reads also traverse fail both modules.
 func TestAppsBooksIncompletePagesAndPrerequisitesNeverMutate(t *testing.T) {
 	for _, name := range []string{"missing version", "version drift", "skipped page", "page bound", "unowned location", "no callback", "Book", "not revocable", "missing asset", "stock unknown", "inactive user", "foreign assignment", "revised location", "selected user foreign", "selected user missing", "selected user unreadable", "user collection unreadable", "asset collection unreadable", "selected asset unreadable"} {
 		t.Run(name, func(t *testing.T) {
@@ -114,8 +117,16 @@ func TestAppsBooksIncompletePagesAndPrerequisitesNeverMutate(t *testing.T) {
 			if name == "revised location" {
 				f.location.ConfigurationPending = true
 			}
-			if err := liveAppsBooksLicensing(t.Context(), s); err == nil {
-				t.Fatal("unmet prerequisite or incoherent collection passed")
+			collectionOnly := name == "missing version" || name == "user collection unreadable" || name == "asset collection unreadable"
+			if collectionOnly || name == "version drift" || name == "skipped page" || name == "page bound" {
+				if err := liveAppsBooksCollection(t.Context(), s); err == nil {
+					t.Fatal("incoherent collection passed")
+				}
+			}
+			if !collectionOnly {
+				if err := liveAppsBooksLicensing(t.Context(), s); err == nil {
+					t.Fatal("unmet prerequisite or incoherent collection passed")
+				}
 			}
 			if f.postCount() != 0 {
 				t.Fatal("unmet prerequisite changed licensing")
@@ -261,6 +272,59 @@ func TestAppsBooksInstallationRequiresNativeProvenance(t *testing.T) {
 				})
 			}
 		})
+	}
+}
+
+// TestAppsBooksDDMInstallationFreshnessUsesLatestReport keeps an earlier DDM
+// app report fresh through later authenticated status reports, because the
+// server deliberately preserves the app report's original observation time.
+func TestAppsBooksDDMInstallationFreshnessUsesLatestReport(t *testing.T) {
+	now := time.Now()
+	installed := now.Add(-2 * time.Hour)
+	appReport := ddm.StatusReportRecord{Seq: 1, ReceivedAt: installed, Raw: []byte(`{"StatusItems":{"app.managed.list":[{"identifier":"com.example.app","declaration-identifier":"declaration","state":"managed","version":"1"}]}}`)}
+	heartbeat := ddm.StatusReportRecord{Seq: 2, ReceivedAt: now.Add(-10 * time.Second), Raw: []byte(`{"StatusItems":{"management.declarations":{}}}`)}
+	for _, tc := range []struct {
+		name    string
+		reports []ddm.StatusReportRecord
+		fresh   bool
+	}{
+		{"later status report", []ddm.StatusReportRecord{appReport, heartbeat}, true},
+		{"app report only", []ddm.StatusReportRecord{appReport}, false},
+		{"future status report", []ddm.StatusReportRecord{appReport, {Seq: 2, ReceivedAt: now.Add(time.Hour), Raw: heartbeat.Raw}}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			op, e, c := appsSourceFixture(t, managedcontent.DDM)
+			e.Observation.ObservedAt = installed
+			raw, err := json.Marshal(app.ManagedContentDDMEvidence{BundleID: c.BundleID, DeclarationIdentifier: "declaration", ServerToken: "token", PublishedAt: installed.Add(-time.Second), Declarations: []ddm.DeclarationStatus{{Identifier: "declaration", ServerToken: "token", Active: true, Valid: "valid", LastSeen: now}}, Reports: tc.reports})
+			if err != nil {
+				t.Fatal(err)
+			}
+			e.Observation.Raw = raw
+			err = appsInstallationSource(op, e, c, now)
+			if tc.fresh && err != nil {
+				t.Fatal("later authenticated status report did not establish freshness", err)
+			}
+			if !tc.fresh && !errors.Is(err, ErrBlocked) {
+				t.Fatal("stale or future declarative status accepted", err)
+			}
+		})
+	}
+}
+
+// TestAppsBooksConfigCanonicalSerial canonicalizes the designated serial as
+// Apple and native reports spell it, and rejects a blank one.
+func TestAppsBooksConfigCanonicalSerial(t *testing.T) {
+	s, _ := appsFixtureSession(t)
+	c := appsAcceptance{Location: "lab", UID: "library", MDMID: "mdm", MaxPages: 5, Serial: " c02abc123xyz\t"}
+	adeTestJSON(t, s.Env.Workspace.path("appsbooks", "acceptance.json"), c)
+	got, err := appsConfig(s)
+	if err != nil || got.Serial != "C02ABC123XYZ" {
+		t.Fatal("designated serial was not canonicalized", got.Serial, err)
+	}
+	c.Serial = "  "
+	adeTestJSON(t, s.Env.Workspace.path("appsbooks", "acceptance.json"), c)
+	if _, err = appsConfig(s); !errors.Is(err, ErrBlocked) {
+		t.Fatal("blank designated serial accepted", err)
 	}
 }
 

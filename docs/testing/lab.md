@@ -373,7 +373,8 @@ jobs, authenticated callbacks, target-specific readback and original-state
 cleanup), and LIVE-015 (independent native installation/version inspection).
 API success, simulated delivery and actual installation have separate evidence.
 Missing prerequisites remain blocked. Unknown or partial licensing retains its
-private mutation fence; it never authorizes an automatic inverse or replay.
+private mutation fence and fails; it never authorizes an automatic inverse or
+replay.
 Preexisting licensing and externally prepared apps are preserved. Each physical
 inspection reports macOS, iOS, iPadOS, visionOS and tvOS separately, with other
 platforms unexercised. Real-location and hardware checks remain pending until

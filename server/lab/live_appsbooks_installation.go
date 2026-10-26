@@ -47,14 +47,24 @@ func appsInstallationConfig(s *Session) (appsInstallation, error) {
 	return c, nil
 }
 
+// appsFresh reports whether an authenticated source time is neither in the
+// future nor older than the operator's freshness bound.
+func appsFresh(at, now time.Time, c appsInstallation) bool {
+	return !at.IsZero() && !at.After(now) && now.Sub(at) <= time.Duration(c.MaxAgeSeconds)*time.Second
+}
+
 // appsInstallationSource binds the privileged native response to the exact
 // operation dispatch. ACK, publication and stale historical processing fail.
+// MDM freshness is the observation time, which an installed-app query
+// refreshes. A DDM app observation keeps its original report time, and status
+// reports carry only changes, so DDM freshness is the latest authenticated
+// status report for the enrollment.
 func appsInstallationSource(op managedcontent.Operation, e managedcontent.Evidence, c appsInstallation, now time.Time) error {
 	d, o := e.Dispatch, e.Observation
 	if op.ID != c.Operation || op.Phase != managedcontent.Dispatched || op.SupersededBy != "" || d == nil || o == nil || op.Dispatch == nil ||
 		d.ID != op.Dispatch.ID || d.Digest != op.Dispatch.Digest || d.Method != op.Plan.Method || d.Content != op.Plan.Content || d.Enrollment != op.Plan.Target.Enrollment || d.Serial != op.Plan.Target.Serial || d.ClientUserID != op.Plan.Target.ClientUserID ||
 		o.ID != d.ID || o.Digest != d.Digest || o.Enrollment != d.Enrollment || o.Method != d.Method || o.ManagementMethod != d.Method || !o.Authoritative || !o.OwnsIdentity || !o.Found || !o.Terminal || !o.Installed || len(o.Raw) == 0 ||
-		o.ObservedAt.IsZero() || o.ObservedAt.After(now) || now.Sub(o.ObservedAt) > time.Duration(c.MaxAgeSeconds)*time.Second {
+		o.ObservedAt.IsZero() || o.ObservedAt.After(now) || d.Method == managedcontent.MDM && !appsFresh(o.ObservedAt, now, c) {
 		return fmt.Errorf("%w: fresh owned native installation provenance required", ErrBlocked)
 	}
 	if d.Method == managedcontent.MDM {
@@ -102,13 +112,20 @@ func appsInstallationSource(op managedcontent.Operation, e managedcontent.Eviden
 			declarations++
 		}
 		report := false
+		var latest time.Time
 		for _, record := range provenance.Reports {
 			if record.Seq > 0 && !record.ReceivedAt.Before(provenance.PublishedAt) && len(record.Raw) > 0 {
 				report = true
+				if record.ReceivedAt.After(latest) {
+					latest = record.ReceivedAt
+				}
 			}
 		}
 		if documents != 1 || declarations != 1 || !report {
 			return fmt.Errorf("%w: authenticated native declaration/report provenance required", ErrBlocked)
+		}
+		if !appsFresh(latest, now, c) {
+			return fmt.Errorf("%w: fresh authenticated declarative status report required", ErrBlocked)
 		}
 	} else {
 		return appsError(context.Background(), "installation method")
@@ -174,6 +191,9 @@ func liveAppsBooksInstallation(ctx context.Context, session *Session) (result er
 	var op managedcontent.Operation
 	var evidence managedcontent.Evidence
 	if err = appsRequest(ctx, s, "GET", base, nil, &op); err != nil {
+		return err
+	}
+	if err = appsSave(s, "operation-before.json", op); err != nil {
 		return err
 	}
 	if err = appsRequest(ctx, s, "GET", base+"/evidence", nil, &evidence); err != nil {
@@ -342,7 +362,7 @@ func liveAppsBooksInstallation(ctx context.Context, session *Session) (result er
 	if !independentInstalled && final.AppVersion != c.Version {
 		return fmt.Errorf("%w: current owned native app version changed or missing", ErrBlocked)
 	}
-	if err = appsSave(s, "operation.json", op); err != nil {
+	if err = appsSave(s, "operation-final.json", latest); err != nil {
 		return err
 	}
 	if err = appsSave(s, "native-evidence.json", evidence); err != nil {

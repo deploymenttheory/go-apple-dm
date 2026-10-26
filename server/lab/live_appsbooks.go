@@ -10,14 +10,13 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/appsbooks"
-	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/inventory"
 )
 
 // appsAcceptance is private operator intent. User licensing does not require a
@@ -52,25 +51,12 @@ func appsNow(s *Session) time.Time {
 
 // appsRead bounds private inputs and hides credential paths and contents.
 func appsRead(s *Session, name string) ([]byte, error) {
-	if s.Env == nil || s.Env.Workspace == nil {
-		return nil, fmt.Errorf("%w: private Apps and Books workspace required", ErrBlocked)
-	}
-	f, err := os.Open(s.Env.Workspace.path("appsbooks", name)) // #nosec G304 -- Fixed internal filenames under the operator's private workspace.
-	if errors.Is(err, os.ErrNotExist) {
-		return nil, fmt.Errorf("%w: dedicated location sToken or private acceptance scope missing", ErrBlocked)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("%w: private Apps and Books input unavailable", errOperation)
-	}
-	b, err := io.ReadAll(io.LimitReader(f, (1<<20)+1))
-	closeErr := f.Close()
-	if err != nil || closeErr != nil || len(b) > 1<<20 {
-		return nil, fmt.Errorf("%w: private Apps and Books input unreadable or oversized", errOperation)
-	}
-	return b, nil
+	return appsArea.read(s, name, "dedicated location sToken or private acceptance scope missing")
 }
 
-// appsConfig validates the explicit private location and bounded collection scope.
+// appsConfig validates the explicit private location and bounded collection
+// scope. A designated serial is canonicalized, as Apple and native device
+// reports spell it, before any comparison or Apple request.
 func appsConfig(s *Session) (appsAcceptance, error) {
 	var c appsAcceptance
 	b, err := appsRead(s, "acceptance.json")
@@ -82,15 +68,17 @@ func appsConfig(s *Session) (appsAcceptance, error) {
 	if d.Decode(&c) != nil || d.Decode(new(any)) != io.EOF || c.Location == "" || c.UID == "" || c.MDMID == "" || c.MaxPages < 1 || c.MaxPages > 1000 {
 		return c, fmt.Errorf("%w: explicit location identity and bounded page scope required", ErrBlocked)
 	}
+	if c.Serial != "" {
+		if c.Serial = inventory.CanonicalSerial(c.Serial); c.Serial == "" {
+			return c, fmt.Errorf("%w: designated serial is blank", ErrBlocked)
+		}
+	}
 	return c, nil
 }
 
 // appsError preserves cancellation while withholding private upstream errors.
 func appsError(ctx context.Context, phase string) error {
-	if ctx.Err() != nil {
-		return fmt.Errorf("%w: Apps and Books %s interrupted", ctx.Err(), phase)
-	}
-	return fmt.Errorf("%w: Apps and Books %s failed", errOperation, phase)
+	return appsArea.fail(ctx, phase)
 }
 
 // appsSDKError classifies missing Apple permissions without exposing raw responses.
@@ -102,27 +90,18 @@ func appsSDKError(ctx context.Context, phase string, cause error) error {
 	return appsError(ctx, phase)
 }
 
-// appsRequest uses the normal reference API and never exposes raw response errors.
-func appsRequest(ctx context.Context, s *Session, method, path string, in, out any) error {
-	var data []byte
-	var err error
-	if in != nil {
-		data, err = jsonv2.Marshal(in)
-		if err != nil {
-			return appsError(ctx, "request encoding")
-		}
-	}
-	b, status, err := HTTP(ctx, s.Env.Client, s.Env.URL, s.Env.Token, method, path, bytes.NewReader(data))
-	if err != nil {
-		if status == http.StatusNotFound || status == http.StatusForbidden || status == http.StatusUnauthorized {
-			return fmt.Errorf("%w: reference location or required Apps and Books permission unavailable", ErrBlocked)
-		}
-		return appsError(ctx, "reference request")
-	}
-	if out != nil && jsonv2.Unmarshal(b, out) != nil {
-		return appsError(ctx, "reference response")
+// appsRejected treats a missing reference location and a missing administration
+// grant as unmet prerequisites; both are listed module prerequisites.
+func appsRejected(status int) error {
+	if status == http.StatusNotFound || status == http.StatusForbidden || status == http.StatusUnauthorized {
+		return fmt.Errorf("%w: reference location or required Apps and Books permission unavailable", ErrBlocked)
 	}
 	return nil
+}
+
+// appsRequest uses the normal reference API and never exposes raw response errors.
+func appsRequest(ctx context.Context, s *Session, method, path string, in, out any) error {
+	return appsArea.request(ctx, s, "reference", appsRejected, method, path, in, out)
 }
 
 // appsBase addresses the selected opaque reference location identifier.
@@ -132,23 +111,7 @@ func appsBase(c appsAcceptance) string {
 
 // appsScope creates an exclusive private evidence directory, including on reruns.
 func appsScope(s *Session, phase string) (*Session, string, error) {
-	if s.Evidence == "" {
-		return nil, "", fmt.Errorf("%w: private Apps and Books evidence directory required", ErrBlocked)
-	}
-	parent, err := filepath.Abs(s.Evidence)
-	if err != nil {
-		return nil, "", appsError(context.Background(), "evidence path")
-	}
-	if err = os.MkdirAll(parent, 0o700); err != nil {
-		return nil, "", appsError(context.Background(), "evidence directory")
-	}
-	id := randomID()
-	copy := *s
-	copy.Evidence = filepath.Join(parent, "appsbooks-"+phase+"-"+id)
-	if err = privatefile.Mkdir(copy.Evidence); err != nil {
-		return nil, "", appsError(context.Background(), "exclusive evidence directory")
-	}
-	return &copy, id, nil
+	return appsArea.scope(s, "appsbooks-"+phase)
 }
 
 // appsSave creates exclusive private structured evidence without replacing prior files.

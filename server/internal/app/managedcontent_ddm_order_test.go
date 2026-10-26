@@ -108,3 +108,63 @@ func TestManagedContentDDMReportOrder(t *testing.T) {
 		})
 	}
 }
+
+// TestManagedContentDDMInheritedIdentifierStaleApp proves that a successor
+// reusing its predecessor's declaration identifier is not settled by an app
+// report sent before the device applied the successor's new server token.
+func TestManagedContentDDMInheritedIdentifierStaleApp(t *testing.T) {
+	a, token, _, _, device, plan := contentBoundaryBench(t)
+	if _, err := device.SyncDDM(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if err := device.PostDDMStatus(t.Context(), true); err != nil {
+		t.Fatal(err)
+	}
+	plan.Method = managedcontent.DDM
+	predecessor := contentBoundaryStep(t, a, token, "inherited-predecessor", plan)
+	if _, err := device.SyncDDM(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if err := device.PostDDMStatus(t.Context(), false); err != nil {
+		t.Fatal(err)
+	}
+	identifier := predecessor.Declarations[0].Identifier
+	// A changed license assignment is the successor change that alters the
+	// content-addressed token while the identifier is inherited.
+	raw := []byte(`{"Identifier":"` + identifier + `","Type":"com.apple.configuration.app.managed","Payload":{"AppStoreID":"1","InstallBehavior":{"Install":"Required","License":{"Assignment":"User"}}}}`)
+	published, changed, err := a.Engine.PutDeclaration(t.Context(), raw)
+	if err != nil || !changed || published.ServerToken == predecessor.Declarations[0].ServerToken {
+		t.Fatal("successor generation was not published", changed, err)
+	}
+	successor := predecessor
+	successor.Predecessor = &managedcontent.DispatchReference{ID: predecessor.ID, Digest: predecessor.Digest, Enrollment: predecessor.Enrollment}
+	successor.Declarations = append([]managedcontent.Document(nil), predecessor.Declarations...)
+	successor.Declarations[0].ServerToken = published.ServerToken
+	app := func(version string) map[string]any {
+		return map[string]any{"app.managed.list": []map[string]any{{"identifier": "com.example.selected", "declaration-identifier": identifier, "state": "managed", "version": version}}}
+	}
+	contentPostNativeStatus(t, device, app("1.0"), false)
+	if _, err := device.SyncDDM(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if err := device.PostDDMStatus(t.Context(), false); err != nil {
+		t.Fatal(err)
+	}
+	stale, err := (contentDelivery{a}).declarativeContentObservation(t.Context(), successor, published.UpdatedAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stale.Terminal || !stale.Installed || stale.AppVersion != "1.0" {
+		t.Fatal("pre-generation app report settled the inherited successor", stale.Terminal, stale.Installed, stale.AppVersion)
+	}
+	fresh := successor
+	fresh.Predecessor = nil
+	if out, err := (contentDelivery{a}).declarativeContentObservation(t.Context(), fresh, published.UpdatedAt); err != nil || !out.Terminal {
+		t.Fatal("fresh identifier lost order-independent settlement", out.Terminal, err)
+	}
+	contentPostNativeStatus(t, device, app("2.0"), false)
+	settled, err := (contentDelivery{a}).declarativeContentObservation(t.Context(), successor, published.UpdatedAt)
+	if err != nil || !settled.Terminal || !settled.Installed || settled.AppVersion != "2.0" {
+		t.Fatal("confirmed-generation app report did not settle the successor", settled.Terminal, settled.Installed, settled.AppVersion, err)
+	}
+}

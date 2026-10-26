@@ -166,10 +166,14 @@ The supervised content worker resumes local intent and accepted licensing polls;
 uncertain remote work stays fenced for explicit reconciliation. Native adapters
 atomically bind immutable dispatch identity/wire to the MDM queue or DDM
 publication, retaining receipts after queue removal. Historical install processing
-and current native installation/version remain distinct observations. A current
-owned DDM managed-app installation also establishes terminal processing regardless
-of whether its app report or valid declaration-generation confirmation arrives
-first; the app report retains its observation timestamp and native bytes. Newer
+and current native installation/version remain distinct observations. When an
+operation's declaration identifier is new, a current owned DDM managed-app
+installation also establishes terminal processing regardless of whether its app
+report or valid declaration-generation confirmation arrives first; the app report
+retains its observation timestamp and native bytes. A successor inherits its
+predecessor's identifier, so an app report sent before the device applies a new
+server token is indistinguishable from one sent after it. Successors therefore
+settle only through an owned app report received after generation confirmation. Newer
 authenticated `ManagedButUninstalled` app status invalidates an older installed
 query and version; a subsequent installed-app query can establish reinstallation.
 A privileged

@@ -2,7 +2,6 @@ package lab
 
 import (
 	"bytes"
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -33,6 +32,7 @@ type appsFixture struct {
 	pageFailure          bool
 	partial              bool
 	statusFailure        bool
+	statusDenied         bool
 	foreign              bool
 	duplicate            bool
 	callback             string
@@ -237,6 +237,10 @@ func (f *appsFixture) serve(t *testing.T, base string, w http.ResponseWriter, r 
 			http.Error(w, "private-token", 500)
 			return
 		}
+		if f.statusDenied {
+			http.Error(w, "private-token", http.StatusForbidden)
+			return
+		}
 		meta["eventStatus"], meta["eventType"], meta["numRequested"], meta["numCompleted"] = "COMPLETE", "ASSOCIATE", 1, 1
 		if !f.assigned {
 			meta["eventType"] = "DISASSOCIATE"
@@ -368,7 +372,7 @@ func TestAppsBooksPrivatePrerequisitesAndSafeErrors(t *testing.T) {
 
 // TestAppsBooksLicensingUncertaintyFenceAndReadback retains uncertain intents and requires exact assignment readback.
 func TestAppsBooksLicensingUncertaintyFenceAndReadback(t *testing.T) {
-	for _, name := range []string{"opt out", "ambiguous target", "unapproved app", "missing callback", "partial", "unknown outcome", "duplicate readback", "reference submission unavailable", "preexisting fence"} {
+	for _, name := range []string{"opt out", "ambiguous target", "unapproved app", "missing callback", "partial", "unknown outcome", "status permission revoked", "duplicate readback", "reference submission unavailable", "preexisting fence"} {
 		t.Run(name, func(t *testing.T) {
 			s, f := appsFixtureSession(t)
 			c, err := appsConfig(s)
@@ -388,6 +392,8 @@ func TestAppsBooksLicensingUncertaintyFenceAndReadback(t *testing.T) {
 				f.partial = true
 			case "unknown outcome":
 				f.statusFailure = true
+			case "status permission revoked":
+				f.statusDenied = true
 			case "duplicate readback":
 				f.duplicate = true
 			case "preexisting fence":
@@ -411,6 +417,9 @@ func TestAppsBooksLicensingUncertaintyFenceAndReadback(t *testing.T) {
 			if f.postCount() > 1 {
 				t.Fatal("negative run guessed cleanup inverse")
 			}
+			if name == "status permission revoked" && (f.postCount() != 1 || errors.Is(err, ErrBlocked) || !errors.Is(err, errOperation)) {
+				t.Fatal("permission loss after an Apple mutation was reported as an unmet prerequisite", err)
+			}
 			if name == "partial" || name == "unknown outcome" {
 				before, err := os.ReadFile(s.Env.Workspace.path("appsbooks", "pending-licensing.json"))
 				if err != nil {
@@ -426,15 +435,6 @@ func TestAppsBooksLicensingUncertaintyFenceAndReadback(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-// TestAppsBooksPauseCancellation stops the bounded polling pause on cancellation.
-func TestAppsBooksPauseCancellation(t *testing.T) {
-	ctx, cancel := context.WithCancel(t.Context())
-	cancel()
-	if !errors.Is(appsPause(ctx), context.Canceled) {
-		t.Fatal("wait ignored cancellation")
 	}
 }
 
