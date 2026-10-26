@@ -1,5 +1,89 @@
 # Changelog
 
+## [0.10.7](https://github.com/deploymenttheory/go-apple-dm/compare/server/v0.10.6...server/v0.10.7) (2026-10-26)
+
+
+### Features
+
+* **ade:** persist authentication evidence and enforce minimum OS ([96779be](https://github.com/deploymenttheory/go-apple-dm/commit/96779be93ba8a0753b4b3fd8177d6092a610fe9a))
+* **appsbooks:** add durable licensing jobs and notifications ([d72ec65](https://github.com/deploymenttheory/go-apple-dm/commit/d72ec65294357c5d8d2ba2033e25cfe3baeb8085))
+* **appsbooks:** compose durable licensing and content delivery ([d5b4363](https://github.com/deploymenttheory/go-apple-dm/commit/d5b436368c0f1c687442d3665b7e02152ff8d639))
+* **appsbooks:** integrate published licensing jobs and document durable workflows ([b390682](https://github.com/deploymenttheory/go-apple-dm/commit/b39068259729458bc5aa7ba42d07474541bd958d))
+* **appsbooks:** persist isolated location workflows ([f70762f](https://github.com/deploymenttheory/go-apple-dm/commit/f70762f92fc3257c5f8253d07a7c9d2ae7e2b6b0))
+* **axm:** extract source-preserving Apple collection ([#326](https://github.com/deploymenttheory/go-apple-dm/issues/326)) ([07b9821](https://github.com/deploymenttheory/go-apple-dm/commit/07b9821648c6c6abba0de0167586976a5aa18e18))
+* **correlation:** add explicit serial correlation and native-first resolution ([f3e4b87](https://github.com/deploymenttheory/go-apple-dm/commit/f3e4b871de32b60c13285484eaf462e282254ce2))
+* **correlation:** add explicit serial correlation and native-first resolution ([#329](https://github.com/deploymenttheory/go-apple-dm/issues/329)) ([f3e4b87](https://github.com/deploymenttheory/go-apple-dm/commit/f3e4b871de32b60c13285484eaf462e282254ce2))
+* **dep:** persist per-serial ADE profile choices ([4bb0664](https://github.com/deploymenttheory/go-apple-dm/commit/4bb0664a43d3f2c6eba5c947197e4e3f5dae52b7))
+* **dmctl:** add dep account commands for ADE server-token registration ([cc69119](https://github.com/deploymenttheory/go-apple-dm/commit/cc691195a43081c7b6c27e0a31dee1a21e30cd86))
+* **inventory:** expose explicit serial inspection and resolution ([655506b](https://github.com/deploymenttheory/go-apple-dm/commit/655506b55b0afa74e78a6a8df2514cec4c8fbc33))
+* **inventory:** persist source evidence with safe migration ([546826e](https://github.com/deploymenttheory/go-apple-dm/commit/546826e1fad3f9812fb805f5dd86bc4f2732724a))
+* **inventorystore:** migrate source evidence with retired writer fences ([#309](https://github.com/deploymenttheory/go-apple-dm/issues/309)) ([8401633](https://github.com/deploymenttheory/go-apple-dm/commit/840163310d08110feab368693b8a58c5f69c510f))
+* **lab:** add opt-in ADE API and native enrollment acceptance ([5b5c4d3](https://github.com/deploymenttheory/go-apple-dm/commit/5b5c4d34e177373df04d02f1d6fb3498924c54f1))
+* **lab:** add populated ABM acceptance and restoration checks ([#350](https://github.com/deploymenttheory/go-apple-dm/issues/350)) ([5ce263f](https://github.com/deploymenttheory/go-apple-dm/commit/5ce263fe8b13af28aa2de1efbd1f8fdb8ae0ca49))
+* **lab:** add scoped ADE service and hardware acceptance ([f2faea6](https://github.com/deploymenttheory/go-apple-dm/commit/f2faea6b14ac2ef45b5bbc3b0eb0f5e421d500d3))
+* **lab:** add scoped Apps and Books acceptance checks ([f5a4894](https://github.com/deploymenttheory/go-apple-dm/commit/f5a489499d8c2f58c98048bfc2017b6ca1dcbd8f))
+* **lab:** validate Apps and Books licensing and native installation evidence ([5e99e1e](https://github.com/deploymenttheory/go-apple-dm/commit/5e99e1e2874a0d0301497ae12ed52a5e7320b8f6))
+* **lab:** verify private declarative apps through supported native evidence ([4bb931b](https://github.com/deploymenttheory/go-apple-dm/commit/4bb931b467f295c75f85568983a248940ba4c848))
+* **server:** compose durable managed content operations ([a6e25db](https://github.com/deploymenttheory/go-apple-dm/commit/a6e25db4c567eb58b26fc9a92d806542cf92e1f1))
+* **server:** expose named Apple account operations ([7b919c3](https://github.com/deploymenttheory/go-apple-dm/commit/7b919c350e4936901d69cf6092de8b8dc53e3014))
+* **server:** expose named Apple connection operations ([9703167](https://github.com/deploymenttheory/go-apple-dm/commit/970316744175c9503d871bd5c6d89f43e79620e2))
+* **server:** expose persistent Apps and Books and managed-content operations ([e9589a7](https://github.com/deploymenttheory/go-apple-dm/commit/e9589a75ac6c308d619fd9c081dce61586d0eb8e))
+* **server:** expose serial-based source inventory inspection ([6e3bae2](https://github.com/deploymenttheory/go-apple-dm/commit/6e3bae278b044444501bbd9ba6c8477884fdf1a8))
+* **server:** inspect and refresh durable native content status ([33a1045](https://github.com/deploymenttheory/go-apple-dm/commit/33a1045a9d9abad32e5f8975a4abb5a6dc817b41))
+* **server:** persist account-scoped ABM assignment workflows ([c1c6e56](https://github.com/deploymenttheory/go-apple-dm/commit/c1c6e56574396049f651f51be264122136d11f7b))
+* **server:** persist account-scoped ABM assignment workflows ([c493d10](https://github.com/deploymenttheory/go-apple-dm/commit/c493d10921d0b6e220f4f65a7116f8092d8225fb))
+* **server:** persist ADE authentication evidence and enforce literal minimum OS ([1c933d3](https://github.com/deploymenttheory/go-apple-dm/commit/1c933d3a76566dbf429e2eaf8f8cd560c229f15d))
+* **server:** store ADE serial choices and share admission resolution ([d5413e0](https://github.com/deploymenttheory/go-apple-dm/commit/d5413e03e48acff9897da50aedebee0f27c12871))
+
+
+### Bug Fixes
+
+* address Apps and Books acceptance review findings ([6a13613](https://github.com/deploymenttheory/go-apple-dm/commit/6a13613dbd10b726f84a46676062896eabfd260f))
+* **axm:** resolve resource IDs and verify activity downloads ([bd812d5](https://github.com/deploymenttheory/go-apple-dm/commit/bd812d522307bc8f012a0f161f8ef465c4cf2a12)), closes [#311](https://github.com/deploymenttheory/go-apple-dm/issues/311)
+* **axm:** resolve resource IDs and verify activity downloads ([#325](https://github.com/deploymenttheory/go-apple-dm/issues/325)) ([cc7d5f6](https://github.com/deploymenttheory/go-apple-dm/commit/cc7d5f6af53a3cbc7411c38f7e1aa28d6c590fa3))
+* **ci:** require installed runtime in standalone verification ([104e24b](https://github.com/deploymenttheory/go-apple-dm/commit/104e24bb3316d71308f936649f20c1c0f38e6967))
+* **dep:** complete the live Apple Business server-token handshake ([#356](https://github.com/deploymenttheory/go-apple-dm/issues/356)) ([baa3ca8](https://github.com/deploymenttheory/go-apple-dm/commit/baa3ca852c47f394e64f1bd7c1f1f9ec1302a4bf))
+* **deps:** patch Go and HTTP security advisories ([b460fe0](https://github.com/deploymenttheory/go-apple-dm/commit/b460fe05f676f448403d41fb7fe4980283b66b9e))
+* **dmctl:** send escaped admin path segments once ([cc15e25](https://github.com/deploymenttheory/go-apple-dm/commit/cc15e25e1dcdf61f31f56a86c6e2350c897b5811))
+* **inventory:** bind identity facts to actual authenticated receipts ([4086762](https://github.com/deploymenttheory/go-apple-dm/commit/4086762d7afad573c0259e5b67d4e21b77d99c90))
+* **inventory:** preserve pending replacement handshakes ([0ded54b](https://github.com/deploymenttheory/go-apple-dm/commit/0ded54bb9a232821b15be8d7cf9f0a88b845575e))
+* **inventory:** preserve receipt provenance during backfill ([5245e58](https://github.com/deploymenttheory/go-apple-dm/commit/5245e583e39458e314e83ab53d20dddd4f61c8a9))
+* **lab:** preserve exact source and enforce native proof scope ([9d91ed0](https://github.com/deploymenttheory/go-apple-dm/commit/9d91ed006dd52da1f207f7fb380c33d812f09ff2))
+* **lab:** protect native evidence files and directories ([378940d](https://github.com/deploymenttheory/go-apple-dm/commit/378940da687dcfafb764b3a02593ebc254d840b2))
+* **recovery:** recognize replayable ADE choices schema ([52929ed](https://github.com/deploymenttheory/go-apple-dm/commit/52929edd0cd4c56c3a71d9ffc5b654f7bbfa102b))
+* **server:** fence assignment replacement and isolate attempt expiry ([72bac88](https://github.com/deploymenttheory/go-apple-dm/commit/72bac880a90768947c12744bfaa08b700bf5d6eb))
+* **server:** fence named account verification outcomes ([95e35f6](https://github.com/deploymenttheory/go-apple-dm/commit/95e35f66a8e5a82885e8cac5e593b45754836fc3))
+* **server:** fold owned native app status and drain worker pages ([dc3c3be](https://github.com/deploymenttheory/go-apple-dm/commit/dc3c3be91a1b0cede7928087b6e31bf85f8b0564))
+* **server:** honor activity deadlines and await DEP timers ([f5ba146](https://github.com/deploymenttheory/go-apple-dm/commit/f5ba146321ef3090f8a7f7eb3710eb90667e57af))
+* **server:** honor newer native managed-app removal evidence ([c8354b1](https://github.com/deploymenttheory/go-apple-dm/commit/c8354b1e6b98cb6c3d6d1a999bedc6d029d68dae))
+* **server:** pin reviewed AXM cancellation handling ([1cb40b0](https://github.com/deploymenttheory/go-apple-dm/commit/1cb40b00e91f6ce75f9c75ebb6d9b210fec24ba2))
+* **server:** pin reviewed token cancellation classification ([83e6a67](https://github.com/deploymenttheory/go-apple-dm/commit/83e6a67ae307226ad1c43c088e5126eff790ddfb))
+* **server:** preserve native content observations and audited ownership ([a49d025](https://github.com/deploymenttheory/go-apple-dm/commit/a49d0255b4c30bee84d5666031ebfbc9a589389b))
+* **server:** return forbidden for ADE policy denials ([63404e6](https://github.com/deploymenttheory/go-apple-dm/commit/63404e698ca323e84c8699e94ae83f89cdb28543))
+* **server:** scope sync diagnostics to account incarnation ([33df3b6](https://github.com/deploymenttheory/go-apple-dm/commit/33df3b6a7b4c2dc45c075f6eacedff440c62c1bc))
+* **server:** settle owned DDM installation across report order ([53215ec](https://github.com/deploymenttheory/go-apple-dm/commit/53215ec2e0d87504cc3e559460d3462f6c2462ac))
+* **server:** snapshot named Apple credentials atomically ([e92dd38](https://github.com/deploymenttheory/go-apple-dm/commit/e92dd388e37270887e247685b2c293c420ba78b4))
+* **server:** validate managed content lint and durable wake retry fixture ([4565073](https://github.com/deploymenttheory/go-apple-dm/commit/45650733f0203b0c37a9775b5940d2ef837b4b04))
+
+
+### Refactoring
+
+* **lab:** call DDM phase runner directly ([2f001b8](https://github.com/deploymenttheory/go-apple-dm/commit/2f001b847a91f78704ee6b69c9e71ba05420e9bd))
+* **lab:** share bounded Apps and Books licensing request ([aa57b32](https://github.com/deploymenttheory/go-apple-dm/commit/aa57b32d5243fe4624acf22bdfe4f8b88f6a6d8f))
+* **server:** share authenticated managed content identity checks ([344e609](https://github.com/deploymenttheory/go-apple-dm/commit/344e60987be465e1bacc4b32070414d0c2e31ad2))
+
+
+### Documentation
+
+* **ade:** document durable authentication and update enrollment diagrams ([f73604d](https://github.com/deploymenttheory/go-apple-dm/commit/f73604dd94a88d4dbdd0874bc75311f21d6a6e27))
+* **correlation:** document standalone enrichment composition ([#308](https://github.com/deploymenttheory/go-apple-dm/issues/308)) ([abdd4f5](https://github.com/deploymenttheory/go-apple-dm/commit/abdd4f54b855b58267d633ba1a997ac7bb1c7387))
+* **dep:** describe serial choices and assignment recovery ([afa3a1f](https://github.com/deploymenttheory/go-apple-dm/commit/afa3a1f3b37c2739e7668b5c97773a1046588e40))
+* describe native mutation failure test methods ([e8a03da](https://github.com/deploymenttheory/go-apple-dm/commit/e8a03da52b4d95dac17d1838046b23b2858108d1))
+* **inventory:** pin source evidence and SQL fence architecture ([5906a06](https://github.com/deploymenttheory/go-apple-dm/commit/5906a06587f1784ba876b7f3c39bb734f9783e38))
+* **lab:** document scoped ADE acceptance and recovery ([fc0d595](https://github.com/deploymenttheory/go-apple-dm/commit/fc0d595fe1271d4a85e4757e38f392d92ed43c16))
+* **managedcontent:** integrate reviewed SDK and delivery diagrams ([1059204](https://github.com/deploymenttheory/go-apple-dm/commit/1059204e541c441c7ce7a1068f49f16d64d5daec))
+* pin account-scoped ABM assignment diagram ([741676d](https://github.com/deploymenttheory/go-apple-dm/commit/741676d02dd55dc3651fa6cff5d5263fae2c77ba))
+
 ## [0.10.6](https://github.com/deploymenttheory/go-apple-dm/compare/server/v0.10.5...server/v0.10.6) (2026-09-29)
 
 
