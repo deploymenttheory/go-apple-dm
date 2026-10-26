@@ -3,6 +3,7 @@ package privatefile
 import (
 	"fmt"
 	"os"
+	"strings"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -48,18 +49,78 @@ func protectFile(file *os.File) error {
 // privateACL builds a protected Windows ACL granting full access to SYSTEM,
 // administrators, and the current process user.
 func privateACL() (*windows.ACL, error) {
+	descriptor, err := privateDescriptor()
+	if err != nil {
+		return nil, err
+	}
+	acl, _, err := descriptor.DACL()
+	return acl, wrap(err)
+}
+
+// privateDescriptor centralizes the protected user, SYSTEM and administrator ACL.
+func privateDescriptor() (*windows.SECURITY_DESCRIPTOR, error) {
 	user, err := windows.GetCurrentProcessToken().GetTokenUser()
 	if err != nil {
 		return nil, wrap(err)
 	}
-	descriptor, err := windows.SecurityDescriptorFromString(
+	return windows.SecurityDescriptorFromString(
 		"D:P(A;;FA;;;SY)(A;;FA;;;BA)(A;;FA;;;" + user.User.Sid.String() + ")",
 	)
+}
+
+// Mkdir exclusively creates a directory with its private DACL already applied.
+// No inherited grants are admitted, and existing paths and parents are unchanged.
+func Mkdir(path string) error {
+	normalized, err := windowsObjectPath(path)
 	if err != nil {
-		return nil, wrap(err)
+		return &os.PathError{Op: "mkdir", Path: path, Err: err}
 	}
-	acl, _, err := descriptor.DACL()
-	return acl, wrap(err)
+	name, err := windows.UTF16PtrFromString(normalized)
+	if err != nil {
+		return &os.PathError{Op: "mkdir", Path: path, Err: err}
+	}
+	descriptor, err := privateDescriptor()
+	if err != nil {
+		return &os.PathError{Op: "mkdir", Path: path, Err: err}
+	}
+	attributes := windows.SecurityAttributes{
+		Length:             uint32(unsafe.Sizeof(windows.SecurityAttributes{})),
+		SecurityDescriptor: descriptor,
+	}
+	if err := windows.CreateDirectory(name, &attributes); err != nil {
+		return &os.PathError{Op: "mkdir", Path: path, Err: err}
+	}
+	return nil
+}
+
+// windowsObjectPath resolves ordinary relative paths once before applying
+// extended-length local or UNC syntax. Already-qualified and device paths retain
+// their caller-selected namespace. Short paths retain ordinary Win32 processing.
+// Source: https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+func windowsObjectPath(path string) (string, error) {
+	if path == "" {
+		return path, nil // Preserve CreateDirectory's invalid empty-path result.
+	}
+	prefix := strings.ReplaceAll(path, "/", `\`)
+	if strings.HasPrefix(prefix, `\\?\`) || strings.HasPrefix(prefix, `\\.\`) || strings.HasPrefix(prefix, `\??\`) {
+		return path, nil
+	}
+	absolute, err := windows.FullPath(path)
+	if err != nil {
+		return "", err
+	}
+	encoded, err := windows.UTF16FromString(absolute)
+	if err != nil {
+		return "", err
+	}
+	// Win32 directory creation reserves twelve of MAX_PATH's 260 characters.
+	if len(encoded)-1 < 248 {
+		return absolute, nil
+	}
+	if strings.HasPrefix(absolute, `\\`) {
+		return `\\?\UNC\` + strings.TrimPrefix(absolute, `\\`), nil
+	}
+	return `\\?\` + absolute, nil
 }
 
 // Check examines the DACL; Go's synthesized Windows mode bits do not represent access.
@@ -92,8 +153,12 @@ func checkWindowsACL(path string) error {
 	if err != nil {
 		return wrap(err)
 	}
+	normalized, err := windowsObjectPath(path)
+	if err != nil {
+		return wrap(err)
+	}
 	descriptor, err := windows.GetNamedSecurityInfo(
-		path, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION,
+		normalized, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION,
 	)
 	if err != nil {
 		return wrap(err)

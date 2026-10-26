@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/appsbooks"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
 // appsAcceptance is private operator intent. User licensing does not require a
@@ -144,7 +145,7 @@ func appsScope(s *Session, phase string) (*Session, string, error) {
 	id := randomID()
 	copy := *s
 	copy.Evidence = filepath.Join(parent, "appsbooks-"+phase+"-"+id)
-	if err = os.Mkdir(copy.Evidence, 0o700); err != nil {
+	if err = privatefile.Mkdir(copy.Evidence); err != nil {
 		return nil, "", appsError(context.Background(), "exclusive evidence directory")
 	}
 	return &copy, id, nil

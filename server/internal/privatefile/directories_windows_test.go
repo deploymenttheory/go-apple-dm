@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"unsafe"
 
@@ -52,6 +53,22 @@ func TestDirectoryCheckWindowsGrants(t *testing.T) {
 			if err := CheckDirectory(path); !errors.Is(err, os.ErrPermission) {
 				t.Fatal("broad Windows directory grant accepted", err)
 			}
+			if err := Mkdir(path); !errors.Is(err, os.ErrExist) {
+				t.Fatal("directory collision was not refused", err)
+			}
+			if err := CheckDirectory(path); !errors.Is(err, os.ErrPermission) {
+				t.Fatal("collision repaired an existing broad directory", err)
+			}
+			created := filepath.Join(parent, "private-created")
+			if err := Mkdir(created); err != nil {
+				t.Fatal(err)
+			}
+			if err := CheckDirectory(created); err != nil {
+				t.Fatal("new directory retained broad parent grants", err)
+			}
+			if err := CheckDirectory(parent); !errors.Is(err, os.ErrPermission) {
+				t.Fatal("private child creation changed parent grants", err)
+			}
 			if err := Protect(path); err != nil {
 				t.Fatal(err)
 			}
@@ -89,4 +106,77 @@ func assertInheritedEveryoneGrant(t *testing.T, path string) {
 		}
 	}
 	t.Fatal("fixture child did not inherit an effective Everyone grant")
+}
+
+// TestWindowsObjectPaths checks namespace and absolute-path preparation without
+// accessing a UNC server or changing machine-wide long-path settings.
+func TestWindowsObjectPaths(t *testing.T) {
+	base := t.TempDir()
+	t.Chdir(base)
+	tail := strings.Repeat(`segment\`, 40) + "leaf"
+	unc := `\\server\share\` + tail
+	local := `C:\` + tail
+	for _, tc := range []struct{ name, input, want string }{
+		{"empty", "", ""},
+		{"relative", `child`, filepath.Join(base, "child")},
+		{"relative-dot", `parent\..\child`, filepath.Join(base, "child")},
+		{"absolute", `C:/parent/./child`, `C:\parent\child`},
+		{"rooted", `\child`, filepath.VolumeName(base) + `\child`},
+		{"drive-relative", filepath.VolumeName(base) + `child`, filepath.Join(base, "child")},
+		{"short-unc", `\\server\share\parent\..\child`, `\\server\share\child`},
+		{"long-local", local, `\\?\` + local},
+		{"long-unc", unc, `\\?\UNC\server\share\` + tail},
+		{"long-relative", tail, `\\?\` + filepath.Join(base, tail)},
+		{"qualified-local", `\\?\C:\parent\..\child`, `\\?\C:\parent\..\child`},
+		{"qualified-unc", `\\?\UNC\server\share\child`, `\\?\UNC\server\share\child`},
+		{"device", `\\.\pipe\example`, `\\.\pipe\example`},
+		{"nt-namespace", `\??\C:\child`, `\??\C:\child`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := windowsObjectPath(tc.input)
+			if err != nil || got != tc.want {
+				t.Fatalf("path normalization %q: got %q want %q: %v", tc.input, got, tc.want, err)
+			}
+		})
+	}
+	if _, err := windowsObjectPath("invalid\x00path"); err == nil {
+		t.Fatal("embedded NUL accepted")
+	}
+}
+
+// TestPrivateLongWindowsDirectory creates actual local directories beyond
+// MAX_PATH and checks their native DACLs without changing the parent descriptor.
+func TestPrivateLongWindowsDirectory(t *testing.T) {
+	parent := t.TempDir()
+	before, err := windows.GetNamedSecurityInfo(parent, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := parent
+	for range 9 {
+		path = filepath.Join(path, strings.Repeat("long-segment-", 4))
+		if err := Mkdir(path); err != nil {
+			t.Fatal(err)
+		}
+		if err := CheckDirectory(path); err != nil {
+			t.Fatal("long directory is not private", err)
+		}
+	}
+	encoded, err := windows.UTF16FromString(path)
+	if err != nil || len(encoded)-1 <= 260 {
+		t.Fatal("fixture did not exceed MAX_PATH", err)
+	}
+	if err := Mkdir(path); !errors.Is(err, os.ErrExist) {
+		t.Fatal("long-path collision was not refused", err)
+	}
+	after, err := windows.GetNamedSecurityInfo(parent, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION)
+	if err != nil || before.String() != after.String() {
+		t.Fatal("private long-directory creation changed parent access", err)
+	}
+	for _, invalid := range []string{"", "invalid\x00path"} {
+		var pe *os.PathError
+		if err := Mkdir(invalid); !errors.As(err, &pe) || pe.Op != "mkdir" || pe.Path != invalid {
+			t.Fatal("directory failure lost its original path contract", err)
+		}
+	}
 }

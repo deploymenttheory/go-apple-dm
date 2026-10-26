@@ -22,6 +22,10 @@ func Check(path string) error {
 	return nil
 }
 
+// Mkdir exclusively creates a directory with owner-only access. It does not
+// change an existing path or create missing parents.
+func Mkdir(path string) error { return wrap(os.Mkdir(path, 0o700)) }
+
 // CheckDirectory refuses nondirectories and access granted to other users.
 func CheckDirectory(path string) error {
 	info, err := os.Lstat(path)

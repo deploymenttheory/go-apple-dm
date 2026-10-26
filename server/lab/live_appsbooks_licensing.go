@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/appsbooks"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
 const (
@@ -151,7 +152,7 @@ func (a *appsAccess) assignments(ctx context.Context, s *Session) ([]appsbooks.A
 func appsPhase(s *Session, name string) (*Session, error) {
 	copy := *s
 	copy.Evidence = filepath.Join(s.Evidence, name)
-	if err := os.Mkdir(copy.Evidence, 0o700); err != nil {
+	if err := privatefile.Mkdir(copy.Evidence); err != nil {
 		return nil, appsError(context.Background(), "phase evidence")
 	}
 	return &copy, nil

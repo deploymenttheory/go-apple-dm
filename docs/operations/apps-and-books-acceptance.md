@@ -27,8 +27,16 @@ the [reference workflow](apps-and-books.md) before acceptance. Ownership and an
 authenticated callback must already be explicitly configured before LIVE-014.
 LIVE-013 does not perform that setup.
 
-Keep the workspace outside this repository, with private directories mode 0700
-and files mode 0600:
+Keep the workspace outside this repository. On Unix, private directories use
+mode 0700 and files use mode 0600. On Windows, native protected access-control
+lists grant access only to the current user, LocalSystem and administrators;
+Go's synthesized mode bits do not establish privacy. The lab applies native
+protection before writing identity, evidence and pending-fence files. Each new
+Apps and Books scope or phase directory is created with private access, without
+changing existing parent directories. Keep operator-supplied workspace and input
+paths private using the platform's native permissions.
+
+Unix workspace preparation:
 
 ```sh
 PRIVATE_LAB=/absolute/path/to/private/live-workspace

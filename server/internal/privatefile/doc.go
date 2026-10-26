@@ -1,4 +1,4 @@
-// Package privatefile creates and checks files containing local credentials.
+// Package privatefile creates and checks private credential and evidence paths.
 //
 // # Design
 //
@@ -6,6 +6,12 @@
 // files receive owner-only permissions. On Windows, an explicit access control
 // list grants access to the current user, LocalSystem and administrators.
 // Protection is applied to the opened file even if its path is renamed.
+//
+// Mkdir exclusively creates a directory with owner-only mode 0700 on Unix and
+// the same protected Windows ACL at creation. It creates no parents and changes
+// no existing path. Existing parents retain their current access policy.
+// Windows directory creation supports long local and UNC paths without changing
+// system settings; already-qualified and device paths retain their namespace.
 //
 // Check rejects nonregular files and permissions that grant access to other
 // users. CheckDirectory applies the same permission contract to directories and
