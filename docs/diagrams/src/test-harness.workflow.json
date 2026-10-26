@@ -122,7 +122,7 @@
       "lane": "live",
       "col": 2,
       "label": "Live scoped evidence",
-      "sublabel": "API outcomes \u00b7 device receipts",
+      "sublabel": "API outcomes · device receipts",
       "type": "backend",
       "width": 245,
       "height": 68,
@@ -210,32 +210,32 @@
       "dot": "transport",
       "title": "Public documentation",
       "items": [
-        "Go command: Test packages \u2014 https://pkg.go.dev/cmd/go#hdr-Test_packages",
-        "Testing procedures \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/docs/testing/lab.md",
-        "CI responsibilities \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/docs/testing/ci.md"
+        "Go command: Test packages — https://pkg.go.dev/cmd/go#hdr-Test_packages",
+        "Testing procedures — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/docs/testing/lab.md",
+        "CI responsibilities — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/docs/testing/ci.md"
       ]
     },
     {
       "title": "Implementation references",
       "dot": "artifact",
       "items": [
-        "fuzz: Fuzz smoke tests \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/Makefile",
-        "unit: Unit and contract tests \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/devicemanagement/storage/storagetest/suite.go",
-        "coverage: Coverage policy \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/Makefile",
-        "catalogue: Shared scenario catalogue \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/catalog.go",
-        "e2e: Embedded runtime \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/environment.go",
-        "process: Process acceptance \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/environment.go"
+        "fuzz: Fuzz smoke tests — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/Makefile",
+        "unit: Unit and contract tests — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/devicemanagement/storage/storagetest/suite.go",
+        "coverage: Coverage policy — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/Makefile",
+        "catalogue: Shared scenario catalogue — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/catalog.go",
+        "e2e: Embedded runtime — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/environment.go",
+        "process: Process acceptance — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/environment.go"
       ]
     },
     {
       "title": "Implementation references (continued)",
       "dot": "artifact",
       "items": [
-        "acceptance: Process evidence \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/catalog.go",
-        "live: Real device or app \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/live.go",
-        "liveproof: Live evidence \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/live.go",
-        "Coverage exemptions \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/scripts/coverage-exempt.txt",
-        "ABM acceptance and restoration \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/live_abm.go"
+        "acceptance: Process evidence — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/catalog.go",
+        "live: Real device or app — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/live.go",
+        "liveproof: Live evidence — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/live.go",
+        "Coverage exemptions — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/scripts/coverage-exempt.txt",
+        "ABM acceptance and restoration — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/live_abm.go"
       ]
     },
     {
@@ -243,11 +243,28 @@
       "items": [
         "LIVE-010 uses its separate server token for authentication, account binding and full/delta enumeration. LIVE-011 additionally requires explicit mutation opt-in and a quiescent dedicated account; uncertainty retains private original state and blocks inverse replay.",
         "LIVE-012 requires actual stored ADE issuance, authenticated check-ins and a fresh native serial/OS/build/supervision acknowledgment. DDM exchange and cleanup have independent results; all other device platforms remain unexercised.",
-        "ADE API checks \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/server/lab/live_ade_collection.go",
-        "ADE assignment recovery \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/server/lab/live_ade_assignment.go",
-        "Native ADE acceptance \u2014 https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/server/lab/live_ade_hardware.go"
+        "ADE API checks — https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/server/lab/live_ade_collection.go",
+        "ADE assignment recovery — https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/server/lab/live_ade_assignment.go",
+        "Native ADE acceptance — https://github.com/deploymenttheory/go-apple-dm/blob/2f001b847a91f78704ee6b69c9e71ba05420e9bd/server/lab/live_ade_hardware.go"
       ],
       "dot": "neutral"
+    },
+    {
+      "title": "Apps and Books evidence boundaries",
+      "dot": "neutral",
+      "items": [
+        "LIVE-013 supplies read-only dedicated-location configuration and complete native API collections. LIVE-014 independently proves direct SDK and reference-server licensing, authenticated callbacks, exact target assignment readback and original-state cleanup. LIVE-015 independently inspects current native installation and expected version.",
+        "Licensing changes require an explicitly attested free, revocable app and one designated target in a quiescent location. An immutable private original snapshot and exclusive pending fence survive uncertain submissions, partial completion, failed callbacks/readback and incomplete cleanup. Preserve preexisting licenses; never infer an inverse from unknown work.",
+        "Installation evidence requires the selected authenticated native principal, fresh supported identity/OS/build observations and exact owned app/bundle/version facts. Feature support is evaluated per platform, OS and channel; enrollment or licensing alone cannot establish installation. Current owned DDM installation establishes terminal processing independently of app/declaration-confirmation report order, preserving the app timestamp and native reports.",
+        "On macOS User Enrollment, forbidden InstalledApplicationList queries remain unexercised. Current owned DDM app.managed.list and the exact actual version before and after identity queries provide the privacy-preserving path; user licensing requires no hardware serial.",
+        "Each physical report records macOS, iOS, iPadOS, visionOS and tvOS separately. Missing live credentials, permissions, callbacks, designated content or devices remain unmet prerequisites. Simulated TLS/runtime/SQL and signed-simulator results do not prove live Apple or physical-device acceptance.",
+        "Files containing identity, evidence or pending-fence data receive private access before writes. Unix files use mode 0600 and directories 0700; Windows uses protected native ACLs for the current user, LocalSystem and administrators. Fresh scope and phase directories preserve existing parent permissions.",
+        "Apps and Books runbook — https://github.com/deploymenttheory/go-apple-dm/blob/53215ec2e0d87504cc3e559460d3462f6c2462ac/docs/operations/apps-and-books-acceptance.md",
+        "Licensing orchestration — https://github.com/deploymenttheory/go-apple-dm/blob/53215ec2e0d87504cc3e559460d3462f6c2462ac/server/lab/live_appsbooks_licensing.go",
+        "Native evidence gate — https://github.com/deploymenttheory/go-apple-dm/blob/53215ec2e0d87504cc3e559460d3462f6c2462ac/server/lab/live_appsbooks_installation.go",
+        "Native evidence privacy — https://github.com/deploymenttheory/go-apple-dm/blob/53215ec2e0d87504cc3e559460d3462f6c2462ac/server/internal/privatefile/doc.go",
+        "Owned DDM installation and terminal processing — https://github.com/deploymenttheory/go-apple-dm/blob/53215ec2e0d87504cc3e559460d3462f6c2462ac/server/internal/app/managedcontent_ddm.go"
+      ]
     }
   ]
 }

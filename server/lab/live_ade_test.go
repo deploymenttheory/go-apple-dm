@@ -274,6 +274,7 @@ func adeNativeDevice(t *testing.T, s *Session, c *adeAcceptance) *simulator.Devi
 // TestADENativeHardwareThroughRuntime requires genuine retained provenance and
 // actual authenticated command/DDM exchanges; simulated proof stays labeled.
 func TestADENativeHardwareThroughRuntime(t *testing.T) {
+	t.Parallel()
 	s, c := adeRuntime(t)
 	d := adeNativeDevice(t, s, &c)
 	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)

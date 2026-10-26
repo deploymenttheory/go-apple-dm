@@ -1,0 +1,556 @@
+package lab
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/appsbooks"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/applications/managedcontent"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/app"
+	"github.com/deploymenttheory/go-apple-dm/server/lab/target"
+)
+
+// TestAppsBooksIncompletePagesAndPrerequisitesNeverMutate rejects incomplete collection and missing licensing prerequisites before writes.
+func TestAppsBooksIncompletePagesAndPrerequisitesNeverMutate(t *testing.T) {
+	for _, name := range []string{"missing version", "version drift", "skipped page", "page bound", "unowned location", "no callback", "Book", "not revocable", "missing asset", "stock unknown", "inactive user", "foreign assignment", "revised location", "selected user foreign", "selected user missing", "selected user unreadable", "user collection unreadable", "asset collection unreadable", "selected asset unreadable"} {
+		t.Run(name, func(t *testing.T) {
+			s, f := appsFixtureSession(t)
+			f.rewrite = func(r *http.Request, m map[string]any) {
+				switch name {
+				case "selected user foreign", "selected user missing", "selected user unreadable", "user collection unreadable":
+					if r.URL.Path == "/users" {
+						selected := r.URL.Query().Get("clientUserId") != ""
+						if name == "user collection unreadable" && !selected {
+							m["users"] = "invalid"
+						}
+						if selected {
+							switch name {
+							case "selected user foreign":
+								m["users"] = []any{map[string]any{"clientUserId": "foreign", "status": "Associated"}}
+							case "selected user missing":
+								m["users"] = []any{}
+							case "selected user unreadable":
+								m["users"] = "invalid"
+							}
+						}
+					}
+				case "asset collection unreadable", "selected asset unreadable":
+					if r.URL.Path == "/assets" && (name == "selected asset unreadable") == (r.URL.Query().Get("adamId") != "") {
+						m["assets"] = "invalid"
+					}
+				case "missing version":
+					if r.URL.Path == "/assets" {
+						delete(m, "versionId")
+					}
+				case "version drift":
+					if r.URL.Path == "/assets" {
+						m["totalPages"] = 2
+						if r.URL.Query().Get("pageIndex") == "0" {
+							m["nextPageIndex"] = 1
+						} else {
+							m["versionId"] = "changed"
+						}
+					}
+				case "skipped page":
+					if r.URL.Path == "/assets" {
+						m["nextPageIndex"] = 2
+					}
+				case "page bound":
+					if r.URL.Path == "/assets" {
+						index, ok := m["currentPageIndex"].(int)
+						if !ok {
+							t.Fatal("fixture page index is not numeric")
+						}
+						m["nextPageIndex"] = index + 1
+						m["totalPages"] = 100
+					}
+				case "unowned location":
+					if r.URL.Path == "/config" {
+						delete(m, "mdmInfo")
+					}
+				case "no callback":
+					if r.URL.Path == "/config" {
+						delete(m, "notificationAuthToken")
+					}
+				case "Book", "not revocable", "stock unknown":
+					if r.URL.Path == "/assets" {
+						_, asset := appsFixtureAsset(t, m)
+						if name == "Book" {
+							asset["productType"] = "Book"
+						}
+						if name == "not revocable" {
+							asset["revocable"] = false
+						}
+						if name == "stock unknown" {
+							delete(asset, "availableCount")
+						}
+					}
+				case "missing asset":
+					if r.URL.Path == "/assets" {
+						m["assets"] = []any{}
+					}
+				case "inactive user":
+					if r.URL.Path == "/users" {
+						m["users"] = []any{map[string]string{"clientUserId": "private-user", "status": "Registered"}}
+					}
+				case "foreign assignment":
+					if r.URL.Path == "/assignments" {
+						m["assignments"] = []appsbooks.Assignment{{Asset: appsbooks.Asset{AdamID: "wrong", PricingParam: "STDQ"}, ClientUserID: "private-user"}}
+					}
+				}
+			}
+			if name == "revised location" {
+				f.location.ConfigurationPending = true
+			}
+			if err := liveAppsBooksLicensing(t.Context(), s); err == nil {
+				t.Fatal("unmet prerequisite or incoherent collection passed")
+			}
+			if f.postCount() != 0 {
+				t.Fatal("unmet prerequisite changed licensing")
+			}
+		})
+	}
+}
+
+// TestAppsBooksImmutableFenceAndEvidenceOwnership preserves pending ownership and exclusive evidence across reruns.
+func TestAppsBooksImmutableFenceAndEvidenceOwnership(t *testing.T) {
+	s, _ := appsFixtureSession(t)
+	p, id, err := appsScope(s, "fixture")
+	if err != nil {
+		t.Fatal(err)
+	}
+	intent := appsLicensingIntent{RunID: id, EvidenceDirectory: p.Evidence}
+	if err = appsFence(p, intent); err != nil {
+		t.Fatal(err)
+	}
+	if err = appsFence(p, intent); !errors.Is(err, ErrBlocked) {
+		t.Fatal("duplicate fence was overwritten", err)
+	}
+	if err = appsRelease(p, "foreign"); err == nil {
+		t.Fatal("foreign run released fence")
+	}
+	copy := *p
+	copy.Evidence = t.TempDir()
+	if err = appsRelease(&copy, id); err == nil {
+		t.Fatal("changed evidence directory released fence")
+	}
+	if err = appsSave(p, "immutable.json", map[string]string{"state": "original"}); err != nil {
+		t.Fatal(err)
+	}
+	if err = appsSave(p, "immutable.json", map[string]string{"state": "changed"}); err == nil {
+		t.Fatal("rerun overwrote source evidence")
+	}
+	if err = appsRelease(p, id); err != nil {
+		t.Fatal(err)
+	}
+	if err = appsCheckFence(p); err != nil {
+		t.Fatal(err)
+	}
+	if err = appsRelease(p, id); err == nil {
+		t.Fatal("missing fence released")
+	}
+	if err = appsSave(p, "bad.json", make(chan int)); err == nil {
+		t.Fatal("invalid evidence encoded")
+	}
+	if _, err = appsPhase(p, "fixture"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = appsPhase(p, "fixture"); err == nil {
+		t.Fatal("phase truncated original evidence")
+	}
+	writeFixture(t, p.Env.Workspace.path("appsbooks", "pending-licensing.json"), []byte("{"))
+	if err = appsRelease(p, id); err == nil {
+		t.Fatal("corrupt fence released")
+	}
+}
+
+// appsSourceFixture constructs source-provenance inputs for negative installation checks.
+func appsSourceFixture(t *testing.T, method managedcontent.Method) (managedcontent.Operation, managedcontent.Evidence, appsInstallation) {
+	t.Helper()
+	c := appsInstallation{Operation: "prepared", BundleID: "com.example.app", Version: "1", Platform: "macOS", Identity: "scep", MaxAgeSeconds: 60}
+	selection := managedcontent.Selection{Enrollment: mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "device"}, Serial: "serial"}
+	content := managedcontent.Content{Asset: appsbooks.Asset{AdamID: "123", PricingParam: "STDQ"}, Kind: "App"}
+	d := managedcontent.Dispatch{ID: "dispatch", Digest: "digest", Enrollment: selection.Enrollment, Serial: selection.Serial, Method: method, Content: content, MDM: []byte("wire"), Declarations: []managedcontent.Document{{Identifier: "declaration", ServerToken: "token", Raw: []byte(`{}`)}}}
+	o := managedcontent.Observation{ID: d.ID, Digest: d.Digest, Enrollment: d.Enrollment, Method: method, ManagementMethod: method, Found: true, Authoritative: true, OwnsIdentity: true, Installed: true, Terminal: true, CommandAcknowledged: true, DeclarationPublished: true, ObservedAt: time.Now()}
+	var err error
+	if method == managedcontent.MDM {
+		var install, report []byte
+		install, err = plist.Marshal(&commands.InstallApplicationResponse{Identifier: new(c.BundleID), State: new("Managed")})
+		if err != nil {
+			t.Fatal(err)
+		}
+		report, err = plist.Marshal(&commands.InstalledApplicationListResponse{InstalledApplicationList: []commands.InstalledApplicationListResponseInstalledApplicationList{{Identifier: new(c.BundleID), Version: new(c.Version), Installing: new(false)}}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		o.Raw, err = json.Marshal(map[string]any{"bundleId": c.BundleID, "installationResponse": install, "currentReport": report})
+	} else {
+		o.AppVersion = c.Version
+		o.Raw, err = json.Marshal(app.ManagedContentDDMEvidence{BundleID: c.BundleID, DeclarationIdentifier: "declaration", ServerToken: "token", PublishedAt: o.ObservedAt.Add(-time.Second), Declarations: []ddm.DeclarationStatus{{Identifier: "declaration", ServerToken: "token", Active: true, Valid: "valid", LastSeen: o.ObservedAt}}, Reports: []ddm.StatusReportRecord{{Seq: 1, ReceivedAt: o.ObservedAt, Raw: []byte(`{"StatusItems":{"app.managed.list":[{"identifier":"com.example.app","declaration-identifier":"declaration","state":"managed","version":"1"}]}}`)}}})
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	op := managedcontent.Operation{ID: c.Operation, Phase: managedcontent.Dispatched, Plan: managedcontent.Plan{Content: content, Target: selection, Method: method}, Dispatch: &managedcontent.DispatchStatus{ID: d.ID, Digest: d.Digest, Method: method}}
+	return op, managedcontent.Evidence{Dispatch: &d, Observation: &o}, c
+}
+
+// TestAppsBooksInstallationRequiresNativeProvenance rejects incomplete, stale, foreign and contradictory native installation sources.
+func TestAppsBooksInstallationRequiresNativeProvenance(t *testing.T) {
+	for _, method := range []managedcontent.Method{managedcontent.MDM, managedcontent.DDM} {
+		t.Run(string(method), func(t *testing.T) {
+			op, e, c := appsSourceFixture(t, method)
+			if err := appsInstallationSource(op, e, c, time.Now()); err != nil {
+				t.Fatal(err)
+			}
+			for _, name := range []string{"no dispatch", "no observation", "wrong operation", "not dispatched", "digest mismatch", "wrong enrollment", "not authoritative", "not owned", "not found", "not terminal", "not installed", "no raw", "future", "stale", "ack or publication only", "foreign bundle", "negative state"} {
+				t.Run(name, func(t *testing.T) {
+					op, e, c := appsSourceFixture(t, method)
+					switch name {
+					case "no dispatch":
+						e.Dispatch = nil
+					case "no observation":
+						e.Observation = nil
+					case "wrong operation":
+						op.ID = "other"
+					case "not dispatched":
+						op.Phase = managedcontent.Prepared
+					case "digest mismatch":
+						e.Observation.Digest = "foreign"
+					case "wrong enrollment":
+						e.Observation.Enrollment.ID = "foreign"
+					case "not authoritative":
+						e.Observation.Authoritative = false
+					case "not owned":
+						e.Observation.OwnsIdentity = false
+					case "not found":
+						e.Observation.Found = false
+					case "not terminal":
+						e.Observation.Terminal = false
+					case "not installed":
+						e.Observation.Installed = false
+					case "no raw":
+						e.Observation.Raw = nil
+					case "future":
+						e.Observation.ObservedAt = time.Now().Add(time.Hour)
+					case "stale":
+						e.Observation.ObservedAt = time.Now().Add(-time.Hour)
+					case "ack or publication only":
+						e.Observation.Terminal = false
+						e.Observation.Installed = false
+					case "foreign bundle":
+						c.BundleID = "other"
+					case "negative state":
+						e.Observation.Raw = []byte(`{"identifier":"com.example.app","state":"managed-but-uninstalled"}`)
+					}
+					if err := appsInstallationSource(op, e, c, time.Now()); err == nil {
+						t.Fatal("unproven installation passed")
+					}
+				})
+			}
+		})
+	}
+}
+
+// TestAppsBooksMissingPhysicalPrerequisitesRemainUnexercised keeps missing physical proof from becoming installation acceptance.
+func TestAppsBooksMissingPhysicalPrerequisitesRemainUnexercised(t *testing.T) {
+	s, _ := appsFixtureSession(t)
+	if err := liveAppsBooksInstallation(t.Context(), s); !errors.Is(err, ErrBlocked) {
+		t.Fatal(err)
+	}
+	adeTestJSON(t, s.Env.Workspace.path("appsbooks", "installation.json"), appsInstallation{Operation: "prepared", BundleID: "bundle", Version: "1", Platform: "unsupported", Identity: "scep", MaxAgeSeconds: 60})
+	if err := liveAppsBooksInstallation(t.Context(), s); !errors.Is(err, ErrBlocked) {
+		t.Fatal("unsupported operator platform claimed installation", err)
+	}
+	adeTestJSON(t, s.Env.Workspace.path("appsbooks", "installation.json"), appsInstallation{Operation: "prepared", BundleID: "bundle", Version: "1", Platform: "macOS", Identity: "scep", MaxAgeSeconds: 60})
+	if err := liveAppsBooksInstallation(t.Context(), s); !errors.Is(err, ErrBlocked) {
+		t.Fatal(err)
+	}
+	s.Info = target.Info{Kind: target.KindDevice, UDID: "device"}
+	if err := liveAppsBooksInstallation(t.Context(), s); err == nil {
+		t.Fatal("no native operation passed")
+	}
+	for _, b := range adeTestEvidence(t, s, "appsbooks-installation-*/assertions.json") {
+		if strings.Contains(string(b), `"macOS":"passed"`) || !strings.Contains(string(b), `"cleanup":"not_applicable_no_app_or_license_changes"`) {
+			t.Fatal("missing hardware invented restoration or installation", string(b))
+		}
+	}
+	writeFixture(t, s.Env.Workspace.path("appsbooks", "installation.json"), []byte(`{"operation":"x","extra":true}`))
+	if _, err := appsInstallationConfig(s); !errors.Is(err, ErrBlocked) {
+		t.Fatal(err)
+	}
+}
+
+// TestAppsBooksBoundsContextAndSafeRequestEncoding bounds private inputs and preserves safe cancellation and encoding failures.
+func TestAppsBooksBoundsContextAndSafeRequestEncoding(t *testing.T) {
+	s, _ := appsFixtureSession(t)
+	if err := appsRequest(t.Context(), s, "GET", "/unused", make(chan int), nil); err == nil {
+		t.Fatal("invalid request encoded")
+	}
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if !errors.Is(appsError(ctx, "fixture"), context.Canceled) {
+		t.Fatal("context not observable")
+	}
+	if err := appsSave(s, "bad.json", json.RawMessage("{")); err == nil {
+		t.Fatal("bad JSON persisted")
+	}
+	if err := os.WriteFile(s.Env.Workspace.path("appsbooks", "stoken"), make([]byte, (1<<20)+1), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := appsRead(s, "stoken"); err == nil {
+		t.Fatal("oversized input accepted")
+	}
+	if err := os.Remove(s.Env.Workspace.path("appsbooks", "stoken")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(s.Env.Workspace.path("appsbooks", "stoken"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := appsRead(s, "stoken"); err == nil {
+		t.Fatal("directory treated as token")
+	}
+	if err := os.WriteFile(filepath.Join(s.Evidence, "blocked"), []byte("file"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	copy := *s
+	copy.Evidence = filepath.Join(s.Evidence, "blocked", "child")
+	if _, _, err := appsScope(&copy, "fixture"); err == nil {
+		t.Fatal("unwritable evidence accepted")
+	}
+}
+
+// TestAppsBooksProtocolTimeoutAndExplicitOverride checks module budget defaults and caller overrides.
+func TestAppsBooksProtocolTimeoutAndExplicitOverride(t *testing.T) {
+	for _, tc := range []struct {
+		name                   string
+		module, override, want time.Duration
+	}{
+		{"default", 0, 0, DefaultModuleTimeout}, {"protocol", 8 * time.Minute, 0, 8 * time.Minute}, {"override", 8 * time.Minute, time.Minute, time.Minute},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			m := Module{ID: "timeout", Modes: []string{"simulated"}, Timeout: tc.module, Steps: []Step{{Name: "observe deadline", Run: func(ctx context.Context, _ *Session) error {
+				deadline, ok := ctx.Deadline()
+				left := time.Until(deadline)
+				if !ok || left > tc.want || left < tc.want-time.Second {
+					t.Errorf("deadline remaining %s, want %s", left, tc.want)
+				}
+				return nil
+			}}}}
+			r := Run(t.Context(), &Environment{Instance: Instance{Mode: "simulated"}}, target.Simulator{}, m, Options{Timeout: tc.override})
+			if r.Status != StatusPassed {
+				t.Fatal(r.Detail)
+			}
+		})
+	}
+}
+
+// TestAppsBooksDirectNotificationFallbackAndPendingSpacing proves first-status fallback and subsequent pending polling intervals.
+func TestAppsBooksDirectNotificationFallbackAndPendingSpacing(t *testing.T) {
+	s, f := appsFixtureSession(t)
+	p, _, err := appsScope(s, "SDK-policy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := appsOpen(t.Context(), p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	clock, ok := f.config.Clock.(*appsTestClock)
+	if !ok {
+		t.Fatal("fixture clock unavailable")
+	}
+	started := clock.Now()
+	var first time.Time
+	calls := 0
+	f.mu.Lock()
+	f.rewrite = func(r *http.Request, m map[string]any) {
+		if r.URL.Path != "/status" {
+			return
+		}
+		calls++
+		now := clock.Now()
+		if calls == 1 {
+			first = now
+			if now.Sub(started) < appsNotificationFallback {
+				t.Error("direct status query preceded notification fallback")
+			}
+			m["eventStatus"] = "PENDING"
+		} else if now.Sub(first) < appsPendingInterval {
+			t.Error("PENDING status query preceded minimum interval")
+		}
+	}
+	f.mu.Unlock()
+	if err = a.sdkJob(appsLongContext(t), p, "policy", true); err != nil {
+		t.Fatal(err)
+	}
+	f.mu.Lock()
+	observedCalls := calls
+	f.mu.Unlock()
+	if observedCalls != 2 || len(adeTestEvidence(t, p, "policy-observation-*.json")) != 2 {
+		t.Fatal("pending and terminal source observations were not independently retained")
+	}
+}
+
+// TestAppsBooksSDKPermissionPrerequisiteAndWaitCancellation classifies unavailable permissions and respects cancelled waits.
+func TestAppsBooksSDKPermissionPrerequisiteAndWaitCancellation(t *testing.T) {
+	for _, status := range []int{http.StatusUnauthorized, http.StatusForbidden} {
+		if err := appsSDKError(t.Context(), "probe", &appsbooks.APIError{HTTPStatus: status}); !errors.Is(err, ErrBlocked) {
+			t.Fatal("missing permission was not an unmet prerequisite", err)
+		}
+	}
+	if err := appsSDKError(t.Context(), "probe", appsbooks.ErrExpired); !errors.Is(err, ErrBlocked) {
+		t.Fatal("expired token was not an unmet prerequisite", err)
+	}
+	if err := appsSDKError(t.Context(), "probe", &appsbooks.APIError{HTTPStatus: 500}); errors.Is(err, ErrBlocked) {
+		t.Fatal("service failure misreported as prerequisite")
+	}
+	s, _ := appsFixtureSession(t)
+	s.Env.appsBooksFixture = nil
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if !errors.Is(appsWait(ctx, s, time.Hour), context.Canceled) {
+		t.Fatal("real notification wait ignored cancellation")
+	}
+	if err := appsWait(t.Context(), s, 0); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestAppsBooksRawEvidencePreservesExactSourceBytes retains upstream bytes without normalizing native evidence.
+func TestAppsBooksRawEvidencePreservesExactSourceBytes(t *testing.T) {
+	s, _ := appsFixtureSession(t)
+	raw := []byte("{\n  \"future\":null, \"escaped\":\"\\u0061\", \"large\":9007199254740993, \"false\":false\n}\n")
+	if err := appsSaveRaw(s, "native.json", raw); err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(filepath.Join(s.Evidence, "native.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(raw, b) {
+		t.Fatal("private source evidence was reserialized")
+	}
+	if err = appsSaveRaw(s, "native.json", []byte(`{"replacement":true}`)); err == nil {
+		t.Fatal("source evidence was overwritten")
+	}
+	if err = appsSaveRaw(s, "invalid.json", []byte("{")); err == nil {
+		t.Fatal("invalid source accepted")
+	}
+}
+
+// TestAppsBooksNativeSourceContradictions rejects malformed provenance even when
+// the SDK summary still carries a positive historical observation.
+func TestAppsBooksNativeSourceContradictions(t *testing.T) {
+	for _, name := range []string{"wrong expected version", "empty installed report", "duplicate installed report", "missing declaration", "inactive declaration", "foreign token", "missing native reports", "missing immutable document", "unsupported method", "superseded operation"} {
+		t.Run(name, func(t *testing.T) {
+			method := managedcontent.DDM
+			if strings.Contains(name, "installed report") || name == "wrong expected version" {
+				method = managedcontent.MDM
+			}
+			op, e, c := appsSourceFixture(t, method)
+			switch name {
+			case "wrong expected version":
+				c.Version = "unobserved-version"
+			case "empty installed report", "duplicate installed report":
+				var source struct {
+					BundleID             string `json:"bundleId"`
+					InstallationResponse []byte `json:"installationResponse"`
+					CurrentReport        []byte `json:"currentReport"`
+				}
+				if err := json.Unmarshal(e.Observation.Raw, &source); err != nil {
+					t.Fatal(err)
+				}
+				report := commands.InstalledApplicationListResponse{}
+				if name == "duplicate installed report" {
+					report.InstalledApplicationList = []commands.InstalledApplicationListResponseInstalledApplicationList{{Identifier: new(c.BundleID), Version: new(c.Version), Installing: new(false)}, {Identifier: new(c.BundleID), Version: new(c.Version), Installing: new(false)}}
+				}
+				raw, err := plist.Marshal(&report)
+				if err != nil {
+					t.Fatal(err)
+				}
+				source.CurrentReport = raw
+				e.Observation.Raw, err = json.Marshal(source)
+				if err != nil {
+					t.Fatal(err)
+				}
+			case "unsupported method":
+				op.Plan.Method, e.Dispatch.Method, e.Observation.Method, e.Observation.ManagementMethod = "unsupported", "unsupported", "unsupported", "unsupported"
+			case "superseded operation":
+				op.SupersededBy = "replacement"
+			default:
+				var source app.ManagedContentDDMEvidence
+				if err := json.Unmarshal(e.Observation.Raw, &source); err != nil {
+					t.Fatal(err)
+				}
+				switch name {
+				case "missing declaration":
+					source.Declarations = nil
+				case "inactive declaration":
+					source.Declarations[0].Active = false
+				case "foreign token":
+					source.Declarations[0].ServerToken = "foreign"
+				case "missing native reports":
+					source.Reports = nil
+				case "missing immutable document":
+					e.Dispatch.Declarations = nil
+				}
+				raw, err := json.Marshal(source)
+				if err != nil {
+					t.Fatal(err)
+				}
+				e.Observation.Raw = raw
+			}
+			if err := appsInstallationSource(op, e, c, time.Now()); err == nil {
+				t.Fatal("contradictory native provenance passed")
+			}
+		})
+	}
+}
+
+// TestAppsBooksCollectionRequiresDurablePrivateEvidence rejects storage failures
+// without claiming API acceptance or modifying Apple configuration or licensing.
+func TestAppsBooksCollectionRequiresDurablePrivateEvidence(t *testing.T) {
+	for _, name := range []string{"configuration.json", "service.json", "reference-location.json", "assets-page-0000.json", "users-page-0000.json", "assignments-page-0000.json"} {
+		t.Run(name, func(t *testing.T) {
+			s, f := appsFixtureSession(t)
+			injected := false
+			f.rewrite = func(r *http.Request, _ map[string]any) {
+				if injected || r.URL.Path != "/config" {
+					return
+				}
+				paths, err := filepath.Glob(filepath.Join(s.Evidence, "appsbooks-api-*"))
+				if err != nil || len(paths) != 1 {
+					t.Fatal("missing exclusive evidence scope", err)
+				}
+				if err := os.Mkdir(filepath.Join(paths[0], name), 0o700); err != nil {
+					t.Fatal(err)
+				}
+				injected = true
+			}
+			if err := liveAppsBooksCollection(t.Context(), s); err == nil || !injected {
+				t.Fatal("missing evidence storage passed API acceptance", err)
+			}
+			if f.postCount() != 0 {
+				t.Fatal("read-only evidence failure mutated licensing")
+			}
+			for _, raw := range adeTestEvidence(t, s, "appsbooks-api-*/assertions.json") {
+				if !bytes.Contains(raw, []byte(`"api":"unexercised"`)) {
+					t.Fatal("failure report claimed completed API proof")
+				}
+			}
+		})
+	}
+}

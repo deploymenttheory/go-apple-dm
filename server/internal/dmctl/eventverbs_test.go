@@ -8,10 +8,11 @@ import (
 	"testing"
 
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl/adminclient"
 )
 
 // TestPersistentEventCommands checks persistent-event commands and rejects unavailable or
-// unconfigured servers.
+// unavailable servers without depending on the built-in default listener.
 func TestPersistentEventCommands(t *testing.T) {
 	f := &fakeAdmin{}
 	status := 200
@@ -63,7 +64,10 @@ func TestPersistentEventCommands(t *testing.T) {
 		t.Fatal("unavailable server reported success")
 	}
 	delete(env, "DMCTL_SERVER")
-	if _, _, err := run(t, env, "events", "list"); err == nil {
-		t.Fatal("unconfigured server accepted")
+	if _, _, err := run(t, env, "-server", srv.URL, "events", "list"); !errors.Is(err, adminclient.ErrStatus) {
+		t.Fatal("unavailable explicitly selected server", err)
+	}
+	if got := f.last(); got.method != http.MethodGet || got.path != "/admin/v1/events" {
+		t.Fatal("unavailable server request", got)
 	}
 }

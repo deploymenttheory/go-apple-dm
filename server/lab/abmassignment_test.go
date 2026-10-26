@@ -11,6 +11,7 @@ import (
 
 // TestABMAssignmentScenario requires persisted acceptance, terminal logs and observed convergence.
 func TestABMAssignmentScenario(t *testing.T) {
+	t.Parallel()
 	w := testWorkspace(t, "simulated")
 	selected, e := Select("E2E-021")
 	if e != nil {

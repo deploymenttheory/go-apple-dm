@@ -17,18 +17,19 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/pki/ca"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
 var errLab = errors.New("lab")
 
-// privateFile creates a new identity file with mode 0600, refusing to overwrite an
-// existing path.
+// privateFile exclusively creates an identity or evidence file and applies native
+// private access before writing data.
 func privateFile(path string, data []byte) error {
-	f, err := os.OpenFile(
+	f, err := privatefile.OpenFile(
 		path,
 		os.O_WRONLY|os.O_CREATE|os.O_EXCL,
 		0o600,
-	) // #nosec G304 -- explicit local lab path
+	)
 	if err != nil {
 		return fmt.Errorf("%w: create %s: %w", errLab, path, err)
 	}

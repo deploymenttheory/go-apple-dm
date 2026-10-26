@@ -393,3 +393,16 @@ read grant, then verifies fresh native identity/serial/platform/OS/build and typ
 supervision observations. Applicable DDM exchange and cleanup are separate
 phases. [The operating guide](operations/ade-acceptance.md) defines each platform's
 executable procedure and unexercised scope.
+
+Apps and Books acceptance similarly separates read-only location collection
+(LIVE-013), explicitly designated free-app licensing through the SDK and
+reference job/callback composition (LIVE-014), and independent current native
+installation/version inspection (LIVE-015). The location's dedicated sToken is
+separate from ABM OAuth and ADE credentials. An immutable private fence binds
+original target assignments, location revision and the absolute evidence
+directory before Apple writes. Partial or unknown outcomes cannot trigger inverse
+replay or bypass recovery on a rerun. Cleanup removes only an app license absent
+from the original snapshot. Native installation inspection changes no apps or
+licenses; it preserves preexisting content and records all other platforms as
+unexercised. [The acceptance guide](operations/apps-and-books-acceptance.md)
+defines these separate procedures and pending real-location/device scope.

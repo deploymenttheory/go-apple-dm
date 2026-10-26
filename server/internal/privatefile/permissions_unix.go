@@ -22,5 +22,21 @@ func Check(path string) error {
 	return nil
 }
 
+// Mkdir exclusively creates a directory with owner-only access. It does not
+// change an existing path or create missing parents.
+func Mkdir(path string) error { return wrap(os.Mkdir(path, 0o700)) }
+
+// CheckDirectory refuses nondirectories and access granted to other users.
+func CheckDirectory(path string) error {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return wrap(err)
+	}
+	if !info.IsDir() || info.Mode().Perm()&0o077 != 0 {
+		return wrap(os.ErrPermission)
+	}
+	return nil
+}
+
 // SyncDirectory flushes directory metadata after exclusive publication.
 func SyncDirectory(file *os.File) error { return wrap(file.Sync()) }

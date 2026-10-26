@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/appsbooks"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm/axmtest"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/dep/deptest"
@@ -50,6 +51,9 @@ type Instance struct {
 
 // Environment owns fixture services and the ordinary server runtime(s).
 type Environment struct {
+	// appsBooksFixture is set only by same-package controlled HTTP tests.
+	// Live workspace configuration cannot redirect the credentialed SDK client.
+	appsBooksFixture *appsbooks.Config
 	// InstallingUserID is the local user's GeneratedUID, supplied by the operator
 	// for live enrollment acceptance. It is not inferred from an arbitrary child.
 	InstallingUserID string
@@ -100,6 +104,15 @@ func address(ctx context.Context, listen string, retain bool) (string, net.Liste
 // Start uses the same configuration and runtime in both adapters. A nonempty
 // binary launches dmserver; an empty binary embeds runtime.ServeListener for E2E tests.
 func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*Environment, error) {
+	return start(ctx, w, binary, out, nil)
+}
+
+// start permits same-package tests to use a private SDK transport in the real
+// embedded runtime. Public/process startup cannot select this fixture override.
+func start(ctx context.Context, w *Workspace, binary string, out io.Writer, fixture *appsbooks.Config) (*Environment, error) {
+	if fixture != nil && binary != "" {
+		return nil, fmt.Errorf("%w: private Apps and Books fixture requires embedded runtime", errOperation)
+	}
 	client, err := w.client()
 	if err != nil {
 		return nil, wrapError(err)
@@ -110,6 +123,7 @@ func Start(ctx context.Context, w *Workspace, binary string, out io.Writer) (*En
 	}
 	ctx, cancel := context.WithCancel(ctx)
 	e := &Environment{
+		appsBooksFixture: fixture,
 		Instance: Instance{
 			Binary: binary,
 			Mode:   w.Mode,
@@ -281,6 +295,10 @@ func (e *Environment) launch(
 			return wrapError(err)
 		}
 		cfg.Logger = slog.New(slog.NewJSONHandler(out, nil))
+		if e.appsBooksFixture != nil {
+			fixture := e.appsBooksFixture
+			cfg.AppsBooks = app.AppsBooksConfig{MDMID: fixture.MDMID, BaseURL: fixture.BaseURL, HTTPClient: fixture.HTTPClient}
+		}
 		cfg.Secrets = secrets.Static{
 			"bench": []byte(env["DM_STORAGE_KEY_BENCH"]),
 			"lab":   []byte(env["DM_STORAGE_KEY_LAB"]),

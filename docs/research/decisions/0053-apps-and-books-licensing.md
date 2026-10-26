@@ -166,7 +166,10 @@ The supervised content worker resumes local intent and accepted licensing polls;
 uncertain remote work stays fenced for explicit reconciliation. Native adapters
 atomically bind immutable dispatch identity/wire to the MDM queue or DDM
 publication, retaining receipts after queue removal. Historical install processing
-and current native installation/version remain distinct observations. Newer
+and current native installation/version remain distinct observations. A current
+owned DDM managed-app installation also establishes terminal processing regardless
+of whether its app report or valid declaration-generation confirmation arrives
+first; the app report retains its observation timestamp and native bytes. Newer
 authenticated `ManagedButUninstalled` app status invalidates an older installed
 query and version; a subsequent installed-app query can establish reinstallation.
 A privileged
@@ -213,6 +216,16 @@ authentication, retries and cancellation. The compiled example waits for success
 licensing before constructing an installation command. See the
 [operations guide](../../operations/apps-and-books.md) for polling intervals and
 the [live checks](../../testing/lab.md#apple-management-feature-checks).
+
+The maintained [acceptance procedures](../../operations/apps-and-books-acceptance.md)
+separate read-only dedicated-token location evidence, explicitly selected free
+revocable app licensing through SDK/reference jobs and authenticated callbacks,
+and independent current native installation/version observations. Per-target
+assignment readback and original-state cleanup are required independently of
+aggregate completion. Uncertain runs retain a private immutable fence and their
+absolute evidence locator. Preexisting assignments and externally prepared apps
+are preserved. Fixture results remain simulated, with real-location and each
+physical platform pending until designated resources are exercised.
 
 ## References
 

@@ -50,6 +50,7 @@ var themeStages = map[string]int{
 	"ddm":             StageConfiguration,
 	"blueprints":      StageConfiguration,
 	"apppush":         StageEvents,
+	"appsbooks":       StageApps,
 	"replacement":     StageReplacement,
 	"returntoservice": StageDestructive,
 }
@@ -75,6 +76,8 @@ const TagDestructive = "destructive"
 //
 // Catalogue JSON uses the administration PascalCase convention.
 type Module struct {
+	// Timeout is a protocol-specific default. An explicit Options.Timeout wins.
+	Timeout       time.Duration            `json:"-"`
 	Settings      map[string]string        `json:"Settings,omitempty"`
 	ID            string                   `json:"ID"`
 	Name          string                   `json:"Name"`
@@ -133,7 +136,8 @@ type StepResult struct {
 	Duration time.Duration `json:"Duration"`
 }
 
-// Options configure a run. Timeout bounds each module; zero selects DefaultModuleTimeout.
+// Options configure a run. Timeout bounds each module; zero selects the module's
+// protocol-specific timeout or DefaultModuleTimeout.
 // Evidence is the run directory; each module writes beneath Evidence/evidence/<ID>.
 type Options struct {
 	Adapter, Revision string
@@ -192,7 +196,10 @@ func Run(ctx context.Context, e *Environment, t target.Target, m Module, opts Op
 	}
 	timeout := opts.Timeout
 	if timeout <= 0 {
-		timeout = DefaultModuleTimeout
+		timeout = m.Timeout
+		if timeout <= 0 {
+			timeout = DefaultModuleTimeout
+		}
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
