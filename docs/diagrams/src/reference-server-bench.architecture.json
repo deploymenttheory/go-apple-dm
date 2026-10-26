@@ -15,7 +15,7 @@
     ],
     "repository": {
       "url": "https://github.com/deploymenttheory/go-apple-dm",
-      "revision": "cd88737d7e29cfc0ec59b2f6b4c7205864c90dbf"
+      "revision": "378940da687dcfafb764b3a02593ebc254d840b2"
     }
   },
   "components": [
@@ -426,10 +426,12 @@
         "Before the first licensing POST, a private immutable original-state intent and exclusive pending fence bind the exact evidence directory. Unknown, partial or contradictory outcomes retain that fence; reruns cannot bypass it or guess an inverse. Bounded cleanup removes only a license absent originally, confirms restoration and preserves preexisting assignments.",
         "LIVE-015 inspects an externally prepared operation through privileged native observations and signed identity/OS/build queries. Exact owned app, bundle and version facts are required before and after queries; the module neither installs nor removes apps and makes no restoration claim.",
         "Generated feature support governs each platform, OS and channel. macOS User Enrollment uses fresh owned DDM app.managed.list/version proof without InstalledApplicationList or hardware serial. macOS, iOS, iPadOS, visionOS and tvOS retain separate results; unsupported or missing prerequisites stay unexercised or blocked. Fixture and API success do not establish live device installation.",
-        "Location reads — https://github.com/deploymenttheory/go-apple-dm/blob/cd88737d7e29cfc0ec59b2f6b4c7205864c90dbf/server/lab/live_appsbooks.go",
-        "Licensing and cleanup fence — https://github.com/deploymenttheory/go-apple-dm/blob/cd88737d7e29cfc0ec59b2f6b4c7205864c90dbf/server/lab/live_appsbooks_licensing.go",
-        "Native installation inspection — https://github.com/deploymenttheory/go-apple-dm/blob/cd88737d7e29cfc0ec59b2f6b4c7205864c90dbf/server/lab/live_appsbooks_installation.go",
-        "Private acceptance prerequisites — https://github.com/deploymenttheory/go-apple-dm/blob/cd88737d7e29cfc0ec59b2f6b4c7205864c90dbf/docs/operations/apps-and-books-acceptance.md"
+        "Files containing identity, evidence or pending-fence data receive private access before writes. Unix files use mode 0600 and directories 0700; Windows uses protected native ACLs for the current user, LocalSystem and administrators. Fresh scope and phase directories preserve existing parent permissions.",
+        "Location reads — https://github.com/deploymenttheory/go-apple-dm/blob/378940da687dcfafb764b3a02593ebc254d840b2/server/lab/live_appsbooks.go",
+        "Licensing and cleanup fence — https://github.com/deploymenttheory/go-apple-dm/blob/378940da687dcfafb764b3a02593ebc254d840b2/server/lab/live_appsbooks_licensing.go",
+        "Native installation inspection — https://github.com/deploymenttheory/go-apple-dm/blob/378940da687dcfafb764b3a02593ebc254d840b2/server/lab/live_appsbooks_installation.go",
+        "Private acceptance prerequisites — https://github.com/deploymenttheory/go-apple-dm/blob/378940da687dcfafb764b3a02593ebc254d840b2/docs/operations/apps-and-books-acceptance.md",
+        "Native evidence privacy — https://github.com/deploymenttheory/go-apple-dm/blob/378940da687dcfafb764b3a02593ebc254d840b2/server/internal/privatefile/doc.go"
       ]
     },
     {
