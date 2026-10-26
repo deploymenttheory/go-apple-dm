@@ -190,7 +190,10 @@ rejects stale/foreign processing, observes authenticated identity continuity and
 fresh OS/build, and requires positive current installed/managed app state with
 the exact expected bundle and version. Generated feature support governs each
 platform, OS and channel. ACK and declaration publication alone are insufficient.
-DDM uses current managed-app status joined to its declaration identity; installed
+DDM uses current managed-app status joined to its declaration identity. Once the
+current owned generation and managed-app installation are proven, their report
+arrival order does not affect terminal processing; the app observation timestamp
+and native report bytes remain unchanged. Installed
 queries do not set the MDM-only managed-app filter. Current native enrollment
 metadata selects generated-supported identity query keys; the ensuing signed
 protocol replies still supply the required fresh OS/build/platform facts. On

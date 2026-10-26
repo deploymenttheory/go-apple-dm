@@ -166,7 +166,10 @@ The supervised content worker resumes local intent and accepted licensing polls;
 uncertain remote work stays fenced for explicit reconciliation. Native adapters
 atomically bind immutable dispatch identity/wire to the MDM queue or DDM
 publication, retaining receipts after queue removal. Historical install processing
-and current native installation/version remain distinct observations. Newer
+and current native installation/version remain distinct observations. A current
+owned DDM managed-app installation also establishes terminal processing regardless
+of whether its app report or valid declaration-generation confirmation arrives
+first; the app report retains its observation timestamp and native bytes. Newer
 authenticated `ManagedButUninstalled` app status invalidates an older installed
 query and version; a subsequent installed-app query can establish reinstallation.
 A privileged
