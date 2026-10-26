@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/deploymenttheory/go-apple-dm/server/internal/dmctl"
+	"github.com/deploymenttheory/go-apple-dm/server/internal/privatefile"
 )
 
 const depTestCertificate = "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n"
@@ -262,8 +263,8 @@ func TestDEPKeypairOutput(t *testing.T) {
 	if err != nil || string(got) != depTestCertificate {
 		t.Fatalf("certificate file = %q, %v", got, err)
 	}
-	if info, err := os.Stat(cert); err != nil || info.Mode().Perm()&0o077 != 0 {
-		t.Fatalf("certificate file mode = %v, %v", info.Mode(), err)
+	if err := privatefile.Check(cert); err != nil {
+		t.Fatalf("certificate file is not private: %v", err)
 	}
 	if _, _, err := run(t, env, "dep", "accounts", "keypair", "abm-lab", "-out", cert); err == nil {
 		t.Fatal("an existing certificate file was replaced")
