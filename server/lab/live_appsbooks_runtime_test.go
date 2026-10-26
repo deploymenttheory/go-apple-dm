@@ -315,12 +315,14 @@ func TestAppsBooksPreparedJobHasNoAutomaticSubmission(t *testing.T) {
 
 // TestAppsBooksNativeInstallationThroughReferenceRuntime proves installation through signed native exchanges and real SQL composition.
 func TestAppsBooksNativeInstallationThroughReferenceRuntime(t *testing.T) {
+	t.Parallel()
 	appsNativeInstallationRuntime(t, managedcontent.MDM, false)
 }
 
 // TestAppsBooksDeclarativeInstallationThroughReferenceRuntime proves current owned
 // declarative app status independently of publication and historical processing.
 func TestAppsBooksDeclarativeInstallationThroughReferenceRuntime(t *testing.T) {
+	t.Parallel()
 	appsNativeInstallationRuntime(t, managedcontent.DDM, false)
 }
 
@@ -947,6 +949,7 @@ func TestAppsBooksRuntimeExchangeFailuresPreserveRecovery(t *testing.T) {
 // TestAppsBooksNativeInspectionFailures preserves denial and freshness boundaries
 // through the actual reference runtime after genuine native installation.
 func TestAppsBooksNativeInspectionFailures(t *testing.T) {
+	t.Parallel()
 	appsNativeInstallationRuntime(t, managedcontent.MDM, true)
 }
 
