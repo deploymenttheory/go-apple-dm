@@ -24,7 +24,8 @@ import (
 
 // TestE2E_DEPAssign covers E2E-011: token PKI exchange, fetch/sync with cursor
 // expiry, state-driven profile assignment, verified ADE MachineInfo with DEP
-// enrichment, and the software-update response.
+// enrichment, the software-update response, and the same registration through
+// dmctl and the reference server's admin API.
 func TestE2E_DEPAssign(t *testing.T) {
 	ctx := context.Background()
 	const account = "abm"
@@ -265,4 +266,6 @@ func TestE2E_DEPAssign(t *testing.T) {
 	if enrolled, err := f.store.Get(ctx, mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: old.UDID}); err != nil || !enrolled.Enabled {
 		t.Fatalf("current device without update capability enrollment = %+v %v", enrolled, err)
 	}
+
+	t.Run("RegistersThroughDmctl", depRegistrationCLI)
 }

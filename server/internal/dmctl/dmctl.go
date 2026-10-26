@@ -187,6 +187,7 @@ func commands() map[string]command {
 	cmds := []command{
 		{"devices", "query agentless device records and collect native inventory", runDevices},
 		{"axm", "manage Apple Business and School Manager data sources", runAxM},
+		{"dep", "register this server with Apple and manage enrollment accounts", runDEP},
 		{"inventory", "manage inventory jobs, schedules, reports, exports and diagnostics", runInventory},
 		{"roles", "manage administrative roles", runRoles},
 		{"auth", "inspect authorization, bootstrap, and recover root credentials", runAuth},

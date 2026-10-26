@@ -59,10 +59,16 @@ func (p *countingPusher) Push(
 // captured audit and push state.
 func newAdminHarness(t *testing.T) *adminHarness {
 	t.Helper()
+	return newAdminHarnessWith(t, nil)
+}
+
+// newAdminHarnessWith also lets a scenario connect fake external services.
+func newAdminHarnessWith(t *testing.T, configure func(*app.Config)) *adminHarness {
+	t.Helper()
 	dsn := filepath.Join(t.TempDir(), "admin.db")
 	trail := auditinmem.New()
 	pusher := &countingPusher{}
-	a, err := app.Build(context.Background(), app.Config{
+	cfg := app.Config{
 		Storage: "sqlite", DSN: dsn,
 		StorageKeys:    []string{"e2e"},
 		Secrets:        secrets.Static{"e2e": []byte("0123456789abcdef0123456789abcdef")},
@@ -70,7 +76,11 @@ func newAdminHarness(t *testing.T) *adminHarness {
 		Logger:         slog.New(slog.NewTextHandler(io.Discard, nil)),
 		Push:           app.PushConfig{Pusher: pusher, Coalesce: -1},
 		Sinks:          app.SinkConfig{AuditStore: trail},
-	})
+	}
+	if configure != nil {
+		configure(&cfg)
+	}
+	a, err := app.Build(context.Background(), cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
