@@ -20,8 +20,11 @@ import (
 
 // Defaults for ClientConfig.
 const (
-	DefaultBaseURL               = "https://mdmenrollment.apple.com"
-	DefaultUserAgent             = "go-apple-dm-dep/1"
+	DefaultBaseURL = "https://mdmenrollment.apple.com"
+	// DefaultUserAgent avoids naming Go: once it accepts the OAuth
+	// credentials, Apple's service rejects go-apple-dm-dep/1 with
+	// USER_AGENT_INVALID.
+	DefaultUserAgent             = "apple-dm-dep/1"
 	DefaultExpiryWarning         = 30 * 24 * time.Hour
 	DefaultExpiryWarningInterval = time.Hour
 	DefaultMaxBodyBytes          = 8 << 20
@@ -45,7 +48,7 @@ type ClientConfig struct {
 	// BaseURL defaults to Apple's production service.
 	BaseURL string
 	// UserAgent is sent on every request; Apple rejects a missing one with
-	// USER_AGENT_MISSING.
+	// USER_AGENT_MISSING and an unacceptable one with USER_AGENT_INVALID.
 	UserAgent string
 	Clock     clock.Clock
 	// Nonce supplies the OAuth nonce; the default is 16 random bytes.

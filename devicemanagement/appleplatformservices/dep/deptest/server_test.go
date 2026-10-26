@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -149,7 +148,7 @@ func TestServer(t *testing.T) {
 		found := false
 		for _, r := range srv.Requests() {
 			if r.Path == dep.PathAccount &&
-				strings.Contains(r.Header.Get("User-Agent"), "go-apple-dm") {
+				r.Header.Get("User-Agent") == dep.DefaultUserAgent {
 				found = true
 			}
 		}

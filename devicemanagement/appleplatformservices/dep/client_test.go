@@ -477,6 +477,10 @@ func TestTransport(t *testing.T) {
 		if ua := f2.srv.Requests()[0].Header.Get("User-Agent"); ua != dep.DefaultUserAgent {
 			t.Fatalf("default agent %q", ua)
 		}
+		// Apple's service answered go-apple-dm-dep/1 with USER_AGENT_INVALID.
+		if strings.Contains(strings.ToLower(dep.DefaultUserAgent), "go") {
+			t.Fatalf("default agent %q names Go", dep.DefaultUserAgent)
+		}
 	})
 
 	t.Run("ClientFailures", func(t *testing.T) {
