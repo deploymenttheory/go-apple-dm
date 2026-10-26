@@ -110,9 +110,15 @@ func (v contentDelivery) declarativeContentObservation(ctx context.Context, d ma
 	if currentToken && fold.generation && fold.baseline && fold.current != nil && !fold.observed.Before(created) {
 		app := fold.current
 		if app.Identifier != "" && app.DeclarationIdentifier != nil && *app.DeclarationIdentifier == d.Declarations[0].Identifier && app.State != nil && *app.State == "managed" && (app.Removed == nil || !*app.Removed) {
-			// Current owned managed installation also proves terminal processing,
-			// including when generation confirmation followed the app report.
-			out.Terminal = true
+			// A fresh identifier cannot appear in an earlier app report, so its
+			// current managed installation also proves terminal processing when
+			// generation confirmation followed the app report. A successor inherits
+			// its predecessor's identifier, and an app report sent before the device
+			// applied the new token is indistinguishable from one sent after; it
+			// settles only through an app report that follows confirmation.
+			if d.Predecessor == nil {
+				out.Terminal = true
+			}
 			out.Installed = true
 			if app.Version != nil {
 				out.AppVersion = *app.Version
