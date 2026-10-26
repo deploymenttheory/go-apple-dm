@@ -86,9 +86,73 @@ Ordinary `ImportToken` and `StoreTokens` reject a changed established consumer k
 - Missing incoming identity metadata preserves the recorded binding; newly supplied metadata can establish a previously unknown value.
 - A changed consumer key also means replacement when either the old or new server UUID is unknown. Ordinary imports reject consumer-key changes even when matching known UUIDs demonstrate the same server.
 
+## Register this server with Apple Business Manager
+
+Registration exchanges this server's public certificate for an encrypted server
+token. It assigns no devices; Apple sends devices to this server only after they
+are assigned to it in the portal. The account name is local; `abm-lab` is an example.
+`keypair` and `import-token` need the sensitive `manageDEPCredentials` action;
+`sync` needs `syncDEPDevices` and the reads need `listDEPAccounts` or `readDEP`.
+
+1. Stage the token keypair and save its public certificate:
+
+   ```sh
+   dmctl dep accounts keypair abm-lab -out ade-public.pem
+   ```
+
+   `-out` never replaces a file and is created before the keypair is staged.
+   Without it the certificate is written to stdout. Running `keypair` again
+   replaces the staged keypair, and a token issued for the earlier certificate
+   then fails to import, so upload the certificate from the latest run.
+
+2. In Apple Business Manager, open **Devices → Management Services** and add an
+   MDM server. Name it, upload `ade-public.pem` as its public key and save, then
+   download its server token (`.p7m`). Apple School Manager uses the same exchange.
+
+3. Import the token unchanged:
+
+   ```sh
+   dmctl dep accounts import-token abm-lab -file token.p7m
+   ```
+
+   The server decrypts the token with the staged key, opens an Apple session,
+   reads the account, then commits the credentials and promotes the keypair. The
+   output is the account Apple returned. Check that its server name is the one
+   entered in the portal and its organization is yours. A token for another key,
+   expired credentials or unaccepted terms fail without changing stored
+   credentials; accept new terms in the portal, then retry.
+
+4. Confirm the binding and read the server's devices:
+
+   ```sh
+   dmctl dep accounts list
+   dmctl dep accounts sync abm-lab
+   dmctl dep accounts devices abm-lab
+   ```
+
+   `list` shows the Apple server UUID, token expiry and `ok`, `terms-expired` or
+   `token-invalid`. A server with no assigned devices completes an empty fetch.
+   `sync` also assigns desired profiles once; a new account has none.
+
+Import a renewed token for the same server the same way. Import uses a staged
+keypair when one exists and otherwise the current one, so stage a new keypair only
+when its certificate will also be uploaded to the portal. With the Compose
+`dmctl` container, redirect files through stdin and stdout; `set -C` stops the
+shell replacing an existing certificate file:
+
+```sh
+set -C
+dmctl dep accounts keypair abm-lab > "$GS_DIR/ade-public.pem"
+dmctl dep accounts import-token abm-lab -file - < "$GS_DIR/token.p7m"
+```
+
+Define a profile with `define-profile ACCOUNT -file profile.json [-default]`,
+then choose it with `default-profile` or per serial with `target`; `clear-default`
+and `clear-target` remove only local choices. `dmctl dep -h` lists every operation.
+
 ## Explicit server identity replacement
 
-Use `PUT /admin/v1/dep/accounts/{name}/token?force=true` only when intentionally allowing a consumer-key or Apple server identity change. Library callers use `ImportOptions{Force: true}`. Force still validates credentials and rechecks the locked account and staged-key baseline.
+Use `dmctl dep accounts import-token ACCOUNT -file token.p7m -force` (`PUT /admin/v1/dep/accounts/{name}/token?force=true`) only when intentionally allowing a consumer-key or Apple server identity change. Library callers use `ImportOptions{Force: true}`. Force still validates credentials and rechecks the locked account and staged-key baseline.
 
 A forced import resets state **only when identity actually changes**, and that replacement requires a validated nonempty server UUID. One transaction replaces credentials and account metadata, clears old inventory, profile definitions, desired default and serial choices, sessions and assignment retry/lease state, and starts a new full-fetch generation with an advanced cursor revision. Old requests cannot restore the removed state.
 

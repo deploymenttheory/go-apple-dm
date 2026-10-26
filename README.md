@@ -276,7 +276,9 @@ in-memory bus delivery remain ephemeral. See [event delivery and retry](docs/ope
 for guarantees, pagination, destination changes and retention boundaries.
 
 `server/cmd/dmctl` provides typed commands for enrollments, queued commands, push certificates,
-declarations, sets, notifications, principals, policies, audit records and event delivery. `dmctl routes`
+declarations, sets, notifications, principals, policies, audit records, event delivery and
+Automated Device Enrollment accounts (`dmctl dep accounts`, including Apple Business Manager
+registration). `dmctl routes`
 lists the active server routes; `dmctl api <METHOD> <path>` accesses routes without a typed
 command. Availability depends on the role and enabled services.
 

@@ -555,7 +555,7 @@ run it again with the same setup file to resume.
 | Goal | Next sequence |
 |---|---|
 | DDM | Working enrollment → supported declarations and activations → set membership/assignment → notify → device status; use the [module catalogue](../testing/lab-catalogue.md) and [status guide](../operations/status-and-profile-inspection.md) |
-| ADE | Organizational device assignment → enrollment-service token → profile configuration/sync → admission → Setup Assistant; see [DEP design](../research/decisions/0026-dep-client-sync-and-assignment.md) |
+| ADE | [Register with Apple Business Manager](../operations/dep-synchronization.md#register-this-server-with-apple-business-manager) using `dmctl dep accounts keypair` and `import-token` → organizational device assignment → profile configuration/sync → admission → Setup Assistant; see [DEP design](../research/decisions/0026-dep-client-sync-and-assignment.md) |
 | Account-driven enrollment | Managed account/domain discovery → OIDC registration → account admission → profile and ongoing authorization; see [enrollment operations](../operations/enrollment-security.md) |
 | Production operation | Device-facing DNS/TLS → protected persistent storage and keys → scoped admins → tested backup/restore → renewal monitoring and live-device checks |
 | Simulated regression tests | Separate lab workspace → doctor → up → selected scenarios → retained evidence; see [testing](../testing/lab.md) |

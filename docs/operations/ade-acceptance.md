@@ -22,8 +22,8 @@ No module disowns devices or changes Activation Lock.
 
 Use a running [live reference workspace](../../test-lab/README.md#live-workspace-and-existing-material)
 and its normal administrator credential and HTTPS trust. The separate ADE
-[server token](dep-synchronization.md#token-setup-and-renewal) must already be
-imported into a named reference account. An ABM OAuth key, Apps and Books sToken
+[server token](dep-synchronization.md#register-this-server-with-apple-business-manager) must already be
+imported into a named reference account with `dmctl dep accounts import-token`. An ABM OAuth key, Apps and Books sToken
 or APNs certificate cannot substitute for it.
 
 Place the **decrypted OAuth server-token JSON** in `ade/tokens.json`; the encrypted

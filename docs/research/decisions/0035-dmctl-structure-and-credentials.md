@@ -39,6 +39,15 @@ operation/log inspection and account-scoped synchronization jobs. Mutation bodie
 come from files or stdin; HTTP 202 represents queued intent. `sync --wait` polls
 the named account's job route. See [ABM connection operations](../../operations/abm-assignments.md#named-connection-inspection).
 
+`dep accounts` covers the Automated Device Enrollment account routes, including
+server-token registration. `keypair -out` is created exclusively before the keypair
+is staged, so a refused path never replaces the staged key the portal certificate
+belongs to. `import-token` sends the portal `.p7m` unchanged as
+`application/pkcs7-mime` and renders the Apple account the server validated.
+Flags that do not apply to an operation are refused locally. Verbs escape path
+segments once; the HTTP client sends escaped segments as given. See
+[registration](../../operations/dep-synchronization.md#register-this-server-with-apple-business-manager).
+
 ## Rationale
 
 Separate logic permits direct testing and keeps stdout usable by scripts. Credential references avoid duplicating secrets in ordinary configuration. Local validation gives feedback before a request reaches the server.
