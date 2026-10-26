@@ -316,19 +316,19 @@ func TestAppsBooksPreparedJobHasNoAutomaticSubmission(t *testing.T) {
 // TestAppsBooksNativeInstallationThroughReferenceRuntime proves installation through signed native exchanges and real SQL composition.
 func TestAppsBooksNativeInstallationThroughReferenceRuntime(t *testing.T) {
 	t.Parallel()
-	appsNativeInstallationRuntime(t, managedcontent.MDM, false)
+	appsNativeInstallationRuntime(t, managedcontent.MDM, false, nil)
 }
 
 // TestAppsBooksDeclarativeInstallationThroughReferenceRuntime proves current owned
 // declarative app status independently of publication and historical processing.
 func TestAppsBooksDeclarativeInstallationThroughReferenceRuntime(t *testing.T) {
 	t.Parallel()
-	appsNativeInstallationRuntime(t, managedcontent.DDM, false)
+	appsNativeInstallationRuntime(t, managedcontent.DDM, false, nil)
 }
 
 // appsNativeInstallationRuntime exercises the real worker, authenticated native
 // reports and read-only acceptance with an APNs-driven protocol simulator.
-func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method, endpointFailures bool) {
+func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method, endpointFailures bool, beforeProof func(context.Context, *Session, *appsFixture, string) func(managedcontent.Operation)) {
 	t.Helper()
 	s, f, c := appsRuntime(t)
 	capture := appsNativeStackCapture(t, s)
@@ -516,8 +516,30 @@ func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method, e
 	if method == managedcontent.DDM {
 		report(declaration, false)
 	}
-	if err = s.Env.api(ctx, "POST", base+"/step", worker, &op); err != nil {
+	var proofRead func(managedcontent.Operation)
+	if beforeProof != nil {
+		proofRead = beforeProof(ctx, s, f, base)
+	}
+	// Observe the supervised worker's committed result instead of competing for
+	// its inspection lease after the authenticated native report arrives.
+	if err = waitLive(ctx, func() (bool, error) {
+		var current managedcontent.Operation
+		if err := s.Env.api(ctx, "GET", base, nil, &current); err != nil {
+			return false, err
+		}
+		if proofRead != nil {
+			proofRead(current)
+		}
+		if current.Worker != "" || !current.LeaseUntil.IsZero() || current.Observation == nil || !current.Observation.Installed {
+			return false, nil
+		}
+		op = current
+		return true, nil
+	}); err != nil {
 		t.Fatal(err)
+	}
+	if proofRead != nil {
+		proofRead(op)
 	}
 	if op.Observation == nil || !op.Observation.Installed || op.Observation.AppVersion != "2.4" {
 		t.Fatal("actual native installation proof did not reach SDK operation")
@@ -950,7 +972,7 @@ func TestAppsBooksRuntimeExchangeFailuresPreserveRecovery(t *testing.T) {
 // through the actual reference runtime after genuine native installation.
 func TestAppsBooksNativeInspectionFailures(t *testing.T) {
 	t.Parallel()
-	appsNativeInstallationRuntime(t, managedcontent.MDM, true)
+	appsNativeInstallationRuntime(t, managedcontent.MDM, true, nil)
 }
 
 // appsBlockEvidence simulates unavailable private storage in the one unfinished
