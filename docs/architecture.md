@@ -184,8 +184,8 @@ also considers the channel and enrollment capabilities. These boundaries come fr
 Apple's per-key `supportedOS` blocks, inherited field by field, not from the release
 in which Apple first published a key. Every use of a key has its own support entry,
 including uses of a shared generated type, and validation checks each use against
-its own entry. Support is guaranteed from macOS 26 onwards and is best effort for
-earlier macOS releases; the boundaries apply in both tiers. `support.Target` and
+its own entry. Support is guaranteed from release 26 of each Apple OS onwards and
+is best effort for earlier releases; the boundaries apply in both tiers. `support.Target` and
 `support.OSSupport` use `osversion.Version` directly, and callers parse and
 construct versions through `osversion`. See [OS versions and feature availability](operations/os-versions.md)
 for version construction and availability checks. SSO value-specific floors are queryable through

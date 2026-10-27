@@ -153,3 +153,54 @@ func TestDeclarationContexts(t *testing.T) {
 		})
 	}
 }
+
+// TestTier checks that release 26 and every later release of each OS are
+// guaranteed, earlier releases are best effort, and an unknown OS or version
+// claims neither tier.
+func TestTier(t *testing.T) {
+	t.Parallel()
+	for os, floor := range map[support.OS]int{
+		support.MacOS:    osversion.MacOSSupportedVersionFloor,
+		support.IOS:      osversion.IOSSupportedVersionFloor,
+		support.TvOS:     osversion.TvOSSupportedVersionFloor,
+		support.VisionOS: osversion.VisionOSSupportedVersionFloor,
+		support.WatchOS:  osversion.WatchOSSupportedVersionFloor,
+	} {
+		if floor != 26 {
+			t.Errorf("%s supported version floor = %d, want 26", os, floor)
+		}
+	}
+	for _, tc := range []struct {
+		os      support.OS
+		version string
+		want    support.Tier
+	}{
+		{support.MacOS, "10.15.7", support.TierBestEffort},
+		{support.MacOS, "15.7", support.TierBestEffort},
+		{support.MacOS, "26.0", support.TierGuaranteed},
+		{support.MacOS, "26.4", support.TierGuaranteed},
+		{support.MacOS, "27.0", support.TierGuaranteed},
+		{support.MacOS, "27.2", support.TierGuaranteed},
+		{support.MacOS, "28.0", support.TierGuaranteed},
+		{support.MacOS, "", ""},
+		{support.IOS, "18.6", support.TierBestEffort},
+		{support.IOS, "26.0", support.TierGuaranteed},
+		{support.IOS, "27.0", support.TierGuaranteed},
+		{support.IOS, "", ""},
+		{support.TvOS, "18.4", support.TierBestEffort},
+		{support.TvOS, "26.0", support.TierGuaranteed},
+		{support.VisionOS, "2.4", support.TierBestEffort},
+		{support.VisionOS, "26.0", support.TierGuaranteed},
+		{support.WatchOS, "11.6", support.TierBestEffort},
+		{support.WatchOS, "27.0", support.TierGuaranteed},
+		{support.OS("unknownOS"), "26.0", ""},
+	} {
+		target := support.Target{OS: tc.os}
+		if tc.version != "" {
+			target.Version = osversion.MustParse(tc.version)
+		}
+		if got := target.Tier(); got != tc.want {
+			t.Errorf("%s %q tier = %q, want %q", tc.os, tc.version, got, tc.want)
+		}
+	}
+}

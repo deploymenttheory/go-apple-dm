@@ -293,3 +293,58 @@ func TestCompatibilityReportsUnvalidatedKeys(t *testing.T) {
 		}
 	}
 }
+
+// TestCompatibilityReportsSupportTier checks that a report marks release 26 and
+// every later release of an OS as guaranteed and earlier releases as best
+// effort, that a best-effort target still receives declarations its version
+// supports, and that an unknown version claims neither tier.
+func TestCompatibilityReportsSupportTier(t *testing.T) {
+	t.Parallel()
+	var target support.Target
+	h := newHarness(t, func(c *ddm.Config) {
+		c.EnrollmentTarget = func(context.Context, mdm.EnrollmentID) (support.Target, error) { return target, nil }
+	})
+	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "tier"}
+	// Deferrals are available from macOS 15.0 and not on iOS; ExtensionConfigs
+	// from macOS 27.0.
+	updatesDecl := declJSON(schema.DeclarationTypeSoftwareUpdateSettings, "updates", map[string]any{"Deferrals": map[string]any{"MajorPeriodInDays": 30}})
+	for _, raw := range [][]byte{updatesDecl, extensionsDecl} {
+		d, _, err := h.engine.PutDeclaration(t.Context(), raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := h.engine.AssignDeclaration(t.Context(), id, d.Identifier); err != nil {
+			t.Fatal(err)
+		}
+	}
+	unknownVersion := supervised(support.MacOS, "26.0")
+	unknownVersion.Version = osversion.Version{}
+	for _, tc := range []struct {
+		name     string
+		target   support.Target
+		tier     support.Tier
+		eligible []string
+	}{
+		{"macOS 15.7 is best effort", supervised(support.MacOS, "15.7"), support.TierBestEffort, []string{"updates"}},
+		{"macOS 26.0 is the guaranteed floor", supervised(support.MacOS, "26.0"), support.TierGuaranteed, []string{"updates"}},
+		{"macOS 26.4 is guaranteed", supervised(support.MacOS, "26.4"), support.TierGuaranteed, []string{"updates"}},
+		{"macOS 27.2 is guaranteed", supervised(support.MacOS, "27.2"), support.TierGuaranteed, []string{"extensions", "updates"}},
+		{"an unknown version claims no tier", unknownVersion, "", nil},
+		{"iOS 18.6 is best effort", supervised(support.IOS, "18.6"), support.TierBestEffort, []string{"extensions"}},
+		{"iOS 27.0 is guaranteed", supervised(support.IOS, "27.0"), support.TierGuaranteed, []string{"extensions"}},
+		{"tvOS 26.0 is guaranteed", supervised(support.TvOS, "26.0"), support.TierGuaranteed, nil},
+	} {
+		target = tc.target
+		report, err := h.engine.Compatibility(t.Context(), id)
+		if err != nil {
+			t.Fatalf("%s: %v", tc.name, err)
+		}
+		var eligible []string
+		for _, ref := range report.Eligible {
+			eligible = append(eligible, ref.Identifier)
+		}
+		if report.Tier != tc.tier || !reflect.DeepEqual(eligible, tc.eligible) {
+			t.Errorf("%s: tier = %q, eligible = %v; want %q, %v", tc.name, report.Tier, eligible, tc.tier, tc.eligible)
+		}
+	}
+}

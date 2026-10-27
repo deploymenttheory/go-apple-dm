@@ -89,8 +89,8 @@ version belongs to that major, normally the published pin. It is added as a fixe
 named for that version, such as `third_party/apple-device-management/27.4`, beside the existing
 retained releases, and generation includes it. Schema versions come from `schemagen versions`,
 not from OS release numbers. The job never removes a retained release. A release retained
-for a guaranteed major, such as `26.4` while support is guaranteed from macOS 26, is removed
-only in a reviewed change that first moves the guaranteed floor above that major; see the
+for a guaranteed major, such as `26.4` while support is guaranteed from release 26, is removed
+only in a reviewed change that first moves the supported version floors above that major; see the
 [mixed-OS fleet decision](research/decisions/0052-mixed-os-fleets.md).
 
 The job then runs `TestSeedOS27CoverageInventory` with `-update-coverage`, which records the

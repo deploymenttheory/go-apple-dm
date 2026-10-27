@@ -61,12 +61,31 @@ restricts unknown inventory as described in the [mixed-OS fleet decision](../res
 
 ## Support tiers
 
-Support is guaranteed from macOS 26 onwards; the schema contracts and acceptance
-scenarios target macOS 26 and later. Earlier macOS releases are best effort: they
-may function but are not actively tested. The tiers do not change availability
+Support is guaranteed from release 26 onwards of macOS, iOS and iPadOS, tvOS,
+visionOS and watchOS; the schema contracts and acceptance scenarios target macOS
+26 and later. Earlier releases are best effort: they may function but are not
+actively tested. The tiers do not change availability
 checks. Every feature's introduction, deprecation and removal boundaries apply at
 every version, so a best-effort device is offered only what its version supports
 and a guaranteed device is refused a feature that requires a later release.
+
+Each OS has a supported version floor, its base guaranteed release. Apple's
+schema numbers the release after each platform's last pre-26 release as 26, so
+the floor is the same release everywhere; devices that cannot run it are best
+effort:
+
+| OS | Constant | Last release before the floor | Floor |
+| --- | --- | --- | --- |
+| macOS | `osversion.MacOSSupportedVersionFloor` | 15 | 26 |
+| iOS and iPadOS | `osversion.IOSSupportedVersionFloor` | 18 | 26 |
+| tvOS | `osversion.TvOSSupportedVersionFloor` | 18 | 26 |
+| visionOS | `osversion.VisionOSSupportedVersionFloor` | 2 | 26 |
+| watchOS | `osversion.WatchOSSupportedVersionFloor` | 11 | 26 |
+
+`support.Target.Tier` returns `support.TierGuaranteed` for the floor release and
+every later release, `support.TierBestEffort` for an earlier release, and an
+empty tier for an unknown OS or version. `ddm.CompatibilityReport.Tier` carries
+the target's tier.
 
 ## Availability issues
 
