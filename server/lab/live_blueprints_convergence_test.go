@@ -56,7 +56,16 @@ func TestLiveBlueprintProfileConvergence(t *testing.T) {
 			})}}
 			dir := t.TempDir()
 			check := &liveBlueprintTest{e: e, path: "/enrollments/device/mac", dir: dir, phase: "observe", profileID: "profile", profileUUID: "uuid"}
-			ctx, cancel := context.WithTimeout(t.Context(), 4*time.Second)
+			// A converging case needs two ProfileList round trips, each waiting at
+			// least one one-second result poll, and one 500 ms convergence poll, so
+			// it gets room for a loaded race-enabled runner and returns as soon as
+			// the profile converges. A case that must not converge fails at its
+			// deadline whatever the runner's speed, so it keeps a short one.
+			budget := 30 * time.Second
+			if tc.fail {
+				budget = 4 * time.Second
+			}
+			ctx, cancel := context.WithTimeout(t.Context(), budget)
 			defer cancel()
 			err := check.checkProfile(ctx, tc.want)
 			if (err != nil) != tc.fail {
