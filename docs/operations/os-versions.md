@@ -7,8 +7,12 @@ dependencies and can be used throughout the library and server.
 `devicemanagement/schema/support` owns feature availability. Its `Target.Version`
 and `OSSupport.Introduced`, `Deprecated` and `Removed` fields use
 `osversion.Version` directly. `Entry.Check` evaluates those boundaries together
-with the target OS, management channel and enrollment requirements. Generated
-payload `Validate` methods use this metadata alongside payload constraints.
+with the target OS, management channel and enrollment requirements. A zero
+`Deprecated` or `Removed` version means the feature has no such bound; it is not a
+release 0 boundary. Generated payload `Validate` methods use this metadata alongside
+payload constraints. The metadata comes from Apple's per-key `supportedOS` blocks,
+inherited field by field from each enclosing key, as described in the
+[schema generator decision](../research/decisions/0003-schema-generator.md).
 
 For example, this program checks a device's observed version against the generated
 availability of an inventory command:
@@ -54,6 +58,15 @@ panics on malformed input and is intended for fixed literals in tests and tables
 The zero `Version` means unspecified; a target with an unspecified version does
 not establish that a feature's release floor has been met. The reference server
 restricts unknown inventory as described in the [mixed-OS fleet decision](../research/decisions/0052-mixed-os-fleets.md).
+
+## Support tiers
+
+Support is guaranteed from macOS 26 onwards; the schema contracts and acceptance
+scenarios target macOS 26 and later. Earlier macOS releases are best effort: they
+may function but are not actively tested. The tiers do not change availability
+checks. Every feature's introduction, deprecation and removal boundaries apply at
+every version, so a best-effort device is offered only what its version supports
+and a guaranteed device is refused a feature that requires a later release.
 
 ## Inputs and validation
 

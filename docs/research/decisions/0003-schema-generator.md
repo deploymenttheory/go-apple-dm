@@ -8,6 +8,13 @@ Apple's pinned YAML schema describes multiple protocol families, nested dictiona
 
 The in-repository generator uses `gopkg.in/yaml.v3` nodes to emit commands and responses, check-in messages, errors, profiles, declarations, declarative protocol messages, status items and other types. Nested dictionaries receive named types. Support metadata remains data in `devicemanagement/schema/support`; callers use `Check`, `Lookup`, `Families` and `Paths`.
 
+Availability comes from Apple's per-key `supportedOS` metadata. A key's
+`introduced`, `deprecated` and `removed` values overlay its enclosing key's
+effective support field by field, ending at the payload's block; retained earlier
+releases are merged as decision 0052 describes. Apple's release publication history
+is not an availability source. In Go, a zero `Deprecated` or `Removed` version
+means the feature has no such bound.
+
 Dictionaries that repeat a subkeytype with the same shape share one Go type within a
 schema; availability is not part of a type. The support table has an entry for every
 key use, resolved from Apple's `supportedOS` blocks along that use's own key path,
@@ -43,6 +50,16 @@ See the [schema updates guide](../../device-management-schema-updates.md).
 ## Rationale
 
 One loader and emitter set keeps type generation, validation, metadata and provenance consistent. The identifier lock makes removals reviewable when the schema changes.
+
+The release in which Apple first published a key does not establish when an OS
+introduced it. Across the 23 commits on Apple's `release` branch from
+`Release_iOS-15_macOS-12` to `Release-v27.2`, measured over 4,527 current key
+paths, first publication would raise the floor of 200 macOS and 153 iOS paths
+that Apple documented after the OS introduced them, and lower it for 107 macOS
+paths published before the OS shipped them. It carries no information for the
+2,075 macOS and 1,342 iOS paths already present in the first release, and Apple
+revised 227 `introduced` values after first publishing them. Apple's per-key
+metadata states each boundary directly and is corrected in place.
 
 ## Constraints
 
