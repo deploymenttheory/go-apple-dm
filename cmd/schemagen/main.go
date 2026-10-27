@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -22,6 +23,21 @@ func main() {
 	}
 }
 
+// historyFlag collects repeated -history values, newest release first. An empty
+// value records the option without retaining a release.
+type historyFlag []string
+
+// String returns the retained checkouts as a comma-separated list.
+func (h *historyFlag) String() string { return strings.Join(*h, ",") }
+
+// Set appends a non-empty checkout path.
+func (h *historyFlag) Set(value string) error {
+	if value != "" {
+		*h = append(*h, value)
+	}
+	return nil
+}
+
 // run parses schema and output options and dispatches generation, verification, or schema
 // inspection commands.
 func run(args []string, out *os.File) error {
@@ -33,7 +49,8 @@ func run(args []string, out *os.File) error {
 	)
 	outDir := fs.String("out", "devicemanagement/schema", "output directory")
 	baseline := fs.String("baseline", "", "baseline schema directory for audit or api-diff")
-	history := fs.String("history", "", "older Apple checkout to retain for mixed-OS fleets")
+	var histories historyFlag
+	fs.Var(&histories, "history", "earlier major schema release checkout to retain for older devices; repeat newest first (default: retained releases in .gitmodules)")
 	ref := fs.String("ref", "", "upstream branch (defaults to the configured submodule branch)")
 	reportDir := fs.String("report", "", "write audit.json and audit.md to this directory")
 	if err := fs.Parse(args); err != nil {
@@ -41,7 +58,7 @@ func run(args []string, out *os.File) error {
 	}
 	if fs.NArg() != 1 {
 		return fmt.Errorf(
-			"usage: schemagen [-schema dir] [-out dir] [-ref branch] [-baseline dir] [-report dir] generate|verify|identifiers|versions|audit|api-diff|boundaries",
+			"usage: schemagen [-schema dir] [-history dir]... [-out dir] [-ref branch] [-baseline dir] [-report dir] generate|verify|identifiers|versions|audit|api-diff|boundaries",
 		)
 	}
 	historyExplicit := false
@@ -51,10 +68,11 @@ func run(args []string, out *os.File) error {
 		}
 	})
 	if !historyExplicit {
-		if data, err := exec.CommandContext(context.Background(), "git", "config", "--file", ".gitmodules", "--get", "submodule.apple-device-management-compatibility.path").
-			Output(); err == nil {
-			*history = strings.TrimSpace(string(data))
+		retained, err := schemagen.RetainedReleases(".gitmodules")
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
+			return err
 		}
+		histories = retained
 	}
 	// Commit is left empty: schemagen reads it from the checkout. Reading it
 	// from the output directory made a submodule bump stamp the old commit.
@@ -66,13 +84,13 @@ func run(args []string, out *os.File) error {
 		}
 		*ref = strings.TrimSpace(string(data))
 	}
-	opts := schemagen.Options{Ref: *ref, History: *history}
+	opts := schemagen.Options{Ref: *ref, Histories: histories}
 	switch fs.Arg(0) {
 	case "boundaries":
 		if *baseline == "" {
 			return fmt.Errorf("boundaries requires -baseline")
 		}
-		cases, err := schemagen.BoundaryProbes(*baseline, *schemaRoot, *history)
+		cases, err := schemagen.BoundaryProbes(*baseline, *schemaRoot, histories...)
 		if err != nil {
 			return err
 		}

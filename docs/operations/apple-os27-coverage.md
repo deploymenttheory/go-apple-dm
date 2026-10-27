@@ -17,9 +17,9 @@ Sources: [enterprise changes](https://support.apple.com/en-us/148830),
 [update management](https://support.apple.com/en-gb/guide/deployment/depd30715cbb/web),
 [general release notes](https://support.apple.com/en-us/127257), and the pinned
 [Apple schema](../../third_party/apple-device-management/current). Wire names and platform
-constraints below come from that schema, including its historical input.
+constraints below come from that schema, including its retained earlier releases.
 [`GENERATED_FROM.json`](../../devicemanagement/schema/GENERATED_FROM.json) records the
-primary and historical Apple commits. The original
+current and retained Apple commits. The original
 OS 27 seed remains a retained canary snapshot, not the shipped source.
 
 ## Delivery contract

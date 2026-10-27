@@ -17,8 +17,10 @@ as upcoming changes.
 
 The workflow preserves control and candidate commits under immutable
 `schema-source/<ref>/<commit>` refs. Every assessment checks out its recorded project
-and Apple commits in a temporary workspace. The production compatibility-history
-input remains pinned to the generator's recorded provenance.
+and Apple commits in a temporary workspace. Generation retains the earlier major
+releases recorded in the published provenance. A candidate whose schema version
+starts a new major is assessed with the published pin as its newest retained release,
+as its adoption would generate it.
 
 Each assessment performs:
 
@@ -76,9 +78,17 @@ discovery is complete, the control passes and that release passes every assessme
 Seeds are never adopted. In an isolated clone of the project commit, the job checks out the
 retained candidate snapshot in `third_party/apple-device-management/current`, then runs
 `go generate ./...`, `schemagen generate` and `schemagen verify` with the production
-exported-identifier lock. The compatibility history pin is unchanged. The title,
+exported-identifier lock. The title,
 `feat(schema): adopt Apple device management schema release <version>`, takes its version from
 the regenerated `os_versions` provenance.
+
+Within the published major schema version, the retained releases beside `current` are
+unchanged. When the candidate starts a new major, the job first retains the previous major's
+final release: the newest commit on Apple's release branch before the candidate whose schema
+version belongs to that major, normally the published pin. It is added as a fixed submodule
+named for that version, such as `third_party/apple-device-management/27.4`, beside the existing
+retained releases, and generation includes it. Schema versions come from `schemagen versions`,
+not from OS release numbers. The job never removes a retained release.
 
 The job then runs `TestSeedOS27CoverageInventory` with `-update-coverage`, which records the
 pinned schema's macOS 27 boundaries in `test-lab/apple-features/macos27-coverage.json`.
@@ -102,7 +112,8 @@ Each run selects one action:
 - Close an open proposal when the published pin already contains Apple's release.
 
 A failed step, such as the removal of a locked exported identifier or a coverage contract that
-recording cannot satisfy, opens a draft containing only the pin change and that step's error.
+recording cannot satisfy, opens a draft containing only the Apple checkout changes and that
+step's error.
 Draft state is set when the pull request is created. Dependency and network failures are monitoring failures and push nothing.
 
 The job authenticates with the release-please GitHub App (`RP_APP_ID`,

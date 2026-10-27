@@ -195,11 +195,18 @@ func TestHistoryPreservesLegacyProfileRepresentation(t *testing.T) {
 	}
 }
 
-// TestHistoryProvenanceAndFailure checks history provenance and failure.
+// TestHistoryProvenanceAndFailure checks that every retained release is merged and recorded
+// newest first, and that missing or invalid releases fail.
 func TestHistoryProvenanceAndFailure(t *testing.T) {
 	t.Parallel()
 	root := auditFixture(t, map[string]string{"mdm/commands/a.yaml": auditSchema})
-	files, err := Run(root, Options{History: root})
+	retained := func(key string) string {
+		return auditFixture(t, map[string]string{"mdm/commands/a.yaml": auditSchema +
+			"- key: " + key + "\n  type: <string>\n  presence: optional\n"})
+	}
+	newer, older := retained("NewerRetained"), retained("OlderRetained")
+	opts := Options{Histories: []string{newer, older}}
+	files, err := Run(root, opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,14 +215,28 @@ func TestHistoryProvenanceAndFailure(t *testing.T) {
 		t.Fatal(err)
 	}
 	provenance, err := ReadGeneratedFrom(filepath.Join(out, generatedFromFile))
-	if err != nil || provenance.History == nil ||
-		provenance.History.YAMLSHA256 != provenance.YAMLSHA256 {
+	if err != nil || len(provenance.History) != 2 {
 		t.Fatalf("%+v %v", provenance, err)
 	}
-	if err := Verify(root, out, Options{History: root}); err != nil {
+	for i, history := range []string{newer, older} {
+		sum, err := yamlSHA256(history)
+		if err != nil || provenance.History[i].YAMLSHA256 != sum {
+			t.Fatalf("history %d = %+v, want %s (%v)", i, provenance.History[i], sum, err)
+		}
+	}
+	var generated []byte
+	for _, data := range files {
+		generated = append(generated, data...)
+	}
+	for _, key := range []string{"NewerRetained", "OlderRetained"} {
+		if !bytes.Contains(generated, []byte(key)) {
+			t.Errorf("retained key %s was not generated", key)
+		}
+	}
+	if err := Verify(root, out, opts); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Run(root, Options{History: filepath.Join(t.TempDir(), "missing")}); err == nil {
+	if _, err := Run(root, Options{Histories: []string{filepath.Join(t.TempDir(), "missing")}}); err == nil {
 		t.Fatal("missing history accepted")
 	}
 	if err := os.WriteFile(
@@ -225,7 +246,7 @@ func TestHistoryProvenanceAndFailure(t *testing.T) {
 	); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Run(schemaRoot(t), Options{History: root}); err == nil {
+	if _, err := Run(schemaRoot(t), Options{Histories: []string{root}}); err == nil {
 		t.Fatal("invalid history accepted")
 	}
 }

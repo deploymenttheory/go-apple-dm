@@ -20,6 +20,10 @@ UPSTREAM = "https://github.com/apple/device-management.git"
 CANARY_MIRROR = "https://github.com/deploymenttheory/go-apple-dm.git"
 SCHEMA = "devicemanagement/schema"
 CURRENT = "third_party/apple-device-management/current"
+# Earlier major schema releases are retained beside CURRENT, each named for its final schema release.
+RELEASES = "third_party/apple-device-management"
+CURRENT_SUBMODULE = "apple-device-management-current"
+RELEASE_NAME = re.compile(r"^[0-9]+(\.[0-9]+)*$")
 SHA = re.compile(r"^[0-9a-f]{40}$")
 REF = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
 STAGES = ("snapshot", "generate", "verify", "compile")
@@ -75,6 +79,36 @@ def entry(kind, ref, commit):
             "snapshotRef": snapshot_ref(ref, commit)}
 
 
+def version_key(version):
+    return tuple(int(part) for part in re.findall(r"[0-9]+", version))
+
+
+def major(version):
+    return (version_key(version) or (0,))[0]
+
+
+def schema_version(tool, schema, cwd):
+    """Return the schema release a checkout represents: the newest OS version its schemas introduce."""
+    output = run([*tool, "-schema", schema, "-history", "", "-ref", "release", "versions"], cwd)
+    return max((line.split("\t", 1)[1] for line in output.splitlines() if "\t" in line), key=version_key, default="")
+
+
+def retained_releases(repo):
+    """Return the retained earlier major schema release checkouts beside CURRENT, newest first."""
+    try:
+        output = run(["git", "config", "--file", ".gitmodules", "--get-regexp", r"^submodule\..*\.path$"], repo)
+    except subprocess.CalledProcessError as exc:
+        if exc.returncode == 1:
+            return []  # No .gitmodules or no submodules.
+        raise
+    paths = [line.split(" ", 1)[1] for line in output.splitlines()]
+    retained = [path for path in paths if path != CURRENT and path.rsplit("/", 1)[0] == RELEASES]
+    for path in retained:
+        if not RELEASE_NAME.fullmatch(path.rsplit("/", 1)[1]):
+            raise ValueError("Retained schema release is not named for its version: " + path)
+    return sorted(retained, key=lambda path: version_key(path.rsplit("/", 1)[1]), reverse=True)
+
+
 def ancestor(repo, before, after):
     p = subprocess.run(["git", "merge-base", "--is-ancestor", before, after], cwd=repo,
                        capture_output=True, text=True, timeout=60)
@@ -84,7 +118,7 @@ def ancestor(repo, before, after):
 
 
 def discover(repo, output, upstream=UPSTREAM, canary_mirror=CANARY_MIRROR):
-    manifest = {"schemaVersion": 4, "complete": False, "branches": [], "upstream": upstream,
+    manifest = {"schemaVersion": 5, "complete": False, "branches": [], "upstream": upstream,
                 "canaryMirror": canary_mirror}
     try:
         manifest["projectCommit"] = run(["git", "rev-parse", "HEAD"], repo).strip()
@@ -92,13 +126,11 @@ def discover(repo, output, upstream=UPSTREAM, canary_mirror=CANARY_MIRROR):
         provenance = json.loads((repo / SCHEMA / "GENERATED_FROM.json").read_text())
         if provenance["commit"] != pin or not SHA.fullmatch(pin):
             raise ValueError("Published schema provenance differs from the current gitlink")
-        history = provenance.get("history", {}).get("commit")
-        if history:
-            history_path = run(["git", "config", "--file", ".gitmodules", "--get",
-                                "submodule.apple-device-management-compatibility.path"], repo).strip()
-            if not SHA.fullmatch(history) or run(["git", "rev-parse", "HEAD:" + history_path], repo).strip() != history:
-                raise ValueError("Published compatibility provenance differs from its gitlink")
-        manifest.update(control=entry("control", "control", pin), historyCommit=history)
+        history = [{"path": path, "commit": run(["git", "rev-parse", "HEAD:" + path], repo).strip()}
+                   for path in retained_releases(repo)]
+        if [h["commit"] for h in history] != [h.get("commit") for h in provenance.get("history", [])]:
+            raise ValueError("Published retained-release provenance differs from the retained gitlinks")
+        manifest.update(control=entry("control", "control", pin), history=history)
         default, heads = parse_refs(run(["git", "ls-remote", "--symref", upstream, "HEAD", "refs/heads/*"]))
         with tempfile.TemporaryDirectory(prefix="dm-codegen-discover-") as temp:
             apple = Path(temp) / "apple"
@@ -198,6 +230,14 @@ def infrastructure_failure(text):
                                          "failed to initialize build cache"))
 
 
+def new_major(tool, candidate, baseline, cwd):
+    """Report whether a candidate starts a newer major schema release than the published pin."""
+    try:
+        return major(schema_version(tool, candidate, cwd)) > major(schema_version(tool, baseline, cwd))
+    except subprocess.CalledProcessError:
+        return False  # The generate stage diagnoses a checkout the generator cannot load.
+
+
 def assess(repo, manifest, branch, directory):
     directory = Path(directory) / branch["key"]
     directory.mkdir(parents=True, exist_ok=True)
@@ -215,19 +255,24 @@ def assess(repo, manifest, branch, directory):
             source = manifest.get("canaryMirror", manifest["upstream"])
             checkout(source, branch["commit"], candidate)
             checkout(source, manifest["control"]["commit"], baseline)
-            history = ""
-            if manifest.get("historyCommit"):
-                history = temp / "history"
-                checkout(manifest["upstream"], manifest["historyCommit"], history)
+            histories = []
+            for index, retained in enumerate(manifest.get("history", [])):
+                histories.append(temp / ("history-" + str(index)))
+                checkout(manifest["upstream"], retained["commit"], histories[-1])
             result["stages"]["snapshot"] = {"state": "passed"}
             env = dict(os.environ, GOWORK="off")
             tool = temp / "schemagen"
             run(["go", "build", "-o", tool, "./cmd/schemagen"], project, env)
+            # Assess a new major release as adoption generates it: the published pin becomes the
+            # newest retained release.
+            if new_major([tool], candidate, baseline, project):
+                histories.insert(0, baseline)
+            retain = [arg for path in histories for arg in ("-history", path)] or ["-history", ""]
             # Resolve dependencies before classifying compiler errors. A failed
             # download is monitoring infrastructure, not schema incompatibility.
             run(["go", "mod", "download"], project, env)
             prepare_output(project)
-            base = [tool, "-schema", candidate, "-history", history, "-ref", branch["ref"], "-out", project / SCHEMA]
+            base = [tool, "-schema", candidate, *retain, "-ref", branch["ref"], "-out", project / SCHEMA]
             commands = [("generate", base + ["generate"]), ("verify", base + ["verify"]),
                         ("compile", ["go", "build", "./devicemanagement/schema/..."])]
             for name, command in commands:
@@ -240,7 +285,7 @@ def assess(repo, manifest, branch, directory):
                 if name == "generate":
                     try:
                         audit = json.loads(run([tool, "-schema", candidate, "-baseline", baseline,
-                                                "-history", history, "-ref", branch["ref"], "audit"], project, env))
+                                                *retain, "-ref", branch["ref"], "audit"], project, env))
                         write_json(directory / "diagnostics.json", {
                             "candidateCommit": audit["candidateCommit"], "baselineCommit": audit["baselineCommit"],
                             "findings": [f for f in audit["findings"] if f["stage"] == "parse" and f["kind"] == "failure"]})
@@ -517,10 +562,49 @@ def recorded_boundaries(project):
             for c in json.loads(path.read_text())["cases"] for b in c["boundaries"]}
 
 
-def prepare_adoption(repo, manifest, candidate, workspace, logs):
-    """Move the current pin in an isolated clone, regenerate and commit the result.
+def retain_previous_major(project, apple, pin, commit):
+    """Retain the previous major's final schema release beside CURRENT when the candidate starts a new major.
 
-    A regeneration failure is recorded and leaves a commit containing only the pin change.
+    Returns the retained path, commit and version, or None within the published major. Earlier retained
+    releases are kept: removing one ends support for those devices and is a reviewed change.
+    """
+    tool = ["go", "run", "./cmd/schemagen"]
+    published = json.loads((project / SCHEMA / "GENERATED_FROM.json").read_text())["os_versions"]
+    adopted = major(schema_version(tool, apple, project))
+    if adopted <= major(published):
+        return None
+    release, version = pin, published
+    # Apple may have published further releases of the previous major since the pin; retain the newest.
+    later = run(["git", "rev-list", "--first-parent", commit, "^" + pin], apple).split()[1:]
+    if later:
+        with tempfile.TemporaryDirectory(prefix="dm-schema-retain-") as temp:
+            previous = Path(temp) / "previous"
+            run(["git", "worktree", "add", "--quiet", "--detach", previous, later[0]], apple)
+            try:
+                for earlier in later:
+                    run(["git", "checkout", "--quiet", "--detach", earlier], previous)
+                    found = schema_version(tool, previous, project)
+                    if major(found) < adopted:
+                        release, version = earlier, found
+                        break
+            finally:
+                run(["git", "worktree", "remove", "--force", previous], apple)
+    if not RELEASE_NAME.fullmatch(version):
+        raise ValueError("Cannot name the retained schema release: " + repr(version))
+    path = RELEASES + "/" + version
+    if path in retained_releases(project):
+        return None
+    url = run(["git", "config", "--file", ".gitmodules", "--get", "submodule." + CURRENT_SUBMODULE + ".url"], project).strip()
+    run(["git", "submodule", "add", "--quiet", "--name", "apple-device-management-" + version, url, path], project)
+    run(["git", "checkout", "--quiet", "--detach", release], project / path)
+    run(["git", "add", ".gitmodules", path], project)
+    return {"path": path, "commit": release, "version": version}
+
+
+def prepare_adoption(repo, manifest, candidate, workspace, logs):
+    """Move the current pin in an isolated clone, retain a completed major release, regenerate and commit.
+
+    A regeneration failure is recorded and leaves a commit containing only the Apple checkout changes.
     Dependency and network failures raise, because they say nothing about the schema.
     """
     logs.mkdir(parents=True, exist_ok=True)
@@ -548,6 +632,7 @@ def prepare_adoption(repo, manifest, candidate, workspace, logs):
         status, name = line.split("\t", 1)
         if name.endswith(".yaml") and name.split("/")[0] in SCHEMA_ROOTS:
             built["schemaFiles"].append([status, name])
+    built["retained"] = retain_previous_major(project, apple, control, commit)
     recorded = recorded_boundaries(project)
     for name, command in ADOPTION_STAGES:
         ok, text = stage(built, name, command, project, logs, env)
@@ -564,8 +649,11 @@ def prepare_adoption(repo, manifest, candidate, workspace, logs):
     if built["regenerated"]:
         version = json.loads((project / SCHEMA / "GENERATED_FROM.json").read_text())["os_versions"]
     built["title"] = "feat(schema): adopt Apple device management schema release " + version
-    run(["git", "commit", "--quiet", "-m", built["title"], "-m",
-         "Pin apple/device-management@" + commit + " and regenerate " + SCHEMA + "."], project, env)
+    message = "Pin apple/device-management@" + commit + " and regenerate " + SCHEMA + "."
+    if built["retained"]:
+        message += (" Retain the final " + str(major(built["retained"]["version"])) + ".x schema release in " +
+                    built["retained"]["path"] + ".")
+    run(["git", "commit", "--quiet", "-m", built["title"], "-m", message], project, env)
     built["head"] = run(["git", "rev-parse", "HEAD"], project).strip()
     built["files"] = run(["git", "show", "--stat", "--format=", "HEAD"], project)
     return built, project
@@ -577,13 +665,13 @@ def adoption_body(manifest, candidate, built, run_url):
     lines = ["<!-- schema-adoption " + json.dumps(meta, sort_keys=True) + " -->",
              "Moves `" + CURRENT + "` to Apple's `" + candidate["ref"] + "` commit [`" + commit[:12] +
              "`](https://github.com/apple/device-management/commit/" + commit + ") and regenerates `" + SCHEMA +
-             "`. The compatibility history pin is unchanged.", "",
+             "`. " + retention_text(built.get("retained")), "",
              "Apple changes: https://github.com/apple/device-management/compare/" + control + "..." + commit, "",
              "| Step | Result |", "|---|---|"]
     lines += ["| " + name + " | " + built["stages"][name]["state"] + " |" for name, _ in ADOPTION_STAGES]
     if built.get("error"):
-        lines += ["", "The `" + built["failedStage"] + "` step failed, so this pull request contains only the pin "
-                  "change. Reproduce with `make generate`, `make verify` and `make test-schema-contracts` on this "
+        lines += ["", "The `" + built["failedStage"] + "` step failed, so this pull request contains only the Apple "
+                  "checkout changes. Reproduce with `make generate`, `make verify` and `make test-schema-contracts` on this "
                   "branch. Record intended exported-name removals in `devicemanagement/schema/ALLOWED_REMOVALS.md`.",
                   "", "```text", built["error"], "```"]
     if built["releaseNotes"]:
@@ -605,6 +693,15 @@ def adoption_body(manifest, candidate, built, run_url):
                   for source, key, kind, version in built["recorded"]]
     lines += ["", "Merge after CI passes.", "", "Workflow run: " + run_url]
     return "\n".join(lines) + "\n"
+
+
+def retention_text(retained):
+    if not retained:
+        return "Retained earlier major releases are unchanged."
+    return ("This release starts a new major schema version, so Apple's final " +
+            str(major(retained["version"])) + ".x schema release, " + retained["version"] + " ([`" +
+            retained["commit"][:12] + "`](https://github.com/apple/device-management/commit/" + retained["commit"] +
+            ")), is now retained in `" + retained["path"] + "`. Earlier retained releases are unchanged.")
 
 
 def render_adoption(state):

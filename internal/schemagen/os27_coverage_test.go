@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"flag"
 	"os"
-	"os/exec"
 	"reflect"
 	"slices"
 	"strings"
@@ -250,9 +249,13 @@ func explicitMacOS27Boundaries(s *Schema) []os27Boundary {
 // across versions and enrollment contexts.
 func checkOS27InheritedBoundaries(t *testing.T) {
 	t.Helper()
-	// Resolve inheritance using the source model and retained historical schema,
+	// Resolve inheritance using the source model and retained earlier releases,
 	// then compare every affected descendant with the compiled public tables.
-	tables, _, err := sourceSupport("../../third_party/apple-device-management/current", compatibilitySchemaRoot(t))
+	retained, err := RetainedReleases("../../.gitmodules")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tables, _, err := sourceSupport("../../third_party/apple-device-management/current", retained...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -292,15 +295,4 @@ func checkOS27InheritedBoundaries(t *testing.T) {
 		t.Fatal("no inherited macOS 27 boundaries checked")
 	}
 	t.Logf("checked %d inherited macOS 27 paths across four versions and six enrollment contexts", checked)
-}
-
-// compatibilitySchemaRoot reads the compatibility schema submodule path from .gitmodules.
-func compatibilitySchemaRoot(t *testing.T) string {
-	t.Helper()
-	command := exec.CommandContext(t.Context(), "git", "config", "--file", "../../.gitmodules", "--get", "submodule.apple-device-management-compatibility.path")
-	output, err := command.Output()
-	if err != nil {
-		t.Fatal(err)
-	}
-	return "../../" + strings.TrimSpace(string(output))
 }

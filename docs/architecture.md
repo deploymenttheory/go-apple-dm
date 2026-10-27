@@ -166,8 +166,9 @@ See [ADE profile validation](operations/dep-synchronization.md#check-a-caller-su
 ## Generated protocol types
 
 The pinned `third_party/apple-device-management/current` submodule supplies Apple's current release YAML definitions.
-The versioned path selected by the `apple-device-management-compatibility` submodule retains the release source
-needed for older-device contracts; both inputs and their content hashes are recorded in generated provenance.
+Versioned submodules beside it, such as `third_party/apple-device-management/26.4`, retain the final schema release
+of each earlier supported major version for older-device contracts; every input and its content hash is recorded
+in generated provenance.
 `schemagen` generates request and response types, registries, validation, platform support metadata
 and conformance fixtures. `devicemanagement/schema/GENERATED_FROM.json` records source provenance;
 `devicemanagement/schema/EXPORTED_IDENTIFIERS.lock` guards exported names. `make verify` regenerates into a
