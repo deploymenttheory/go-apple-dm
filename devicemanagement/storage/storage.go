@@ -8,6 +8,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/validation"
 )
 
 // Errors shared by every backend.
@@ -172,6 +173,10 @@ type EnqueueOptions struct {
 type EnqueueResult struct {
 	Queued  []mdm.EnrollmentID
 	Skipped map[mdm.EnrollmentID]error
+	// Warnings lists, for queued enrollments, availability warnings about the
+	// command's populated keys, such as keys the target has deprecated. Target
+	// validation in the command service fills it; stores leave it nil.
+	Warnings map[mdm.EnrollmentID][]validation.AvailabilityIssue
 }
 
 // ClearFilter selects commands for Clear. Zero values mean "any".

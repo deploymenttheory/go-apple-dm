@@ -2,7 +2,9 @@ package validation_test
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -94,5 +96,87 @@ func TestSupportChecks(t *testing.T) {
 	c.Support("X.Y", true, e)
 	if c.Err() != nil || len(c.Warnings()) != 1 || c.Warnings()[0].Rule != validation.RuleSupport {
 		t.Fatalf("expected one warning, got err=%v warnings=%v", c.Err(), c.Warnings())
+	}
+}
+
+// TestRelationshipAndDeadlineRules checks field relationships and device-local
+// deadline formats.
+func TestRelationshipAndDeadlineRules(t *testing.T) {
+	t.Parallel()
+	c := validation.New(support.Target{})
+	c.Require("Pair", true, "unused")
+	c.LocalDateTime("Absent", false, "not checked")
+	c.LocalDateTime("Valid", true, "2026-10-27T09:30:00")
+	c.Enum("Single", true, float32(1.5), []any{1.5})
+	if c.Err() != nil {
+		t.Fatalf("valid values rejected: %v", c.Err())
+	}
+	c.Require("Pair", false, "Pair requires Partner")
+	for _, value := range []string{"2026-10-27T09:30:00Z", "2026-10-27T09:30:00.5", "2026-02-30T09:30:00"} {
+		c.LocalDateTime("Deadline", true, value)
+	}
+	var es validation.Errors
+	if !errors.As(c.Err(), &es) || len(es) != 4 {
+		t.Fatalf("errors = %v", c.Err())
+	}
+	if es[0].Rule != validation.RuleRequired || es[0].Message != "Pair requires Partner" {
+		t.Fatalf("relationship error = %+v", es[0])
+	}
+	for _, e := range es[1:] {
+		if e.Path != "Deadline" || e.Rule != validation.RuleFormat {
+			t.Fatalf("deadline error = %+v", e)
+		}
+	}
+}
+
+// TestAvailabilityIssues checks the key-level issues behind support errors and
+// deprecation warnings: their windows, order, de-duplication across values,
+// and extraction from wrapped validation errors.
+func TestAvailabilityIssues(t *testing.T) {
+	t.Parallel()
+	ios := func(s support.OSSupport) *support.Entry {
+		return &support.Entry{Path: "Top.Key", OS: map[support.OS]*support.OSSupport{support.IOS: &s}}
+	}
+	introduced := ios(support.OSSupport{Introduced: osversion.New(17, 0, 0), Removed: osversion.New(20, 0, 0)})
+	introduced.Path = "Top.New"
+	deprecated := ios(support.OSSupport{Introduced: osversion.New(15, 0, 0), Deprecated: osversion.New(16, 0, 0)})
+	deprecated.Path = "Top.Old"
+	unavailable := &support.Entry{Path: "Top.Mac", OS: map[support.OS]*support.OSSupport{support.IOS: {NotAvailable: true}}}
+
+	c := validation.New(support.Target{OS: support.IOS, Version: osversion.New(16, 4, 0)})
+	c.Required("Top.Name", false)
+	c.Support("Top.Old", true, deprecated)
+	c.Support("Top.New[0]", true, introduced)
+	c.Support("Top.New[1]", true, introduced)
+	c.Support("Top.Mac.private-map-key", true, unavailable)
+	want := []validation.AvailabilityIssue{
+		{Path: "Top.Mac", OS: support.IOS, Rule: support.RuleNotAvailable, Severity: validation.SeverityError},
+		{Path: "Top.New", OS: support.IOS, Rule: support.RuleIntroduced, Severity: validation.SeverityError, Introduced: osversion.New(17, 0, 0), Removed: osversion.New(20, 0, 0)},
+		{Path: "Top.Old", OS: support.IOS, Rule: support.RuleDeprecated, Severity: validation.SeverityWarning, Introduced: osversion.New(15, 0, 0), Deprecated: osversion.New(16, 0, 0)},
+	}
+	if got := c.Availability(); !slices.Equal(got, want) {
+		t.Fatalf("Availability() = %+v, want %+v", got, want)
+	}
+	var es validation.Errors
+	if !errors.As(c.Err(), &es) || len(es) != 4 || es[0].Availability != nil || es[1].Availability == nil {
+		t.Fatalf("errors = %+v", c.Err())
+	}
+	if c.Warnings()[0].Availability.Rule != support.RuleDeprecated {
+		t.Fatalf("warning = %+v", c.Warnings()[0])
+	}
+	wrapped := fmt.Errorf("declaration: %w", c.Err())
+	if got := validation.AvailabilityIssues(wrapped); !slices.Equal(got, want[:2]) {
+		t.Fatalf("AvailabilityIssues(wrapped) = %+v, want %+v", got, want[:2])
+	}
+	if got := validation.AvailabilityIssues(errors.New("other")); got != nil {
+		t.Fatalf("AvailabilityIssues(other) = %+v", got)
+	}
+	root := validation.New(support.Target{OS: support.IOS, Version: osversion.New(16, 4, 0)})
+	root.Support("", true, introduced)
+	if got := root.Err().Error(); got != "Top.New: requires iOS 17.0, target is 16.4" {
+		t.Fatalf("root error = %q", got)
+	}
+	if got := validation.New(support.Target{OS: support.IOS}).Availability(); got != nil {
+		t.Fatalf("empty collector issues = %+v", got)
 	}
 }

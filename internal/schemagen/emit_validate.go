@@ -69,7 +69,8 @@ func (e *emitter) validateType(b *bytes.Buffer, td *TypeDef, patterns *[]string)
 	if !td.Nested {
 		fmt.Fprintf(
 			b,
-			"// Validate checks x against the schema. With a non-zero target it also checks\n// that every present key is supported on that OS version and enrollment context.\nfunc (x *%s) Validate(t support.Target) error {\n\tc := validation.New(t)\n\tx.validate(c, \"\", %q)\n\treturn c.Err()\n}\n\n",
+			"// Validate checks x against the schema. With a non-zero target it also checks\n// that every present key is supported on that OS version and enrollment context.\nfunc (x *%s) Validate(t support.Target) error {\n\tc := validation.New(t)\n\tx.ValidateInto(c)\n\treturn c.Err()\n}\n\n// ValidateInto checks x as Validate does for the collector's target and records\n// the errors, deprecation warnings and availability issues in c.\nfunc (x *%s) ValidateInto(c *validation.Collector) { x.validate(c, \"\", %q) }\n\n",
+			td.Name,
 			td.Name,
 			rootSupportPath(td),
 		)

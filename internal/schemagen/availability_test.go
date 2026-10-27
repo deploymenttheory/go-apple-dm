@@ -330,6 +330,8 @@ func TestSharedSubkeyTypeFollowsEachUsesAvailability(t *testing.T) {
 	}
 	validate := string(files["commands/validate.gen.go"])
 	for _, want := range []string{
+		"\tx.ValidateInto(c)\n\treturn c.Err()\n",
+		`func (x *AvailTest) ValidateInto(c *validation.Collector) { x.validate(c, "", "AvailTest") }`,
 		`x.validate(c, "", "AvailTest")`,
 		`x.validate(c, "", "AvailTest.response")`,
 		"func (x *" + shared.Name + ") validate(c *validation.Collector, path, supportPath string)",
@@ -341,6 +343,10 @@ func TestSharedSubkeyTypeFollowsEachUsesAvailability(t *testing.T) {
 		if !strings.Contains(validate, want) {
 			t.Errorf("validate.gen.go missing %q", want)
 		}
+	}
+	registry := string(files["commands/registry.gen.go"])
+	if strings.Count(registry, "\tValidateInto(c *validation.Collector)\n") != 2 {
+		t.Errorf("Command and Response interfaces must declare ValidateInto:\n%s", registry)
 	}
 	supportFile := string(files["commands/support.gen.go"])
 	for _, want := range []string{

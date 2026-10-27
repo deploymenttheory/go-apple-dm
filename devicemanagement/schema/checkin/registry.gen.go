@@ -5,6 +5,7 @@ package checkin
 
 import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/validation"
 )
 
 // Message is implemented by every top-level type in this package.
@@ -15,6 +16,9 @@ type Message interface {
 	SchemaPath() string
 	// Validate checks the value against the schema for the target.
 	Validate(t support.Target) error
+	// ValidateInto records the value's errors, deprecation warnings and
+	// availability issues in c, checked against c's target.
+	ValidateInto(c *validation.Collector)
 }
 
 // Entry describes one schema in the Registry.

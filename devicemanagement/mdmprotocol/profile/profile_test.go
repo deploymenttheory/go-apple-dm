@@ -16,6 +16,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/profiles"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/validation"
 )
 
 // sample returns a profile containing MDM, root-certificate, and raw custom payloads.
@@ -154,7 +155,9 @@ func TestValidateErrors(t *testing.T) {
 	if m, err := (&profile.Payload{Content: empty, UUID: "u", Identifier: "i"}).Map(); err != nil || m["PayloadType"] != "x" || m["PayloadVersion"] != int64(1) {
 		t.Fatalf("empty raw: %v %v", m, err)
 	}
-	if empty.SchemaPath() != "" || empty.Validate(support.Target{}) != nil {
+	collector := validation.New(support.Target{OS: support.MacOS})
+	empty.ValidateInto(collector)
+	if empty.SchemaPath() != "" || empty.Validate(support.Target{}) != nil || collector.Err() != nil || collector.Availability() != nil {
 		t.Fatal("raw methods")
 	}
 }

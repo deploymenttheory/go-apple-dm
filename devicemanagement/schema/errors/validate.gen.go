@@ -12,8 +12,14 @@ import (
 // that every present key is supported on that OS version and enrollment context.
 func (x *CodePlatformSSORequired) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "CodePlatformSSORequired")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *CodePlatformSSORequired) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "CodePlatformSSORequired")
 }
 
 func (x *CodePlatformSSORequired) validate(c *validation.Collector, path, supportPath string) {
@@ -117,8 +123,14 @@ func (x *CodePlatformSSORequiredDetailsPackage) validate(c *validation.Collector
 // that every present key is supported on that OS version and enrollment context.
 func (x *CodeSoftwareUpdateRequired) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "CodeSoftwareUpdateRequired")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *CodeSoftwareUpdateRequired) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "CodeSoftwareUpdateRequired")
 }
 
 func (x *CodeSoftwareUpdateRequired) validate(c *validation.Collector, path, supportPath string) {
@@ -215,8 +227,14 @@ func (x *CodeSoftwareUpdateRequiredDetailsRequireBetaProgram) validate(c *valida
 // that every present key is supported on that OS version and enrollment context.
 func (x *UnrecognizedDevice) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "UnrecognizedDevice")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *UnrecognizedDevice) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "UnrecognizedDevice")
 }
 
 func (x *UnrecognizedDevice) validate(c *validation.Collector, path, supportPath string) {
@@ -253,8 +271,14 @@ func (x *UnrecognizedDevice) validate(c *validation.Collector, path, supportPath
 // that every present key is supported on that OS version and enrollment context.
 func (x *CodePairingTokenMissing) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "CodePairingTokenMissing")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *CodePairingTokenMissing) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "CodePairingTokenMissing")
 }
 
 func (x *CodePairingTokenMissing) validate(c *validation.Collector, path, supportPath string) {
@@ -315,9 +339,13 @@ func (x *CodePairingTokenMissingDetails) validate(c *validation.Collector, path,
 // that every present key is supported on that OS version and enrollment context.
 func (x *WellKnownFailed) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "WellKnownFailed")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *WellKnownFailed) ValidateInto(c *validation.Collector) { x.validate(c, "", "WellKnownFailed") }
 
 func (x *WellKnownFailed) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {

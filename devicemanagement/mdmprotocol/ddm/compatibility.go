@@ -1,6 +1,7 @@
 package ddm
 
 import (
+	"cmp"
 	"context"
 	json "encoding/json/v2"
 	"fmt"
@@ -11,14 +12,22 @@ import (
 	schemaddm "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/status"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/validation"
 )
 
-// CompatibilityIssue identifies a withheld or adjusted declaration without
-// disclosing settings, credentials, or arbitrary validation error values.
+// CompatibilityIssue identifies a withheld, adjusted or deprecated declaration
+// without disclosing settings, credentials, or arbitrary validation error
+// values.
 type CompatibilityIssue struct {
 	Identifier string
 	Reason     string
 	Withheld   bool
+	// Availability lists the declaration's keys whose availability rejects
+	// the target (severity error) or that the target has deprecated (severity
+	// warning). An unsupported-target issue lists its blocking keys; an
+	// eligible declaration with deprecated keys has its own non-withheld
+	// issue with reason "deprecated". Keys are identified by schema key path.
+	Availability []validation.AvailabilityIssue
 }
 
 // CompatibilityReport is a preview; requesting it never changes snapshots,
@@ -67,10 +76,11 @@ func (e *Engine) Compatibility(ctx context.Context, id mdm.EnrollmentID) (Compat
 }
 
 type compatibleItem struct {
-	item    SnapshotItem
-	typ     string
-	payload map[string]any
-	reason  string
+	item         SnapshotItem
+	typ          string
+	payload      map[string]any
+	reason       string
+	availability []validation.AvailabilityIssue
 }
 
 // filterCompatible removes declarations that cannot be delivered to the resolved target.
@@ -97,8 +107,12 @@ func filterCompatible(ctx context.Context, store DeclarationStore, items []Snaps
 		}
 		if unknown && env.Type != schemaddm.DeclarationTypeManagementStatusSubscriptions && env.Type != schemaddm.DeclarationTypeActivationSimple {
 			entry.reason = "inventory-required"
-		} else if _, err := ParseDeclaration(canonical, target); err != nil {
-			entry.reason = "unsupported-target"
+		} else {
+			c := validation.New(target)
+			if _, err := parseDeclaration(canonical, c); err != nil {
+				entry.reason = "unsupported-target"
+			}
+			entry.availability = c.Availability()
 		}
 		if entry.reason == "" && env.Type == schemaddm.DeclarationTypeManagementStatusSubscriptions {
 			pruneStatusSubscriptions(entry, target, unknown)
@@ -146,7 +160,7 @@ func filterCompatible(ctx context.Context, store DeclarationStore, items []Snaps
 			}
 		}
 		if entry.reason != "" {
-			issues = append(issues, CompatibilityIssue{Identifier: entry.item.Identifier, Reason: entry.reason, Withheld: true})
+			issues = append(issues, CompatibilityIssue{Identifier: entry.item.Identifier, Reason: entry.reason, Withheld: true, Availability: entry.availability})
 			continue
 		}
 		payload, err := canonjson.Marshal(entry.payload)
@@ -164,16 +178,13 @@ func filterCompatible(ctx context.Context, store DeclarationStore, items []Snaps
 		if modified {
 			issues = append(issues, CompatibilityIssue{Identifier: entry.item.Identifier, Reason: "references-filtered"})
 		}
+		if len(entry.availability) > 0 {
+			issues = append(issues, CompatibilityIssue{Identifier: entry.item.Identifier, Reason: "deprecated", Availability: entry.availability})
+		}
 		result = append(result, entry.item)
 	}
 	slices.SortFunc(issues, func(a, b CompatibilityIssue) int {
-		if a.Identifier < b.Identifier {
-			return -1
-		}
-		if a.Identifier > b.Identifier {
-			return 1
-		}
-		return 0
+		return cmp.Or(cmp.Compare(a.Identifier, b.Identifier), cmp.Compare(a.Reason, b.Reason))
 	})
 	return result, issues, nil
 }
