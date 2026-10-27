@@ -185,7 +185,7 @@ construct versions through `osversion`. See [OS versions and feature availabilit
 for version construction and availability checks. SSO value-specific floors are queryable through
 `profiles.ValueSupport(path, value)` and retain their containing key's constraints.
 
-The [Device Management Client Schema monitor](schema-monitor.md) discovers upcoming
+The [Apple Device Management Schema updates workflow](device-management-schema-updates.md) discovers upcoming
 release and seed schemas, retains immutable source commits and runs the generator
 on main in isolated workspaces. The published schema pin is a control. Generation,
 regeneration consistency and generated-package compilation determine compatibility.

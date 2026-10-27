@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Check upcoming Apple schemas with the generator on main and publish actionable failures."""
+"""Check upcoming Apple Device Management Schema commits with the generator on main, report
+generator failures and propose passing Apple releases as adoption pull requests."""
 import argparse
 import copy
 import json
@@ -12,7 +13,7 @@ import tempfile
 import time
 from urllib.parse import quote
 
-from device_management_client_schema_diagnostics import digest, findings
+from device_management_schema_update_diagnostics import digest, findings
 
 ROOT = Path(__file__).resolve().parents[2]
 UPSTREAM = "https://github.com/apple/device-management.git"
@@ -24,7 +25,7 @@ REF = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
 STAGES = ("snapshot", "generate", "verify", "compile")
 MARKER = re.compile(r"<!-- schema-monitor (\{.*?\}) -->")
 START, END = "<!-- schema-monitor:evidence:start -->", "<!-- schema-monitor:evidence:end -->"
-SCRIPT = ".github/scripts/device_management_client_schema_monitor.py"
+SCRIPT = ".github/scripts/device_management_schema_update.py"
 ADOPT_BRANCH = "schema/adopt-release"
 ADOPTION = re.compile(r"<!-- schema-adoption (\{.*?\}) -->")
 # The generator steps of make generate and make verify, run with the production identifier lock.
@@ -346,7 +347,7 @@ def issue_actions(existing, reports, manifest, run_url, repository):
                         {"path": "result.json", "detail": "Previously affected candidate has not been reassessed; retained for verification."}]})
             item["observations"].sort(key=lambda o: (o["branch"]["commit"], o["branch"]["ref"]))
         section = evidence_section(item, manifest["projectCommit"], manifest["control"]["commit"], run_url, repository)
-        title = "[Device Management Client Schema] " + item["title"]
+        title = "[Apple Device Management Schema] " + item["title"]
         if key not in indexed:
             actions.append(("POST", "issues", {"title": title, "body": section + "\n\n## Engineer notes\n",
                                                  "labels": ["schema-monitor", "schema-gap"]}))
@@ -421,7 +422,7 @@ class GitHub:
 
 
 def render_report(manifest, reports):
-    lines = ["# Device Management Client Schema Code Generation Monitor", "",
+    lines = ["# Apple Device Management Schema Updates", "",
              "Project: `" + manifest.get("projectCommit", "unknown") + "`.", "",
              "| Source | Generate | Verify | Compile |", "|---|---|---|---|"]
     for r in reports:
@@ -542,7 +543,7 @@ def prepare_adoption(repo, manifest, candidate, workspace, logs):
     version = commit[:12]
     if built["regenerated"]:
         version = json.loads((project / SCHEMA / "GENERATED_FROM.json").read_text())["os_versions"]
-    built["title"] = "feat(schema): adopt Apple device management release " + version
+    built["title"] = "feat(schema): adopt Apple device management schema release " + version
     run(["git", "commit", "--quiet", "-m", built["title"], "-m",
          "Pin apple/device-management@" + commit + " and regenerate " + SCHEMA + "."], project, env)
     built["head"] = run(["git", "rev-parse", "HEAD"], project).strip()
@@ -576,7 +577,7 @@ def adoption_body(manifest, candidate, built, run_url):
               "`test-lab/apple-features/macos27-coverage.json`. `TestSeedOS27CoverageInventory` fails until then.",
               "- [ ] Confirm that `EXPORTED_IDENTIFIERS.lock` only adds names.",
               "- [ ] Confirm that the compatibility history pin should remain unchanged.", "",
-              "Monitor run: " + run_url]
+              "Workflow run: " + run_url]
     return "\n".join(lines) + "\n"
 
 
@@ -653,7 +654,7 @@ def consolidation_actions(existing, historical_commit):
         if marker in issue["body"] and issue["state"] == "closed":
             continue
         note = ("\n\n" + marker + "\nThis finding comes from a historical seed older than the published schema. "
-                "The monitor now checks future schema code generation. Closing this record does not claim that "
+                "The Apple Device Management Schema updates workflow now checks future schema code generation. Closing this record does not claim that "
                 "historical parsing was repaired.\n")
         if issue["number"] == canonical:
             note += "\nConsolidated affected-file records: " + ", ".join("#" + str(i["number"]) for i in issues[1:]) + ".\n"
@@ -661,7 +662,7 @@ def consolidation_actions(existing, historical_commit):
             note += "\nConsolidated into #" + str(canonical) + ".\n"
         values = {"state": "closed", "state_reason": "not_planned", "body": issue["body"] + note}
         if issue["number"] == canonical:
-            values["title"] = "[Device Management Client Schema] Historical examples parser limitation (consolidated)"
+            values["title"] = "[Apple Device Management Schema] Historical examples parser limitation (consolidated)"
         actions.append(("PATCH", "issues/" + str(issue["number"]), values))
     return actions
 

@@ -57,7 +57,7 @@ def diagnosis(stage, message):
             "compile": ("internal/schemagen/emit_types.go", ""),
         }.get(stage, ("internal/schemagen/generate.go", "func Run("))
         why = "The recorded diagnostic identifies a failure in " + stage + "; a precise implementation fix needs investigation."
-        change = "Minimise the linked input and trace the diagnostic through the linked generator stage. The monitor has not verified a specific code change."
+        change = "Minimise the linked input and trace the diagnostic through the linked generator stage. The workflow has not verified a specific code change."
         if stage == "parse" and any(s in message for s in ("did not find", "could not find", "mapping values are not allowed")):
             why = "The YAML parser rejects the input syntax. This may require an upstream correction rather than new generator support."
             change = "Verify the original YAML at the recorded Apple commit and report malformed input upstream; do not weaken strict parsing to accept it."

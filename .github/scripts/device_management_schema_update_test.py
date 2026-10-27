@@ -6,8 +6,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import device_management_client_schema_monitor as m
-from device_management_client_schema_diagnostics import findings, diagnosis
+import device_management_schema_update as m
+from device_management_schema_update_diagnostics import findings, diagnosis
 
 
 PIN, NEXT, PROJECT = 'a' * 40, 'b' * 40, 'c' * 40
@@ -514,7 +514,7 @@ class AdoptionTests(unittest.TestCase):
             method, endpoint, body = api.calls[0]
             self.assertEqual(('POST', 'pulls', m.ADOPT_BRANCH, 'main'), (method, endpoint, body['head'], body['base']))
             self.assertFalse(body['draft'])
-            self.assertEqual('feat(schema): adopt Apple device management release 27.2', body['title'])
+            self.assertEqual('feat(schema): adopt Apple device management schema release 27.2', body['title'])
             self.assertIn('> # Changes in 27.2\n> - Adds 27.2', body['body'])
             self.assertNotIn('27.0', body['body'].split('## Apple release notes')[1].split('## Changed Apple files')[0])
             self.assertIn(candidate, m.run(['git', 'ls-tree', m.ADOPT_BRANCH, m.CURRENT], remote))
@@ -564,7 +564,7 @@ class AdoptionTests(unittest.TestCase):
             with patch.object(m, 'ADOPTION_STAGES', REGENERATE):
                 self.assertTrue(m.adopt(project, value, results, api, True, 'run', remote=str(remote)))
             state = json.loads((results / 'adoption.json').read_text())
-            self.assertEqual(('create', 'feat(schema): adopt Apple device management release 27.2'),
+            self.assertEqual(('create', 'feat(schema): adopt Apple device management schema release 27.2'),
                              (state['action'], state['proposal']['title']))
             self.assertIn('Report only: True.', (results / 'adoption.md').read_text())
             with patch.object(m, 'ADOPTION_STAGES', OFFLINE):

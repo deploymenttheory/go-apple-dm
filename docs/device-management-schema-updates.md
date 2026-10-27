@@ -1,7 +1,7 @@
-# Device Management Client Schema Code Generation Monitor
+# Apple Device Management Schema Updates
 
-The monitor checks whether the generator on main can process upcoming Apple Device
-Management Client Schemas and produce valid Go packages. A confirmed failure opens
+This workflow checks whether the generator on main can process upcoming Apple Device
+Management Schema commits and produce valid Go packages. A confirmed failure opens
 an incident explaining the schema change, generator limitation, relevant code and
 required regression test. A passing Apple release is proposed as one adoption pull
 request that moves the production pin and regenerates the library.
@@ -77,7 +77,7 @@ Seeds are never adopted. In an isolated clone of the project commit, the job che
 retained candidate snapshot in `third_party/apple-device-management/current`, then runs
 `go generate ./...`, `schemagen generate` and `schemagen verify` with the production
 exported-identifier lock. The compatibility history pin is unchanged. The title,
-`feat(schema): adopt Apple device management release <version>`, takes its version from
+`feat(schema): adopt Apple device management schema release <version>`, takes its version from
 the regenerated `os_versions` provenance.
 
 The pull request records the Apple, control, project and pushed head commits in a
@@ -109,21 +109,21 @@ the workflow token do not trigger CI.
 The workflow runs daily and supports manual dispatch. Dispatch defaults to report-only:
 source snapshots, assessment artifacts and the proposed adoption are retained, but issue
 publication and adoption pushes are disabled.
-Monitor unit and integration checks also run on pull requests changing its scripts or workflow.
+Its unit and integration tests also run on pull requests that change its scripts or workflow.
 
 ```sh
-python3 .github/scripts/device_management_client_schema_monitor.py discover \
+python3 .github/scripts/device_management_schema_update.py discover \
   --output /tmp/device-management-discovery.json
-python3 .github/scripts/device_management_client_schema_monitor.py capture \
+python3 .github/scripts/device_management_schema_update.py capture \
   --manifest /tmp/device-management-discovery.json \
   --output /tmp/device-management-capture.json
-python3 .github/scripts/device_management_client_schema_monitor.py assess \
+python3 .github/scripts/device_management_schema_update.py assess \
   --manifest /tmp/device-management-discovery.json --key ASSESSMENT_KEY \
   --output /tmp/device-management-assessments
-python3 .github/scripts/device_management_client_schema_monitor.py publish \
+python3 .github/scripts/device_management_schema_update.py publish \
   --manifest /tmp/device-management-discovery.json \
   --output /tmp/device-management-assessments --report-only
-python3 .github/scripts/device_management_client_schema_monitor.py adopt \
+python3 .github/scripts/device_management_schema_update.py adopt \
   --manifest /tmp/device-management-discovery.json \
   --output /tmp/device-management-assessments --report-only
 ```
@@ -131,13 +131,13 @@ python3 .github/scripts/device_management_client_schema_monitor.py adopt \
 `capture` writes immutable Git refs and requires repository contents permission.
 `assess` writes only temporary checkouts and local reports. `adopt` builds in a temporary
 clone; without `--report-only` it pushes `schema/adopt-release` and writes pull requests. To reproduce an existing
-assessment, download the `device-management-client-schema-discovery` artifact and use
+assessment, download the `device-management-schema-discovery` artifact and use
 its manifest and the assessment key recorded in the incident. Existing captured refs
 make another capture unnecessary.
 
-Artifacts are named `device-management-client-schema-discovery`,
-`device-management-client-schema-assessment-<key>`,
-`device-management-client-schema-summary` and `device-management-client-schema-adoption`.
+Artifacts are named `device-management-schema-discovery`,
+`device-management-schema-assessment-<key>`,
+`device-management-schema-summary` and `device-management-schema-adoption`.
 They retain complete file inventories, diagnostics, per-stage logs, planned issue actions,
 publication status and the adoption proposal for 30 days.
 
@@ -150,7 +150,7 @@ The closure explains that historical parsing has not been repaired. It does not 
 unrelated incidents or create future-schema incidents from historical observations.
 
 ```sh
-python3 .github/scripts/device_management_client_schema_monitor.py consolidate \
+python3 .github/scripts/device_management_schema_update.py consolidate \
   --historical-commit REVIEWED_HISTORICAL_SHA \
   --output /tmp/device-management-consolidation --report-only
 ```
@@ -160,11 +160,11 @@ is idempotent and uses the same paced, rate-limit-aware GitHub client.
 
 ## Sources and implementation
 
-Apple publishes [Device Management Client Schemas](https://github.com/apple/device-management)
-and the [schema format](https://github.com/apple/device-management/blob/release/docs/schema.md).
+Apple publishes the [Apple Device Management Schema](https://github.com/apple/device-management)
+and its [schema format](https://github.com/apple/device-management/blob/release/docs/schema.md).
 The [workflow](../.github/workflows/device-management-schema-update.yml),
-[monitor](../.github/scripts/device_management_client_schema_monitor.py) and
-[diagnostic classifier](../.github/scripts/device_management_client_schema_diagnostics.py)
+[update script](../.github/scripts/device_management_schema_update.py) and
+[diagnostic classifier](../.github/scripts/device_management_schema_update_diagnostics.py)
 implement the project's discovery, assessment and incident policy. The
 [published contract runner](../scripts/device-management-schema-contracts.py)
 verifies shipped features separately from candidate code generation.

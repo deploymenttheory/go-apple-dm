@@ -23,7 +23,7 @@ finished before the part that differentiates a product can start.
 
 The library provides reusable protocol, enrollment, certificate and Apple-service
 packages behind storage interfaces. Types, validation and platform support metadata
-come from Apple's [Device Management Client Schema](https://github.com/apple/device-management)
+come from the [Apple Device Management Schema](https://github.com/apple/device-management)
 and the pinned compatibility input. The reference server composes these packages
 with persistent SQL state, managed administration and background workers.
 

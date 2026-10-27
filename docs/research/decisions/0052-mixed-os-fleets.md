@@ -26,7 +26,7 @@ their own isolated immutable source workspace. `GENERATED_FROM.json` records bot
 commits and content hashes. Normal generation and verification discover that history
 input from `.gitmodules`. The original OS 27 seed is retained
 as an immutable canary snapshot. The thirteen OS 27 contracts run in ordinary
-validation. The monitor checks upcoming schemas with the current generator and uses the shipped
+validation. The Apple Device Management Schema updates workflow checks upcoming schemas with the current generator and uses the shipped
 release pin as its control. Its release adoption pull requests move only the primary
 pin and keep the historical input. Mixed-fleet behaviour contracts remain in ordinary CI.
 Later transitions must retain all
