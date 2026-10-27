@@ -37,8 +37,18 @@ func (e *emitter) validateFile() []byte {
 		e.validateType(body, td, &patterns)
 	}
 	b.WriteString("import (\n")
+	var std []string
 	if len(patterns) > 0 {
-		b.WriteString("\t\"regexp\"\n\n")
+		std = append(std, "regexp")
+	}
+	if bytes.Contains(body.Bytes(), []byte("strings.TrimSuffix(")) {
+		std = append(std, "strings")
+	}
+	for _, name := range std {
+		fmt.Fprintf(b, "\t%q\n", name)
+	}
+	if len(std) > 0 {
+		b.WriteString("\n")
 	}
 	b.WriteString(
 		"\t\"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support\"\n\t\"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/validation\"\n)\n\n",
@@ -59,20 +69,23 @@ func (e *emitter) validateType(b *bytes.Buffer, td *TypeDef, patterns *[]string)
 	if !td.Nested {
 		fmt.Fprintf(
 			b,
-			"// Validate checks x against the schema. With a non-zero target it also checks\n// that every present key is supported on that OS version and enrollment context.\nfunc (x *%s) Validate(t support.Target) error {\n\tc := validation.New(t)\n\tx.validate(c, \"\")\n\treturn c.Err()\n}\n\n",
+			"// Validate checks x against the schema. With a non-zero target it also checks\n// that every present key is supported on that OS version and enrollment context.\nfunc (x *%s) Validate(t support.Target) error {\n\tc := validation.New(t)\n\tx.validate(c, \"\", %q)\n\treturn c.Err()\n}\n\n",
 			td.Name,
+			rootSupportPath(td),
 		)
 	}
-	fmt.Fprintf(b, "func (x *%s) validate(c *validation.Collector, p string) {\n\tif x == nil { c.Required(p, false); return }\n", td.Name)
+	// path is the wire-key path of the value, used in validation errors.
+	// supportPath is the support table path of the key use being validated, so
+	// a struct shared by several uses checks each against that use's entries.
+	fmt.Fprintf(b, "func (x *%s) validate(c *validation.Collector, path, supportPath string) {\n\tif x == nil { c.Required(path, false); return }\n", td.Name)
 	if !td.Nested {
-		fmt.Fprintf(b, "\tc.Support(p, true, supportTable[%q])\n", td.Name)
+		fmt.Fprintf(b, "\tc.Support(path, true, supportTable[%q])\n", td.Name)
 	}
 	if len(td.Fields) == 0 {
-		b.WriteString("\t_, _ = c, p\n}\n\n")
+		b.WriteString("\t_, _, _ = c, path, supportPath\n}\n\n")
 		return
 	}
 	e.reviewedValidation(b, td)
-	top := topName(td)
 	for _, f := range td.Fields {
 		if f.Src.LegacyRequired {
 			alternative := legacyOptionalAlternatives[td.Schema.Path+"."+f.Key]
@@ -94,23 +107,23 @@ func (e *emitter) validateType(b *bytes.Buffer, td *TypeDef, patterns *[]string)
 		}
 		fmt.Fprintf(
 			b,
-			"\t{\n\t\tpath := validation.Join(p, %q)\n\t\tpresent := %s\n\t\t_, _ = path, present\n",
+			"\t{\n\t\tfieldPath := validation.Join(path, %q)\n\t\tpresent := %s\n\t\t_, _ = fieldPath, present\n",
 			key,
 			present,
 		)
 		if !td.Leaf {
-			fmt.Fprintf(b, "\t\tc.Support(path, present, supportTable[%q])\n", supportPath(top, f))
+			fmt.Fprintf(b, "\t\tc.Support(fieldPath, present, supportTable[supportPath+%q])\n", fieldSuffix(f))
 		}
 		if !f.Optional && !td.Leaf {
-			b.WriteString("\t\tc.Required(path, present)\n")
+			b.WriteString("\t\tc.Required(fieldPath, present)\n")
 		}
 		if f.Kind == KindScalar && hasValueFloor(td, f) {
-			fmt.Fprintf(b, "\t\tif present { c.Support(path, true, ValueSupport(%q, %s)) }\n", supportPath(top, f), value)
+			fmt.Fprintf(b, "\t\tif present { c.Support(fieldPath, true, ValueSupport(supportPath+%q, %s)) }\n", fieldSuffix(f), value)
 		}
-		e.constraintChecks(b, f, value, "path", patterns)
+		e.constraintChecks(b, f, value, "fieldPath", patterns)
 		switch f.Kind {
 		case KindStruct:
-			b.WriteString("\t\tif present {\n\t\t\tx." + f.Name + ".validate(c, path)\n\t\t}\n")
+			fmt.Fprintf(b, "\t\tif present {\n\t\t\tx.%s.validate(c, fieldPath, %s)\n\t\t}\n", f.Name, e.childSupportPath(td, f.Struct, f.Base, fieldSuffix(f)))
 		case KindArray:
 			if f.Elem != nil {
 				e.arrayChecks(b, f, patterns, td)
@@ -120,7 +133,7 @@ func (e *emitter) validateType(b *bytes.Buffer, td *TypeDef, patterns *[]string)
 			}
 		case KindMap:
 			if f.Elem != nil {
-				e.mapChecks(b, f, patterns)
+				e.mapChecks(b, f, patterns, td)
 			}
 		case KindScalar:
 		}
@@ -197,12 +210,11 @@ func (e *emitter) constraintChecks(
 
 // arrayChecks emits per-element checks.
 func (e *emitter) arrayChecks(b *bytes.Buffer, f *Field, patterns *[]string, td *TypeDef) {
-	top := topName(td)
 	k := f.Src
 	if k.Repetition != nil {
 		fmt.Fprintf(
 			b,
-			"\t\tc.Repetition(path, present, len(x.%s), %d, %d)\n",
+			"\t\tc.Repetition(fieldPath, present, len(x.%s), %d, %d)\n",
 			f.Name,
 			k.Repetition.Min,
 			k.Repetition.Max,
@@ -213,32 +225,33 @@ func (e *emitter) arrayChecks(b *bytes.Buffer, f *Field, patterns *[]string, td 
 	case KindStruct:
 		fmt.Fprintf(
 			b,
-			"\t\tfor i := range x.%s {\n\t\t\tx.%s[i].validate(c, validation.Index(path, i))\n\t\t}\n",
+			"\t\tfor i := range x.%s {\n\t\t\tx.%s[i].validate(c, validation.Index(fieldPath, i), %s)\n\t\t}\n",
 			f.Name,
 			f.Name,
+			e.childSupportPath(td, el.Struct, el.Base, elemSuffix(f)),
 		)
 	case KindScalar:
 		if hasValueFloor(td, f) {
-			fmt.Fprintf(b, "\t\tfor i, v := range x.%s { c.Support(validation.Index(path, i), true, ValueSupport(%q, v)) }\n", f.Name, supportPath(top, f))
+			fmt.Fprintf(b, "\t\tfor i, v := range x.%s { c.Support(validation.Index(fieldPath, i), true, ValueSupport(supportPath+%q, v)) }\n", f.Name, fieldSuffix(f))
 		}
 		ek := el.Src
 		if el.Base == "string" && len(ek.Subkeys) > 0 {
-			fmt.Fprintf(b, "\t\tfor i, v := range x.%s { c.Support(validation.Index(path, i), true, supportTable[%q + v]) }\n", f.Name, supportPath(top, f)+"."+el.Key+".")
+			fmt.Fprintf(b, "\t\tfor i, v := range x.%s { c.Support(validation.Index(fieldPath, i), true, supportTable[supportPath+%q+v]) }\n", f.Name, elemSuffix(f)+".")
 		}
 		if len(ek.RangeList) > 0 || ek.Range != nil || (ek.Format != "" && el.Base == "string") {
 			fmt.Fprintf(
 				b,
-				"\t\tfor i, v := range x.%s {\n\t\t\tip := validation.Index(path, i)\n",
+				"\t\tfor i, v := range x.%s {\n\t\t\titemPath := validation.Index(fieldPath, i)\n",
 				f.Name,
 			)
 			if len(ek.RangeList) > 0 &&
 				(el.Base == "string" || el.Base == "int64" || el.Base == "float64") {
-				fmt.Fprintf(b, "\t\t\tc.Enum(ip, true, v, []any{%s})\n", joinLiterals(ek.RangeList))
+				fmt.Fprintf(b, "\t\t\tc.Enum(itemPath, true, v, []any{%s})\n", joinLiterals(ek.RangeList))
 			}
 			if ek.Range != nil && (el.Base == "int64" || el.Base == "float64") {
 				fmt.Fprintf(
 					b,
-					"\t\t\tc.Range(ip, true, float64(v), %s, %s)\n",
+					"\t\t\tc.Range(itemPath, true, float64(v), %s, %s)\n",
 					floatPtr(ek.Range.Min),
 					floatPtr(ek.Range.Max),
 				)
@@ -247,7 +260,7 @@ func (e *emitter) arrayChecks(b *bytes.Buffer, f *Field, patterns *[]string, td 
 				if _, err := regexp.Compile(ek.Format); err == nil {
 					fmt.Fprintf(
 						b,
-						"\t\t\tc.Pattern(ip, true, v, format%d)\n",
+						"\t\t\tc.Pattern(itemPath, true, v, format%d)\n",
 						indexOf(patterns, ek.Format),
 					)
 				}
@@ -263,30 +276,35 @@ func (e *emitter) arrayChecks(b *bytes.Buffer, f *Field, patterns *[]string, td 
 func (e *emitter) variantChecks(b *bytes.Buffer, f *Field) {
 	fmt.Fprintf(
 		b,
-		"\t\tfor i, v := range x.%s {\n\t\t\tip := validation.Index(path, i)\n\t\t\tswitch t := v.(type) {\n",
+		"\t\tfor i, v := range x.%s {\n\t\t\titemPath := validation.Index(fieldPath, i)\n\t\t\tswitch t := v.(type) {\n",
 		f.Name,
 	)
-	for _, v := range f.Variants {
+	keys := variantKeys(f)
+	for i, v := range f.Variants {
+		variantPath := "supportPath+" + strconv.Quote(fieldSuffix(f)+"."+keys[i])
 		fmt.Fprintf(
 			b,
-			"\t\t\tcase *%s:\n\t\t\t\tif t != nil {\n\t\t\t\t\tt.validate(c, ip)\n\t\t\t\t}\n\t\t\tcase %s:\n\t\t\t\tt.validate(c, ip)\n",
+			"\t\t\tcase *%s:\n\t\t\t\tif t != nil {\n\t\t\t\t\tt.validate(c, itemPath, %s)\n\t\t\t\t}\n\t\t\tcase %s:\n\t\t\t\tt.validate(c, itemPath, %s)\n",
 			v.Name,
+			variantPath,
 			v.Name,
+			variantPath,
 		)
 	}
 	b.WriteString("\t\t\t}\n\t\t}\n")
 }
 
 // mapChecks emits per-value checks for wildcard-key dictionaries.
-func (e *emitter) mapChecks(b *bytes.Buffer, f *Field, patterns *[]string) {
+func (e *emitter) mapChecks(b *bytes.Buffer, f *Field, patterns *[]string, td *TypeDef) {
 	el := f.Elem
 	switch el.Kind {
 	case KindStruct:
 		fmt.Fprintf(
 			b,
-			"\t\tfor k := range x.%s {\n\t\t\tv := x.%s[k]\n\t\t\tv.validate(c, validation.Join(path, k))\n\t\t}\n",
+			"\t\tfor k := range x.%s {\n\t\t\tv := x.%s[k]\n\t\t\tv.validate(c, validation.Join(fieldPath, k), %s)\n\t\t}\n",
 			f.Name,
 			f.Name,
+			e.childSupportPath(td, el.Struct, el.Base, elemSuffix(f)),
 		)
 	case KindScalar:
 		ek := el.Src
@@ -294,7 +312,7 @@ func (e *emitter) mapChecks(b *bytes.Buffer, f *Field, patterns *[]string) {
 			(el.Base == "string" || el.Base == "int64" || el.Base == "float64") {
 			fmt.Fprintf(
 				b,
-				"\t\tfor k, v := range x.%s {\n\t\t\tc.Enum(validation.Join(path, k), true, v, []any{%s})\n\t\t}\n",
+				"\t\tfor k, v := range x.%s {\n\t\t\tc.Enum(validation.Join(fieldPath, k), true, v, []any{%s})\n\t\t}\n",
 				f.Name,
 				joinLiterals(ek.RangeList),
 			)
@@ -302,7 +320,7 @@ func (e *emitter) mapChecks(b *bytes.Buffer, f *Field, patterns *[]string) {
 		if ek.Range != nil && (el.Base == "int64" || el.Base == "float64") {
 			fmt.Fprintf(
 				b,
-				"\t\tfor k, v := range x.%s {\n\t\t\tc.Range(validation.Join(path, k), true, float64(v), %s, %s)\n\t\t}\n",
+				"\t\tfor k, v := range x.%s {\n\t\t\tc.Range(validation.Join(fieldPath, k), true, float64(v), %s, %s)\n\t\t}\n",
 				f.Name,
 				floatPtr(ek.Range.Min),
 				floatPtr(ek.Range.Max),
@@ -312,7 +330,7 @@ func (e *emitter) mapChecks(b *bytes.Buffer, f *Field, patterns *[]string) {
 			if _, err := regexp.Compile(ek.Format); err == nil {
 				fmt.Fprintf(
 					b,
-					"\t\tfor k, v := range x.%s {\n\t\t\tc.Pattern(validation.Join(path, k), true, v, format%d)\n\t\t}\n",
+					"\t\tfor k, v := range x.%s {\n\t\t\tc.Pattern(validation.Join(fieldPath, k), true, v, format%d)\n\t\t}\n",
 					f.Name,
 					indexOf(patterns, ek.Format),
 				)
@@ -350,4 +368,58 @@ func floatPtr(f *float64) string {
 		return "nil"
 	}
 	return "new(" + goLiteral(*f) + ")"
+}
+
+// fieldSuffix is what validation appends to a struct's support path to check
+// field f.
+func fieldSuffix(f *Field) string { return "." + f.Key }
+
+// elemSuffix is the support path suffix of f's array or map element.
+func elemSuffix(f *Field) string { return fieldSuffix(f) + "." + f.Elem.Key }
+
+// rootSupportPath is the support path of a top-level request or response.
+func rootSupportPath(td *TypeDef) string {
+	if td.IsResponse {
+		return topName(td) + ".response"
+	}
+	return td.Name
+}
+
+// childSupportPath returns the Go expression for the supportPath argument of a
+// nested struct value. A value reached through a recursive reference has its
+// owner's type and is checked against the owner's use, which encloses the
+// current struct: the owner's path is the current path without the keys between
+// them.
+func (e *emitter) childSupportPath(td, child *TypeDef, base, suffix string) string {
+	if child != nil {
+		return "supportPath+" + strconv.Quote(suffix)
+	}
+	owner := e.typeNamed(base)
+	switch {
+	case owner == nil:
+		return "supportPath"
+	case !owner.Nested:
+		return strconv.Quote(rootSupportPath(owner))
+	}
+	if rel, ok := strings.CutPrefix(td.KeyPath, owner.KeyPath); ok && (rel == "" || rel[0] == '.') {
+		if rel == "" {
+			return "supportPath"
+		}
+		return "strings.TrimSuffix(supportPath, " + strconv.Quote(rel) + ")"
+	}
+	use := owner.KeyPath
+	if owner.IsResponse {
+		use = responsePrefix + use
+	}
+	return strconv.Quote(tablePath(topName(owner), use))
+}
+
+// typeNamed returns the package type with the given Go name, or nil.
+func (e *emitter) typeNamed(name string) *TypeDef {
+	for _, td := range e.pkg.Types {
+		if td.Name == name {
+			return td
+		}
+	}
+	return nil
 }

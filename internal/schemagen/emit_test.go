@@ -232,10 +232,10 @@ func TestGenerateSynthetic(t *testing.T) {
 	}
 	validate := get("commands/validate.gen.go")
 	for _, want := range []string{
-		"not RE2-compatible", "c.Repetition(path, present, len(x.Strs), 1, 3)", "c.Enum(ip, true, v, []any{\"a\", \"b\"})",
-		"c.Range(ip, true, float64(v), new(0.0), new(9.0))", "c.Pattern(ip, true, v, format0)",
+		"not RE2-compatible", "c.Repetition(fieldPath, present, len(x.Strs), 1, 3)", "c.Enum(itemPath, true, v, []any{\"a\", \"b\"})",
+		"c.Range(itemPath, true, float64(v), new(0.0), new(9.0))", "c.Pattern(itemPath, true, v, format0)",
 		"for k, v := range x.MapStr", "for k, v := range x.MapNum", "case *ShapesUnionA:", "case ShapesUnionB:",
-		"c.Range(path, true, float64(*x.RealRange), new(0.5), nil)", "c.Enum(path, true, *x.IntEnum, []any{int64(3), int64(4)})",
+		"c.Range(fieldPath, true, float64(*x.RealRange), new(0.5), nil)", "c.Enum(fieldPath, true, *x.IntEnum, []any{int64(3), int64(4)})",
 	} {
 		if !strings.Contains(validate, want) {
 			t.Errorf("validate.gen.go missing %q", want)

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"maps"
 	"slices"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -16,71 +15,70 @@ import (
 type supportOS = support.OSSupport
 
 // effective computes the support table for a schema: one entry for the
-// schema itself (keyed by the top-level type name) and one per key path,
-// with per-key blocks inheriting from the payload block and from parent
-// keys, as docs/schema.md specifies.
+// schema itself (keyed by the top-level type name) and one per key use, with
+// per-key blocks inheriting from the payload block and from parent keys, as
+// docs/schema.md specifies. A struct shared by several uses is walked once per
+// use, and each use's entry comes from that use's own source keys.
 func effective(st *SchemaType) (map[string]*support.Entry, error) {
-	out := map[string]*support.Entry{}
+	source, err := keyAvailability(st.Schema)
+	if err != nil {
+		return nil, err
+	}
 	base, err := convertOS(nil, &st.Schema.Payload.SupportedOS)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", st.Schema.Path, err)
 	}
-	out[st.Name] = &support.Entry{Path: st.Name, OS: base}
-	var walk func(td *TypeDef, parent map[support.OS]*support.OSSupport) error
-	walk = func(td *TypeDef, parent map[support.OS]*support.OSSupport) error {
+	out := map[string]*support.Entry{st.Name: {Path: st.Name, OS: base}}
+	add := func(use string) error {
+		os, ok := source[use]
+		if !ok {
+			return fmt.Errorf("%s: %s: no source key for generated field", st.Schema.Path, use)
+		}
+		p := tablePath(st.Name, use)
+		out[p] = &support.Entry{Path: p, OS: os}
+		return nil
+	}
+	var walk func(td *TypeDef, prefix string) error
+	walk = func(td *TypeDef, prefix string) error {
 		if td == nil {
 			return nil
 		}
 		for _, f := range td.Fields {
-			eff, err := convertOS(parent, f.Src.SupportedOS)
-			if err != nil {
-				return fmt.Errorf("%s: %s: %w", st.Schema.Path, f.Path, err)
+			use := joinKeyPath(prefix, f.Key)
+			if err := add(use); err != nil {
+				return err
 			}
-			p := supportPath(st.Name, f)
-			out[p] = &support.Entry{Path: p, OS: eff}
-			if f.Struct != nil {
-				if err := walk(f.Struct, eff); err != nil {
-					return err
-				}
+			if err := walk(f.Struct, use); err != nil {
+				return err
 			}
-			if f.Elem != nil && f.Elem.Struct != nil {
-				elemEff, err := convertOS(eff, f.Elem.Src.SupportedOS)
-				if err != nil {
+			if f.Elem != nil {
+				item := use + "." + f.Elem.Key
+				if err := walk(f.Elem.Struct, item); err != nil {
 					return err
 				}
-				if err := walk(f.Elem.Struct, elemEff); err != nil {
-					return err
-				}
-			}
-			// String arrays such as DeviceInformation.Queries describe their
-			// named values as subkeys. They have no Go struct, but their per-value
-			// availability must still be retained and enforced.
-			if f.Elem != nil && f.Elem.Kind == KindScalar && f.Elem.Base == "string" {
-				itemOS, err := convertOS(eff, f.Elem.Src.SupportedOS)
-				if err != nil {
-					return err
-				}
-				for _, key := range f.Elem.Src.Subkeys {
-					valueOS, err := convertOS(itemOS, key.SupportedOS)
-					if err != nil {
-						return err
+				// String arrays such as DeviceInformation.Queries describe their
+				// named values as subkeys. They have no Go struct, but their
+				// per-value availability must still be retained and enforced.
+				if f.Elem.Kind == KindScalar && f.Elem.Base == "string" {
+					for _, value := range f.Elem.Src.Subkeys {
+						if err := add(item + "." + value.Key); err != nil {
+							return err
+						}
 					}
-					path := p + "." + f.Elem.Key + "." + key.Key
-					out[path] = &support.Entry{Path: path, OS: valueOS}
 				}
 			}
-			for _, v := range f.Variants {
-				if err := walk(v, eff); err != nil {
+			for i, key := range variantKeys(f) {
+				if err := walk(f.Variants[i], use+"."+key); err != nil {
 					return err
 				}
 			}
 		}
 		return nil
 	}
-	if err := walk(st.Request, base); err != nil {
+	if err := walk(st.Request, ""); err != nil {
 		return nil, err
 	}
-	if err := walk(st.Response, base); err != nil {
+	if err := walk(st.Response, responsePrefix); err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -210,43 +208,33 @@ func (e *emitter) supportFile() []byte {
 	b.WriteString(
 		"// Support returns the support entry for a key path such as \"DeviceLock.Message\"\n// or \"DeviceLock.response.MessageResult\", or nil when unknown.\nfunc Support(path string) *support.Entry { return supportTable[path] }\n\n",
 	)
-	all := map[string]*support.Entry{}
+	// Each schema's entries are added by their own function: a single map
+	// literal with thousands of nested entries exceeds compiler limits under
+	// race and coverage instrumentation.
+	b.WriteString(
+		"// supportTable is the effective supportedOS data for every schema and key use.\nvar supportTable = map[string]*support.Entry{}\n\n",
+	)
+	b.WriteString("func init() {\n")
 	for _, st := range e.pkg.Schemas {
+		fmt.Fprintf(b, "\t%s(supportTable)\n", addSupportFunc(st))
+	}
+	fmt.Fprintf(b, "\tsupport.Register(%q, supportTable)\n}\n\n", e.pkg.Name)
+	for _, st := range e.pkg.Schemas {
+		fmt.Fprintf(
+			b,
+			"// %s adds the support entries for %s and each of its key uses.\nfunc %s(table map[string]*support.Entry) {\n",
+			addSupportFunc(st),
+			st.Name,
+			addSupportFunc(st),
+		)
 		table, err := effective(st)
 		if err != nil {
 			// Surface as a compile error in the generated file so it cannot be missed.
-			fmt.Fprintf(b, "\t// ERROR: %v\n\t%q: nil,\n", err, st.Name)
+			fmt.Fprintf(b, "\t// ERROR: %v\n\t%q: nil,\n}\n\n", err, st.Name)
 			continue
 		}
-		maps.Copy(all, table)
-	}
-	keys := make([]string, 0, len(all))
-	for k := range all {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	// The table is assembled from small functions: a single map literal
-	// with thousands of nested entries exceeds compiler limits under race
-	// and coverage instrumentation.
-	const chunk = 100
-	parts := (len(keys) + chunk - 1) / chunk
-	b.WriteString(
-		"// supportTable is the effective supportedOS data for every schema and key.\nvar supportTable = map[string]*support.Entry{}\n\n",
-	)
-	b.WriteString("func init() {\n\tfor _, part := range []func(map[string]*support.Entry){\n")
-	for i := range parts {
-		fmt.Fprintf(b, "\t\tsupportPart%d,\n", i)
-	}
-	fmt.Fprintf(
-		b,
-		"\t} {\n\t\tpart(supportTable)\n\t}\n\tsupport.Register(%q, supportTable)\n}\n\n",
-		e.pkg.Name,
-	)
-	for i := range parts {
-		fmt.Fprintf(b, "func supportPart%d(t map[string]*support.Entry) {\n", i)
-		end := min((i+1)*chunk, len(keys))
-		for _, k := range keys[i*chunk : end] {
-			fmt.Fprintf(b, "\tt[%s] = &support.Entry%s\n", strconv.Quote(k), entryLiteral(all[k]))
+		for _, path := range slices.Sorted(maps.Keys(table)) {
+			fmt.Fprintf(b, "\ttable[%s] = &support.Entry%s\n", strconv.Quote(path), entryLiteral(table[path]))
 		}
 		b.WriteString("}\n\n")
 	}
@@ -257,6 +245,10 @@ func (e *emitter) supportFile() []byte {
 	}
 	return []byte(source)
 }
+
+// addSupportFunc names the generated function that adds a schema's entries to
+// the support table.
+func addSupportFunc(st *SchemaType) string { return "add" + st.Name + "Support" }
 
 // entryLiteral renders a support metadata entry as a Go literal.
 func entryLiteral(en *support.Entry) string {

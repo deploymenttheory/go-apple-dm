@@ -12,85 +12,85 @@ import (
 // that every present key is supported on that OS version and enrollment context.
 func (x *AccountListCalDAV) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AccountListCalDAV")
 	return c.Err()
 }
 
-func (x *AccountListCalDAV) validate(c *validation.Collector, p string) {
+func (x *AccountListCalDAV) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AccountListCalDAV"])
+	c.Support(path, true, supportTable["AccountListCalDAV"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 		for i := range x.Value {
-			x.Value[i].validate(c, validation.Index(path, i))
+			x.Value[i].validate(c, validation.Index(fieldPath, i), supportPath+".account.list.caldav.status_value")
 		}
 	}
 }
 
-func (x *AccountListCalDAVAccount) validate(c *validation.Collector, p string) {
+func (x *AccountListCalDAVAccount) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "identifier")
+		fieldPath := validation.Join(path, "identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListCalDAV.account.list.caldav.status_value.identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "_removed")
+		fieldPath := validation.Join(path, "_removed")
 		present := x.Removed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListCalDAV.account.list.caldav.status_value._removed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+"._removed"])
 	}
 	{
-		path := validation.Join(p, "declaration-identifier")
+		fieldPath := validation.Join(path, "declaration-identifier")
 		present := x.DeclarationIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListCalDAV.account.list.caldav.status_value.declaration-identifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".declaration-identifier"])
 	}
 	{
-		path := validation.Join(p, "visible-name")
+		fieldPath := validation.Join(path, "visible-name")
 		present := x.VisibleName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListCalDAV.account.list.caldav.status_value.visible-name"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".visible-name"])
 	}
 	{
-		path := validation.Join(p, "hostname")
+		fieldPath := validation.Join(path, "hostname")
 		present := x.Hostname != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListCalDAV.account.list.caldav.status_value.hostname"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".hostname"])
 	}
 	{
-		path := validation.Join(p, "port")
+		fieldPath := validation.Join(path, "port")
 		present := x.Port != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListCalDAV.account.list.caldav.status_value.port"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".port"])
 	}
 	{
-		path := validation.Join(p, "username")
+		fieldPath := validation.Join(path, "username")
 		present := x.Username != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListCalDAV.account.list.caldav.status_value.username"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".username"])
 	}
 	{
-		path := validation.Join(p, "are-calendars-enabled")
+		fieldPath := validation.Join(path, "are-calendars-enabled")
 		present := x.AreCalendarsEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListCalDAV.account.list.caldav.status_value.are-calendars-enabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".are-calendars-enabled"])
 	}
 	{
-		path := validation.Join(p, "are-reminders-enabled")
+		fieldPath := validation.Join(path, "are-reminders-enabled")
 		present := x.AreRemindersEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListCalDAV.account.list.caldav.status_value.are-reminders-enabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".are-reminders-enabled"])
 	}
 }
 
@@ -98,73 +98,73 @@ func (x *AccountListCalDAVAccount) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *AccountListCardDAV) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AccountListCardDAV")
 	return c.Err()
 }
 
-func (x *AccountListCardDAV) validate(c *validation.Collector, p string) {
+func (x *AccountListCardDAV) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AccountListCardDAV"])
+	c.Support(path, true, supportTable["AccountListCardDAV"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 		for i := range x.Value {
-			x.Value[i].validate(c, validation.Index(path, i))
+			x.Value[i].validate(c, validation.Index(fieldPath, i), supportPath+".account.list.carddav.status_value")
 		}
 	}
 }
 
-func (x *AccountListCardDAVAccount) validate(c *validation.Collector, p string) {
+func (x *AccountListCardDAVAccount) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "identifier")
+		fieldPath := validation.Join(path, "identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListCardDAV.account.list.carddav.status_value.identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "_removed")
+		fieldPath := validation.Join(path, "_removed")
 		present := x.Removed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListCardDAV.account.list.carddav.status_value._removed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+"._removed"])
 	}
 	{
-		path := validation.Join(p, "declaration-identifier")
+		fieldPath := validation.Join(path, "declaration-identifier")
 		present := x.DeclarationIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListCardDAV.account.list.carddav.status_value.declaration-identifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".declaration-identifier"])
 	}
 	{
-		path := validation.Join(p, "visible-name")
+		fieldPath := validation.Join(path, "visible-name")
 		present := x.VisibleName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListCardDAV.account.list.carddav.status_value.visible-name"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".visible-name"])
 	}
 	{
-		path := validation.Join(p, "hostname")
+		fieldPath := validation.Join(path, "hostname")
 		present := x.Hostname != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListCardDAV.account.list.carddav.status_value.hostname"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".hostname"])
 	}
 	{
-		path := validation.Join(p, "port")
+		fieldPath := validation.Join(path, "port")
 		present := x.Port != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListCardDAV.account.list.carddav.status_value.port"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".port"])
 	}
 	{
-		path := validation.Join(p, "username")
+		fieldPath := validation.Join(path, "username")
 		present := x.Username != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListCardDAV.account.list.carddav.status_value.username"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".username"])
 	}
 }
 
@@ -172,103 +172,103 @@ func (x *AccountListCardDAVAccount) validate(c *validation.Collector, p string) 
 // that every present key is supported on that OS version and enrollment context.
 func (x *AccountListExchange) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AccountListExchange")
 	return c.Err()
 }
 
-func (x *AccountListExchange) validate(c *validation.Collector, p string) {
+func (x *AccountListExchange) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AccountListExchange"])
+	c.Support(path, true, supportTable["AccountListExchange"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 		for i := range x.Value {
-			x.Value[i].validate(c, validation.Index(path, i))
+			x.Value[i].validate(c, validation.Index(fieldPath, i), supportPath+".account.list.exchange.status_value")
 		}
 	}
 }
 
-func (x *AccountListExchangeAccount) validate(c *validation.Collector, p string) {
+func (x *AccountListExchangeAccount) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "identifier")
+		fieldPath := validation.Join(path, "identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListExchange.account.list.exchange.status_value.identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "_removed")
+		fieldPath := validation.Join(path, "_removed")
 		present := x.Removed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListExchange.account.list.exchange.status_value._removed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+"._removed"])
 	}
 	{
-		path := validation.Join(p, "declaration-identifier")
+		fieldPath := validation.Join(path, "declaration-identifier")
 		present := x.DeclarationIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListExchange.account.list.exchange.status_value.declaration-identifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".declaration-identifier"])
 	}
 	{
-		path := validation.Join(p, "visible-name")
+		fieldPath := validation.Join(path, "visible-name")
 		present := x.VisibleName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListExchange.account.list.exchange.status_value.visible-name"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".visible-name"])
 	}
 	{
-		path := validation.Join(p, "hostname")
+		fieldPath := validation.Join(path, "hostname")
 		present := x.Hostname != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListExchange.account.list.exchange.status_value.hostname"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".hostname"])
 	}
 	{
-		path := validation.Join(p, "port")
+		fieldPath := validation.Join(path, "port")
 		present := x.Port != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListExchange.account.list.exchange.status_value.port"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".port"])
 	}
 	{
-		path := validation.Join(p, "username")
+		fieldPath := validation.Join(path, "username")
 		present := x.Username != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListExchange.account.list.exchange.status_value.username"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".username"])
 	}
 	{
-		path := validation.Join(p, "is-mail-enabled")
+		fieldPath := validation.Join(path, "is-mail-enabled")
 		present := x.IsMailEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListExchange.account.list.exchange.status_value.is-mail-enabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".is-mail-enabled"])
 	}
 	{
-		path := validation.Join(p, "are-calendars-enabled")
+		fieldPath := validation.Join(path, "are-calendars-enabled")
 		present := x.AreCalendarsEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListExchange.account.list.exchange.status_value.are-calendars-enabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".are-calendars-enabled"])
 	}
 	{
-		path := validation.Join(p, "are-contacts-enabled")
+		fieldPath := validation.Join(path, "are-contacts-enabled")
 		present := x.AreContactsEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListExchange.account.list.exchange.status_value.are-contacts-enabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".are-contacts-enabled"])
 	}
 	{
-		path := validation.Join(p, "are-notes-enabled")
+		fieldPath := validation.Join(path, "are-notes-enabled")
 		present := x.AreNotesEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListExchange.account.list.exchange.status_value.are-notes-enabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".are-notes-enabled"])
 	}
 	{
-		path := validation.Join(p, "are-reminders-enabled")
+		fieldPath := validation.Join(path, "are-reminders-enabled")
 		present := x.AreRemindersEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListExchange.account.list.exchange.status_value.are-reminders-enabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".are-reminders-enabled"])
 	}
 }
 
@@ -276,85 +276,85 @@ func (x *AccountListExchangeAccount) validate(c *validation.Collector, p string)
 // that every present key is supported on that OS version and enrollment context.
 func (x *AccountListGoogle) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AccountListGoogle")
 	return c.Err()
 }
 
-func (x *AccountListGoogle) validate(c *validation.Collector, p string) {
+func (x *AccountListGoogle) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AccountListGoogle"])
+	c.Support(path, true, supportTable["AccountListGoogle"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 		for i := range x.Value {
-			x.Value[i].validate(c, validation.Index(path, i))
+			x.Value[i].validate(c, validation.Index(fieldPath, i), supportPath+".account.list.google.status_value")
 		}
 	}
 }
 
-func (x *AccountListGoogleAccount) validate(c *validation.Collector, p string) {
+func (x *AccountListGoogleAccount) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "identifier")
+		fieldPath := validation.Join(path, "identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListGoogle.account.list.google.status_value.identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "_removed")
+		fieldPath := validation.Join(path, "_removed")
 		present := x.Removed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListGoogle.account.list.google.status_value._removed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+"._removed"])
 	}
 	{
-		path := validation.Join(p, "declaration-identifier")
+		fieldPath := validation.Join(path, "declaration-identifier")
 		present := x.DeclarationIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListGoogle.account.list.google.status_value.declaration-identifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".declaration-identifier"])
 	}
 	{
-		path := validation.Join(p, "visible-name")
+		fieldPath := validation.Join(path, "visible-name")
 		present := x.VisibleName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListGoogle.account.list.google.status_value.visible-name"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".visible-name"])
 	}
 	{
-		path := validation.Join(p, "username")
+		fieldPath := validation.Join(path, "username")
 		present := x.Username != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListGoogle.account.list.google.status_value.username"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".username"])
 	}
 	{
-		path := validation.Join(p, "is-mail-enabled")
+		fieldPath := validation.Join(path, "is-mail-enabled")
 		present := x.IsMailEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListGoogle.account.list.google.status_value.is-mail-enabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".is-mail-enabled"])
 	}
 	{
-		path := validation.Join(p, "are-calendars-enabled")
+		fieldPath := validation.Join(path, "are-calendars-enabled")
 		present := x.AreCalendarsEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListGoogle.account.list.google.status_value.are-calendars-enabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".are-calendars-enabled"])
 	}
 	{
-		path := validation.Join(p, "are-contacts-enabled")
+		fieldPath := validation.Join(path, "are-contacts-enabled")
 		present := x.AreContactsEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListGoogle.account.list.google.status_value.are-contacts-enabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".are-contacts-enabled"])
 	}
 	{
-		path := validation.Join(p, "are-notes-enabled")
+		fieldPath := validation.Join(path, "are-notes-enabled")
 		present := x.AreNotesEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListGoogle.account.list.google.status_value.are-notes-enabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".are-notes-enabled"])
 	}
 }
 
@@ -362,79 +362,79 @@ func (x *AccountListGoogleAccount) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *AccountListLDAP) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AccountListLDAP")
 	return c.Err()
 }
 
-func (x *AccountListLDAP) validate(c *validation.Collector, p string) {
+func (x *AccountListLDAP) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AccountListLDAP"])
+	c.Support(path, true, supportTable["AccountListLDAP"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 		for i := range x.Value {
-			x.Value[i].validate(c, validation.Index(path, i))
+			x.Value[i].validate(c, validation.Index(fieldPath, i), supportPath+".account.list.ldap.status_value")
 		}
 	}
 }
 
-func (x *AccountListLDAPAccount) validate(c *validation.Collector, p string) {
+func (x *AccountListLDAPAccount) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "identifier")
+		fieldPath := validation.Join(path, "identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListLDAP.account.list.ldap.status_value.identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "_removed")
+		fieldPath := validation.Join(path, "_removed")
 		present := x.Removed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListLDAP.account.list.ldap.status_value._removed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+"._removed"])
 	}
 	{
-		path := validation.Join(p, "declaration-identifier")
+		fieldPath := validation.Join(path, "declaration-identifier")
 		present := x.DeclarationIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListLDAP.account.list.ldap.status_value.declaration-identifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".declaration-identifier"])
 	}
 	{
-		path := validation.Join(p, "visible-name")
+		fieldPath := validation.Join(path, "visible-name")
 		present := x.VisibleName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListLDAP.account.list.ldap.status_value.visible-name"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".visible-name"])
 	}
 	{
-		path := validation.Join(p, "hostname")
+		fieldPath := validation.Join(path, "hostname")
 		present := x.Hostname != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListLDAP.account.list.ldap.status_value.hostname"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".hostname"])
 	}
 	{
-		path := validation.Join(p, "port")
+		fieldPath := validation.Join(path, "port")
 		present := x.Port != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListLDAP.account.list.ldap.status_value.port"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".port"])
 	}
 	{
-		path := validation.Join(p, "username")
+		fieldPath := validation.Join(path, "username")
 		present := x.Username != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListLDAP.account.list.ldap.status_value.username"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".username"])
 	}
 	{
-		path := validation.Join(p, "is-enabled")
+		fieldPath := validation.Join(path, "is-enabled")
 		present := x.IsEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListLDAP.account.list.ldap.status_value.is-enabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".is-enabled"])
 	}
 }
 
@@ -442,85 +442,85 @@ func (x *AccountListLDAPAccount) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *AccountListMailIncoming) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AccountListMailIncoming")
 	return c.Err()
 }
 
-func (x *AccountListMailIncoming) validate(c *validation.Collector, p string) {
+func (x *AccountListMailIncoming) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AccountListMailIncoming"])
+	c.Support(path, true, supportTable["AccountListMailIncoming"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 		for i := range x.Value {
-			x.Value[i].validate(c, validation.Index(path, i))
+			x.Value[i].validate(c, validation.Index(fieldPath, i), supportPath+".account.list.mail.incoming.status_value")
 		}
 	}
 }
 
-func (x *AccountListMailIncomingAccount) validate(c *validation.Collector, p string) {
+func (x *AccountListMailIncomingAccount) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "identifier")
+		fieldPath := validation.Join(path, "identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListMailIncoming.account.list.mail.incoming.status_value.identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "_removed")
+		fieldPath := validation.Join(path, "_removed")
 		present := x.Removed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListMailIncoming.account.list.mail.incoming.status_value._removed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+"._removed"])
 	}
 	{
-		path := validation.Join(p, "declaration-identifier")
+		fieldPath := validation.Join(path, "declaration-identifier")
 		present := x.DeclarationIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListMailIncoming.account.list.mail.incoming.status_value.declaration-identifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".declaration-identifier"])
 	}
 	{
-		path := validation.Join(p, "visible-name")
+		fieldPath := validation.Join(path, "visible-name")
 		present := x.VisibleName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListMailIncoming.account.list.mail.incoming.status_value.visible-name"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".visible-name"])
 	}
 	{
-		path := validation.Join(p, "hostname")
+		fieldPath := validation.Join(path, "hostname")
 		present := x.Hostname != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListMailIncoming.account.list.mail.incoming.status_value.hostname"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".hostname"])
 	}
 	{
-		path := validation.Join(p, "port")
+		fieldPath := validation.Join(path, "port")
 		present := x.Port != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListMailIncoming.account.list.mail.incoming.status_value.port"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".port"])
 	}
 	{
-		path := validation.Join(p, "username")
+		fieldPath := validation.Join(path, "username")
 		present := x.Username != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListMailIncoming.account.list.mail.incoming.status_value.username"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".username"])
 	}
 	{
-		path := validation.Join(p, "is-mail-enabled")
+		fieldPath := validation.Join(path, "is-mail-enabled")
 		present := x.IsMailEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListMailIncoming.account.list.mail.incoming.status_value.is-mail-enabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".is-mail-enabled"])
 	}
 	{
-		path := validation.Join(p, "are-notes-enabled")
+		fieldPath := validation.Join(path, "are-notes-enabled")
 		present := x.AreNotesEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListMailIncoming.account.list.mail.incoming.status_value.are-notes-enabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".are-notes-enabled"])
 	}
 }
 
@@ -528,73 +528,73 @@ func (x *AccountListMailIncomingAccount) validate(c *validation.Collector, p str
 // that every present key is supported on that OS version and enrollment context.
 func (x *AccountListMailOutgoing) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AccountListMailOutgoing")
 	return c.Err()
 }
 
-func (x *AccountListMailOutgoing) validate(c *validation.Collector, p string) {
+func (x *AccountListMailOutgoing) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AccountListMailOutgoing"])
+	c.Support(path, true, supportTable["AccountListMailOutgoing"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 		for i := range x.Value {
-			x.Value[i].validate(c, validation.Index(path, i))
+			x.Value[i].validate(c, validation.Index(fieldPath, i), supportPath+".account.list.mail.outgoing.status_value")
 		}
 	}
 }
 
-func (x *AccountListMailOutgoingAccount) validate(c *validation.Collector, p string) {
+func (x *AccountListMailOutgoingAccount) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "identifier")
+		fieldPath := validation.Join(path, "identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListMailOutgoing.account.list.mail.outgoing.status_value.identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "_removed")
+		fieldPath := validation.Join(path, "_removed")
 		present := x.Removed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListMailOutgoing.account.list.mail.outgoing.status_value._removed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+"._removed"])
 	}
 	{
-		path := validation.Join(p, "declaration-identifier")
+		fieldPath := validation.Join(path, "declaration-identifier")
 		present := x.DeclarationIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListMailOutgoing.account.list.mail.outgoing.status_value.declaration-identifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".declaration-identifier"])
 	}
 	{
-		path := validation.Join(p, "visible-name")
+		fieldPath := validation.Join(path, "visible-name")
 		present := x.VisibleName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListMailOutgoing.account.list.mail.outgoing.status_value.visible-name"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".visible-name"])
 	}
 	{
-		path := validation.Join(p, "hostname")
+		fieldPath := validation.Join(path, "hostname")
 		present := x.Hostname != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListMailOutgoing.account.list.mail.outgoing.status_value.hostname"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".hostname"])
 	}
 	{
-		path := validation.Join(p, "port")
+		fieldPath := validation.Join(path, "port")
 		present := x.Port != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListMailOutgoing.account.list.mail.outgoing.status_value.port"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".port"])
 	}
 	{
-		path := validation.Join(p, "username")
+		fieldPath := validation.Join(path, "username")
 		present := x.Username != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListMailOutgoing.account.list.mail.outgoing.status_value.username"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".username"])
 	}
 }
 
@@ -602,73 +602,73 @@ func (x *AccountListMailOutgoingAccount) validate(c *validation.Collector, p str
 // that every present key is supported on that OS version and enrollment context.
 func (x *AccountListSubscribedCalendar) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AccountListSubscribedCalendar")
 	return c.Err()
 }
 
-func (x *AccountListSubscribedCalendar) validate(c *validation.Collector, p string) {
+func (x *AccountListSubscribedCalendar) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AccountListSubscribedCalendar"])
+	c.Support(path, true, supportTable["AccountListSubscribedCalendar"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 		for i := range x.Value {
-			x.Value[i].validate(c, validation.Index(path, i))
+			x.Value[i].validate(c, validation.Index(fieldPath, i), supportPath+".account.list.subscribed-calendar.status_value")
 		}
 	}
 }
 
-func (x *AccountListSubscribedCalendarAccount) validate(c *validation.Collector, p string) {
+func (x *AccountListSubscribedCalendarAccount) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "identifier")
+		fieldPath := validation.Join(path, "identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListSubscribedCalendar.account.list.subscribed-calendar.status_value.identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "_removed")
+		fieldPath := validation.Join(path, "_removed")
 		present := x.Removed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListSubscribedCalendar.account.list.subscribed-calendar.status_value._removed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+"._removed"])
 	}
 	{
-		path := validation.Join(p, "declaration-identifier")
+		fieldPath := validation.Join(path, "declaration-identifier")
 		present := x.DeclarationIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListSubscribedCalendar.account.list.subscribed-calendar.status_value.declaration-identifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".declaration-identifier"])
 	}
 	{
-		path := validation.Join(p, "visible-name")
+		fieldPath := validation.Join(path, "visible-name")
 		present := x.VisibleName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListSubscribedCalendar.account.list.subscribed-calendar.status_value.visible-name"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".visible-name"])
 	}
 	{
-		path := validation.Join(p, "calendar-url")
+		fieldPath := validation.Join(path, "calendar-url")
 		present := x.CalendarUrl != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListSubscribedCalendar.account.list.subscribed-calendar.status_value.calendar-url"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".calendar-url"])
 	}
 	{
-		path := validation.Join(p, "username")
+		fieldPath := validation.Join(path, "username")
 		present := x.Username != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListSubscribedCalendar.account.list.subscribed-calendar.status_value.username"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".username"])
 	}
 	{
-		path := validation.Join(p, "is-enabled")
+		fieldPath := validation.Join(path, "is-enabled")
 		present := x.IsEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AccountListSubscribedCalendar.account.list.subscribed-calendar.status_value.is-enabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".is-enabled"])
 	}
 }
 
@@ -676,178 +676,178 @@ func (x *AccountListSubscribedCalendarAccount) validate(c *validation.Collector,
 // that every present key is supported on that OS version and enrollment context.
 func (x *AppManagedList) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AppManagedList")
 	return c.Err()
 }
 
-func (x *AppManagedList) validate(c *validation.Collector, p string) {
+func (x *AppManagedList) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AppManagedList"])
+	c.Support(path, true, supportTable["AppManagedList"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 		for i := range x.Value {
-			x.Value[i].validate(c, validation.Index(path, i))
+			x.Value[i].validate(c, validation.Index(fieldPath, i), supportPath+".app.managed.list.status_value")
 		}
 	}
 }
 
-func (x *AppManagedListApp) validate(c *validation.Collector, p string) {
+func (x *AppManagedListApp) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "identifier")
+		fieldPath := validation.Join(path, "identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppManagedList.app.managed.list.status_value.identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "_removed")
+		fieldPath := validation.Join(path, "_removed")
 		present := x.Removed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppManagedList.app.managed.list.status_value._removed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+"._removed"])
 	}
 	{
-		path := validation.Join(p, "declaration-identifier")
+		fieldPath := validation.Join(path, "declaration-identifier")
 		present := x.DeclarationIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppManagedList.app.managed.list.status_value.declaration-identifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".declaration-identifier"])
 	}
 	{
-		path := validation.Join(p, "name")
+		fieldPath := validation.Join(path, "name")
 		present := x.Name != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppManagedList.app.managed.list.status_value.name"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".name"])
 	}
 	{
-		path := validation.Join(p, "external-version-id")
+		fieldPath := validation.Join(path, "external-version-id")
 		present := x.ExternalVersionId != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppManagedList.app.managed.list.status_value.external-version-id"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".external-version-id"])
 	}
 	{
-		path := validation.Join(p, "version")
+		fieldPath := validation.Join(path, "version")
 		present := x.Version != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppManagedList.app.managed.list.status_value.version"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".version"])
 	}
 	{
-		path := validation.Join(p, "short-version")
+		fieldPath := validation.Join(path, "short-version")
 		present := x.ShortVersion != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppManagedList.app.managed.list.status_value.short-version"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".short-version"])
 	}
 	{
-		path := validation.Join(p, "state")
+		fieldPath := validation.Join(path, "state")
 		present := x.State != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppManagedList.app.managed.list.status_value.state"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".state"])
 		if present {
-			c.Enum(path, true, *x.State, []any{"optional", "queued", "not-present", "prompting-for-consent", "prompting-for-login", "prompting-for-management", "downloading", "installing", "managed", "managed-but-uninstalled", "failed"})
+			c.Enum(fieldPath, true, *x.State, []any{"optional", "queued", "not-present", "prompting-for-consent", "prompting-for-login", "prompting-for-management", "downloading", "installing", "managed", "managed-but-uninstalled", "failed"})
 		}
 	}
 	{
-		path := validation.Join(p, "update-state")
+		fieldPath := validation.Join(path, "update-state")
 		present := x.UpdateState != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppManagedList.app.managed.list.status_value.update-state"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".update-state"])
 		if present {
-			c.Enum(path, true, *x.UpdateState, []any{"available", "prompting-for-update", "prompting-for-update-login", "updating", "failed"})
+			c.Enum(fieldPath, true, *x.UpdateState, []any{"available", "prompting-for-update", "prompting-for-update-login", "updating", "failed"})
 		}
 	}
 	{
-		path := validation.Join(p, "config-state")
+		fieldPath := validation.Join(path, "config-state")
 		present := x.ConfigState != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppManagedList.app.managed.list.status_value.config-state"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".config-state"])
 		if present {
-			x.ConfigState.validate(c, path)
+			x.ConfigState.validate(c, fieldPath, supportPath+".config-state")
 		}
 	}
 	{
-		path := validation.Join(p, "reasons")
+		fieldPath := validation.Join(path, "reasons")
 		present := len(x.Reasons) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppManagedList.app.managed.list.status_value.reasons"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".reasons"])
 		for i := range x.Reasons {
-			x.Reasons[i].validate(c, validation.Index(path, i))
+			x.Reasons[i].validate(c, validation.Index(fieldPath, i), supportPath+".reasons._reasons")
 		}
 	}
 }
 
-func (x *AppManagedListManagedConfiguration) validate(c *validation.Collector, p string) {
+func (x *AppManagedListManagedConfiguration) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "app-config-state")
+		fieldPath := validation.Join(path, "app-config-state")
 		present := x.AppConfigState != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppManagedList.app.managed.list.status_value.config-state.app-config-state"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".app-config-state"])
 		if present {
-			x.AppConfigState.validate(c, path)
+			x.AppConfigState.validate(c, fieldPath, supportPath+".app-config-state")
 		}
 	}
 	{
-		path := validation.Join(p, "extension-config-state")
+		fieldPath := validation.Join(path, "extension-config-state")
 		present := len(x.ExtensionConfigState) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppManagedList.app.managed.list.status_value.config-state.extension-config-state"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".extension-config-state"])
 		for k := range x.ExtensionConfigState {
 			v := x.ExtensionConfigState[k]
-			v.validate(c, validation.Join(path, k))
+			v.validate(c, validation.Join(fieldPath, k), supportPath+".extension-config-state.ANY")
 		}
 	}
 }
 
-func (x *AppManagedListManagedConfigurationState) validate(c *validation.Collector, p string) {
+func (x *AppManagedListManagedConfigurationState) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "state")
+		fieldPath := validation.Join(path, "state")
 		present := x.State != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppManagedList.app.managed.list.status_value.config-state.app-config-state.state"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".state"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.State, []any{"unknown", "invalid", "valid"})
+			c.Enum(fieldPath, true, x.State, []any{"unknown", "invalid", "valid"})
 		}
 	}
 }
 
-func (x *AppManagedListStatusReason) validate(c *validation.Collector, p string) {
+func (x *AppManagedListStatusReason) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "code")
+		fieldPath := validation.Join(path, "code")
 		present := x.Code != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppManagedList.app.managed.list.status_value.reasons._reasons.code"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".code"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "description")
+		fieldPath := validation.Join(path, "description")
 		present := x.Description != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppManagedList.app.managed.list.status_value.reasons._reasons.description"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".description"])
 	}
 	{
-		path := validation.Join(p, "details")
+		fieldPath := validation.Join(path, "details")
 		present := len(x.Details) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppManagedList.app.managed.list.status_value.reasons._reasons.details"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".details"])
 	}
 }
 
@@ -855,90 +855,90 @@ func (x *AppManagedListStatusReason) validate(c *validation.Collector, p string)
 // that every present key is supported on that OS version and enrollment context.
 func (x *ContentCacheInfo) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ContentCacheInfo")
 	return c.Err()
 }
 
-func (x *ContentCacheInfo) validate(c *validation.Collector, p string) {
+func (x *ContentCacheInfo) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ContentCacheInfo"])
+	c.Support(path, true, supportTable["ContentCacheInfo"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 		if present {
-			x.Value.validate(c, path)
+			x.Value.validate(c, fieldPath, supportPath+".content-cache.info")
 		}
 	}
 }
 
-func (x *ContentCacheInfoContentCacheInfo) validate(c *validation.Collector, p string) {
+func (x *ContentCacheInfoContentCacheInfo) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "cache-details")
+		fieldPath := validation.Join(path, "cache-details")
 		present := len(x.CacheDetails) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheInfo.content-cache.info.cache-details"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".cache-details"])
 	}
 	{
-		path := validation.Join(p, "cache-free")
+		fieldPath := validation.Join(path, "cache-free")
 		present := x.CacheFree != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheInfo.content-cache.info.cache-free"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".cache-free"])
 	}
 	{
-		path := validation.Join(p, "cache-limit")
+		fieldPath := validation.Join(path, "cache-limit")
 		present := x.CacheLimit != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheInfo.content-cache.info.cache-limit"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".cache-limit"])
 	}
 	{
-		path := validation.Join(p, "cache-status")
+		fieldPath := validation.Join(path, "cache-status")
 		present := x.CacheStatus != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheInfo.content-cache.info.cache-status"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".cache-status"])
 		if present {
-			c.Enum(path, true, *x.CacheStatus, []any{"LOWSPACE", "OK"})
+			c.Enum(fieldPath, true, *x.CacheStatus, []any{"LOWSPACE", "OK"})
 		}
 	}
 	{
-		path := validation.Join(p, "cache-used")
+		fieldPath := validation.Join(path, "cache-used")
 		present := x.CacheUsed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheInfo.content-cache.info.cache-used"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".cache-used"])
 	}
 	{
-		path := validation.Join(p, "max-cache-pressure-last-hour")
+		fieldPath := validation.Join(path, "max-cache-pressure-last-hour")
 		present := x.MaxCachePressureLastHour != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheInfo.content-cache.info.max-cache-pressure-last-hour"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".max-cache-pressure-last-hour"])
 		if present {
-			c.Range(path, true, float64(*x.MaxCachePressureLastHour), new(0.0), new(1.0))
+			c.Range(fieldPath, true, float64(*x.MaxCachePressureLastHour), new(0.0), new(1.0))
 		}
 	}
 	{
-		path := validation.Join(p, "personal-cache-free")
+		fieldPath := validation.Join(path, "personal-cache-free")
 		present := x.PersonalCacheFree != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheInfo.content-cache.info.personal-cache-free"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".personal-cache-free"])
 	}
 	{
-		path := validation.Join(p, "personal-cache-limit")
+		fieldPath := validation.Join(path, "personal-cache-limit")
 		present := x.PersonalCacheLimit != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheInfo.content-cache.info.personal-cache-limit"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".personal-cache-limit"])
 	}
 	{
-		path := validation.Join(p, "personal-cache-used")
+		fieldPath := validation.Join(path, "personal-cache-used")
 		present := x.PersonalCacheUsed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheInfo.content-cache.info.personal-cache-used"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".personal-cache-used"])
 	}
 }
 
@@ -946,71 +946,71 @@ func (x *ContentCacheInfoContentCacheInfo) validate(c *validation.Collector, p s
 // that every present key is supported on that OS version and enrollment context.
 func (x *ContentCacheParents) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ContentCacheParents")
 	return c.Err()
 }
 
-func (x *ContentCacheParents) validate(c *validation.Collector, p string) {
+func (x *ContentCacheParents) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ContentCacheParents"])
+	c.Support(path, true, supportTable["ContentCacheParents"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 		for i := range x.Value {
-			x.Value[i].validate(c, validation.Index(path, i))
+			x.Value[i].validate(c, validation.Index(fieldPath, i), supportPath+".content-cache.parents.parents-item")
 		}
 	}
 }
 
-func (x *ContentCacheParentsContentCacheParents) validate(c *validation.Collector, p string) {
+func (x *ContentCacheParentsContentCacheParents) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "identifier")
+		fieldPath := validation.Join(path, "identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheParents.content-cache.parents.parents-item.identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "_removed")
+		fieldPath := validation.Join(path, "_removed")
 		present := x.Removed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheParents.content-cache.parents.parents-item._removed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+"._removed"])
 	}
 	{
-		path := validation.Join(p, "address")
+		fieldPath := validation.Join(path, "address")
 		present := x.Address != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheParents.content-cache.parents.parents-item.address"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".address"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "port")
+		fieldPath := validation.Join(path, "port")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheParents.content-cache.parents.parents-item.port"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".port"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "healthy")
+		fieldPath := validation.Join(path, "healthy")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheParents.content-cache.parents.parents-item.healthy"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".healthy"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "version")
+		fieldPath := validation.Join(path, "version")
 		present := x.Version != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheParents.content-cache.parents.parents-item.version"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".version"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -1018,78 +1018,78 @@ func (x *ContentCacheParentsContentCacheParents) validate(c *validation.Collecto
 // that every present key is supported on that OS version and enrollment context.
 func (x *ContentCachePeers) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ContentCachePeers")
 	return c.Err()
 }
 
-func (x *ContentCachePeers) validate(c *validation.Collector, p string) {
+func (x *ContentCachePeers) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ContentCachePeers"])
+	c.Support(path, true, supportTable["ContentCachePeers"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 		for i := range x.Value {
-			x.Value[i].validate(c, validation.Index(path, i))
+			x.Value[i].validate(c, validation.Index(fieldPath, i), supportPath+".content-cache.peers.peer-item")
 		}
 	}
 }
 
-func (x *ContentCachePeersContentCachePeers) validate(c *validation.Collector, p string) {
+func (x *ContentCachePeersContentCachePeers) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "identifier")
+		fieldPath := validation.Join(path, "identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCachePeers.content-cache.peers.peer-item.identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "_removed")
+		fieldPath := validation.Join(path, "_removed")
 		present := x.Removed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCachePeers.content-cache.peers.peer-item._removed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+"._removed"])
 	}
 	{
-		path := validation.Join(p, "address")
+		fieldPath := validation.Join(path, "address")
 		present := x.Address != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCachePeers.content-cache.peers.peer-item.address"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".address"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "port")
+		fieldPath := validation.Join(path, "port")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCachePeers.content-cache.peers.peer-item.port"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".port"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "friendly")
+		fieldPath := validation.Join(path, "friendly")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCachePeers.content-cache.peers.peer-item.friendly"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".friendly"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "healthy")
+		fieldPath := validation.Join(path, "healthy")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCachePeers.content-cache.peers.peer-item.healthy"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".healthy"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "version")
+		fieldPath := validation.Join(path, "version")
 		present := x.Version != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCachePeers.content-cache.peers.peer-item.version"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".version"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -1097,146 +1097,146 @@ func (x *ContentCachePeersContentCachePeers) validate(c *validation.Collector, p
 // that every present key is supported on that OS version and enrollment context.
 func (x *ContentCacheStatus) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ContentCacheStatus")
 	return c.Err()
 }
 
-func (x *ContentCacheStatus) validate(c *validation.Collector, p string) {
+func (x *ContentCacheStatus) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ContentCacheStatus"])
+	c.Support(path, true, supportTable["ContentCacheStatus"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 		if present {
-			x.Value.validate(c, path)
+			x.Value.validate(c, fieldPath, supportPath+".content-cache.status")
 		}
 	}
 }
 
-func (x *ContentCacheStatusContentCacheStatus) validate(c *validation.Collector, p string) {
+func (x *ContentCacheStatusContentCacheStatus) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "server-guid")
+		fieldPath := validation.Join(path, "server-guid")
 		present := x.ServerGuid != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheStatus.content-cache.status.server-guid"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".server-guid"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "activated")
+		fieldPath := validation.Join(path, "activated")
 		present := x.Activated != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheStatus.content-cache.status.activated"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".activated"])
 	}
 	{
-		path := validation.Join(p, "active")
+		fieldPath := validation.Join(path, "active")
 		present := x.Active != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheStatus.content-cache.status.active"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".active"])
 	}
 	{
-		path := validation.Join(p, "cache-status")
+		fieldPath := validation.Join(path, "cache-status")
 		present := x.CacheStatus != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheStatus.content-cache.status.cache-status"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".cache-status"])
 		if present {
-			c.Enum(path, true, *x.CacheStatus, []any{"LOWSPACE", "OK"})
+			c.Enum(fieldPath, true, *x.CacheStatus, []any{"LOWSPACE", "OK"})
 		}
 	}
 	{
-		path := validation.Join(p, "private-addresses")
+		fieldPath := validation.Join(path, "private-addresses")
 		present := len(x.PrivateAddresses) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheStatus.content-cache.status.private-addresses"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".private-addresses"])
 	}
 	{
-		path := validation.Join(p, "public-address")
+		fieldPath := validation.Join(path, "public-address")
 		present := x.PublicAddress != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheStatus.content-cache.status.public-address"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".public-address"])
 	}
 	{
-		path := validation.Join(p, "port")
+		fieldPath := validation.Join(path, "port")
 		present := x.Port != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheStatus.content-cache.status.port"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".port"])
 	}
 	{
-		path := validation.Join(p, "registration-status")
+		fieldPath := validation.Join(path, "registration-status")
 		present := x.RegistrationStatus != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheStatus.content-cache.status.registration-status"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".registration-status"])
 		if present {
-			c.Enum(path, true, *x.RegistrationStatus, []any{int64(-1), int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.RegistrationStatus, []any{int64(-1), int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "registration-started")
+		fieldPath := validation.Join(path, "registration-started")
 		present := x.RegistrationStarted != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheStatus.content-cache.status.registration-started"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".registration-started"])
 	}
 	{
-		path := validation.Join(p, "registration-response-code")
+		fieldPath := validation.Join(path, "registration-response-code")
 		present := x.RegistrationResponseCode != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheStatus.content-cache.status.registration-response-code"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".registration-response-code"])
 	}
 	{
-		path := validation.Join(p, "registration-error")
+		fieldPath := validation.Join(path, "registration-error")
 		present := x.RegistrationError != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheStatus.content-cache.status.registration-error"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".registration-error"])
 	}
 	{
-		path := validation.Join(p, "startup-status")
+		fieldPath := validation.Join(path, "startup-status")
 		present := x.StartupStatus != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheStatus.content-cache.status.startup-status"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".startup-status"])
 		if present {
-			c.Enum(path, true, *x.StartupStatus, []any{"FAILED", "MIGRATING_DATA", "OK", "PENDING"})
+			c.Enum(fieldPath, true, *x.StartupStatus, []any{"FAILED", "MIGRATING_DATA", "OK", "PENDING"})
 		}
 	}
 	{
-		path := validation.Join(p, "tetherator-status")
+		fieldPath := validation.Join(path, "tetherator-status")
 		present := x.TetheratorStatus != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheStatus.content-cache.status.tetherator-status"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".tetherator-status"])
 		if present {
-			c.Enum(path, true, *x.TetheratorStatus, []any{int64(-1), int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.TetheratorStatus, []any{int64(-1), int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "sending-reports")
+		fieldPath := validation.Join(path, "sending-reports")
 		present := x.SendingReports != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheStatus.content-cache.status.sending-reports"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".sending-reports"])
 	}
 	{
-		path := validation.Join(p, "report-response-code")
+		fieldPath := validation.Join(path, "report-response-code")
 		present := x.ReportResponseCode != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheStatus.content-cache.status.report-response-code"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".report-response-code"])
 	}
 	{
-		path := validation.Join(p, "report-error")
+		fieldPath := validation.Join(path, "report-error")
 		present := x.ReportError != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheStatus.content-cache.status.report-error"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".report-error"])
 	}
 	{
-		path := validation.Join(p, "version")
+		fieldPath := validation.Join(path, "version")
 		present := x.Version != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCacheStatus.content-cache.status.version"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".version"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -1244,20 +1244,20 @@ func (x *ContentCacheStatusContentCacheStatus) validate(c *validation.Collector,
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeviceSerialNumber) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DeviceSerialNumber")
 	return c.Err()
 }
 
-func (x *DeviceSerialNumber) validate(c *validation.Collector, p string) {
+func (x *DeviceSerialNumber) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DeviceSerialNumber"])
+	c.Support(path, true, supportTable["DeviceSerialNumber"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -1265,20 +1265,20 @@ func (x *DeviceSerialNumber) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeviceUDID) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DeviceUDID")
 	return c.Err()
 }
 
-func (x *DeviceUDID) validate(c *validation.Collector, p string) {
+func (x *DeviceUDID) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DeviceUDID"])
+	c.Support(path, true, supportTable["DeviceUDID"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -1286,20 +1286,20 @@ func (x *DeviceUDID) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeviceModelFamily) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DeviceModelFamily")
 	return c.Err()
 }
 
-func (x *DeviceModelFamily) validate(c *validation.Collector, p string) {
+func (x *DeviceModelFamily) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DeviceModelFamily"])
+	c.Support(path, true, supportTable["DeviceModelFamily"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -1307,20 +1307,20 @@ func (x *DeviceModelFamily) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeviceModelIdentifier) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DeviceModelIdentifier")
 	return c.Err()
 }
 
-func (x *DeviceModelIdentifier) validate(c *validation.Collector, p string) {
+func (x *DeviceModelIdentifier) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DeviceModelIdentifier"])
+	c.Support(path, true, supportTable["DeviceModelIdentifier"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -1328,20 +1328,20 @@ func (x *DeviceModelIdentifier) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeviceModelMarketingName) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DeviceModelMarketingName")
 	return c.Err()
 }
 
-func (x *DeviceModelMarketingName) validate(c *validation.Collector, p string) {
+func (x *DeviceModelMarketingName) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DeviceModelMarketingName"])
+	c.Support(path, true, supportTable["DeviceModelMarketingName"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -1349,20 +1349,20 @@ func (x *DeviceModelMarketingName) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeviceModelNumber) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DeviceModelNumber")
 	return c.Err()
 }
 
-func (x *DeviceModelNumber) validate(c *validation.Collector, p string) {
+func (x *DeviceModelNumber) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DeviceModelNumber"])
+	c.Support(path, true, supportTable["DeviceModelNumber"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -1370,20 +1370,20 @@ func (x *DeviceModelNumber) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeviceOperatingSystemBuildVersion) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DeviceOperatingSystemBuildVersion")
 	return c.Err()
 }
 
-func (x *DeviceOperatingSystemBuildVersion) validate(c *validation.Collector, p string) {
+func (x *DeviceOperatingSystemBuildVersion) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DeviceOperatingSystemBuildVersion"])
+	c.Support(path, true, supportTable["DeviceOperatingSystemBuildVersion"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -1391,20 +1391,20 @@ func (x *DeviceOperatingSystemBuildVersion) validate(c *validation.Collector, p 
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeviceOperatingSystemFamily) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DeviceOperatingSystemFamily")
 	return c.Err()
 }
 
-func (x *DeviceOperatingSystemFamily) validate(c *validation.Collector, p string) {
+func (x *DeviceOperatingSystemFamily) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DeviceOperatingSystemFamily"])
+	c.Support(path, true, supportTable["DeviceOperatingSystemFamily"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -1412,20 +1412,20 @@ func (x *DeviceOperatingSystemFamily) validate(c *validation.Collector, p string
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeviceOperatingSystemMarketingName) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DeviceOperatingSystemMarketingName")
 	return c.Err()
 }
 
-func (x *DeviceOperatingSystemMarketingName) validate(c *validation.Collector, p string) {
+func (x *DeviceOperatingSystemMarketingName) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DeviceOperatingSystemMarketingName"])
+	c.Support(path, true, supportTable["DeviceOperatingSystemMarketingName"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -1433,20 +1433,20 @@ func (x *DeviceOperatingSystemMarketingName) validate(c *validation.Collector, p
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeviceOperatingSystemSupplementalBuildVersion) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DeviceOperatingSystemSupplementalBuildVersion")
 	return c.Err()
 }
 
-func (x *DeviceOperatingSystemSupplementalBuildVersion) validate(c *validation.Collector, p string) {
+func (x *DeviceOperatingSystemSupplementalBuildVersion) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DeviceOperatingSystemSupplementalBuildVersion"])
+	c.Support(path, true, supportTable["DeviceOperatingSystemSupplementalBuildVersion"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -1454,20 +1454,20 @@ func (x *DeviceOperatingSystemSupplementalBuildVersion) validate(c *validation.C
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeviceOperatingSystemSupplementalExtraVersion) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DeviceOperatingSystemSupplementalExtraVersion")
 	return c.Err()
 }
 
-func (x *DeviceOperatingSystemSupplementalExtraVersion) validate(c *validation.Collector, p string) {
+func (x *DeviceOperatingSystemSupplementalExtraVersion) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DeviceOperatingSystemSupplementalExtraVersion"])
+	c.Support(path, true, supportTable["DeviceOperatingSystemSupplementalExtraVersion"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -1475,20 +1475,20 @@ func (x *DeviceOperatingSystemSupplementalExtraVersion) validate(c *validation.C
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeviceOperatingSystemVersion) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DeviceOperatingSystemVersion")
 	return c.Err()
 }
 
-func (x *DeviceOperatingSystemVersion) validate(c *validation.Collector, p string) {
+func (x *DeviceOperatingSystemVersion) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DeviceOperatingSystemVersion"])
+	c.Support(path, true, supportTable["DeviceOperatingSystemVersion"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -1496,22 +1496,22 @@ func (x *DeviceOperatingSystemVersion) validate(c *validation.Collector, p strin
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeviceBatteryHealth) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DeviceBatteryHealth")
 	return c.Err()
 }
 
-func (x *DeviceBatteryHealth) validate(c *validation.Collector, p string) {
+func (x *DeviceBatteryHealth) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DeviceBatteryHealth"])
+	c.Support(path, true, supportTable["DeviceBatteryHealth"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 		if present {
-			c.Enum(path, true, x.Value, []any{"non-genuine", "normal", "service-recommended", "unknown", "unsupported"})
+			c.Enum(fieldPath, true, x.Value, []any{"non-genuine", "normal", "service-recommended", "unknown", "unsupported"})
 		}
 	}
 }
@@ -1520,92 +1520,92 @@ func (x *DeviceBatteryHealth) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeviceSystemHealth) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DeviceSystemHealth")
 	return c.Err()
 }
 
-func (x *DeviceSystemHealth) validate(c *validation.Collector, p string) {
+func (x *DeviceSystemHealth) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DeviceSystemHealth"])
+	c.Support(path, true, supportTable["DeviceSystemHealth"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 		if present {
-			x.Value.validate(c, path)
+			x.Value.validate(c, fieldPath, supportPath+".device.system.health")
 		}
 	}
 }
 
-func (x *DeviceSystemHealthDeviceSystemHealth) validate(c *validation.Collector, p string) {
+func (x *DeviceSystemHealthDeviceSystemHealth) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Baseband")
+		fieldPath := validation.Join(path, "Baseband")
 		present := x.Baseband != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeviceSystemHealth.device.system.health.Baseband"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Baseband"])
 		if present {
-			c.Enum(path, true, *x.Baseband, []any{"ok", "error"})
+			c.Enum(fieldPath, true, *x.Baseband, []any{"ok", "error"})
 		}
 	}
 	{
-		path := validation.Join(p, "Camera")
+		fieldPath := validation.Join(path, "Camera")
 		present := x.Camera != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeviceSystemHealth.device.system.health.Camera"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Camera"])
 		if present {
-			c.Enum(path, true, *x.Camera, []any{"ok", "error", "non-genuine", "pending-repair"})
+			c.Enum(fieldPath, true, *x.Camera, []any{"ok", "error", "non-genuine", "pending-repair"})
 		}
 	}
 	{
-		path := validation.Join(p, "Display")
+		fieldPath := validation.Join(path, "Display")
 		present := x.Display != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeviceSystemHealth.device.system.health.Display"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Display"])
 		if present {
-			c.Enum(path, true, *x.Display, []any{"ok", "error", "non-genuine", "pending-repair"})
+			c.Enum(fieldPath, true, *x.Display, []any{"ok", "error", "non-genuine", "pending-repair"})
 		}
 	}
 	{
-		path := validation.Join(p, "FaceID")
+		fieldPath := validation.Join(path, "FaceID")
 		present := x.FaceID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeviceSystemHealth.device.system.health.FaceID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FaceID"])
 		if present {
-			c.Enum(path, true, *x.FaceID, []any{"ok", "error", "pending-repair"})
+			c.Enum(fieldPath, true, *x.FaceID, []any{"ok", "error", "pending-repair"})
 		}
 	}
 	{
-		path := validation.Join(p, "NFC")
+		fieldPath := validation.Join(path, "NFC")
 		present := x.NFC != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeviceSystemHealth.device.system.health.NFC"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".NFC"])
 		if present {
-			c.Enum(path, true, *x.NFC, []any{"ok", "error"})
+			c.Enum(fieldPath, true, *x.NFC, []any{"ok", "error"})
 		}
 	}
 	{
-		path := validation.Join(p, "TouchID")
+		fieldPath := validation.Join(path, "TouchID")
 		present := x.TouchID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeviceSystemHealth.device.system.health.TouchID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TouchID"])
 		if present {
-			c.Enum(path, true, *x.TouchID, []any{"ok", "error", "pending-repair"})
+			c.Enum(fieldPath, true, *x.TouchID, []any{"ok", "error", "pending-repair"})
 		}
 	}
 	{
-		path := validation.Join(p, "UWB")
+		fieldPath := validation.Join(path, "UWB")
 		present := x.UWB != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeviceSystemHealth.device.system.health.UWB"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UWB"])
 		if present {
-			c.Enum(path, true, *x.UWB, []any{"ok", "error"})
+			c.Enum(fieldPath, true, *x.UWB, []any{"ok", "error"})
 		}
 	}
 }
@@ -1614,20 +1614,20 @@ func (x *DeviceSystemHealthDeviceSystemHealth) validate(c *validation.Collector,
 // that every present key is supported on that OS version and enrollment context.
 func (x *DiskManagementFileVaultEnabled) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DiskManagementFileVaultEnabled")
 	return c.Err()
 }
 
-func (x *DiskManagementFileVaultEnabled) validate(c *validation.Collector, p string) {
+func (x *DiskManagementFileVaultEnabled) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DiskManagementFileVaultEnabled"])
+	c.Support(path, true, supportTable["DiskManagementFileVaultEnabled"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -1635,20 +1635,20 @@ func (x *DiskManagementFileVaultEnabled) validate(c *validation.Collector, p str
 // that every present key is supported on that OS version and enrollment context.
 func (x *EnhancedLoggingAppleCareToken) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "EnhancedLoggingAppleCareToken")
 	return c.Err()
 }
 
-func (x *EnhancedLoggingAppleCareToken) validate(c *validation.Collector, p string) {
+func (x *EnhancedLoggingAppleCareToken) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["EnhancedLoggingAppleCareToken"])
+	c.Support(path, true, supportTable["EnhancedLoggingAppleCareToken"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -1656,20 +1656,20 @@ func (x *EnhancedLoggingAppleCareToken) validate(c *validation.Collector, p stri
 // that every present key is supported on that OS version and enrollment context.
 func (x *EnhancedLoggingNonInteractiveEligibility) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "EnhancedLoggingNonInteractiveEligibility")
 	return c.Err()
 }
 
-func (x *EnhancedLoggingNonInteractiveEligibility) validate(c *validation.Collector, p string) {
+func (x *EnhancedLoggingNonInteractiveEligibility) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["EnhancedLoggingNonInteractiveEligibility"])
+	c.Support(path, true, supportTable["EnhancedLoggingNonInteractiveEligibility"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -1677,22 +1677,22 @@ func (x *EnhancedLoggingNonInteractiveEligibility) validate(c *validation.Collec
 // that every present key is supported on that OS version and enrollment context.
 func (x *EnhancedLoggingStatus) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "EnhancedLoggingStatus")
 	return c.Err()
 }
 
-func (x *EnhancedLoggingStatus) validate(c *validation.Collector, p string) {
+func (x *EnhancedLoggingStatus) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["EnhancedLoggingStatus"])
+	c.Support(path, true, supportTable["EnhancedLoggingStatus"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 		if present {
-			c.Enum(path, true, x.Value, []any{"none", "waiting-for-consent", "collecting", "follow-up-question", "upload-consent", "uploading", "finished", "failed", "cancelled", "declined"})
+			c.Enum(fieldPath, true, x.Value, []any{"none", "waiting-for-consent", "collecting", "follow-up-question", "upload-consent", "uploading", "finished", "failed", "cancelled", "declined"})
 		}
 	}
 }
@@ -1701,20 +1701,20 @@ func (x *EnhancedLoggingStatus) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *EnhancedLoggingTimestamp) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "EnhancedLoggingTimestamp")
 	return c.Err()
 }
 
-func (x *EnhancedLoggingTimestamp) validate(c *validation.Collector, p string) {
+func (x *EnhancedLoggingTimestamp) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["EnhancedLoggingTimestamp"])
+	c.Support(path, true, supportTable["EnhancedLoggingTimestamp"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -1722,109 +1722,109 @@ func (x *EnhancedLoggingTimestamp) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ManagementClientCapabilities) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ManagementClientCapabilities")
 	return c.Err()
 }
 
-func (x *ManagementClientCapabilities) validate(c *validation.Collector, p string) {
+func (x *ManagementClientCapabilities) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ManagementClientCapabilities"])
+	c.Support(path, true, supportTable["ManagementClientCapabilities"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 		if present {
-			x.Value.validate(c, path)
+			x.Value.validate(c, fieldPath, supportPath+".management.client-capabilities")
 		}
 	}
 }
 
-func (x *ManagementClientCapabilitiesCapabilities) validate(c *validation.Collector, p string) {
+func (x *ManagementClientCapabilitiesCapabilities) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "supported-versions")
+		fieldPath := validation.Join(path, "supported-versions")
 		present := len(x.SupportedVersions) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementClientCapabilities.management.client-capabilities.supported-versions"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".supported-versions"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "supported-features")
+		fieldPath := validation.Join(path, "supported-features")
 		present := len(x.SupportedFeatures) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementClientCapabilities.management.client-capabilities.supported-features"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".supported-features"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "supported-payloads")
+		fieldPath := validation.Join(path, "supported-payloads")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementClientCapabilities.management.client-capabilities.supported-payloads"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".supported-payloads"])
+		c.Required(fieldPath, present)
 		if present {
-			x.SupportedPayloads.validate(c, path)
+			x.SupportedPayloads.validate(c, fieldPath, supportPath+".supported-payloads")
 		}
 	}
 }
 
-func (x *ManagementClientCapabilitiesCapabilitiesSupportedPayloads) validate(c *validation.Collector, p string) {
+func (x *ManagementClientCapabilitiesCapabilitiesSupportedPayloads) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "declarations")
+		fieldPath := validation.Join(path, "declarations")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementClientCapabilities.management.client-capabilities.supported-payloads.declarations"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".declarations"])
+		c.Required(fieldPath, present)
 		if present {
-			x.Declarations.validate(c, path)
+			x.Declarations.validate(c, fieldPath, supportPath+".declarations")
 		}
 	}
 	{
-		path := validation.Join(p, "status-items")
+		fieldPath := validation.Join(path, "status-items")
 		present := len(x.StatusItems) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementClientCapabilities.management.client-capabilities.supported-payloads.status-items"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".status-items"])
+		c.Required(fieldPath, present)
 	}
 }
 
-func (x *ManagementClientCapabilitiesCapabilitiesSupportedPayloadsDeclarations) validate(c *validation.Collector, p string) {
+func (x *ManagementClientCapabilitiesCapabilitiesSupportedPayloadsDeclarations) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "activations")
+		fieldPath := validation.Join(path, "activations")
 		present := len(x.Activations) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementClientCapabilities.management.client-capabilities.supported-payloads.declarations.activations"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".activations"])
 	}
 	{
-		path := validation.Join(p, "assets")
+		fieldPath := validation.Join(path, "assets")
 		present := len(x.Assets) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementClientCapabilities.management.client-capabilities.supported-payloads.declarations.assets"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".assets"])
 	}
 	{
-		path := validation.Join(p, "configurations")
+		fieldPath := validation.Join(path, "configurations")
 		present := len(x.Configurations) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementClientCapabilities.management.client-capabilities.supported-payloads.declarations.configurations"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".configurations"])
 	}
 	{
-		path := validation.Join(p, "management")
+		fieldPath := validation.Join(path, "management")
 		present := len(x.Management) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementClientCapabilities.management.client-capabilities.supported-payloads.declarations.management"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".management"])
 	}
 }
 
@@ -1832,143 +1832,143 @@ func (x *ManagementClientCapabilitiesCapabilitiesSupportedPayloadsDeclarations) 
 // that every present key is supported on that OS version and enrollment context.
 func (x *ManagementDeclarations) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ManagementDeclarations")
 	return c.Err()
 }
 
-func (x *ManagementDeclarations) validate(c *validation.Collector, p string) {
+func (x *ManagementDeclarations) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ManagementDeclarations"])
+	c.Support(path, true, supportTable["ManagementDeclarations"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 		if present {
-			x.Value.validate(c, path)
+			x.Value.validate(c, fieldPath, supportPath+".management.declarations")
 		}
 	}
 }
 
-func (x *ManagementDeclarationsDeclarations) validate(c *validation.Collector, p string) {
+func (x *ManagementDeclarationsDeclarations) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "activations")
+		fieldPath := validation.Join(path, "activations")
 		present := len(x.Activations) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementDeclarations.management.declarations.activations"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".activations"])
+		c.Required(fieldPath, present)
 		for i := range x.Activations {
-			x.Activations[i].validate(c, validation.Index(path, i))
+			x.Activations[i].validate(c, validation.Index(fieldPath, i), supportPath+".activations._activations")
 		}
 	}
 	{
-		path := validation.Join(p, "configurations")
+		fieldPath := validation.Join(path, "configurations")
 		present := len(x.Configurations) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementDeclarations.management.declarations.configurations"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".configurations"])
+		c.Required(fieldPath, present)
 		for i := range x.Configurations {
-			x.Configurations[i].validate(c, validation.Index(path, i))
+			x.Configurations[i].validate(c, validation.Index(fieldPath, i), supportPath+".configurations._configurations")
 		}
 	}
 	{
-		path := validation.Join(p, "assets")
+		fieldPath := validation.Join(path, "assets")
 		present := len(x.Assets) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementDeclarations.management.declarations.assets"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".assets"])
+		c.Required(fieldPath, present)
 		for i := range x.Assets {
-			x.Assets[i].validate(c, validation.Index(path, i))
+			x.Assets[i].validate(c, validation.Index(fieldPath, i), supportPath+".assets._assets")
 		}
 	}
 	{
-		path := validation.Join(p, "management")
+		fieldPath := validation.Join(path, "management")
 		present := len(x.Management) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementDeclarations.management.declarations.management"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".management"])
+		c.Required(fieldPath, present)
 		for i := range x.Management {
-			x.Management[i].validate(c, validation.Index(path, i))
+			x.Management[i].validate(c, validation.Index(fieldPath, i), supportPath+".management._management")
 		}
 	}
 }
 
-func (x *ManagementDeclarationsDeclaration) validate(c *validation.Collector, p string) {
+func (x *ManagementDeclarationsDeclaration) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "identifier")
+		fieldPath := validation.Join(path, "identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementDeclarations.management.declarations.activations._activations.identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "server-token")
+		fieldPath := validation.Join(path, "server-token")
 		present := x.ServerToken != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementDeclarations.management.declarations.activations._activations.server-token"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".server-token"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "active")
+		fieldPath := validation.Join(path, "active")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementDeclarations.management.declarations.activations._activations.active"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".active"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "valid")
+		fieldPath := validation.Join(path, "valid")
 		present := x.Valid != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementDeclarations.management.declarations.activations._activations.valid"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".valid"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Valid, []any{"unknown", "invalid", "valid"})
+			c.Enum(fieldPath, true, x.Valid, []any{"unknown", "invalid", "valid"})
 		}
 	}
 	{
-		path := validation.Join(p, "reasons")
+		fieldPath := validation.Join(path, "reasons")
 		present := len(x.Reasons) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementDeclarations.management.declarations.activations._activations.reasons"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".reasons"])
 		for i := range x.Reasons {
-			x.Reasons[i].validate(c, validation.Index(path, i))
+			x.Reasons[i].validate(c, validation.Index(fieldPath, i), supportPath+".reasons._reasons")
 		}
 	}
 }
 
-func (x *ManagementDeclarationsStatusReason) validate(c *validation.Collector, p string) {
+func (x *ManagementDeclarationsStatusReason) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "code")
+		fieldPath := validation.Join(path, "code")
 		present := x.Code != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementDeclarations.management.declarations.activations._activations.reasons._reasons.code"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".code"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "description")
+		fieldPath := validation.Join(path, "description")
 		present := x.Description != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementDeclarations.management.declarations.activations._activations.reasons._reasons.description"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".description"])
 	}
 	{
-		path := validation.Join(p, "details")
+		fieldPath := validation.Join(path, "details")
 		present := len(x.Details) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagementDeclarations.management.declarations.activations._activations.reasons._reasons.details"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".details"])
 	}
 }
 
@@ -1976,75 +1976,75 @@ func (x *ManagementDeclarationsStatusReason) validate(c *validation.Collector, p
 // that every present key is supported on that OS version and enrollment context.
 func (x *MDMApp) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "MDMApp")
 	return c.Err()
 }
 
-func (x *MDMApp) validate(c *validation.Collector, p string) {
+func (x *MDMApp) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["MDMApp"])
+	c.Support(path, true, supportTable["MDMApp"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 		for i := range x.Value {
-			x.Value[i].validate(c, validation.Index(path, i))
+			x.Value[i].validate(c, validation.Index(fieldPath, i), supportPath+".mdm.app.status_value")
 		}
 	}
 }
 
-func (x *MDMAppApp) validate(c *validation.Collector, p string) {
+func (x *MDMAppApp) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "identifier")
+		fieldPath := validation.Join(path, "identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDMApp.mdm.app.status_value.identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "_removed")
+		fieldPath := validation.Join(path, "_removed")
 		present := x.Removed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDMApp.mdm.app.status_value._removed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+"._removed"])
 	}
 	{
-		path := validation.Join(p, "name")
+		fieldPath := validation.Join(path, "name")
 		present := x.Name != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDMApp.mdm.app.status_value.name"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".name"])
 	}
 	{
-		path := validation.Join(p, "external-version-id")
+		fieldPath := validation.Join(path, "external-version-id")
 		present := x.ExternalVersionId != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDMApp.mdm.app.status_value.external-version-id"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".external-version-id"])
 	}
 	{
-		path := validation.Join(p, "version")
+		fieldPath := validation.Join(path, "version")
 		present := x.Version != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDMApp.mdm.app.status_value.version"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".version"])
 	}
 	{
-		path := validation.Join(p, "short-version")
+		fieldPath := validation.Join(path, "short-version")
 		present := x.ShortVersion != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDMApp.mdm.app.status_value.short-version"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".short-version"])
 	}
 	{
-		path := validation.Join(p, "state")
+		fieldPath := validation.Join(path, "state")
 		present := x.State != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDMApp.mdm.app.status_value.state"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".state"])
 		if present {
-			c.Enum(path, true, *x.State, []any{"queued", "needs-redemption", "redeeming", "prompting", "prompting-for-login", "validating-purchase", "prompting-for-update", "prompting-for-update-login", "prompting-for-management", "validating-update", "updating", "installing", "managed", "managed-but-uninstalled", "unknown", "user-installed-app", "user-rejected", "update-rejected", "management-rejected", "failed"})
+			c.Enum(fieldPath, true, *x.State, []any{"queued", "needs-redemption", "redeeming", "prompting", "prompting-for-login", "validating-purchase", "prompting-for-update", "prompting-for-update-login", "prompting-for-management", "validating-update", "updating", "installing", "managed", "managed-but-uninstalled", "unknown", "user-installed-app", "user-rejected", "update-rejected", "management-rejected", "failed"})
 		}
 	}
 }
@@ -2053,22 +2053,22 @@ func (x *MDMAppApp) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *MDMEnrollmentType) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "MDMEnrollmentType")
 	return c.Err()
 }
 
-func (x *MDMEnrollmentType) validate(c *validation.Collector, p string) {
+func (x *MDMEnrollmentType) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["MDMEnrollmentType"])
+	c.Support(path, true, supportTable["MDMEnrollmentType"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 		if present {
-			c.Enum(path, true, x.Value, []any{"none", "supervised", "device", "user"})
+			c.Enum(fieldPath, true, x.Value, []any{"none", "supervised", "device", "user"})
 		}
 	}
 }
@@ -2077,20 +2077,20 @@ func (x *MDMEnrollmentType) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *MDMIsAwaitingConfiguration) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "MDMIsAwaitingConfiguration")
 	return c.Err()
 }
 
-func (x *MDMIsAwaitingConfiguration) validate(c *validation.Collector, p string) {
+func (x *MDMIsAwaitingConfiguration) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["MDMIsAwaitingConfiguration"])
+	c.Support(path, true, supportTable["MDMIsAwaitingConfiguration"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -2098,20 +2098,20 @@ func (x *MDMIsAwaitingConfiguration) validate(c *validation.Collector, p string)
 // that every present key is supported on that OS version and enrollment context.
 func (x *MDMIsReturnToService) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "MDMIsReturnToService")
 	return c.Err()
 }
 
-func (x *MDMIsReturnToService) validate(c *validation.Collector, p string) {
+func (x *MDMIsReturnToService) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["MDMIsReturnToService"])
+	c.Support(path, true, supportTable["MDMIsReturnToService"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -2119,20 +2119,20 @@ func (x *MDMIsReturnToService) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *MDMIsSharedIPad) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "MDMIsSharedIPad")
 	return c.Err()
 }
 
-func (x *MDMIsSharedIPad) validate(c *validation.Collector, p string) {
+func (x *MDMIsSharedIPad) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["MDMIsSharedIPad"])
+	c.Support(path, true, supportTable["MDMIsSharedIPad"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -2140,20 +2140,20 @@ func (x *MDMIsSharedIPad) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *MDMPushMagic) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "MDMPushMagic")
 	return c.Err()
 }
 
-func (x *MDMPushMagic) validate(c *validation.Collector, p string) {
+func (x *MDMPushMagic) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["MDMPushMagic"])
+	c.Support(path, true, supportTable["MDMPushMagic"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -2161,20 +2161,20 @@ func (x *MDMPushMagic) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *MDMPushToken) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "MDMPushToken")
 	return c.Err()
 }
 
-func (x *MDMPushToken) validate(c *validation.Collector, p string) {
+func (x *MDMPushToken) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["MDMPushToken"])
+	c.Support(path, true, supportTable["MDMPushToken"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -2182,84 +2182,84 @@ func (x *MDMPushToken) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *MigrationAssistantReport) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "MigrationAssistantReport")
 	return c.Err()
 }
 
-func (x *MigrationAssistantReport) validate(c *validation.Collector, p string) {
+func (x *MigrationAssistantReport) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["MigrationAssistantReport"])
+	c.Support(path, true, supportTable["MigrationAssistantReport"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 		if present {
-			x.Value.validate(c, path)
+			x.Value.validate(c, fieldPath, supportPath+".migration-assistant.report")
 		}
 	}
 }
 
-func (x *MigrationAssistantReportMigrationAssistantReport) validate(c *validation.Collector, p string) {
+func (x *MigrationAssistantReportMigrationAssistantReport) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "completed-data-size")
+		fieldPath := validation.Join(path, "completed-data-size")
 		present := x.CompletedDataSize != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MigrationAssistantReport.migration-assistant.report.completed-data-size"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".completed-data-size"])
 	}
 	{
-		path := validation.Join(p, "completed-file-count")
+		fieldPath := validation.Join(path, "completed-file-count")
 		present := x.CompletedFileCount != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MigrationAssistantReport.migration-assistant.report.completed-file-count"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".completed-file-count"])
 	}
 	{
-		path := validation.Join(p, "completion-time")
+		fieldPath := validation.Join(path, "completion-time")
 		present := x.CompletionTime != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MigrationAssistantReport.migration-assistant.report.completion-time"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".completion-time"])
 	}
 	{
-		path := validation.Join(p, "source-user")
+		fieldPath := validation.Join(path, "source-user")
 		present := x.SourceUser != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MigrationAssistantReport.migration-assistant.report.source-user"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".source-user"])
 	}
 	{
-		path := validation.Join(p, "start-time")
+		fieldPath := validation.Join(path, "start-time")
 		present := x.StartTime != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MigrationAssistantReport.migration-assistant.report.start-time"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".start-time"])
 	}
 	{
-		path := validation.Join(p, "target-user")
+		fieldPath := validation.Join(path, "target-user")
 		present := x.TargetUser != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MigrationAssistantReport.migration-assistant.report.target-user"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".target-user"])
 	}
 	{
-		path := validation.Join(p, "total-data-size")
+		fieldPath := validation.Join(path, "total-data-size")
 		present := x.TotalDataSize != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MigrationAssistantReport.migration-assistant.report.total-data-size"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".total-data-size"])
 	}
 	{
-		path := validation.Join(p, "total-file-count")
+		fieldPath := validation.Join(path, "total-file-count")
 		present := x.TotalFileCount != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MigrationAssistantReport.migration-assistant.report.total-file-count"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".total-file-count"])
 	}
 	{
-		path := validation.Join(p, "errors")
+		fieldPath := validation.Join(path, "errors")
 		present := len(x.Errors) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["MigrationAssistantReport.migration-assistant.report.errors"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".errors"])
 	}
 }
 
@@ -2267,22 +2267,22 @@ func (x *MigrationAssistantReportMigrationAssistantReport) validate(c *validatio
 // that every present key is supported on that OS version and enrollment context.
 func (x *MigrationAssistantState) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "MigrationAssistantState")
 	return c.Err()
 }
 
-func (x *MigrationAssistantState) validate(c *validation.Collector, p string) {
+func (x *MigrationAssistantState) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["MigrationAssistantState"])
+	c.Support(path, true, supportTable["MigrationAssistantState"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 		if present {
-			c.Enum(path, true, x.Value, []any{"waiting", "migrating", "completed", "failed", "cancelled", "unknown"})
+			c.Enum(fieldPath, true, x.Value, []any{"waiting", "migrating", "completed", "failed", "cancelled", "unknown"})
 		}
 	}
 }
@@ -2291,105 +2291,105 @@ func (x *MigrationAssistantState) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *PackageList) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "PackageList")
 	return c.Err()
 }
 
-func (x *PackageList) validate(c *validation.Collector, p string) {
+func (x *PackageList) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["PackageList"])
+	c.Support(path, true, supportTable["PackageList"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 		for i := range x.Value {
-			x.Value[i].validate(c, validation.Index(path, i))
+			x.Value[i].validate(c, validation.Index(fieldPath, i), supportPath+".package.list.status_value")
 		}
 	}
 }
 
-func (x *PackageListPackage) validate(c *validation.Collector, p string) {
+func (x *PackageListPackage) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "identifier")
+		fieldPath := validation.Join(path, "identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["PackageList.package.list.status_value.identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "_removed")
+		fieldPath := validation.Join(path, "_removed")
 		present := x.Removed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["PackageList.package.list.status_value._removed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+"._removed"])
 	}
 	{
-		path := validation.Join(p, "declaration-identifier")
+		fieldPath := validation.Join(path, "declaration-identifier")
 		present := x.DeclarationIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["PackageList.package.list.status_value.declaration-identifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".declaration-identifier"])
 	}
 	{
-		path := validation.Join(p, "name")
+		fieldPath := validation.Join(path, "name")
 		present := x.Name != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["PackageList.package.list.status_value.name"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".name"])
 	}
 	{
-		path := validation.Join(p, "version")
+		fieldPath := validation.Join(path, "version")
 		present := x.Version != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["PackageList.package.list.status_value.version"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".version"])
 	}
 	{
-		path := validation.Join(p, "state")
+		fieldPath := validation.Join(path, "state")
 		present := x.State != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["PackageList.package.list.status_value.state"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".state"])
 		if present {
-			c.Enum(path, true, *x.State, []any{"optional", "queued", "prompting-for-consent", "downloading", "installing", "installed", "failed"})
+			c.Enum(fieldPath, true, *x.State, []any{"optional", "queued", "prompting-for-consent", "downloading", "installing", "installed", "failed"})
 		}
 	}
 	{
-		path := validation.Join(p, "reasons")
+		fieldPath := validation.Join(path, "reasons")
 		present := len(x.Reasons) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PackageList.package.list.status_value.reasons"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".reasons"])
 		for i := range x.Reasons {
-			x.Reasons[i].validate(c, validation.Index(path, i))
+			x.Reasons[i].validate(c, validation.Index(fieldPath, i), supportPath+".reasons._reasons")
 		}
 	}
 }
 
-func (x *PackageListStatusReason) validate(c *validation.Collector, p string) {
+func (x *PackageListStatusReason) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "code")
+		fieldPath := validation.Join(path, "code")
 		present := x.Code != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["PackageList.package.list.status_value.reasons._reasons.code"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".code"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "description")
+		fieldPath := validation.Join(path, "description")
 		present := x.Description != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["PackageList.package.list.status_value.reasons._reasons.description"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".description"])
 	}
 	{
-		path := validation.Join(p, "details")
+		fieldPath := validation.Join(path, "details")
 		present := len(x.Details) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PackageList.package.list.status_value.reasons._reasons.details"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".details"])
 	}
 }
 
@@ -2397,20 +2397,20 @@ func (x *PackageListStatusReason) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *PasscodeCompliance) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "PasscodeCompliance")
 	return c.Err()
 }
 
-func (x *PasscodeCompliance) validate(c *validation.Collector, p string) {
+func (x *PasscodeCompliance) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["PasscodeCompliance"])
+	c.Support(path, true, supportTable["PasscodeCompliance"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -2418,20 +2418,20 @@ func (x *PasscodeCompliance) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *PasscodeIsPresent) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "PasscodeIsPresent")
 	return c.Err()
 }
 
-func (x *PasscodeIsPresent) validate(c *validation.Collector, p string) {
+func (x *PasscodeIsPresent) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["PasscodeIsPresent"])
+	c.Support(path, true, supportTable["PasscodeIsPresent"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -2439,49 +2439,49 @@ func (x *PasscodeIsPresent) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ScreenSharingConnectionGroupUnresolvedConnections) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ScreenSharingConnectionGroupUnresolvedConnections")
 	return c.Err()
 }
 
-func (x *ScreenSharingConnectionGroupUnresolvedConnections) validate(c *validation.Collector, p string) {
+func (x *ScreenSharingConnectionGroupUnresolvedConnections) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ScreenSharingConnectionGroupUnresolvedConnections"])
+	c.Support(path, true, supportTable["ScreenSharingConnectionGroupUnresolvedConnections"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 		for i := range x.Value {
-			x.Value[i].validate(c, validation.Index(path, i))
+			x.Value[i].validate(c, validation.Index(fieldPath, i), supportPath+".screensharing.connection.group.unresolved-connection.unresolved_group")
 		}
 	}
 }
 
-func (x *ScreenSharingConnectionGroupUnresolvedConnectionsUnresolvedGroup) validate(c *validation.Collector, p string) {
+func (x *ScreenSharingConnectionGroupUnresolvedConnectionsUnresolvedGroup) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "identifier")
+		fieldPath := validation.Join(path, "identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ScreenSharingConnectionGroupUnresolvedConnections.screensharing.connection.group.unresolved-connection.unresolved_group.identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "_removed")
+		fieldPath := validation.Join(path, "_removed")
 		present := x.Removed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ScreenSharingConnectionGroupUnresolvedConnections.screensharing.connection.group.unresolved-connection.unresolved_group._removed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+"._removed"])
 	}
 	{
-		path := validation.Join(p, "unresolved_connections")
+		fieldPath := validation.Join(path, "unresolved_connections")
 		present := len(x.UnresolvedConnections) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ScreenSharingConnectionGroupUnresolvedConnections.screensharing.connection.group.unresolved-connection.unresolved_group.unresolved_connections"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".unresolved_connections"])
 	}
 }
 
@@ -2489,70 +2489,70 @@ func (x *ScreenSharingConnectionGroupUnresolvedConnectionsUnresolvedGroup) valid
 // that every present key is supported on that OS version and enrollment context.
 func (x *SecurityCertificateList) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SecurityCertificateList")
 	return c.Err()
 }
 
-func (x *SecurityCertificateList) validate(c *validation.Collector, p string) {
+func (x *SecurityCertificateList) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SecurityCertificateList"])
+	c.Support(path, true, supportTable["SecurityCertificateList"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 		for i := range x.Value {
-			x.Value[i].validate(c, validation.Index(path, i))
+			x.Value[i].validate(c, validation.Index(fieldPath, i), supportPath+".security.certificate.list.status_value")
 		}
 	}
 }
 
-func (x *SecurityCertificateListCertificate) validate(c *validation.Collector, p string) {
+func (x *SecurityCertificateListCertificate) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "identifier")
+		fieldPath := validation.Join(path, "identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["SecurityCertificateList.security.certificate.list.status_value.identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "_removed")
+		fieldPath := validation.Join(path, "_removed")
 		present := x.Removed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SecurityCertificateList.security.certificate.list.status_value._removed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+"._removed"])
 	}
 	{
-		path := validation.Join(p, "declaration-identifier")
+		fieldPath := validation.Join(path, "declaration-identifier")
 		present := x.DeclarationIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SecurityCertificateList.security.certificate.list.status_value.declaration-identifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".declaration-identifier"])
 	}
 	{
-		path := validation.Join(p, "subject-summary")
+		fieldPath := validation.Join(path, "subject-summary")
 		present := x.SubjectSummary != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["SecurityCertificateList.security.certificate.list.status_value.subject-summary"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".subject-summary"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "is-identity")
+		fieldPath := validation.Join(path, "is-identity")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["SecurityCertificateList.security.certificate.list.status_value.is-identity"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".is-identity"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "data")
+		fieldPath := validation.Join(path, "data")
 		present := len(x.Data) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SecurityCertificateList.security.certificate.list.status_value.data"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".data"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -2560,20 +2560,20 @@ func (x *SecurityCertificateListCertificate) validate(c *validation.Collector, p
 // that every present key is supported on that OS version and enrollment context.
 func (x *SecurityLockdownMode) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SecurityLockdownMode")
 	return c.Err()
 }
 
-func (x *SecurityLockdownMode) validate(c *validation.Collector, p string) {
+func (x *SecurityLockdownMode) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SecurityLockdownMode"])
+	c.Support(path, true, supportTable["SecurityLockdownMode"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -2581,163 +2581,163 @@ func (x *SecurityLockdownMode) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ServicesBackgroundTask) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ServicesBackgroundTask")
 	return c.Err()
 }
 
-func (x *ServicesBackgroundTask) validate(c *validation.Collector, p string) {
+func (x *ServicesBackgroundTask) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ServicesBackgroundTask"])
+	c.Support(path, true, supportTable["ServicesBackgroundTask"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 		for i := range x.Value {
-			x.Value[i].validate(c, validation.Index(path, i))
+			x.Value[i].validate(c, validation.Index(fieldPath, i), supportPath+".services.background-task.status_value")
 		}
 	}
 }
 
-func (x *ServicesBackgroundTaskBackgroundTask) validate(c *validation.Collector, p string) {
+func (x *ServicesBackgroundTaskBackgroundTask) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "identifier")
+		fieldPath := validation.Join(path, "identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServicesBackgroundTask.services.background-task.status_value.identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "_removed")
+		fieldPath := validation.Join(path, "_removed")
 		present := x.Removed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServicesBackgroundTask.services.background-task.status_value._removed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+"._removed"])
 	}
 	{
-		path := validation.Join(p, "code-signature")
+		fieldPath := validation.Join(path, "code-signature")
 		present := x.CodeSignature != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServicesBackgroundTask.services.background-task.status_value.code-signature"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".code-signature"])
 	}
 	{
-		path := validation.Join(p, "uid")
+		fieldPath := validation.Join(path, "uid")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServicesBackgroundTask.services.background-task.status_value.uid"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".uid"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "path")
+		fieldPath := validation.Join(path, "path")
 		present := x.Path != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServicesBackgroundTask.services.background-task.status_value.path"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".path"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "state")
+		fieldPath := validation.Join(path, "state")
 		present := x.State != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServicesBackgroundTask.services.background-task.status_value.state"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".state"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.State, []any{"not-registered", "enabled", "requires-approval", "not-found"})
+			c.Enum(fieldPath, true, x.State, []any{"not-registered", "enabled", "requires-approval", "not-found"})
 		}
 	}
 	{
-		path := validation.Join(p, "type")
+		fieldPath := validation.Join(path, "type")
 		present := x.Type != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServicesBackgroundTask.services.background-task.status_value.type"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".type"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Type, []any{"daemon", "agent", "login-item", "app", "user-item"})
+			c.Enum(fieldPath, true, x.Type, []any{"daemon", "agent", "login-item", "app", "user-item"})
 		}
 	}
 	{
-		path := validation.Join(p, "launchd")
+		fieldPath := validation.Join(path, "launchd")
 		present := x.Launchd != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServicesBackgroundTask.services.background-task.status_value.launchd"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".launchd"])
 		if present {
-			x.Launchd.validate(c, path)
+			x.Launchd.validate(c, fieldPath, supportPath+".launchd")
 		}
 	}
 }
 
-func (x *ServicesBackgroundTaskBackgroundTaskLaunchd) validate(c *validation.Collector, p string) {
+func (x *ServicesBackgroundTaskBackgroundTaskLaunchd) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "label")
+		fieldPath := validation.Join(path, "label")
 		present := x.Label != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServicesBackgroundTask.services.background-task.status_value.launchd.label"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".label"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "program")
+		fieldPath := validation.Join(path, "program")
 		present := x.Program != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServicesBackgroundTask.services.background-task.status_value.launchd.program"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".program"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "program-arguments")
+		fieldPath := validation.Join(path, "program-arguments")
 		present := len(x.ProgramArguments) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServicesBackgroundTask.services.background-task.status_value.launchd.program-arguments"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".program-arguments"])
 	}
 	{
-		path := validation.Join(p, "checksum")
+		fieldPath := validation.Join(path, "checksum")
 		present := x.Checksum != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServicesBackgroundTask.services.background-task.status_value.launchd.checksum"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".checksum"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "device-management")
+		fieldPath := validation.Join(path, "device-management")
 		present := x.DeviceManagement != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServicesBackgroundTask.services.background-task.status_value.launchd.device-management"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".device-management"])
 		if present {
-			x.DeviceManagement.validate(c, path)
+			x.DeviceManagement.validate(c, fieldPath, supportPath+".device-management")
 		}
 	}
 }
 
-func (x *ServicesBackgroundTaskBackgroundTaskLaunchdDeviceManagement) validate(c *validation.Collector, p string) {
+func (x *ServicesBackgroundTaskBackgroundTaskLaunchdDeviceManagement) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "configuration-identifier")
+		fieldPath := validation.Join(path, "configuration-identifier")
 		present := x.ConfigurationIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServicesBackgroundTask.services.background-task.status_value.launchd.device-management.configuration-identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".configuration-identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "asset-identifier")
+		fieldPath := validation.Join(path, "asset-identifier")
 		present := x.AssetIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServicesBackgroundTask.services.background-task.status_value.launchd.device-management.asset-identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".asset-identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "asset-server-token")
+		fieldPath := validation.Join(path, "asset-server-token")
 		present := x.AssetServerToken != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServicesBackgroundTask.services.background-task.status_value.launchd.device-management.asset-server-token"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".asset-server-token"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -2745,20 +2745,20 @@ func (x *ServicesBackgroundTaskBackgroundTaskLaunchdDeviceManagement) validate(c
 // that every present key is supported on that OS version and enrollment context.
 func (x *SoftwareUpdateBetaEnrollment) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SoftwareUpdateBetaEnrollment")
 	return c.Err()
 }
 
-func (x *SoftwareUpdateBetaEnrollment) validate(c *validation.Collector, p string) {
+func (x *SoftwareUpdateBetaEnrollment) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SoftwareUpdateBetaEnrollment"])
+	c.Support(path, true, supportTable["SoftwareUpdateBetaEnrollment"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -2766,20 +2766,20 @@ func (x *SoftwareUpdateBetaEnrollment) validate(c *validation.Collector, p strin
 // that every present key is supported on that OS version and enrollment context.
 func (x *SoftwareUpdateDeviceID) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SoftwareUpdateDeviceID")
 	return c.Err()
 }
 
-func (x *SoftwareUpdateDeviceID) validate(c *validation.Collector, p string) {
+func (x *SoftwareUpdateDeviceID) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SoftwareUpdateDeviceID"])
+	c.Support(path, true, supportTable["SoftwareUpdateDeviceID"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -2787,49 +2787,49 @@ func (x *SoftwareUpdateDeviceID) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *SoftwareUpdateFailureReason) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SoftwareUpdateFailureReason")
 	return c.Err()
 }
 
-func (x *SoftwareUpdateFailureReason) validate(c *validation.Collector, p string) {
+func (x *SoftwareUpdateFailureReason) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SoftwareUpdateFailureReason"])
+	c.Support(path, true, supportTable["SoftwareUpdateFailureReason"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 		if present {
-			x.Value.validate(c, path)
+			x.Value.validate(c, fieldPath, supportPath+".softwareupdate.failure-reason")
 		}
 	}
 }
 
-func (x *SoftwareUpdateFailureReasonDictionary) validate(c *validation.Collector, p string) {
+func (x *SoftwareUpdateFailureReasonDictionary) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "count")
+		fieldPath := validation.Join(path, "count")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["SoftwareUpdateFailureReason.softwareupdate.failure-reason.count"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".count"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "reason")
+		fieldPath := validation.Join(path, "reason")
 		present := x.Reason != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SoftwareUpdateFailureReason.softwareupdate.failure-reason.reason"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".reason"])
 	}
 	{
-		path := validation.Join(p, "timestamp")
+		fieldPath := validation.Join(path, "timestamp")
 		present := x.Timestamp != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SoftwareUpdateFailureReason.softwareupdate.failure-reason.timestamp"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".timestamp"])
 	}
 }
 
@@ -2837,47 +2837,47 @@ func (x *SoftwareUpdateFailureReasonDictionary) validate(c *validation.Collector
 // that every present key is supported on that OS version and enrollment context.
 func (x *SoftwareUpdateInstallReason) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SoftwareUpdateInstallReason")
 	return c.Err()
 }
 
-func (x *SoftwareUpdateInstallReason) validate(c *validation.Collector, p string) {
+func (x *SoftwareUpdateInstallReason) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SoftwareUpdateInstallReason"])
+	c.Support(path, true, supportTable["SoftwareUpdateInstallReason"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 		if present {
-			x.Value.validate(c, path)
+			x.Value.validate(c, fieldPath, supportPath+".softwareupdate.install-reason")
 		}
 	}
 }
 
-func (x *SoftwareUpdateInstallReasonDictionary) validate(c *validation.Collector, p string) {
+func (x *SoftwareUpdateInstallReasonDictionary) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "reason")
+		fieldPath := validation.Join(path, "reason")
 		present := len(x.Reason) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SoftwareUpdateInstallReason.softwareupdate.install-reason.reason"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".reason"])
+		c.Required(fieldPath, present)
 		for i, v := range x.Reason {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"system-settings", "install-tonight", "auto-update", "notification", "setup-assistant", "command-line", "mdm", "declaration"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"system-settings", "install-tonight", "auto-update", "notification", "setup-assistant", "command-line", "mdm", "declaration"})
 		}
 	}
 	{
-		path := validation.Join(p, "declaration-id")
+		fieldPath := validation.Join(path, "declaration-id")
 		present := x.DeclarationId != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SoftwareUpdateInstallReason.softwareupdate.install-reason.declaration-id"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".declaration-id"])
 	}
 }
 
@@ -2885,22 +2885,22 @@ func (x *SoftwareUpdateInstallReasonDictionary) validate(c *validation.Collector
 // that every present key is supported on that OS version and enrollment context.
 func (x *SoftwareUpdateInstallState) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SoftwareUpdateInstallState")
 	return c.Err()
 }
 
-func (x *SoftwareUpdateInstallState) validate(c *validation.Collector, p string) {
+func (x *SoftwareUpdateInstallState) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SoftwareUpdateInstallState"])
+	c.Support(path, true, supportTable["SoftwareUpdateInstallState"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 		if present {
-			c.Enum(path, true, x.Value, []any{"none", "downloading", "prepared", "installing", "failed"})
+			c.Enum(fieldPath, true, x.Value, []any{"none", "downloading", "prepared", "installing", "failed"})
 		}
 	}
 }
@@ -2909,50 +2909,50 @@ func (x *SoftwareUpdateInstallState) validate(c *validation.Collector, p string)
 // that every present key is supported on that OS version and enrollment context.
 func (x *SoftwareUpdatePendingVersion) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SoftwareUpdatePendingVersion")
 	return c.Err()
 }
 
-func (x *SoftwareUpdatePendingVersion) validate(c *validation.Collector, p string) {
+func (x *SoftwareUpdatePendingVersion) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SoftwareUpdatePendingVersion"])
+	c.Support(path, true, supportTable["SoftwareUpdatePendingVersion"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 		if present {
-			x.Value.validate(c, path)
+			x.Value.validate(c, fieldPath, supportPath+".softwareupdate.pending-version")
 		}
 	}
 }
 
-func (x *SoftwareUpdatePendingVersionDictionary) validate(c *validation.Collector, p string) {
+func (x *SoftwareUpdatePendingVersionDictionary) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "os-version")
+		fieldPath := validation.Join(path, "os-version")
 		present := x.OsVersion != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["SoftwareUpdatePendingVersion.softwareupdate.pending-version.os-version"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".os-version"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "build-version")
+		fieldPath := validation.Join(path, "build-version")
 		present := x.BuildVersion != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["SoftwareUpdatePendingVersion.softwareupdate.pending-version.build-version"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".build-version"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "target-local-date-time")
+		fieldPath := validation.Join(path, "target-local-date-time")
 		present := x.TargetLocalDateTime != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SoftwareUpdatePendingVersion.softwareupdate.pending-version.target-local-date-time"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".target-local-date-time"])
 	}
 }
 
@@ -2960,34 +2960,34 @@ func (x *SoftwareUpdatePendingVersionDictionary) validate(c *validation.Collecto
 // that every present key is supported on that OS version and enrollment context.
 func (x *Reason) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Reason")
 	return c.Err()
 }
 
-func (x *Reason) validate(c *validation.Collector, p string) {
+func (x *Reason) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Reason"])
+	c.Support(path, true, supportTable["Reason"])
 	{
-		path := validation.Join(p, "code")
+		fieldPath := validation.Join(path, "code")
 		present := x.Code != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Reason.code"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".code"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "description")
+		fieldPath := validation.Join(path, "description")
 		present := x.Description != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Reason.description"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".description"])
 	}
 	{
-		path := validation.Join(p, "details")
+		fieldPath := validation.Join(path, "details")
 		present := len(x.Details) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Reason.details"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".details"])
 	}
 }
 
@@ -2995,43 +2995,43 @@ func (x *Reason) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *TestArrayValue) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "TestArrayValue")
 	return c.Err()
 }
 
-func (x *TestArrayValue) validate(c *validation.Collector, p string) {
+func (x *TestArrayValue) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["TestArrayValue"])
+	c.Support(path, true, supportTable["TestArrayValue"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := len(x.Value) > 0
-		_, _ = path, present
+		_, _ = fieldPath, present
 		for i := range x.Value {
-			x.Value[i].validate(c, validation.Index(path, i))
+			x.Value[i].validate(c, validation.Index(fieldPath, i), supportPath+".test.array-value.status_value")
 		}
 	}
 }
 
-func (x *TestArrayValueArray) validate(c *validation.Collector, p string) {
+func (x *TestArrayValueArray) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "key1")
+		fieldPath := validation.Join(path, "key1")
 		present := x.Key1 != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["TestArrayValue.test.array-value.status_value.key1"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".key1"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "key2")
+		fieldPath := validation.Join(path, "key2")
 		present := x.Key2 != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TestArrayValue.test.array-value.status_value.key2"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".key2"])
 	}
 }
 
@@ -3039,20 +3039,20 @@ func (x *TestArrayValueArray) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *TestBooleanValue) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "TestBooleanValue")
 	return c.Err()
 }
 
-func (x *TestBooleanValue) validate(c *validation.Collector, p string) {
+func (x *TestBooleanValue) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["TestBooleanValue"])
+	c.Support(path, true, supportTable["TestBooleanValue"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -3060,43 +3060,43 @@ func (x *TestBooleanValue) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *TestDictionaryValue) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "TestDictionaryValue")
 	return c.Err()
 }
 
-func (x *TestDictionaryValue) validate(c *validation.Collector, p string) {
+func (x *TestDictionaryValue) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["TestDictionaryValue"])
+	c.Support(path, true, supportTable["TestDictionaryValue"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 		if present {
-			x.Value.validate(c, path)
+			x.Value.validate(c, fieldPath, supportPath+".test.dictionary-value")
 		}
 	}
 }
 
-func (x *TestDictionaryValueDictionary) validate(c *validation.Collector, p string) {
+func (x *TestDictionaryValueDictionary) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "key1")
+		fieldPath := validation.Join(path, "key1")
 		present := x.Key1 != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["TestDictionaryValue.test.dictionary-value.key1"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".key1"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "key2")
+		fieldPath := validation.Join(path, "key2")
 		present := x.Key2 != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TestDictionaryValue.test.dictionary-value.key2"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".key2"])
 	}
 }
 
@@ -3104,20 +3104,20 @@ func (x *TestDictionaryValueDictionary) validate(c *validation.Collector, p stri
 // that every present key is supported on that OS version and enrollment context.
 func (x *TestErrorValue) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "TestErrorValue")
 	return c.Err()
 }
 
-func (x *TestErrorValue) validate(c *validation.Collector, p string) {
+func (x *TestErrorValue) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["TestErrorValue"])
+	c.Support(path, true, supportTable["TestErrorValue"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -3125,20 +3125,20 @@ func (x *TestErrorValue) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *TestIntegerValue) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "TestIntegerValue")
 	return c.Err()
 }
 
-func (x *TestIntegerValue) validate(c *validation.Collector, p string) {
+func (x *TestIntegerValue) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["TestIntegerValue"])
+	c.Support(path, true, supportTable["TestIntegerValue"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -3146,20 +3146,20 @@ func (x *TestIntegerValue) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *TestRealValue) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "TestRealValue")
 	return c.Err()
 }
 
-func (x *TestRealValue) validate(c *validation.Collector, p string) {
+func (x *TestRealValue) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["TestRealValue"])
+	c.Support(path, true, supportTable["TestRealValue"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := true
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
 
@@ -3167,19 +3167,19 @@ func (x *TestRealValue) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *TestStringValue) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "TestStringValue")
 	return c.Err()
 }
 
-func (x *TestStringValue) validate(c *validation.Collector, p string) {
+func (x *TestStringValue) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["TestStringValue"])
+	c.Support(path, true, supportTable["TestStringValue"])
 	{
-		path := validation.Join(p, "")
+		fieldPath := validation.Join(path, "")
 		present := x.Value != ""
-		_, _ = path, present
+		_, _ = fieldPath, present
 	}
 }
