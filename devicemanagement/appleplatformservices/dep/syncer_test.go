@@ -504,12 +504,14 @@ func TestSyncer(t *testing.T) {
 		if f.clock.Now().Sub(start) >= time.Hour {
 			t.Fatal("retry waited for the interval, not the backoff")
 		}
-		// The interval tick syncs as well.
+		// The interval tick syncs as well. Each kick leaves its unfired
+		// interval waiter behind, so the pending count cannot show when the
+		// loop has parked on its new interval; advance until the sync lands.
 		f.srv.AddDevices(device("D"))
-		// The fired backoff waiter is gone; the loop parks on a new interval.
-		waitFor(t, "parked on the interval", func() bool { return f.clock.Pending() >= pending+1 })
-		f.clock.Advance(time.Hour + time.Second)
-		waitFor(t, "after interval", func() bool { return len(serials(t, f.store, dep.DeviceQuery{})) == 4 })
+		waitFor(t, "after interval", func() bool {
+			f.clock.Advance(time.Hour + time.Second)
+			return len(serials(t, f.store, dep.DeviceQuery{})) == 4
+		})
 		cancel()
 		if err := <-done; !errors.Is(err, context.Canceled) {
 			t.Fatalf("Run = %v", err)
