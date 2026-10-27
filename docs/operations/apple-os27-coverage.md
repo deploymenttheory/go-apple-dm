@@ -17,9 +17,9 @@ Sources: [enterprise changes](https://support.apple.com/en-us/148830),
 [update management](https://support.apple.com/en-gb/guide/deployment/depd30715cbb/web),
 [general release notes](https://support.apple.com/en-us/127257), and the pinned
 [Apple schema](../../third_party/apple-device-management/current). Wire names and platform
-constraints below come from that schema, including its historical input.
+constraints below come from that schema, including its retained earlier releases.
 [`GENERATED_FROM.json`](../../devicemanagement/schema/GENERATED_FROM.json) records the
-primary and historical Apple commits. The original
+current and retained Apple commits. The original
 OS 27 seed remains a retained canary snapshot, not the shipped source.
 
 ## Delivery contract
@@ -72,11 +72,13 @@ combinations in [manifest.json](../../test-lab/apple-features/manifest.json).
 iPadOS uses the iOS schema family. Fixture availability applies to the exact
 fields in that fixture, not every variant of its declaration type.
 
-The reviewed [macOS 27 inventory](../../test-lab/apple-features/macos27-coverage.json)
-names all 32 fixture IDs and 50 source cases containing 73 explicit macOS 27
-introduction, deprecation or removal boundaries at the pinned schema. The required
+The [macOS 27 inventory](../../test-lab/apple-features/macos27-coverage.json)
+names every fixture ID and every source case containing explicit macOS 27
+introduction, deprecation or removal boundaries at the pinned schema. Release adoption
+records new boundaries from the pinned schema, keeping existing native test plans and
+giving new sources a pending plan. The required
 `TestSeedOS27CoverageInventory` contract rejects missing or changed cases and
-checks 663 affected inherited paths against compiled metadata at all four versions
+checks every affected inherited path against compiled metadata at all four versions
 in six enrollment contexts. It separately checks the twelve reviewed SSO enum
 floors described in prose. Source cases excluded from Mac acceptance have an
 explicit platform reason. The inventory records native test plans, not passes;

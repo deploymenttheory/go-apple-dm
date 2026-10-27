@@ -2,8 +2,10 @@ package schemagen
 
 import (
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"gopkg.in/yaml.v3"
@@ -23,7 +25,8 @@ func schemaRoot(t *testing.T) string {
 // TestLoadAllYAMLNoUnknownKeys checks load all YAML no unknown keys.
 func TestLoadAllYAMLNoUnknownKeys(t *testing.T) {
 	t.Parallel()
-	tree, err := Load(schemaRoot(t))
+	root := schemaRoot(t)
+	tree, err := Load(root)
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
@@ -34,14 +37,19 @@ func TestLoadAllYAMLNoUnknownKeys(t *testing.T) {
 			t.Errorf("schema without path or title: %+v", s)
 		}
 	}
-	// Counts from the pinned commit in devicemanagement/schema/GENERATED_FROM.json. A change here
-	// means Apple added or removed files: update GENERATED_FROM and this table.
-	want := map[Family]int{
-		FamilyCommands: 67, FamilyCheckin: 9, FamilyErrors: 5, FamilyProfiles: 127,
-		FamilyDDM: 65, FamilyDDMProto: 3, FamilyStatus: 64, FamilyOther: 5,
+	// Expected counts come from each family's directory in the pinned checkout, so
+	// they follow every adopted Apple release while still detecting skipped or
+	// misclassified files.
+	want := map[Family]int{}
+	for dir, family := range map[string]Family{
+		"mdm/commands": FamilyCommands, "mdm/checkin": FamilyCheckin, "mdm/errors": FamilyErrors,
+		"mdm/profiles": FamilyProfiles, "declarative/declarations": FamilyDDM,
+		"declarative/protocol": FamilyDDMProto, "declarative/status": FamilyStatus, "other": FamilyOther,
+	} {
+		want[family] = countYAML(t, filepath.Join(root, filepath.FromSlash(dir)))
 	}
 	for f, n := range want {
-		if counts[f] != n {
+		if n == 0 || counts[f] != n {
 			t.Errorf("family %s: got %d schemas, want %d", f, counts[f], n)
 		}
 	}
@@ -50,9 +58,25 @@ func TestLoadAllYAMLNoUnknownKeys(t *testing.T) {
 			t.Fatalf("schemas not sorted: %s >= %s", tree.Schemas[i-1].Path, tree.Schemas[i].Path)
 		}
 	}
-	if got := len(tree.ByFamily(FamilyCheckin)); got != 9 {
-		t.Errorf("ByFamily(checkin) = %d", got)
+	if got := len(tree.ByFamily(FamilyCheckin)); got != want[FamilyCheckin] {
+		t.Errorf("ByFamily(checkin) = %d, want %d", got, want[FamilyCheckin])
 	}
+}
+
+// countYAML counts the YAML files below dir without using the loader under test.
+func countYAML(t *testing.T, dir string) int {
+	t.Helper()
+	n := 0
+	err := filepath.WalkDir(dir, func(_ string, d fs.DirEntry, err error) error {
+		if err == nil && !d.IsDir() && strings.HasSuffix(d.Name(), ".yaml") {
+			n++
+		}
+		return err
+	})
+	if err != nil {
+		t.Fatalf("count %s: %v", dir, err)
+	}
+	return n
 }
 
 // TestClassify checks schema family and kind classification and unknown-family errors.

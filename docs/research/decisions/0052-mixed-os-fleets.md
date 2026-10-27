@@ -13,24 +13,38 @@ deleted from newer documentation.
 
 ## Decision
 
-Generate a combined API from the candidate schema and a pinned historical Apple
-checkout. `schemagen -history` merges previous keys into the current source,
-preserves emission order and Go representations, and retains historical removal
-boundaries. Current definitions supply new fields and updated availability.
+Generate a combined API from the current schema and the final schema release of
+each earlier supported major version. `schemagen -history` merges each retained
+release into the current source, newest first. It preserves emission order and Go
+representations and retains historical removal boundaries. Current definitions
+supply new fields and updated availability; a key Apple no longer documents keeps
+the availability recorded by the newest retained release that still documents it.
 Ambiguous moves, incompatible wire types, and unreviewed required-to-optional
 changes remain subject to the existing generation/API guards.
 
-The normal library carries the historical checkout at the versioned path selected by
-the `apple-device-management-compatibility` `.gitmodules` entry; seed assessments use
-their own isolated immutable source workspace. `GENERATED_FROM.json` records both
-commits and content hashes. Normal generation and verification discover that history
-input from `.gitmodules`. The original OS 27 seed is retained
-as an immutable canary snapshot. The thirteen OS 27 contracts run in ordinary
-validation. The monitor checks upcoming schemas with the current generator and uses the shipped
-release pin as its control. Its release adoption pull requests move only the primary
-pin and keep the historical input. Mixed-fleet behaviour contracts remain in ordinary CI.
-Later transitions must retain all
-previously published contracts; the public API guard detects incomplete history.
+`third_party/apple-device-management/current` follows Apple's `release` branch within
+the current major schema version (n). Each retained earlier major has a fixed
+submodule beside it, in a directory named for the final schema release Apple
+published for that major: `26.4` is n-1 while `current` carries 27.x. A schema
+release version is the newest OS version the schema introduces; it need not match
+the last OS release of that major. When an adopted Apple release starts a new major
+schema version, its adoption pull request pins the previous major's final release in
+a new versioned submodule, keeps the existing retained releases and moves `current`.
+Adopting 28.0 therefore retains 27.x's final release as n-1 and keeps 26.4 as n-2.
+Retained releases accumulate: removing one ends generated support for devices on
+that major, so it is a reviewed change whose exported-name removals must be recorded.
+
+Normal generation, verification and the OS 27 contracts discover retained releases
+from `.gitmodules`. `GENERATED_FROM.json` records the current commit and each
+retained release's commit, version and content hash, newest first. Seed assessments
+use their own isolated immutable source workspaces; a candidate that starts a new
+major is assessed with the published pin as its newest retained release, as its
+adoption would generate it. The original OS 27 seed is retained as an immutable
+canary snapshot. The thirteen OS 27 contracts run in ordinary validation. The Apple
+Device Management Schema updates workflow checks upcoming schemas with the current
+generator and uses the shipped release pin as its control. Mixed-fleet behaviour
+contracts remain in ordinary CI. Every transition must retain all previously
+published contracts; the public API guard detects incomplete history.
 
 The OS 27 legacy-profile alternative keeps `ProfileURL` as a Go string. Generated
 marshal methods omit its empty value when using `ProfileAssetReference`.
@@ -92,4 +106,7 @@ that refreshed inventory rejects an obsolete queued command while preserving
 the valid work behind it. Storage contract tests run the same inventory refresh
 and exact clearing against every built-in backend. Generator and schema tests
 retain older firewall support, removed fields, URL serialization and OS 27 asset
-validation without relaxing public API checks.
+validation without relaxing public API checks. Generator tests merge two retained
+releases and record them newest first, and require each retained release named in
+`.gitmodules` to be checked out. Workflow tests adopt a new major release both when the
+pin is the previous major's final release and when Apple published a later one.

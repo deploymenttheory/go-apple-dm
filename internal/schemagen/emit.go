@@ -18,9 +18,10 @@ type Options struct {
 	Commit string
 	// Ref names the upstream branch selected by the caller.
 	Ref string
-	// History is an older Apple checkout whose public wire shapes must remain
-	// available for devices still running older operating systems.
-	History string
+	// Histories are checkouts of earlier major schema releases, newest first,
+	// whose public wire shapes must remain available for devices still running
+	// those operating systems.
+	Histories []string
 }
 
 // Files maps a path relative to devicemanagement/schema/ to file contents.

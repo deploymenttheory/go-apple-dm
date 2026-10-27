@@ -2,6 +2,6 @@
 	path = third_party/apple-device-management/current
 	url = https://github.com/apple/device-management
 	branch = release
-[submodule "apple-device-management-compatibility"]
+[submodule "apple-device-management-26.4"]
 	path = third_party/apple-device-management/26.4
 	url = https://github.com/apple/device-management.git

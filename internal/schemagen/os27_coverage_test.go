@@ -3,9 +3,10 @@
 package schemagen
 
 import (
+	"bytes"
 	"encoding/json"
+	"flag"
 	"os"
-	"os/exec"
 	"reflect"
 	"slices"
 	"strings"
@@ -20,41 +21,52 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
+// updateCoverage rewrites the inventory's macOS 27 boundaries from the pinned schema. Release
+// adoption runs it so that an adopted schema carries its own boundary record.
+var updateCoverage = flag.Bool("update-coverage", false, "record macOS 27 boundaries from the pinned schema in "+os27InventoryPath)
+
+const (
+	os27InventoryPath = "test-lab/apple-features/macos27-coverage.json"
+	// os27PendingPlan marks a case recorded automatically; a reviewer replaces it with a native test plan.
+	os27PendingPlan = "Pending review: recorded from the pinned schema without a native test plan."
+)
+
 type os27Boundary struct {
 	Path    string `json:"path"`
 	Kind    string `json:"kind"`
 	Version string `json:"version"`
 }
 
-// The reviewed inventory is independent of generated Go names. Missing source
-// cases, fields, fixtures or prose-only enum floors must not become silent passes.
+type os27Case struct {
+	Source     string         `json:"source"`
+	Boundaries []os27Boundary `json:"boundaries"`
+	Fixtures   []string       `json:"fixtures"`
+	NativePlan string         `json:"nativePlan"`
+}
+
+type os27Inventory struct {
+	Description string     `json:"description"`
+	Fixtures    []string   `json:"fixtures"`
+	Cases       []os27Case `json:"cases"`
+	NonMacCases []struct {
+		Source string `json:"source"`
+		Reason string `json:"reason"`
+	} `json:"nonMacCases"`
+	ValueFloors map[string][]string `json:"valueFloors"`
+}
+
+// The inventory is independent of generated Go names. Missing source cases, fields,
+// fixtures or prose-only enum floors must not become silent passes.
 func TestSeedOS27CoverageInventory(t *testing.T) {
-	var inventory struct {
-		SchemaCommit  string   `json:"schemaCommit"`
-		HistoryCommit string   `json:"historyCommit"`
-		Fixtures      []string `json:"fixtures"`
-		Cases         []struct {
-			Source     string         `json:"source"`
-			Boundaries []os27Boundary `json:"boundaries"`
-			Fixtures   []string       `json:"fixtures"`
-			NativePlan string         `json:"nativePlan"`
-		} `json:"cases"`
-		ValueFloors map[string][]string `json:"valueFloors"`
-		NonMacCases []struct {
-			Source string `json:"source"`
-			Reason string `json:"reason"`
-		} `json:"nonMacCases"`
+	var inventory os27Inventory
+	readOS27JSON(t, os27InventoryPath, &inventory)
+	tree, err := Load("../../third_party/apple-device-management/current")
+	if err != nil {
+		t.Fatal(err)
 	}
-	readOS27JSON(t, "test-lab/apple-features/macos27-coverage.json", &inventory)
-	var provenance struct {
-		Commit  string `json:"commit"`
-		History struct {
-			Commit string `json:"commit"`
-		} `json:"history"`
-	}
-	readOS27JSON(t, "devicemanagement/schema/GENERATED_FROM.json", &provenance)
-	if inventory.SchemaCommit != provenance.Commit || inventory.HistoryCommit != provenance.History.Commit {
-		t.Fatal("schema inputs changed: review the macOS 27 coverage inventory")
+	if *updateCoverage {
+		inventory.Cases = recordOS27Boundaries(tree, inventory.Cases)
+		writeOS27JSON(t, os27InventoryPath, inventory)
 	}
 	var manifest struct {
 		Features []struct {
@@ -75,14 +87,13 @@ func TestSeedOS27CoverageInventory(t *testing.T) {
 	if !slices.Equal(fixtureIDs, inventory.Fixtures) {
 		t.Fatal("fixture IDs differ from the reviewed coverage inventory", fixtureIDs)
 	}
-	tree, err := Load("../../third_party/apple-device-management/current")
-	if err != nil {
-		t.Fatal(err)
-	}
 	reviewed := map[string][]os27Boundary{}
 	for _, c := range inventory.Cases {
 		if _, exists := reviewed[c.Source]; exists || len(c.Boundaries) == 0 || c.NativePlan == "" {
 			t.Fatal("duplicate or incomplete coverage case", c.Source)
+		}
+		if c.NativePlan == os27PendingPlan {
+			t.Logf("%s: native test plan pending review", c.Source)
 		}
 		for _, id := range c.Fixtures {
 			if !slices.Contains(fixtureIDs, id) {
@@ -99,12 +110,13 @@ func TestSeedOS27CoverageInventory(t *testing.T) {
 			continue
 		}
 		if !slices.Equal(actual, reviewed[s.Path]) {
-			t.Errorf("unreviewed macOS 27 boundary in %s: got %+v, reviewed %+v", s.Path, actual, reviewed[s.Path])
+			t.Errorf("unrecorded macOS 27 boundary in %s: got %+v, recorded %+v (run with -update-coverage)",
+				s.Path, actual, reviewed[s.Path])
 		}
 		delete(reviewed, s.Path)
 	}
 	for source := range reviewed {
-		t.Errorf("reviewed boundary no longer exists: %s", source)
+		t.Errorf("recorded boundary no longer exists: %s (run with -update-coverage)", source)
 	}
 	for _, c := range inventory.Cases {
 		s := bySource[c.Source]
@@ -160,6 +172,50 @@ func readOS27JSON(t *testing.T, path string, target any) {
 	}
 }
 
+// recordOS27Boundaries returns one case per schema with explicit macOS 27 boundaries. Existing
+// fixtures and native plans are kept, new sources receive os27PendingPlan, and cases whose
+// boundaries no longer exist are dropped.
+func recordOS27Boundaries(tree *Tree, cases []os27Case) []os27Case {
+	existing := map[string]os27Case{}
+	for _, c := range cases {
+		existing[c.Source] = c
+	}
+	var result []os27Case
+	for _, s := range tree.Schemas {
+		boundaries := explicitMacOS27Boundaries(s)
+		if len(boundaries) == 0 {
+			continue
+		}
+		c, ok := existing[s.Path]
+		if !ok {
+			c = os27Case{Source: s.Path, Fixtures: []string{}, NativePlan: os27PendingPlan}
+		}
+		c.Boundaries = boundaries
+		result = append(result, c)
+	}
+	return result
+}
+
+// writeOS27JSON writes value as indented JSON to a repository file.
+func writeOS27JSON(t *testing.T, path string, value any) {
+	t.Helper()
+	var data bytes.Buffer
+	encoder := json.NewEncoder(&data)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(value); err != nil {
+		t.Fatal(err)
+	}
+	root, err := os.OpenRoot("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = root.Close() }()
+	if err := root.WriteFile(path, data.Bytes(), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
 // explicitMacOS27Boundaries collects and sorts explicit macOS 27 introduction, deprecation, and
 // removal boundaries.
 func explicitMacOS27Boundaries(s *Schema) []os27Boundary {
@@ -193,9 +249,13 @@ func explicitMacOS27Boundaries(s *Schema) []os27Boundary {
 // across versions and enrollment contexts.
 func checkOS27InheritedBoundaries(t *testing.T) {
 	t.Helper()
-	// Resolve inheritance using the source model and retained historical schema,
+	// Resolve inheritance using the source model and retained earlier releases,
 	// then compare every affected descendant with the compiled public tables.
-	tables, _, err := sourceSupport("../../third_party/apple-device-management/current", compatibilitySchemaRoot(t))
+	retained, err := RetainedReleases("../../.gitmodules")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tables, _, err := sourceSupport("../../third_party/apple-device-management/current", retained...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -235,15 +295,4 @@ func checkOS27InheritedBoundaries(t *testing.T) {
 		t.Fatal("no inherited macOS 27 boundaries checked")
 	}
 	t.Logf("checked %d inherited macOS 27 paths across four versions and six enrollment contexts", checked)
-}
-
-// compatibilitySchemaRoot reads the compatibility schema submodule path from .gitmodules.
-func compatibilitySchemaRoot(t *testing.T) string {
-	t.Helper()
-	command := exec.CommandContext(t.Context(), "git", "config", "--file", "../../.gitmodules", "--get", "submodule.apple-device-management-compatibility.path")
-	output, err := command.Output()
-	if err != nil {
-		t.Fatal(err)
-	}
-	return "../../" + strings.TrimSpace(string(output))
 }

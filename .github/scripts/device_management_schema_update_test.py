@@ -6,8 +6,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import device_management_client_schema_monitor as m
-from device_management_client_schema_diagnostics import findings, diagnosis
+import device_management_schema_update as m
+from device_management_schema_update_diagnostics import findings, diagnosis
 
 
 PIN, NEXT, PROJECT = 'a' * 40, 'b' * 40, 'c' * 40
@@ -45,7 +45,11 @@ def stored(action):
     return dict(action[2], number=42, state='open')
 
 
-REGENERATE = (('generate', ['sh', '-c', 'printf \'{"os_versions": "27.2"}\' > ' + m.SCHEMA + '/GENERATED_FROM.json']),)
+EXISTING_CASE = {'source': 'mdm/commands/a.yaml', 'boundaries': [{'path': '$', 'kind': 'introduced', 'version': '27.0'}]}
+NEW_CASE = {'source': 'mdm/commands/b.yaml', 'boundaries': [{'path': '$', 'kind': 'introduced', 'version': '27.2'}]}
+REGENERATE = (('generate', ['sh', '-c', 'printf \'{"os_versions": "27.2"}\' > ' + m.SCHEMA + '/GENERATED_FROM.json']),
+              ('coverage', ['sh', '-c', 'printf \'%s\' \'' + json.dumps({'cases': [EXISTING_CASE, NEW_CASE]}) +
+                            '\' > ' + m.COVERAGE]))
 LOCK_FAILURE = (('generate', ['sh', '-c', 'echo "EXPORTED_IDENTIFIERS.lock: OldType is no longer generated"; exit 1']),)
 OFFLINE = (('generate', ['sh', '-c', 'echo "dial tcp: lookup proxy.golang.org: no such host"; exit 1']),)
 
@@ -83,10 +87,18 @@ def commit_all(path, message):
     return m.run(['git', 'rev-parse', 'HEAD'], path).strip()
 
 
+def fake_version(tool, schema, cwd):
+    """Stand in for schemagen versions: fixture releases record their schema version in VERSION."""
+    return (Path(schema) / 'VERSION').read_text()
+
+
 def apple_release(apple, version):
     # Apple prepends each release section to CHANGES.md.
     notes = '# Changes in ' + version + '\n- Adds ' + version + '\n\n# Changes in 27.0\n'
     (apple / 'CHANGES.md').write_text(notes + (apple / 'CHANGES.md').read_text())
+    (apple / 'VERSION').write_text(version)
+    (apple / 'mdm/commands').mkdir(parents=True, exist_ok=True)
+    (apple / 'mdm/commands' / ('v' + version + '.yaml')).write_text('title: Example\n')
     commit = commit_all(apple, 'Release-v' + version)
     m.run(['git', 'branch', 'schema-source/release/' + commit], apple)
     return commit
@@ -100,19 +112,35 @@ def passing_results(value, directory):
             'stages': {s: {'state': 'passed'} for s in m.STAGES}})
 
 
-def adoption_workspace(root):
-    """Build Apple, project and push-target repositories with a pinned control and a newer release."""
+def adoption_workspace(root, published='27.0', releases=('27.2',), retained=None):
+    """Build Apple, project and push-target repositories with a pinned control and newer releases.
+
+    The candidate is the last release. A retained version adds an earlier pinned release beside current.
+    """
     apple = git_repo(root / 'apple', 'release')
     (apple / 'CHANGES.md').write_text('- Initial schema\n')
-    pin = commit_all(apple, 'Release-v27.0')
-    candidate = apple_release(apple, '27.2')
+    gitmodules = '[submodule "apple-device-management-current"]\n\tpath = ' + m.CURRENT + '\n\turl = ' + str(apple) + \
+        '\n\tbranch = release\n'
+    links, history = [], []
+    if retained:
+        (apple / 'VERSION').write_text(retained)
+        old = commit_all(apple, 'Release-v' + retained)
+        path = m.RELEASES + '/' + retained
+        gitmodules += '[submodule "apple-device-management-' + retained + '"]\n\tpath = ' + path + '\n\turl = ' + str(apple) + '\n'
+        links.append((old, path))
+        history.append({'commit': old})
+    (apple / 'VERSION').write_text(published)
+    pin = commit_all(apple, 'Release-v' + published)
+    links.append((pin, m.CURRENT))
+    candidate = [apple_release(apple, version) for version in releases][-1]
     project = git_repo(root / 'project', 'main')
-    (project / '.gitmodules').write_text('[submodule "apple-device-management-current"]\n\tpath = ' + m.CURRENT +
-                                         '\n\turl = ' + str(apple) + '\n\tbranch = release\n')
+    (project / '.gitmodules').write_text(gitmodules)
     (project / m.SCHEMA).mkdir(parents=True)
-    m.write_json(project / m.SCHEMA / 'GENERATED_FROM.json', {'commit': pin, 'os_versions': '27.0'})
+    m.write_json(project / m.SCHEMA / 'GENERATED_FROM.json', {'commit': pin, 'os_versions': published, 'history': history})
+    m.write_json(project / m.COVERAGE, {'cases': [EXISTING_CASE]})
     m.run(['git', 'add', '.'], project)
-    m.run(['git', 'update-index', '--add', '--cacheinfo', '160000,' + pin + ',' + m.CURRENT], project)
+    for commit, path in links:
+        m.run(['git', 'update-index', '--add', '--cacheinfo', '160000,' + commit + ',' + path], project)
     m.run(['git', 'commit', '-qm', 'project'], project)
     remote = root / 'remote.git'
     m.run(['git', 'init', '-q', '--bare', remote])
@@ -167,6 +195,31 @@ class DiscoveryTests(unittest.TestCase):
             m.run(['git', 'merge', '--ff-only', 'seed_macOS_28'], apple)
             result = m.discover(project, root / 'discovery.json', str(apple), str(apple))
             self.assertEqual(['release'], [b['kind'] for b in result['branches']])
+
+    def test_discovery_records_retained_releases_newest_first(self):
+        with tempfile.TemporaryDirectory() as temp, local_git():
+            value, apple, project, _, _ = adoption_workspace(Path(temp), '27.2', ('27.4',), '26.4')
+            gitmodules = (project / '.gitmodules').read_text() + '[submodule "apple-device-management-9.3"]\n\tpath = ' + \
+                m.RELEASES + '/9.3\n\turl = ' + str(apple) + '\n'
+            (project / '.gitmodules').write_text(gitmodules)
+            old = m.run(['git', 'rev-list', '--max-parents=0', 'release'], apple).strip()
+            provenance = json.loads((project / m.SCHEMA / 'GENERATED_FROM.json').read_text())
+            m.write_json(project / m.SCHEMA / 'GENERATED_FROM.json', dict(provenance, history=[{'commit': old}, {'commit': old}]))
+            m.run(['git', 'update-index', '--add', '--cacheinfo', '160000,' + old + ',' + m.RELEASES + '/9.3'], project)
+            m.run(['git', 'add', '.gitmodules', m.SCHEMA + '/GENERATED_FROM.json'], project)
+            m.run(['git', 'commit', '-qm', 'retain 9.3'], project)
+            result = m.discover(project, Path(temp) / 'discovery.json', str(apple), str(apple))
+            self.assertTrue(result['complete'], result)
+            self.assertEqual([{'path': m.RELEASES + '/26.4', 'commit': old}, {'path': m.RELEASES + '/9.3', 'commit': old}],
+                             result['history'])
+            m.write_json(project / m.SCHEMA / 'GENERATED_FROM.json', provenance)
+            m.run(['git', 'add', '.gitmodules', m.SCHEMA + '/GENERATED_FROM.json'], project)
+            m.run(['git', 'commit', '-qm', 'stale provenance'], project)
+            result = m.discover(project, Path(temp) / 'discovery.json', str(apple), str(apple))
+            self.assertIn('retained-release provenance differs', result['error'])
+            (project / '.gitmodules').write_text(gitmodules.replace(m.RELEASES + '/9.3', m.RELEASES + '/legacy'))
+            with self.assertRaisesRegex(ValueError, 'not named for its version'):
+                m.retained_releases(project)
 
     def test_default_discovery_is_not_version_named(self):
         for default in ('release', 'main'):
@@ -280,6 +333,18 @@ class AssessmentTests(unittest.TestCase):
             self.assertFalse(result['complete'])
             self.assertEqual([], result['findings'])
             self.assertIn('checkout unavailable', result['automationErrors'])
+
+    def test_new_major_candidate_is_assessed_with_the_pin_retained(self):
+        versions = {'candidate': '28.0', 'control': '27.2', 'patch': '27.4'}
+        with patch.object(m, 'schema_version', lambda tool, schema, cwd: versions[schema]):
+            self.assertTrue(m.new_major(['schemagen'], 'candidate', 'control', '.'))
+            self.assertFalse(m.new_major(['schemagen'], 'patch', 'control', '.'))
+            self.assertFalse(m.new_major(['schemagen'], 'control', 'control', '.'))
+        failure = subprocess.CalledProcessError(1, 'schemagen', stderr='field future-metadata not found')
+        with patch.object(m, 'schema_version', side_effect=failure):
+            self.assertFalse(m.new_major(['schemagen'], 'candidate', 'control', '.'))
+        self.assertEqual((27, 4, 1), m.version_key('27.4.1'))
+        self.assertEqual(0, m.major(''))
 
     def test_artifact_provenance_must_match(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -470,6 +535,11 @@ class PublicationTests(unittest.TestCase):
 
 
 class AdoptionTests(unittest.TestCase):
+    def setUp(self):
+        version = patch.object(m, 'schema_version', fake_version)
+        version.start()
+        self.addCleanup(version.stop)
+
     def test_only_a_passing_release_with_a_passing_control_is_adopted(self):
         release = report('release', NEXT, 'release')
         value = manifest(release)
@@ -514,8 +584,12 @@ class AdoptionTests(unittest.TestCase):
             method, endpoint, body = api.calls[0]
             self.assertEqual(('POST', 'pulls', m.ADOPT_BRANCH, 'main'), (method, endpoint, body['head'], body['base']))
             self.assertFalse(body['draft'])
-            self.assertEqual('feat(schema): adopt Apple device management release 27.2', body['title'])
+            self.assertEqual('feat(schema): adopt Apple device management schema release 27.2', body['title'])
             self.assertIn('> # Changes in 27.2\n> - Adds 27.2', body['body'])
+            self.assertIn('## Added and removed schema files\n\n- Added `mdm/commands/v27.2.yaml`', body['body'])
+            recorded = body['body'].split('## Recorded macOS 27 boundaries')[1]
+            self.assertIn('- `mdm/commands/b.yaml` `$`: introduced 27.2', recorded)
+            self.assertNotIn('a.yaml', recorded)
             self.assertNotIn('27.0', body['body'].split('## Apple release notes')[1].split('## Changed Apple files')[0])
             self.assertIn(candidate, m.run(['git', 'ls-tree', m.ADOPT_BRANCH, m.CURRENT], remote))
             self.assertIn('27.2', m.run(['git', 'show', m.ADOPT_BRANCH + ':' + m.SCHEMA + '/GENERATED_FROM.json'], remote))
@@ -544,6 +618,40 @@ class AdoptionTests(unittest.TestCase):
             self.assertEqual(2, len(api.calls))
             self.assertEqual(reviewed, m.run(['git', 'rev-parse', m.ADOPT_BRANCH], remote).strip())
 
+    def test_new_major_retains_the_final_previous_release_beside_current(self):
+        # Apple's final 27.x schema release is retained whether or not the pin already reached it.
+        for releases, final in ((('27.4', '28.0'), '27.4'), (('28.0',), '27.2')):
+            with self.subTest(releases=releases), tempfile.TemporaryDirectory() as temp, local_git():
+                value, apple, project, remote, results = adoption_workspace(Path(temp), '27.2', releases, '26.4')
+                final_commit = m.run(['git', 'rev-parse', 'release^'], apple).strip()
+                api = PullAPI()
+                with patch.object(m, 'ADOPTION_STAGES', REGENERATE):
+                    self.assertTrue(m.adopt(project, value, results, api, False, 'run', remote=str(remote)))
+                path = m.RELEASES + '/' + final
+                self.assertIn(final_commit, m.run(['git', 'ls-tree', m.ADOPT_BRANCH, path], remote))
+                self.assertIn(value['branches'][0]['commit'], m.run(['git', 'ls-tree', m.ADOPT_BRANCH, m.CURRENT], remote))
+                gitmodules = m.run(['git', 'show', m.ADOPT_BRANCH + ':.gitmodules'], remote)
+                self.assertIn('[submodule "apple-device-management-' + final + '"]\n\tpath = ' + path, gitmodules)
+                self.assertNotIn('branch', gitmodules.split('apple-device-management-' + final)[1])
+                self.assertIn('[submodule "apple-device-management-26.4"]', gitmodules)
+                body = api.calls[0][2]['body']
+                self.assertIn("Apple's final 27.x schema release, " + final + ' ([`' + final_commit[:12], body)
+                self.assertIn('Retain the final 27.x schema release in ' + path,
+                              m.run(['git', 'log', '-1', '--format=%b', m.ADOPT_BRANCH], remote))
+                with tempfile.TemporaryDirectory() as clone:
+                    m.run(['git', 'clone', '--quiet', '--branch', m.ADOPT_BRANCH, remote, clone])
+                    self.assertEqual([path, m.RELEASES + '/26.4'], m.retained_releases(Path(clone)))
+
+    def test_release_within_the_published_major_keeps_retained_releases(self):
+        with tempfile.TemporaryDirectory() as temp, local_git():
+            value, _, project, remote, results = adoption_workspace(Path(temp), '27.2', ('27.4',), '26.4')
+            api = PullAPI()
+            with patch.object(m, 'ADOPTION_STAGES', REGENERATE):
+                self.assertTrue(m.adopt(project, value, results, api, False, 'run', remote=str(remote)))
+            self.assertEqual(m.run(['git', 'show', 'HEAD:.gitmodules'], project),
+                             m.run(['git', 'show', m.ADOPT_BRANCH + ':.gitmodules'], remote))
+            self.assertIn('Retained earlier major releases are unchanged.', api.calls[0][2]['body'])
+
     def test_regeneration_failure_opens_a_pin_only_draft(self):
         with tempfile.TemporaryDirectory() as temp, local_git():
             value, _, project, remote, results = adoption_workspace(Path(temp))
@@ -554,6 +662,8 @@ class AdoptionTests(unittest.TestCase):
             self.assertTrue(body['draft'])
             self.assertTrue(body['title'].endswith(candidate[:12]))
             self.assertIn('OldType is no longer generated', body['body'])
+            self.assertIn('The `generate` step failed', body['body'])
+            self.assertNotIn('## Recorded macOS 27 boundaries', body['body'])
             self.assertIn(candidate, m.run(['git', 'ls-tree', m.ADOPT_BRANCH, m.CURRENT], remote))
             self.assertIn('27.0', m.run(['git', 'show', m.ADOPT_BRANCH + ':' + m.SCHEMA + '/GENERATED_FROM.json'], remote))
 
@@ -564,7 +674,7 @@ class AdoptionTests(unittest.TestCase):
             with patch.object(m, 'ADOPTION_STAGES', REGENERATE):
                 self.assertTrue(m.adopt(project, value, results, api, True, 'run', remote=str(remote)))
             state = json.loads((results / 'adoption.json').read_text())
-            self.assertEqual(('create', 'feat(schema): adopt Apple device management release 27.2'),
+            self.assertEqual(('create', 'feat(schema): adopt Apple device management schema release 27.2'),
                              (state['action'], state['proposal']['title']))
             self.assertIn('Report only: True.', (results / 'adoption.md').read_text())
             with patch.object(m, 'ADOPTION_STAGES', OFFLINE):

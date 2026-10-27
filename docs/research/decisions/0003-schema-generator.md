@@ -20,17 +20,17 @@ modify the vendored Apple input.
 
 Generated conformance tests exercise XML plist, binary plist and JSON round trips. `devicemanagement/schema/EXPORTED_IDENTIFIERS.lock` tracks exported names, and approved removals belong in `devicemanagement/schema/ALLOWED_REMOVALS.md`. Provenance is generated from the checked-out schema as described in record 0046.
 
-The Device Management Client Schema monitor discovers upcoming release and active
+The Apple Device Management Schema updates workflow discovers upcoming release and active
 seed heads dynamically, excluding inputs already contained in the published pin or
 promoted release. It verifies strict parsing, generation, regeneration consistency
 and compilation in isolated workspaces, with the published schema as a control.
 Incidents group unsupported constructs across files and snapshots and identify the
 relevant generator code and required regression tests. The candidate output uses a
 fresh identifier lock; the published API guard remains in ordinary CI. When Apple's
-release passes, the monitor proposes it as one reviewed adoption pull request that
+release passes, the workflow proposes it as one reviewed adoption pull request that
 moves the pin and regenerates with the production identifier lock. Server
 compatibility remains the responsibility of ordinary CI.
-See the [monitor guide](../../schema-monitor.md).
+See the [schema updates guide](../../device-management-schema-updates.md).
 
 ## Rationale
 
