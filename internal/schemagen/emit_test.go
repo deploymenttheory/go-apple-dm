@@ -310,6 +310,121 @@ func TestGenerateSynthetic(t *testing.T) {
 	}
 }
 
+// TestGenerateRecursiveArrays checks element validation for recursive arrays
+// and arrays of arrays. Helpers recurses to its enclosing array, Kids to its
+// enclosing dictionary, and a Dock folder's Page to the Dock through an array
+// of arrays, as Apple's HomeScreenLayout does; each recursive value is checked
+// against its owner's use. Sheets and Grid are arrays of arrays of a struct and
+// of a constrained scalar.
+func TestGenerateRecursiveArrays(t *testing.T) {
+	t.Parallel()
+	doc := `title: Recursive
+payload:
+  requesttype: Recursive
+payloadkeys:
+- key: Apps
+  type: <array>
+  subkeys: &apps
+  - key: App
+    type: <dictionary>
+    subkeys:
+    - key: ID
+      type: <string>
+      presence: required
+    - key: Helpers
+      type: <array>
+      subkeys: *apps
+- key: Node
+  type: <dictionary>
+  subkeys: &node
+  - key: Label
+    type: <string>
+    presence: required
+  - key: Kids
+    type: <array>
+    subkeys: *node
+- key: Dock
+  type: <array>
+  subkeys: &icons
+  - key: Icon
+    type: <dictionary>
+    subkeys:
+    - key: Kind
+      type: <string>
+      rangelist: [App, Folder]
+    - key: Pages
+      type: <array>
+      subkeys:
+      - key: Page
+        type: <array>
+        subkeys: *icons
+- key: Sheets
+  type: <array>
+  subkeys:
+  - key: Sheet
+    type: <array>
+    repetition:
+      min: 1
+      max: 4
+    subkeys:
+    - key: Tile
+      type: <dictionary>
+      subkeys:
+      - key: Name
+        type: <string>
+        presence: required
+- key: Grid
+  type: <array>
+  subkeys:
+  - key: Row
+    type: <array>
+    subkeys:
+    - key: Cell
+      type: <string>
+      rangelist: [x, o]
+`
+	s, err := Parse([]byte(doc))
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	s.Path = "mdm/commands/recursive.yaml"
+	if s.Family, s.Kind, err = Classify(s.Path); err != nil {
+		t.Fatal(err)
+	}
+	pkgs, err := Build(&Tree{Schemas: []*Schema{s}})
+	if err != nil {
+		t.Fatalf("Build: %v", err)
+	}
+	files, err := Generate(pkgs, Options{Commit: "synthetic"})
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	ws := regexp.MustCompile(`\s+`)
+	text := func(name string) string { return ws.ReplaceAllString(string(files[name]), " ") }
+	types, validate, support := text("commands/types.gen.go"), text("commands/validate.gen.go"), text("commands/support.gen.go")
+	for _, want := range []string{
+		"Helpers []RecursiveApps", "Kids []RecursiveNode", "Pages [][]RecursiveDock", "Sheets [][]RecursiveSheet", "Grid [][]string",
+	} {
+		if !strings.Contains(types, want) {
+			t.Errorf("types.gen.go missing %q", want)
+		}
+	}
+	for _, want := range []string{
+		"for i := range x.Helpers { x.Helpers[i].validate(c, validation.Index(fieldPath, i), supportPath) }",
+		"for i := range x.Kids { x.Kids[i].validate(c, validation.Index(fieldPath, i), supportPath) }",
+		"for i := range x.Pages { for i1 := range x.Pages[i] { x.Pages[i][i1].validate(c, validation.Index(validation.Index(fieldPath, i), i1), supportPath) } }",
+		"for i := range x.Sheets { c.Repetition(validation.Index(fieldPath, i), true, len(x.Sheets[i]), 1, 4) for i1 := range x.Sheets[i] { x.Sheets[i][i1].validate(c, validation.Index(validation.Index(fieldPath, i), i1), supportPath+\".Sheets.Sheet.Tile\") } }",
+		"for i := range x.Grid { for i1 := range x.Grid[i] { c.Enum(validation.Index(validation.Index(fieldPath, i), i1), true, x.Grid[i][i1], []any{\"x\", \"o\"}) } }",
+	} {
+		if !strings.Contains(validate, want) {
+			t.Errorf("validate.gen.go missing %q", want)
+		}
+	}
+	if !strings.Contains(support, `table["Recursive.Sheets.Sheet.Tile.Name"]`) {
+		t.Error("support.gen.go has no entry for a struct nested in an array of arrays")
+	}
+}
+
 // TestUniqueNameSuffixes checks numeric suffix allocation for colliding generated names.
 func TestUniqueNameSuffixes(t *testing.T) {
 	t.Parallel()

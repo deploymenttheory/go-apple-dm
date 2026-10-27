@@ -2998,6 +2998,9 @@ func (x *ParentalControlsApplicationRestrictionsApplicationItem) validate(c *val
 		present := len(x.SubApps) > 0
 		_, _ = fieldPath, present
 		c.Support(fieldPath, present, supportTable[supportPath+".subApps"])
+		for i := range x.SubApps {
+			x.SubApps[i].validate(c, validation.Index(fieldPath, i), supportPath)
+		}
 	}
 	{
 		fieldPath := validation.Join(path, "displayName")
@@ -3043,6 +3046,9 @@ func (x *ParentalControlsApplicationRestrictionsAllowListAllowListItem) validate
 		present := len(x.SubApps) > 0
 		_, _ = fieldPath, present
 		c.Support(fieldPath, present, supportTable[supportPath+".subApps"])
+		for i := range x.SubApps {
+			x.SubApps[i].validate(c, validation.Index(fieldPath, i), supportPath)
+		}
 	}
 	{
 		fieldPath := validation.Join(path, "displayName")
@@ -7925,6 +7931,11 @@ func (x *HomeScreenLayout) validate(c *validation.Collector, path, supportPath s
 		_, _ = fieldPath, present
 		c.Support(fieldPath, present, supportTable[supportPath+".Pages"])
 		c.Required(fieldPath, present)
+		for i := range x.Pages {
+			for i1 := range x.Pages[i] {
+				x.Pages[i][i1].validate(c, validation.Index(validation.Index(fieldPath, i), i1), supportPath+".Pages.PagesItem.IconItem")
+			}
+		}
 	}
 }
 
@@ -7960,6 +7971,11 @@ func (x *HomeScreenLayoutIconItem) validate(c *validation.Collector, path, suppo
 		present := len(x.Pages) > 0
 		_, _ = fieldPath, present
 		c.Support(fieldPath, present, supportTable[supportPath+".Pages"])
+		for i := range x.Pages {
+			for i1 := range x.Pages[i] {
+				x.Pages[i][i1].validate(c, validation.Index(validation.Index(fieldPath, i), i1), supportPath)
+			}
+		}
 	}
 	{
 		fieldPath := validation.Join(path, "URL")
@@ -8001,6 +8017,11 @@ func (x *HomeScreenLayoutPagesItemIconItem) validate(c *validation.Collector, pa
 		present := len(x.Pages) > 0
 		_, _ = fieldPath, present
 		c.Support(fieldPath, present, supportTable[supportPath+".Pages"])
+		for i := range x.Pages {
+			for i1 := range x.Pages[i] {
+				x.Pages[i][i1].validate(c, validation.Index(validation.Index(fieldPath, i), i1), supportPath)
+			}
+		}
 	}
 	{
 		fieldPath := validation.Join(path, "URL")

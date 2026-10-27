@@ -66,6 +66,14 @@ func effective(st *SchemaType) (map[string]*support.Entry, error) {
 						}
 					}
 				}
+				// An array of arrays, such as HomeScreenLayout's Pages, nests
+				// its structs one element deeper per level.
+				for el := f.Elem; el.Kind == KindArray && el.Elem != nil; el = el.Elem {
+					item += "." + el.Elem.Key
+					if err := walk(el.Elem.Struct, item); err != nil {
+						return err
+					}
+				}
 			}
 			for i, key := range variantKeys(f) {
 				if err := walk(f.Variants[i], use+"."+key); err != nil {
