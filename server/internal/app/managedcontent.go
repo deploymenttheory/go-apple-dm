@@ -113,6 +113,10 @@ func (a *App) runManagedContent(ctx context.Context) error {
 			for {
 				operations, next, err := a.ManagedContent.Operations(ctx, after, 100)
 				if err != nil {
+					// Cancellation can interrupt a tick in progress; stopping is not a failure.
+					if ctx.Err() != nil {
+						return nil
+					}
 					return err
 				}
 				for _, op := range operations {
