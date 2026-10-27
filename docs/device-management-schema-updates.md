@@ -82,9 +82,12 @@ the regenerated `os_versions` provenance.
 
 The pull request records the Apple, control, project and pushed head commits in a
 `schema-adoption` marker. It includes Apple's release notes, changed files, stage results
-and a review checklist. Merging requires review: the published OS 27 feature contracts fail
-until `test-lab/apple-features/macos27-coverage.json` records the reviewed schema and
-history commits.
+and a review checklist. CI fails until the review changes are committed to the adoption
+branch; merge only after it passes. The published OS 27 feature contracts fail until
+`test-lab/apple-features/macos27-coverage.json` records a reviewed case for every new
+macOS 27.x boundary and the new schema and history commits. When Apple adds or removes
+schema files, the checklist lists them, and the loader's family counts in
+`internal/schemagen/model_test.go` must be updated.
 
 Each run selects one action:
 

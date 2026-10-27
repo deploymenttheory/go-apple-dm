@@ -87,6 +87,8 @@ def apple_release(apple, version):
     # Apple prepends each release section to CHANGES.md.
     notes = '# Changes in ' + version + '\n- Adds ' + version + '\n\n# Changes in 27.0\n'
     (apple / 'CHANGES.md').write_text(notes + (apple / 'CHANGES.md').read_text())
+    (apple / 'mdm/commands').mkdir(parents=True, exist_ok=True)
+    (apple / 'mdm/commands' / ('v' + version + '.yaml')).write_text('title: Example\n')
     commit = commit_all(apple, 'Release-v' + version)
     m.run(['git', 'branch', 'schema-source/release/' + commit], apple)
     return commit
@@ -516,6 +518,7 @@ class AdoptionTests(unittest.TestCase):
             self.assertFalse(body['draft'])
             self.assertEqual('feat(schema): adopt Apple device management schema release 27.2', body['title'])
             self.assertIn('> # Changes in 27.2\n> - Adds 27.2', body['body'])
+            self.assertIn('`TestLoadAllYAMLNoUnknownKeys` fails until then.\n  - Added `mdm/commands/v27.2.yaml`', body['body'])
             self.assertNotIn('27.0', body['body'].split('## Apple release notes')[1].split('## Changed Apple files')[0])
             self.assertIn(candidate, m.run(['git', 'ls-tree', m.ADOPT_BRANCH, m.CURRENT], remote))
             self.assertIn('27.2', m.run(['git', 'show', m.ADOPT_BRANCH + ':' + m.SCHEMA + '/GENERATED_FROM.json'], remote))

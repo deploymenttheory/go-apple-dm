@@ -27,6 +27,8 @@ MARKER = re.compile(r"<!-- schema-monitor (\{.*?\}) -->")
 START, END = "<!-- schema-monitor:evidence:start -->", "<!-- schema-monitor:evidence:end -->"
 SCRIPT = ".github/scripts/device_management_schema_update.py"
 ADOPT_BRANCH = "schema/adopt-release"
+# Top-level Apple directories whose YAML files the generator loads as schemas.
+SCHEMA_ROOTS = ("declarative", "mdm", "other")
 ADOPTION = re.compile(r"<!-- schema-adoption (\{.*?\}) -->")
 # The generator steps of make generate and make verify, run with the production identifier lock.
 ADOPTION_STAGES = (("go-generate", ["go", "generate", "./..."]),
@@ -529,7 +531,11 @@ def prepare_adoption(repo, manifest, candidate, workspace, logs):
     end = next((i for i, line in enumerate(notes) if i and line.startswith("# ")), len(notes))
     built = {"stages": {name: {"state": "blocked"} for name, _ in ADOPTION_STAGES}, "regenerated": False,
              "appleChanges": run(["git", "diff", "--stat", control, commit], apple),
-             "releaseNotes": notes[:end]}
+             "releaseNotes": notes[:end], "schemaFiles": []}
+    for line in run(["git", "diff", "--name-status", "--diff-filter=AD", control, commit], apple).splitlines():
+        status, name = line.split("\t", 1)
+        if name.endswith(".yaml") and name.split("/")[0] in SCHEMA_ROOTS:
+            built["schemaFiles"].append([status, name])
     for name, command in ADOPTION_STAGES:
         ok, text = stage(built, name, command, project, logs, env)
         if not ok:
@@ -573,9 +579,16 @@ def adoption_body(manifest, candidate, built, run_url):
     if len(stat) > 60:
         stat = stat[:59] + ["...", stat[-1]]
     lines += ["", "## Changed Apple files", "", "```text", *stat, "```", "", "## Review", "",
-              "- [ ] Review the new availability boundaries, then update `schemaCommit` and `historyCommit` in "
-              "`test-lab/apple-features/macos27-coverage.json`. `TestSeedOS27CoverageInventory` fails until then.",
-              "- [ ] Confirm that `EXPORTED_IDENTIFIERS.lock` only adds names.",
+              "CI fails until the review changes below are committed to this branch. Merge only after CI passes.", "",
+              "- [ ] Add reviewed cases for every new macOS 27.x boundary and update `schemaCommit` and "
+              "`historyCommit` in `test-lab/apple-features/macos27-coverage.json`. "
+              "`TestSeedOS27CoverageInventory` fails until then."]
+    if built["schemaFiles"]:
+        lines.append("- [ ] Apple added or removed schema files. Update the family counts in "
+                     "`internal/schemagen/model_test.go`; `TestLoadAllYAMLNoUnknownKeys` fails until then.")
+        lines += ["  - " + ("Added" if status == "A" else "Removed") + " `" + name + "`"
+                  for status, name in built["schemaFiles"]]
+    lines += ["- [ ] Confirm that `EXPORTED_IDENTIFIERS.lock` only adds names.",
               "- [ ] Confirm that the compatibility history pin should remain unchanged.", "",
               "Workflow run: " + run_url]
     return "\n".join(lines) + "\n"
