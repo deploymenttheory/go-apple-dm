@@ -56,6 +56,7 @@ func parseDeclaration(raw []byte, c *validation.Collector) (*Declaration, error)
 		return nil, fmt.Errorf("%w: %s payload: %w", ErrInvalidDeclaration, env.Type, err)
 	}
 	typed.ValidateInto(c)
+	reportUnknownKeys(c, typed, payload)
 	if err := c.Err(); err != nil {
 		return nil, fmt.Errorf("%w: %s: %w", ErrInvalidDeclaration, env.Type, err)
 	}

@@ -231,6 +231,31 @@ func (c *Collector) Support(path string, present bool, e *support.Entry) {
 	}
 }
 
+// SupportValue checks a present subkey-valued string, such as a
+// DeviceInformation query, against its entry e. A value without an entry is
+// recorded as unvalidated under schemaPath, the value's schema key path
+// without the value itself.
+func (c *Collector) SupportValue(path, schemaPath string, e *support.Entry) {
+	if e == nil {
+		c.Unvalidated(path, schemaPath)
+		return
+	}
+	c.Support(path, true, e)
+}
+
+// Unvalidated records a warning for a present key or value that has no
+// availability data, identified by its schema key path. Like support checks,
+// it records nothing for a target without an OS.
+func (c *Collector) Unvalidated(path, schemaPath string) {
+	if c.target.OS == "" {
+		return
+	}
+	c.warnings = append(c.warnings, &Error{
+		Path: path, Rule: RuleSupport, Message: schemaPath + ": no availability data",
+		Availability: &AvailabilityIssue{Path: schemaPath, OS: c.target.OS, Rule: support.RuleUnvalidated, Severity: SeverityWarning},
+	})
+}
+
 // issue describes the availability check r of entry e for the collector's target.
 func (c *Collector) issue(e *support.Entry, r support.Result, severity Severity) *AvailabilityIssue {
 	issue := &AvailabilityIssue{Path: e.Path, OS: c.target.OS, Rule: r.Rule, Severity: severity}

@@ -20,6 +20,10 @@
 // method returns the issues for errors and warnings alike; AvailabilityIssues
 // extracts the blocking issues from an error that Validate returned.
 //
+// A present key or subkey-valued string without availability data records a
+// warning whose issue has rule support.RuleUnvalidated and no versions; the
+// value is still accepted. Its schema key path omits the value.
+//
 // This package defines the result types and accumulation behavior. The generator
 // defines schema-specific rules, and schema/support holds availability metadata.
 // Successful structural validation does not prove a payload will install on a

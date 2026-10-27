@@ -23,10 +23,14 @@ type CompatibilityIssue struct {
 	Reason     string
 	Withheld   bool
 	// Availability lists the declaration's keys whose availability rejects
-	// the target (severity error) or that the target has deprecated (severity
-	// warning). An unsupported-target issue lists its blocking keys; an
-	// eligible declaration with deprecated keys has its own non-withheld
-	// issue with reason "deprecated". Keys are identified by schema key path.
+	// the target (severity error), that the target has deprecated, or that
+	// have no availability data (both severity warning). An
+	// unsupported-target issue lists its blocking keys. An eligible
+	// declaration has a non-withheld issue with reason "deprecated" for its
+	// deprecated keys and one with reason "unvalidated" for keys absent from
+	// the generated schema, which are delivered unchanged. A withheld
+	// declaration's warnings follow its blocking keys. Keys are identified by
+	// schema key path.
 	Availability []validation.AvailabilityIssue
 }
 
@@ -178,8 +182,16 @@ func filterCompatible(ctx context.Context, store DeclarationStore, items []Snaps
 		if modified {
 			issues = append(issues, CompatibilityIssue{Identifier: entry.item.Identifier, Reason: "references-filtered"})
 		}
-		if len(entry.availability) > 0 {
-			issues = append(issues, CompatibilityIssue{Identifier: entry.item.Identifier, Reason: "deprecated", Availability: entry.availability})
+		for _, warning := range []support.Rule{support.RuleDeprecated, support.RuleUnvalidated} {
+			var keys []validation.AvailabilityIssue
+			for _, issue := range entry.availability {
+				if issue.Rule == warning {
+					keys = append(keys, issue)
+				}
+			}
+			if len(keys) > 0 {
+				issues = append(issues, CompatibilityIssue{Identifier: entry.item.Identifier, Reason: string(warning), Availability: keys})
+			}
 		}
 		result = append(result, entry.item)
 	}

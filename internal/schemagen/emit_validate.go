@@ -237,7 +237,7 @@ func (e *emitter) arrayChecks(b *bytes.Buffer, f *Field, patterns *[]string, td 
 		}
 		ek := el.Src
 		if el.Base == "string" && len(ek.Subkeys) > 0 {
-			fmt.Fprintf(b, "\t\tfor i, v := range x.%s { c.Support(validation.Index(fieldPath, i), true, supportTable[supportPath+%q+v]) }\n", f.Name, elemSuffix(f)+".")
+			fmt.Fprintf(b, "\t\tfor i, v := range x.%s { c.SupportValue(validation.Index(fieldPath, i), supportPath+%q, supportTable[supportPath+%q+v]) }\n", f.Name, elemSuffix(f), elemSuffix(f)+".")
 		}
 		if len(ek.RangeList) > 0 || ek.Range != nil || (ek.Format != "" && el.Base == "string") {
 			fmt.Fprintf(

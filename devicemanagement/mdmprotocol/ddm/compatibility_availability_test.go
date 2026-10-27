@@ -180,3 +180,116 @@ func TestCompatibilityReportsKeyAvailability(t *testing.T) {
 		}
 	}
 }
+
+// A value of keys without availability data, which reports must not disclose.
+const futureValue = "private-future-value"
+
+var (
+	// futureDecl adds keys absent from the generated schema at the payload
+	// root and under a map value.
+	futureDecl = declJSON(schema.DeclarationTypeAppManaged, "future", map[string]any{
+		"AppStoreID":       privateAppStoreID,
+		"FutureKey":        futureValue,
+		"ExtensionConfigs": map[string]any{privateExtension: map[string]any{"FutureExtensionKey": futureValue}},
+	})
+	// futureRangesDecl adds a key absent from the generated schema to an array item.
+	futureRangesDecl = declJSON(schema.DeclarationTypeContentCaching, "future-ranges", map[string]any{
+		"ListenRanges": []any{map[string]any{"type": "IPv4", "first": "192.0.2.1", "last": "192.0.2.9", "FutureRangeKey": futureValue}},
+	})
+)
+
+// TestCompatibilityReportsUnvalidatedKeys checks that keys absent from the
+// generated schema leave a declaration eligible, are reported as unvalidated
+// by schema key path, follow the blocking keys of withheld declarations and
+// never disclose map keys or values.
+func TestCompatibilityReportsUnvalidatedKeys(t *testing.T) {
+	t.Parallel()
+	if _, err := ddm.ParseDeclaration(futureDecl, supervised(support.MacOS, "27.2")); err != nil {
+		t.Fatalf("unknown keys rejected: %v", err)
+	}
+	var target support.Target
+	h := newHarness(t, func(c *ddm.Config) {
+		c.EnrollmentTarget = func(context.Context, mdm.EnrollmentID) (support.Target, error) { return target, nil }
+	})
+	id := mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: "unvalidated"}
+	for _, raw := range [][]byte{futureDecl, futureRangesDecl} {
+		d, _, err := h.engine.PutDeclaration(t.Context(), raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := h.engine.AssignDeclaration(t.Context(), id, d.Identifier); err != nil {
+			t.Fatal(err)
+		}
+	}
+	unvalidated := func(paths ...string) []validation.AvailabilityIssue {
+		var keys []validation.AvailabilityIssue
+		for _, path := range paths {
+			keys = append(keys, keyIssue(path, support.MacOS, support.RuleUnvalidated, validation.SeverityWarning, "", "", ""))
+		}
+		return keys
+	}
+	// blocking lists keys introduced in macOS 27.0, followed by warnings.
+	blocking := func(warnings []validation.AvailabilityIssue, paths ...string) []validation.AvailabilityIssue {
+		var keys []validation.AvailabilityIssue
+		for _, path := range paths {
+			keys = append(keys, keyIssue(path, support.MacOS, support.RuleIntroduced, validation.SeverityError, "27.0", "", ""))
+		}
+		return append(keys, warnings...)
+	}
+	appKeys := unvalidated("AppManaged.ExtensionConfigs.ANY.FutureExtensionKey", "AppManaged.FutureKey")
+	rangeKeys := unvalidated("ContentCaching.ListenRanges.RangesItem.FutureRangeKey")
+	for _, tc := range []struct {
+		name     string
+		target   support.Target
+		eligible []string
+		issues   []ddm.CompatibilityIssue
+	}{
+		{
+			name:     "macOS 27.2 delivers both declarations",
+			target:   supervised(support.MacOS, "27.2"),
+			eligible: []string{"future", "future-ranges"},
+			issues: []ddm.CompatibilityIssue{
+				{Identifier: "future", Reason: "unvalidated", Availability: appKeys},
+				{Identifier: "future-ranges", Reason: "unvalidated", Availability: rangeKeys},
+			},
+		},
+		{
+			name:   "macOS 26.4 lists warnings after blocking keys",
+			target: supervised(support.MacOS, "26.4"),
+			issues: []ddm.CompatibilityIssue{
+				{
+					Identifier: "future", Reason: "unsupported-target", Withheld: true,
+					Availability: blocking(appKeys, "AppManaged.ExtensionConfigs"),
+				},
+				{
+					Identifier: "future-ranges", Reason: "unsupported-target", Withheld: true,
+					Availability: blocking(rangeKeys, "ContentCaching", "ContentCaching.ListenRanges",
+						"ContentCaching.ListenRanges.RangesItem.first", "ContentCaching.ListenRanges.RangesItem.last",
+						"ContentCaching.ListenRanges.RangesItem.type"),
+				},
+			},
+		},
+	} {
+		target = tc.target
+		report, err := h.engine.Compatibility(t.Context(), id)
+		if err != nil {
+			t.Fatalf("%s: %v", tc.name, err)
+		}
+		var eligible []string
+		for _, ref := range report.Eligible {
+			eligible = append(eligible, ref.Identifier)
+		}
+		if !reflect.DeepEqual(eligible, tc.eligible) || !reflect.DeepEqual(report.Issues, tc.issues) {
+			t.Errorf("%s: eligible = %v, issues = %+v; want %v, %+v", tc.name, eligible, report.Issues, tc.eligible, tc.issues)
+		}
+		body, err := json.Marshal(report)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, value := range []string{privateAppStoreID, privateExtension, futureValue} {
+			if strings.Contains(string(body), value) {
+				t.Errorf("%s: report discloses %q: %s", tc.name, value, body)
+			}
+		}
+	}
+}

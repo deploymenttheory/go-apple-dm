@@ -90,7 +90,10 @@ for _, issue := range c.Availability() {
 `issue.Path` is the key's schema key path, which `support.Lookup` accepts, and
 an issue never contains configuration values. A zero `Introduced`, `Deprecated` or
 `Removed` version is an absent bound. A removed key is an error; a deprecated
-key is a warning, and the payload is still delivered.
+key is a warning, and the payload is still delivered. A key or value without
+availability data, such as a declaration payload key the generated type does not
+define or an unknown `DeviceInformation` query, is also delivered and is reported
+as a warning with rule `unvalidated` and no versions.
 
 ## Inputs and validation
 

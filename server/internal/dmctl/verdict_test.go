@@ -17,7 +17,8 @@ func words(s string) string { return strings.Join(strings.Fields(s), " ") }
 func TestScopeVerbsPrintVerdicts(t *testing.T) {
 	assignment := `{"Changed":true,"Verdict":{"Enforced":true,"Eligible":[{"Identifier":"apps"}],"Issues":[` +
 		`{"Identifier":"extensions","Reason":"unsupported-target","Withheld":true,"Availability":[{"Path":"AppManaged.ExtensionConfigs","OS":"macOS","Rule":"introduced","Severity":"error","Introduced":"27.0","Deprecated":"latest","Removed":"latest"}]},` +
-		`{"Identifier":"intelligence","Reason":"deprecated","Withheld":false,"Availability":[{"Path":"IntelligenceSettings.AllowVisualIntelligenceSummary","OS":"iOS","Rule":"deprecated","Severity":"warning","Introduced":"26.4","Deprecated":"27.0","Removed":"latest"}]}]}}`
+		`{"Identifier":"intelligence","Reason":"deprecated","Withheld":false,"Availability":[{"Path":"IntelligenceSettings.AllowVisualIntelligenceSummary","OS":"iOS","Rule":"deprecated","Severity":"warning","Introduced":"26.4","Deprecated":"27.0","Removed":"latest"}]},` +
+		`{"Identifier":"future","Reason":"unvalidated","Withheld":false,"Availability":[{"Path":"AppManaged.FutureKey","OS":"macOS","Rule":"unvalidated","Severity":"warning"}]}]}}`
 	enqueue := `{"CommandUUID":"CMD-1","Queued":0,"Skipped":"request type not supported","Availability":[{"Path":"DeviceInformation.Queries.QueriesItem.OSUpdateSettings","OS":"macOS","Rule":"removed","Severity":"error","Introduced":"10.11","Deprecated":"26.0","Removed":"27.0"}]}`
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
@@ -45,6 +46,7 @@ func TestScopeVerbsPrintVerdicts(t *testing.T) {
 			"changed true", "eligible apps", "withheld extensions unsupported-target",
 			"AppManaged.ExtensionConfigs macOS error introduced introduced 27.0, deprecated latest, removed latest",
 			"delivered intelligence deprecated", "iOS warning deprecated introduced 26.4, deprecated 27.0",
+			"delivered future unvalidated", "AppManaged.FutureKey macOS warning unvalidated",
 		} {
 			if !strings.Contains(words(out), want) {
 				t.Fatalf("%v output missing %q:\n%s", args, want, out)
