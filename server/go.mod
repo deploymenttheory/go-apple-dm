@@ -10,10 +10,11 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.33.6
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.4
 	github.com/cedar-policy/cedar-go v1.8.0
-	github.com/deploymenttheory/go-apple-dm v0.8.7-0.20261025154622-bb39d3a24680
+	github.com/deploymenttheory/go-apple-dm v0.8.8-0.20261027124559-dbaff0831e14
 	github.com/deploymenttheory/go-macos-pkg v0.7.2
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/jackc/pgx/v5 v5.11.0
+	github.com/micromdm/plist v0.3.0
 	github.com/smallstep/pkcs7 v0.2.3
 	golang.org/x/crypto v0.58.0
 	golang.org/x/sys v0.49.0
@@ -80,7 +81,6 @@ require (
 	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
-	github.com/micromdm/plist v0.3.0 // indirect
 	github.com/mikelolasagasti/xz v1.0.1 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.30 // indirect

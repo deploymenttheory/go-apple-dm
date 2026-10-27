@@ -11,6 +11,7 @@ import (
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/paging"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/validation"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 	"github.com/deploymenttheory/go-apple-dm/server/replycerts"
 )
@@ -216,10 +217,17 @@ func (a *App) enqueueCommand(w http.ResponseWriter, r *http.Request) {
 		a.storageStatus(w, r, err)
 		return
 	}
-	// Include each target's validation reason from Core.Enqueue in the response.
+	// Include each target's validation reason from Core.Enqueue in the response,
+	// with the keys whose availability skipped the target or warns about it.
 	out := map[string]any{"CommandUUID": cmd.UUID, "Queued": len(res.Queued)}
 	if reason, ok := res.Skipped[id]; ok {
 		out["Skipped"] = reason.Error()
+		if issues := availabilityViews(validation.AvailabilityIssues(reason)); issues != nil {
+			out["Availability"] = issues
+		}
+	}
+	if issues := availabilityViews(res.Warnings[id]); issues != nil {
+		out["Availability"] = issues
 	}
 	writeJSON(w, http.StatusOK, out)
 }

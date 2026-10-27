@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/cms"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/ddm/blueprint"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/mdm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/profile"
@@ -111,6 +112,14 @@ func TestBlueprintAdminAndDeviceDelivery(t *testing.T) {
 			w = request("PUT", "/admin/v1/enrollments/device/device/blueprints/engineering", "", nil, nil)
 			if w.Code != 200 {
 				t.Fatal(w.Code, w.Body.String())
+			}
+			// Assignment returns the device's verdict for the blueprint's declarations.
+			var assigned struct {
+				Changed bool
+				Verdict struct{ Eligible []ddm.DeclarationRef }
+			}
+			if err := json.Unmarshal(w.Body.Bytes(), &assigned); err != nil || !assigned.Changed || len(assigned.Verdict.Eligible) == 0 {
+				t.Fatal("blueprint verdict", w.Body.String(), err)
 			}
 			if _, err := a.Engine.Manifest(t.Context(), id); err != nil {
 				t.Fatal(err)

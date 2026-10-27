@@ -147,6 +147,13 @@ declarations using Apple’s fields.
 Asset delivery accepts unsigned plist data; CMS-signed files use `ProfileURL`.
 See [Apple's LegacyProfile reference](https://developer.apple.com/documentation/devicemanagement/legacyprofile).
 
+Assigning a Blueprint with `PUT /enrollments/{channel}/{id}/blueprints/{blueprint}`
+returns `Changed` and the enrollment's availability `Verdict` for the Blueprint's
+declarations, described in the [OS 27 coverage guide](apple-os27-coverage.md).
+The assignment is accepted even when the device cannot take every declaration
+yet; delivery remains gated, so a later OS upgrade makes the withheld ones
+eligible.
+
 Downloads require the pinned, valid MDM identity, enabled device and channel,
 certificate-status checks, current assignment/compatibility and a declaration in
 the last advertised snapshot. URLs include the full channel, enrollment ID and

@@ -134,8 +134,8 @@ func renderTarget(w io.Writer, m Match, t support.Target) {
 	}
 }
 
-// availability summarises which OS versions introduce a key, for the untargeted
-// listing.
+// availability summarises which OS versions introduce, deprecate and remove a
+// key, for the untargeted listing.
 func availability(family, path string) string {
 	e := support.Lookup(family, path)
 	if e == nil {
@@ -147,14 +147,19 @@ func availability(family, path string) string {
 		if s == nil || s.NotAvailable {
 			continue
 		}
+		var part string
 		switch {
 		case !s.Removed.IsZero():
-			parts = append(parts, fmt.Sprintf("%s %s to %s", os, s.Introduced, s.Removed))
+			part = fmt.Sprintf("%s %s to %s", os, s.Introduced, s.Removed)
 		case s.Introduced.IsZero():
-			parts = append(parts, string(os))
+			part = string(os)
 		default:
-			parts = append(parts, fmt.Sprintf("%s %s+", os, s.Introduced))
+			part = fmt.Sprintf("%s %s+", os, s.Introduced)
 		}
+		if !s.Deprecated.IsZero() {
+			part += fmt.Sprintf(" (deprecated %s)", s.Deprecated)
+		}
+		parts = append(parts, part)
 	}
 	if len(parts) == 0 {
 		return "not available"

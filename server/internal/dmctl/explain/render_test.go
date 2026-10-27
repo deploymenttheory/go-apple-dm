@@ -73,10 +73,11 @@ func TestRenderTargetDescription(t *testing.T) {
 	}
 }
 
-// A removed key reports the range it was available for, and a key Apple never
-// shipped on any OS says so, rather than both rendering as blank.
+// A removed key reports the range it was available for, a deprecated key names
+// its deprecation, and a key Apple never shipped on any OS says so, rather than
+// rendering as blank.
 func TestAvailabilityWording(t *testing.T) {
-	var removed, notAvailable string
+	var removed, deprecated, notAvailable string
 	for _, family := range explain.Families() {
 		paths, err := explain.Paths(family)
 		if err != nil {
@@ -97,6 +98,9 @@ func TestAvailabilityWording(t *testing.T) {
 				if !s.Removed.IsZero() && removed == "" {
 					removed = family + "|" + p
 				}
+				if !s.Deprecated.IsZero() && deprecated == "" {
+					deprecated = family + "|" + p
+				}
 			}
 			if !anyAvailable && notAvailable == "" && len(e.OS) > 0 {
 				notAvailable = family + "|" + p
@@ -116,5 +120,6 @@ func TestAvailabilityWording(t *testing.T) {
 		}
 	}
 	check(removed, " to ")
+	check(deprecated, " (deprecated ")
 	check(notAvailable, "not available")
 }
