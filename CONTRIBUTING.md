@@ -112,9 +112,11 @@ Edit project-authored generated comments in `internal/schemagen`, then run `make
 
 The [Device Management Client Schema monitor](docs/schema-monitor.md) checks upcoming
 Apple schemas against the generator on main, using the published pin as a control.
-It reports code generation failures with source evidence and remediation guidance.
-Use report-only mode to retain proposed incidents without publishing. Ordinary CI
-runs published feature contracts separately from the monitor.
+It reports code generation failures with source evidence and remediation guidance,
+and proposes a passing Apple release on the `schema/adopt-release` branch. Complete
+that pull request's review checklist before merging it. Use report-only mode to retain
+proposed incidents and adoption without publishing. Ordinary CI runs published feature
+contracts separately from the monitor.
 
 ## Pull requests
 
