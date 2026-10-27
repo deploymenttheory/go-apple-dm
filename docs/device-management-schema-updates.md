@@ -80,14 +80,16 @@ exported-identifier lock. The compatibility history pin is unchanged. The title,
 `feat(schema): adopt Apple device management schema release <version>`, takes its version from
 the regenerated `os_versions` provenance.
 
+The job then runs `TestSeedOS27CoverageInventory` with `-update-coverage`, which records the
+pinned schema's macOS 27 boundaries in `test-lab/apple-features/macos27-coverage.json`.
+Existing native test plans are kept, new sources receive a pending plan, and sources whose
+boundaries no longer exist are removed. The loader's expected family counts are derived
+from the checkout. An adoption pull request therefore needs no hand edits to pass CI; merge
+it after CI passes. Replacing pending plans is separate native-acceptance work.
+
 The pull request records the Apple, control, project and pushed head commits in a
-`schema-adoption` marker. It includes Apple's release notes, changed files, stage results
-and a review checklist. CI fails until the review changes are committed to the adoption
-branch; merge only after it passes. The published OS 27 feature contracts fail until
-`test-lab/apple-features/macos27-coverage.json` records a reviewed case for every new
-macOS 27.x boundary and the new schema and history commits. When Apple adds or removes
-schema files, the checklist lists them, and the loader's family counts in
-`internal/schemagen/model_test.go` must be updated.
+`schema-adoption` marker. It includes Apple's release notes, changed files, added and removed
+schema files, stage results and the macOS 27 boundaries it recorded.
 
 Each run selects one action:
 
@@ -99,9 +101,9 @@ Each run selects one action:
 - Create a pull request when no proposal is open.
 - Close an open proposal when the published pin already contains Apple's release.
 
-A regeneration failure, such as the removal of a locked exported identifier, opens a draft
-containing only the pin change and the `schemagen` error. Draft state is set when the pull
-request is created. Dependency and network failures are monitoring failures and push nothing.
+A failed step, such as the removal of a locked exported identifier or a coverage contract that
+recording cannot satisfy, opens a draft containing only the pin change and that step's error.
+Draft state is set when the pull request is created. Dependency and network failures are monitoring failures and push nothing.
 
 The job authenticates with the release-please GitHub App (`RP_APP_ID`,
 `RP_APP_PRIVATE_KEY`), scoped to contents and pull-request writes. Pull requests opened with

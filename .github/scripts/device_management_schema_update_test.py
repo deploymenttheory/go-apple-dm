@@ -45,7 +45,11 @@ def stored(action):
     return dict(action[2], number=42, state='open')
 
 
-REGENERATE = (('generate', ['sh', '-c', 'printf \'{"os_versions": "27.2"}\' > ' + m.SCHEMA + '/GENERATED_FROM.json']),)
+EXISTING_CASE = {'source': 'mdm/commands/a.yaml', 'boundaries': [{'path': '$', 'kind': 'introduced', 'version': '27.0'}]}
+NEW_CASE = {'source': 'mdm/commands/b.yaml', 'boundaries': [{'path': '$', 'kind': 'introduced', 'version': '27.2'}]}
+REGENERATE = (('generate', ['sh', '-c', 'printf \'{"os_versions": "27.2"}\' > ' + m.SCHEMA + '/GENERATED_FROM.json']),
+              ('coverage', ['sh', '-c', 'printf \'%s\' \'' + json.dumps({'cases': [EXISTING_CASE, NEW_CASE]}) +
+                            '\' > ' + m.COVERAGE]))
 LOCK_FAILURE = (('generate', ['sh', '-c', 'echo "EXPORTED_IDENTIFIERS.lock: OldType is no longer generated"; exit 1']),)
 OFFLINE = (('generate', ['sh', '-c', 'echo "dial tcp: lookup proxy.golang.org: no such host"; exit 1']),)
 
@@ -113,6 +117,7 @@ def adoption_workspace(root):
                                          '\n\turl = ' + str(apple) + '\n\tbranch = release\n')
     (project / m.SCHEMA).mkdir(parents=True)
     m.write_json(project / m.SCHEMA / 'GENERATED_FROM.json', {'commit': pin, 'os_versions': '27.0'})
+    m.write_json(project / m.COVERAGE, {'cases': [EXISTING_CASE]})
     m.run(['git', 'add', '.'], project)
     m.run(['git', 'update-index', '--add', '--cacheinfo', '160000,' + pin + ',' + m.CURRENT], project)
     m.run(['git', 'commit', '-qm', 'project'], project)
@@ -518,7 +523,10 @@ class AdoptionTests(unittest.TestCase):
             self.assertFalse(body['draft'])
             self.assertEqual('feat(schema): adopt Apple device management schema release 27.2', body['title'])
             self.assertIn('> # Changes in 27.2\n> - Adds 27.2', body['body'])
-            self.assertIn('`TestLoadAllYAMLNoUnknownKeys` fails until then.\n  - Added `mdm/commands/v27.2.yaml`', body['body'])
+            self.assertIn('## Added and removed schema files\n\n- Added `mdm/commands/v27.2.yaml`', body['body'])
+            recorded = body['body'].split('## Recorded macOS 27 boundaries')[1]
+            self.assertIn('- `mdm/commands/b.yaml` `$`: introduced 27.2', recorded)
+            self.assertNotIn('a.yaml', recorded)
             self.assertNotIn('27.0', body['body'].split('## Apple release notes')[1].split('## Changed Apple files')[0])
             self.assertIn(candidate, m.run(['git', 'ls-tree', m.ADOPT_BRANCH, m.CURRENT], remote))
             self.assertIn('27.2', m.run(['git', 'show', m.ADOPT_BRANCH + ':' + m.SCHEMA + '/GENERATED_FROM.json'], remote))
@@ -557,6 +565,8 @@ class AdoptionTests(unittest.TestCase):
             self.assertTrue(body['draft'])
             self.assertTrue(body['title'].endswith(candidate[:12]))
             self.assertIn('OldType is no longer generated', body['body'])
+            self.assertIn('The `generate` step failed', body['body'])
+            self.assertNotIn('## Recorded macOS 27 boundaries', body['body'])
             self.assertIn(candidate, m.run(['git', 'ls-tree', m.ADOPT_BRANCH, m.CURRENT], remote))
             self.assertIn('27.0', m.run(['git', 'show', m.ADOPT_BRANCH + ':' + m.SCHEMA + '/GENERATED_FROM.json'], remote))
 

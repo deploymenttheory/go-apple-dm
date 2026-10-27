@@ -113,8 +113,8 @@ Edit project-authored generated comments in `internal/schemagen`, then run `make
 The [Apple Device Management Schema updates workflow](docs/device-management-schema-updates.md)
 checks upcoming schema commits against the generator on main, using the published pin as a control.
 It reports code generation failures with source evidence and remediation guidance,
-and proposes a passing Apple release on the `schema/adopt-release` branch. Complete
-that pull request's review checklist before merging it. Use report-only mode to retain
+and proposes a passing Apple release on the `schema/adopt-release` branch with its
+regenerated code and macOS 27 boundary record. Merge it after CI passes. Use report-only mode to retain
 proposed incidents and adoption without publishing. Ordinary CI runs published feature
 contracts separately from this workflow.
 

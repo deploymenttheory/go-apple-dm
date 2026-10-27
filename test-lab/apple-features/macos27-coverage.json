@@ -1,7 +1,5 @@
 {
-  "description": "Reviewed macOS 27 structured schema boundaries. Inherited descendants and reviewed SSO enum floors are checked separately by TestSeedOS27CoverageInventory. This inventory is a coverage plan, not native pass evidence.",
-  "schemaCommit": "9e7fdbe23990b2551c4b29b39bc8b0de956805eb",
-  "historyCommit": "67045e2fa06f528b196c01edee6a8bf88b844beb",
+  "description": "macOS 27 structured schema boundaries with native test plans. Release adoption records new boundaries from the pinned schema with pending plans. Inherited descendants and reviewed SSO enum floors are checked separately by TestSeedOS27CoverageInventory. This inventory is a coverage plan, not native pass evidence.",
   "fixtures": [
     "accessibility",
     "acme",
@@ -863,9 +861,6 @@
     "ExtensibleSingleSignOn.PlatformSSO.AuthenticationMethod": [
       "OpenID"
     ],
-    "ExtensibleSingleSignOn.PlatformSSO.NewUserAuthenticationMethods": [
-      "OpenID"
-    ],
     "ExtensibleSingleSignOn.PlatformSSO.FileVaultPolicy": [
       "RequireTouchID",
       "RequireTouchIDOrWatch",
@@ -875,6 +870,9 @@
       "RequireTouchID",
       "RequireTouchIDOrWatch",
       "AllowOpenIDForTouchIDFallback"
+    ],
+    "ExtensibleSingleSignOn.PlatformSSO.NewUserAuthenticationMethods": [
+      "OpenID"
     ],
     "ExtensibleSingleSignOn.PlatformSSO.UnlockPolicy": [
       "RequireTouchID",

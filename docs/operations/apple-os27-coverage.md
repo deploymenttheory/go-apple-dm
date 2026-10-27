@@ -72,11 +72,13 @@ combinations in [manifest.json](../../test-lab/apple-features/manifest.json).
 iPadOS uses the iOS schema family. Fixture availability applies to the exact
 fields in that fixture, not every variant of its declaration type.
 
-The reviewed [macOS 27 inventory](../../test-lab/apple-features/macos27-coverage.json)
-names all 32 fixture IDs and 50 source cases containing 73 explicit macOS 27
-introduction, deprecation or removal boundaries at the pinned schema. The required
+The [macOS 27 inventory](../../test-lab/apple-features/macos27-coverage.json)
+names every fixture ID and every source case containing explicit macOS 27
+introduction, deprecation or removal boundaries at the pinned schema. Release adoption
+records new boundaries from the pinned schema, keeping existing native test plans and
+giving new sources a pending plan. The required
 `TestSeedOS27CoverageInventory` contract rejects missing or changed cases and
-checks 663 affected inherited paths against compiled metadata at all four versions
+checks every affected inherited path against compiled metadata at all four versions
 in six enrollment contexts. It separately checks the twelve reviewed SSO enum
 floors described in prose. Source cases excluded from Mac acceptance have an
 explicit platform reason. The inventory records native test plans, not passes;

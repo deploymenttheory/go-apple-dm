@@ -30,10 +30,14 @@ ADOPT_BRANCH = "schema/adopt-release"
 # Top-level Apple directories whose YAML files the generator loads as schemas.
 SCHEMA_ROOTS = ("declarative", "mdm", "other")
 ADOPTION = re.compile(r"<!-- schema-adoption (\{.*?\}) -->")
-# The generator steps of make generate and make verify, run with the production identifier lock.
+# The generator steps of make generate and make verify, run with the production identifier lock,
+# then the macOS 27 boundary record that the published OS 27 contracts check.
 ADOPTION_STAGES = (("go-generate", ["go", "generate", "./..."]),
                    ("generate", ["go", "run", "./cmd/schemagen", "generate"]),
-                   ("verify", ["go", "run", "./cmd/schemagen", "verify"]))
+                   ("verify", ["go", "run", "./cmd/schemagen", "verify"]),
+                   ("coverage", ["go", "test", "-count=1", "-tags", "schema_seed_os_27", "-run",
+                                 "^TestSeedOS27CoverageInventory$", "./internal/schemagen", "-update-coverage"]))
+COVERAGE = "test-lab/apple-features/macos27-coverage.json"
 
 
 def run(args, cwd=None, env=None, timeout=1800):
@@ -505,6 +509,14 @@ def adoption_plan(pulls, manifest, candidate):
     return "replace", pull, ""
 
 
+def recorded_boundaries(project):
+    path = project / COVERAGE
+    if not path.exists():
+        return set()
+    return {(c["source"], b["path"], b["kind"], b["version"])
+            for c in json.loads(path.read_text())["cases"] for b in c["boundaries"]}
+
+
 def prepare_adoption(repo, manifest, candidate, workspace, logs):
     """Move the current pin in an isolated clone, regenerate and commit the result.
 
@@ -536,15 +548,17 @@ def prepare_adoption(repo, manifest, candidate, workspace, logs):
         status, name = line.split("\t", 1)
         if name.endswith(".yaml") and name.split("/")[0] in SCHEMA_ROOTS:
             built["schemaFiles"].append([status, name])
+    recorded = recorded_boundaries(project)
     for name, command in ADOPTION_STAGES:
         ok, text = stage(built, name, command, project, logs, env)
         if not ok:
             if infrastructure_failure(text):
                 raise RuntimeError(text[-6000:])
-            built["error"] = text[-3000:]
+            built.update(error=text[-3000:], failedStage=name)
             break
     else:
         built["regenerated"] = True
+        built["recorded"] = sorted(recorded_boundaries(project) - recorded)
         run(["git", "add", "--all"], project)
     version = commit[:12]
     if built["regenerated"]:
@@ -568,9 +582,10 @@ def adoption_body(manifest, candidate, built, run_url):
              "| Step | Result |", "|---|---|"]
     lines += ["| " + name + " | " + built["stages"][name]["state"] + " |" for name, _ in ADOPTION_STAGES]
     if built.get("error"):
-        lines += ["", "Regeneration failed, so this pull request contains only the pin change. Run `make generate` on this "
-                  "branch to reproduce. Record intended exported-name removals in "
-                  "`devicemanagement/schema/ALLOWED_REMOVALS.md`.", "", "```text", built["error"], "```"]
+        lines += ["", "The `" + built["failedStage"] + "` step failed, so this pull request contains only the pin "
+                  "change. Reproduce with `make generate`, `make verify` and `make test-schema-contracts` on this "
+                  "branch. Record intended exported-name removals in `devicemanagement/schema/ALLOWED_REMOVALS.md`.",
+                  "", "```text", built["error"], "```"]
     if built["releaseNotes"]:
         lines += ["", "## Apple release notes", ""] + ["> " + line for line in built["releaseNotes"][:80]]
         if len(built["releaseNotes"]) > 80:
@@ -578,19 +593,17 @@ def adoption_body(manifest, candidate, built, run_url):
     stat = built["appleChanges"].rstrip().splitlines()
     if len(stat) > 60:
         stat = stat[:59] + ["...", stat[-1]]
-    lines += ["", "## Changed Apple files", "", "```text", *stat, "```", "", "## Review", "",
-              "CI fails until the review changes below are committed to this branch. Merge only after CI passes.", "",
-              "- [ ] Add reviewed cases for every new macOS 27.x boundary and update `schemaCommit` and "
-              "`historyCommit` in `test-lab/apple-features/macos27-coverage.json`. "
-              "`TestSeedOS27CoverageInventory` fails until then."]
+    lines += ["", "## Changed Apple files", "", "```text", *stat, "```"]
     if built["schemaFiles"]:
-        lines.append("- [ ] Apple added or removed schema files. Update the family counts in "
-                     "`internal/schemagen/model_test.go`; `TestLoadAllYAMLNoUnknownKeys` fails until then.")
-        lines += ["  - " + ("Added" if status == "A" else "Removed") + " `" + name + "`"
+        lines += ["", "## Added and removed schema files", ""]
+        lines += ["- " + ("Added" if status == "A" else "Removed") + " `" + name + "`"
                   for status, name in built["schemaFiles"]]
-    lines += ["- [ ] Confirm that `EXPORTED_IDENTIFIERS.lock` only adds names.",
-              "- [ ] Confirm that the compatibility history pin should remain unchanged.", "",
-              "Workflow run: " + run_url]
+    if built.get("recorded"):
+        lines += ["", "## Recorded macOS 27 boundaries", "",
+                  "`" + COVERAGE + "` records these boundaries. New sources have a pending native test plan.", ""]
+        lines += ["- `" + source + "` `" + key + "`: " + kind + " " + version
+                  for source, key, kind, version in built["recorded"]]
+    lines += ["", "Merge after CI passes.", "", "Workflow run: " + run_url]
     return "\n".join(lines) + "\n"
 
 
