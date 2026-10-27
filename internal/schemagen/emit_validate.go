@@ -235,41 +235,71 @@ func (e *emitter) arrayChecks(b *bytes.Buffer, f *Field, patterns *[]string, td 
 		if hasValueFloor(td, f) {
 			fmt.Fprintf(b, "\t\tfor i, v := range x.%s { c.Support(validation.Index(fieldPath, i), true, ValueSupport(supportPath+%q, v)) }\n", f.Name, fieldSuffix(f))
 		}
-		ek := el.Src
-		if el.Base == "string" && len(ek.Subkeys) > 0 {
+		if el.Base == "string" && len(el.Src.Subkeys) > 0 {
 			fmt.Fprintf(b, "\t\tfor i, v := range x.%s { c.SupportValue(validation.Index(fieldPath, i), supportPath+%q, supportTable[supportPath+%q+v]) }\n", f.Name, elemSuffix(f), elemSuffix(f)+".")
 		}
-		if len(ek.RangeList) > 0 || ek.Range != nil || (ek.Format != "" && el.Base == "string") {
-			fmt.Fprintf(
-				b,
-				"\t\tfor i, v := range x.%s {\n\t\t\titemPath := validation.Index(fieldPath, i)\n",
-				f.Name,
-			)
-			if len(ek.RangeList) > 0 &&
-				(el.Base == "string" || el.Base == "int64" || el.Base == "float64") {
-				fmt.Fprintf(b, "\t\t\tc.Enum(itemPath, true, v, []any{%s})\n", joinLiterals(ek.RangeList))
-			}
-			if ek.Range != nil && (el.Base == "int64" || el.Base == "float64") {
-				fmt.Fprintf(
-					b,
-					"\t\t\tc.Range(itemPath, true, float64(v), %s, %s)\n",
-					floatPtr(ek.Range.Min),
-					floatPtr(ek.Range.Max),
-				)
-			}
-			if ek.Format != "" && el.Base == "string" {
-				if _, err := regexp.Compile(ek.Format); err == nil {
-					fmt.Fprintf(
-						b,
-						"\t\t\tc.Pattern(itemPath, true, v, format%d)\n",
-						indexOf(patterns, ek.Format),
-					)
-				}
-			}
-			b.WriteString("\t\t}\n")
+		if checks := scalarItemChecks(el, "v", "itemPath", patterns); checks != "" {
+			fmt.Fprintf(b, "\t\tfor i, v := range x.%s {\n\t\t\titemPath := validation.Index(fieldPath, i)\n%s\t\t}\n", f.Name, checks)
 		}
-	case KindArray, KindMap:
+	case KindArray:
+		if checks := e.nestedChecks(td, el, "x."+f.Name+"[i]", "validation.Index(fieldPath, i)", elemSuffix(f), 1, patterns); checks != "" {
+			fmt.Fprintf(b, "\t\tfor i := range x.%s {\n%s\t\t}\n", f.Name, checks)
+		}
+	case KindMap:
 	}
+}
+
+// nestedChecks returns the checks for value, an array element that is itself
+// an array: its repetition, then each of its items at any depth. path is the
+// element's validation path expression and suffix its support path suffix;
+// depth numbers the loop index over its items. Items reached through a
+// recursive reference have no Struct and are checked against the owner's use.
+func (e *emitter) nestedChecks(td *TypeDef, el *Field, value, path, suffix string, depth int, patterns *[]string) string {
+	var b strings.Builder
+	if r := el.Src.Repetition; r != nil {
+		fmt.Fprintf(&b, "c.Repetition(%s, true, len(%s), %d, %d)\n", path, value, r.Min, r.Max)
+	}
+	item := el.Elem
+	if item == nil {
+		return b.String()
+	}
+	index := "i" + strconv.Itoa(depth)
+	itemValue := value + "[" + index + "]"
+	itemPath := "validation.Index(" + path + ", " + index + ")"
+	itemSuffix := suffix + "." + item.Key
+	var checks string
+	switch item.Kind {
+	case KindStruct:
+		checks = fmt.Sprintf("%s.validate(c, %s, %s)\n", itemValue, itemPath, e.childSupportPath(td, item.Struct, item.Base, itemSuffix))
+	case KindArray:
+		checks = e.nestedChecks(td, item, itemValue, itemPath, itemSuffix, depth+1, patterns)
+	case KindScalar:
+		checks = scalarItemChecks(item, itemValue, itemPath, patterns)
+	case KindMap:
+	}
+	if checks != "" {
+		fmt.Fprintf(&b, "for %s := range %s {\n%s}\n", index, value, checks)
+	}
+	return b.String()
+}
+
+// scalarItemChecks returns the enum, range and pattern checks for value, a
+// scalar array item at path.
+func scalarItemChecks(el *Field, value, path string, patterns *[]string) string {
+	var b strings.Builder
+	k := el.Src
+	if len(k.RangeList) > 0 && (el.Base == "string" || el.Base == "int64" || el.Base == "float64") {
+		fmt.Fprintf(&b, "\t\t\tc.Enum(%s, true, %s, []any{%s})\n", path, value, joinLiterals(k.RangeList))
+	}
+	if k.Range != nil && (el.Base == "int64" || el.Base == "float64") {
+		fmt.Fprintf(&b, "\t\t\tc.Range(%s, true, float64(%s), %s, %s)\n", path, value, floatPtr(k.Range.Min), floatPtr(k.Range.Max))
+	}
+	if k.Format != "" && el.Base == "string" {
+		if _, err := regexp.Compile(k.Format); err == nil {
+			fmt.Fprintf(&b, "\t\t\tc.Pattern(%s, true, %s, format%d)\n", path, value, indexOf(patterns, k.Format))
+		}
+	}
+	return b.String()
 }
 
 // variantChecks emits a type switch validating each element of a

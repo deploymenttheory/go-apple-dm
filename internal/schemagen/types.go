@@ -177,8 +177,8 @@ func (b *builder) build() (*SchemaType, error) {
 	}
 	for _, fx := range b.fixups {
 		// The recursive key's subkeys are the owner's subkeys, so it has the
-		// owner's type: an array owner gives its full slice type, a
-		// dictionary owner gives its struct.
+		// owner's type: an array owner gives its full slice type and element,
+		// a dictionary owner gives its struct.
 		base := fx.owner.Base
 		fx.field.Base = base
 		if fx.wrapElem {
@@ -192,8 +192,10 @@ func (b *builder) build() (*SchemaType, error) {
 			fx.field.Kind = KindArray
 			if fx.owner.Kind == KindArray {
 				fx.field.GoType = strings.TrimPrefix(fx.owner.GoType, "*")
+				fx.field.Elem = recursiveUse(fx.owner.Elem)
 			} else {
 				fx.field.GoType = "[]" + base
+				fx.field.Elem = &Field{Key: fx.owner.Key, Name: fx.owner.Name, Src: fx.owner.Src, Kind: KindStruct, Base: base, GoType: base}
 			}
 		default:
 			fx.field.Kind = KindStruct
@@ -205,6 +207,20 @@ func (b *builder) build() (*SchemaType, error) {
 		}
 	}
 	return st, nil
+}
+
+// recursiveUse copies the element model of a recursive array's owner. The
+// copy's structs are the owner's, reached again through the reference, so they
+// carry no Struct: validation checks them against the owner's use (see
+// childSupportPath), and walks over the model stop at the reference.
+func recursiveUse(elem *Field) *Field {
+	if elem == nil {
+		return nil
+	}
+	use := *elem
+	use.Struct = nil
+	use.Elem = recursiveUse(elem.Elem)
+	return &use
 }
 
 // buildStatusItem emits a struct with a single Value field carrying the

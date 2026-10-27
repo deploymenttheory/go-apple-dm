@@ -60,6 +60,12 @@ func auditAvailability(
 								check(item+"."+value.Key, supportPath+elemSuffix(f)+"."+value.Key)
 							}
 						}
+						consulted := supportPath + elemSuffix(f)
+						for el := f.Elem; el.Kind == KindArray && el.Elem != nil; el = el.Elem {
+							item += "." + el.Elem.Key
+							consulted += "." + el.Elem.Key
+							walk(el.Elem.Struct, item, consulted)
+						}
 					}
 					for i, key := range variantKeys(f) {
 						walk(f.Variants[i], use+"."+key, supportPath+fieldSuffix(f)+"."+key)

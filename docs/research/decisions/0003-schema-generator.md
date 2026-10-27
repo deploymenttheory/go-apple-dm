@@ -19,9 +19,10 @@ Dictionaries that repeat a subkeytype with the same shape share one Go type with
 schema; availability is not part of a type. The support table has an entry for every
 key use, resolved from Apple's `supportedOS` blocks along that use's own key path,
 including the block of each heterogeneous-array variant. Generated validation passes
-the support path of the use being checked to nested values, so a shared type is
-checked against each use's entries. A value reached through a recursive reference is
-checked against the use of the key it recurses to.
+the support path of the use being checked to nested values, including each element of
+an array or of an array of arrays, so a shared type is checked against each use's
+entries. A value reached through a recursive reference, such as an element of a
+recursive array, is checked against the use of the key it recurses to.
 
 Version parsing and comparison live in `devicemanagement/osversion`, with named
 macOS major constants used by generated availability boundaries. Generator input
