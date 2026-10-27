@@ -18,8 +18,8 @@ const latestVersion = "latest"
 // availabilityView is the admin API projection of one key's availability
 // issue. Versions are dotted strings, and an absent deprecation or removal
 // bound is "latest". An issue without version bounds, such as for a key that is
-// not available on the target OS, has no window. Views never contain
-// configuration values.
+// not available on the target OS or that has no availability data, has no
+// window. Views never contain configuration values.
 type availabilityView struct {
 	Path       string
 	OS         support.OS

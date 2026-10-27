@@ -108,16 +108,26 @@ declaration issues. A withheld `unsupported-target` declaration lists its keys,
 and an eligible declaration with deprecated keys has a non-withheld `deprecated`
 issue listing them.
 
+A key or value without availability data is delivered and reported as a warning
+with rule `unvalidated` and no version window, as profile inspection reports
+unknown payload keys. Such keys are declaration payload members that the generated
+type does not define and subkey-valued strings, such as `DeviceInformation`
+queries, without a support entry. The issue names the schema key path where the
+key or value occurs: map keys become `ANY`, and an unknown value is not named. An
+eligible declaration with such keys has a non-withheld `unvalidated` issue
+listing them; a withheld declaration lists them after its blocking keys.
+
 Scoping configuration remains an accepted operation and returns a per-device
 verdict; delivery gating is unchanged, so an incompatible item is never sent and
 a device that upgrades becomes eligible. The reference server's set and Blueprint
 assignment responses include the enrollment's compatibility for the assigned
 set's declarations. Its command enqueue response includes the availability keys
-behind a skipped target, and the deprecated keys of a queued target, which the
-service records in `EnqueueResult.Warnings`. The admin API renders versions as
-dotted strings, an absent deprecation or removal bound as `"latest"`, and no
-window for a key that is not available on the OS. If no verdict can be produced
-after an assignment, the assignment stands and the response omits it.
+behind a skipped target, and the deprecated and unvalidated keys of a queued
+target, which the service records in `EnqueueResult.Warnings`. The admin API
+renders versions as dotted strings, an absent deprecation or removal bound as
+`"latest"`, and no window for a key that is not available on the OS or that is
+unvalidated. If no verdict can be produced after an assignment, the assignment
+stands and the response omits it.
 
 An acknowledged, tracked device-channel inventory result refreshes product, OS
 and build versions. Missing and malformed observations preserve previous values;

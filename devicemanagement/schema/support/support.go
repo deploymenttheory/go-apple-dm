@@ -125,6 +125,10 @@ const (
 	// supervision, Automated Device Enrollment, user-approved MDM, or a
 	// required or forbidden shared iPad or user enrollment mode.
 	RuleContext Rule = "context"
+	// RuleUnvalidated: the key or value has no availability data, so it was
+	// not checked against the target. Check never returns it; validators
+	// report it for keys and values absent from the generated schema.
+	RuleUnvalidated Rule = "unvalidated"
 )
 
 // Result of a support check. Rule is empty when the key is supported and not

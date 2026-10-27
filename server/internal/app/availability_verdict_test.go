@@ -124,17 +124,19 @@ func TestAssignmentReturnsAvailabilityVerdict(t *testing.T) {
 
 // TestEnqueueReturnsAvailability checks that an enqueued command reports a
 // key the target has deprecated as a delivered warning, and a key the target
-// has removed as the reason the target was skipped, each with its window.
+// has removed as the reason the target was skipped, each with its window. A
+// query without availability data is delivered and reported as unvalidated,
+// without a window or the query name.
 func TestEnqueueReturnsAvailability(t *testing.T) {
 	a, srv, _ := mdmAdminApp(t)
 	verdictMac(t, a, "MAC-26", "26.4")
 	verdictMac(t, a, "MAC-27", "27.0")
-	command := func(uuid string) string {
+	command := func(uuid, query string) string {
 		return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
 <key>Command</key><dict><key>RequestType</key><string>DeviceInformation</string>
-<key>Queries</key><array><string>OSUpdateSettings</string></array></dict>
+<key>Queries</key><array><string>` + query + `</string></array></dict>
 <key>CommandUUID</key><string>` + uuid + `</string>
 </dict></plist>`
 	}
@@ -144,12 +146,20 @@ func TestEnqueueReturnsAvailability(t *testing.T) {
 			"Introduced": "10.11", "Deprecated": "26.0", "Removed": "27.0",
 		}}
 	}
-	_, body := verdictCall(t, srv, http.MethodPost, "/admin/v1/enrollments/device/MAC-26/commands", command("DEPRECATED"))
+	_, body := verdictCall(t, srv, http.MethodPost, "/admin/v1/enrollments/device/MAC-26/commands", command("DEPRECATED", "OSUpdateSettings"))
 	if body["Queued"] != float64(1) || body["Skipped"] != nil || !reflect.DeepEqual(body["Availability"], issue("deprecated", "warning")) {
 		t.Fatalf("deprecated query = %v", body)
 	}
-	_, body = verdictCall(t, srv, http.MethodPost, "/admin/v1/enrollments/device/MAC-27/commands", command("REMOVED"))
+	_, body = verdictCall(t, srv, http.MethodPost, "/admin/v1/enrollments/device/MAC-27/commands", command("REMOVED", "OSUpdateSettings"))
 	if body["Queued"] != float64(0) || body["Skipped"] == nil || !reflect.DeepEqual(body["Availability"], issue("removed", "error")) {
 		t.Fatalf("removed query = %v", body)
+	}
+	raw, body := verdictCall(t, srv, http.MethodPost, "/admin/v1/enrollments/device/MAC-27/commands", command("UNVALIDATED", "PrivateFutureQuery"))
+	unvalidated := []any{map[string]any{"Path": "DeviceInformation.Queries.QueriesItem", "OS": "macOS", "Rule": "unvalidated", "Severity": "warning"}}
+	if body["Queued"] != float64(1) || body["Skipped"] != nil || !reflect.DeepEqual(body["Availability"], unvalidated) {
+		t.Fatalf("unvalidated query = %s", raw)
+	}
+	if strings.Contains(raw, "PrivateFutureQuery") {
+		t.Fatalf("response discloses the query: %s", raw)
 	}
 }

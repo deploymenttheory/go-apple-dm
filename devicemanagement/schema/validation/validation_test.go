@@ -180,3 +180,35 @@ func TestAvailabilityIssues(t *testing.T) {
 		t.Fatalf("empty collector issues = %+v", got)
 	}
 }
+
+// TestUnvalidatedValues checks that a key or subkey-valued string without
+// availability data is a warning naming only its schema key path, that a
+// value with an entry is checked as a support rule, and that a target without
+// an OS records nothing.
+func TestUnvalidatedValues(t *testing.T) {
+	t.Parallel()
+	removed := &support.Entry{Path: "Query.Values.Item.Old", OS: map[support.OS]*support.OSSupport{
+		support.MacOS: {Introduced: osversion.New(10, 11, 0), Removed: osversion.New(27, 0, 0)},
+	}}
+	c := validation.New(support.Target{OS: support.MacOS, Version: osversion.New(27, 0, 0)})
+	c.SupportValue("Query.Values[0]", "Query.Values.Item", nil)
+	c.SupportValue("Query.Values[1]", "Query.Values.Item", removed)
+	c.Unvalidated("Query.Future", "Query.Future")
+	want := []validation.AvailabilityIssue{
+		{Path: "Query.Values.Item.Old", OS: support.MacOS, Rule: support.RuleRemoved, Severity: validation.SeverityError, Introduced: osversion.New(10, 11, 0), Removed: osversion.New(27, 0, 0)},
+		{Path: "Query.Future", OS: support.MacOS, Rule: support.RuleUnvalidated, Severity: validation.SeverityWarning},
+		{Path: "Query.Values.Item", OS: support.MacOS, Rule: support.RuleUnvalidated, Severity: validation.SeverityWarning},
+	}
+	if got := c.Availability(); !slices.Equal(got, want) {
+		t.Fatalf("Availability() = %+v, want %+v", got, want)
+	}
+	if w := c.Warnings(); len(w) != 2 || w[0].Path != "Query.Values[0]" || w[0].Message != "Query.Values.Item: no availability data" {
+		t.Fatalf("warnings = %+v", w)
+	}
+	offline := validation.New(support.Target{})
+	offline.SupportValue("Query.Values[0]", "Query.Values.Item", nil)
+	offline.Unvalidated("Query.Future", "Query.Future")
+	if offline.Err() != nil || len(offline.Warnings()) != 0 {
+		t.Fatalf("offline target recorded %v / %v", offline.Err(), offline.Warnings())
+	}
+}

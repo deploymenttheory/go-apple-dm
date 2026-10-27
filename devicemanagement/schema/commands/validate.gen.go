@@ -3271,7 +3271,7 @@ func (x *DeviceInformation) validate(c *validation.Collector, path, supportPath 
 		c.Support(fieldPath, present, supportTable[supportPath+".Queries"])
 		c.Required(fieldPath, present)
 		for i, v := range x.Queries {
-			c.Support(validation.Index(fieldPath, i), true, supportTable[supportPath+".Queries.QueriesItem."+v])
+			c.SupportValue(validation.Index(fieldPath, i), supportPath+".Queries.QueriesItem", supportTable[supportPath+".Queries.QueriesItem."+v])
 		}
 	}
 	{
@@ -4574,7 +4574,7 @@ func (x *SecurityInfoResponseSecurityInfoSecureBoot) validate(c *validation.Coll
 		_, _ = fieldPath, present
 		c.Support(fieldPath, present, supportTable[supportPath+".ReducedSecurity"])
 		for i, v := range x.ReducedSecurity {
-			c.Support(validation.Index(fieldPath, i), true, supportTable[supportPath+".ReducedSecurity.ReducedSecurityItems."+v])
+			c.SupportValue(validation.Index(fieldPath, i), supportPath+".ReducedSecurity.ReducedSecurityItems", supportTable[supportPath+".ReducedSecurity.ReducedSecurityItems."+v])
 		}
 	}
 }
