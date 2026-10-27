@@ -326,6 +326,18 @@ func TestAppsBooksDeclarativeInstallationThroughReferenceRuntime(t *testing.T) {
 	appsNativeInstallationRuntime(t, managedcontent.DDM, false, nil)
 }
 
+// appsRuntimeScenarioBudget bounds one simulated Apps and Books runtime
+// scenario. The native inspection scenario proves installation, then nine
+// contradictory native reports and a recovery, each through authenticated
+// native queries whose results are polled once a second; under the race
+// detector it takes about a minute on a developer machine. Declarative
+// scenarios that take seconds there have exceeded a minute on CI runners,
+// which run the whole package's parallel tests on fewer cores while waiting
+// for the reference server's once-a-second worker to commit its observation.
+// Four minutes covers that contention, while a stalled scenario still fails
+// well inside the package's 20-minute test timeout.
+const appsRuntimeScenarioBudget = 4 * time.Minute
+
 // appsNativeInstallationRuntime exercises the real worker, authenticated native
 // reports and read-only acceptance with an APNs-driven protocol simulator.
 func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method, endpointFailures bool, beforeProof func(context.Context, *Session, *appsFixture, string) func(managedcontent.Operation)) {
@@ -403,7 +415,7 @@ func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method, e
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx, cancel := context.WithTimeout(t.Context(), time.Minute)
+	ctx, cancel := context.WithTimeout(t.Context(), appsRuntimeScenarioBudget)
 	stopped := make(chan struct{})
 	var connects, empty, processed atomic.Int64
 	wakesBefore := len(s.Env.APNS.Requests())

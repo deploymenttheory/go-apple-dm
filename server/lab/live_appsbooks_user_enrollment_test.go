@@ -103,7 +103,7 @@ func appsUserEnrollmentPump(t *testing.T, ctx context.Context, s *Session, d *si
 func TestAppsBooksMacUserEnrollmentUsesOwnedDeclarativeVersion(t *testing.T) {
 	t.Parallel()
 	s, f, c := appsRuntimeWith(t, nil, map[string]string{"DM_DISCOVERY": "Mac=mdm-byod"})
-	ctx, cancel := context.WithTimeout(t.Context(), time.Minute)
+	ctx, cancel := context.WithTimeout(t.Context(), appsRuntimeScenarioBudget)
 	defer cancel()
 	f.mu.Lock()
 	f.assigned = true
