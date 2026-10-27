@@ -4,8 +4,10 @@
 // # Design
 //
 // Generated packages register supportedOS tables. Lookup, Families and Paths
-// expose those entries, and Check evaluates a Target with a reason and
-// deprecation information. Generated validators and dmctl explain use the same
+// expose those entries, and Check evaluates a Target with a reason, deprecation
+// information and a Rule naming the requirement that rejected or warned about
+// the target. Rule values are stable codes that callers can act on without
+// parsing the reason. Generated validators and dmctl explain use the same
 // metadata. Pointer booleans preserve the difference between an unspecified
 // condition and an explicit prohibition.
 //

@@ -12,8 +12,14 @@ import (
 // that every present key is supported on that OS version and enrollment context.
 func (x *ActivationSimple) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "ActivationSimple")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *ActivationSimple) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "ActivationSimple")
 }
 
 func (x *ActivationSimple) validate(c *validation.Collector, path, supportPath string) {
@@ -41,8 +47,14 @@ func (x *ActivationSimple) validate(c *validation.Collector, path, supportPath s
 // that every present key is supported on that OS version and enrollment context.
 func (x *AssetCredentialACME) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AssetCredentialACME")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AssetCredentialACME) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "AssetCredentialACME")
 }
 
 func (x *AssetCredentialACME) validate(c *validation.Collector, path, supportPath string) {
@@ -134,8 +146,14 @@ func (x *AssetCredentialACMEAuthentication) validate(c *validation.Collector, pa
 // that every present key is supported on that OS version and enrollment context.
 func (x *AssetCredentialCertificate) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AssetCredentialCertificate")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AssetCredentialCertificate) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "AssetCredentialCertificate")
 }
 
 func (x *AssetCredentialCertificate) validate(c *validation.Collector, path, supportPath string) {
@@ -218,8 +236,14 @@ func (x *AssetCredentialCertificateAuthentication) validate(c *validation.Collec
 // that every present key is supported on that OS version and enrollment context.
 func (x *AssetCredentialIdentity) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AssetCredentialIdentity")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AssetCredentialIdentity) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "AssetCredentialIdentity")
 }
 
 func (x *AssetCredentialIdentity) validate(c *validation.Collector, path, supportPath string) {
@@ -311,8 +335,14 @@ func (x *AssetCredentialIdentityAuthentication) validate(c *validation.Collector
 // that every present key is supported on that OS version and enrollment context.
 func (x *AssetCredentialSCEP) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AssetCredentialSCEP")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AssetCredentialSCEP) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "AssetCredentialSCEP")
 }
 
 func (x *AssetCredentialSCEP) validate(c *validation.Collector, path, supportPath string) {
@@ -404,8 +434,14 @@ func (x *AssetCredentialSCEPAuthentication) validate(c *validation.Collector, pa
 // that every present key is supported on that OS version and enrollment context.
 func (x *AssetCredentialUserNameAndPassword) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AssetCredentialUserNameAndPassword")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AssetCredentialUserNameAndPassword) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "AssetCredentialUserNameAndPassword")
 }
 
 func (x *AssetCredentialUserNameAndPassword) validate(c *validation.Collector, path, supportPath string) {
@@ -488,9 +524,13 @@ func (x *AssetCredentialUserNameAndPasswordAuthentication) validate(c *validatio
 // that every present key is supported on that OS version and enrollment context.
 func (x *ACMECredential) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "ACMECredential")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *ACMECredential) ValidateInto(c *validation.Collector) { x.validate(c, "", "ACMECredential") }
 
 func (x *ACMECredential) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -607,8 +647,14 @@ func (x *ACMECredentialSubjectAltName) validate(c *validation.Collector, path, s
 // that every present key is supported on that OS version and enrollment context.
 func (x *IdentityCredential) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "IdentityCredential")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *IdentityCredential) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "IdentityCredential")
 }
 
 func (x *IdentityCredential) validate(c *validation.Collector, path, supportPath string) {
@@ -637,9 +683,13 @@ func (x *IdentityCredential) validate(c *validation.Collector, path, supportPath
 // that every present key is supported on that OS version and enrollment context.
 func (x *SCEPCredential) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "SCEPCredential")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *SCEPCredential) ValidateInto(c *validation.Collector) { x.validate(c, "", "SCEPCredential") }
 
 func (x *SCEPCredential) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -757,8 +807,14 @@ func (x *SCEPCredentialSubjectAltName) validate(c *validation.Collector, path, s
 // that every present key is supported on that OS version and enrollment context.
 func (x *UserNameAndPasswordCredential) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "UserNameAndPasswordCredential")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *UserNameAndPasswordCredential) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "UserNameAndPasswordCredential")
 }
 
 func (x *UserNameAndPasswordCredential) validate(c *validation.Collector, path, supportPath string) {
@@ -786,9 +842,13 @@ func (x *UserNameAndPasswordCredential) validate(c *validation.Collector, path, 
 // that every present key is supported on that OS version and enrollment context.
 func (x *AssetData) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AssetData")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AssetData) ValidateInto(c *validation.Collector) { x.validate(c, "", "AssetData") }
 
 func (x *AssetData) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -870,8 +930,14 @@ func (x *AssetDataAuthentication) validate(c *validation.Collector, path, suppor
 // that every present key is supported on that OS version and enrollment context.
 func (x *AssetUserIdentity) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AssetUserIdentity")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AssetUserIdentity) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "AssetUserIdentity")
 }
 
 func (x *AssetUserIdentity) validate(c *validation.Collector, path, supportPath string) {
@@ -898,8 +964,14 @@ func (x *AssetUserIdentity) validate(c *validation.Collector, path, supportPath 
 // that every present key is supported on that OS version and enrollment context.
 func (x *AccessibilitySettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AccessibilitySettings")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AccessibilitySettings) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "AccessibilitySettings")
 }
 
 func (x *AccessibilitySettings) validate(c *validation.Collector, path, supportPath string) {
@@ -936,9 +1008,13 @@ func (x *AccessibilitySettingsVision) validate(c *validation.Collector, path, su
 // that every present key is supported on that OS version and enrollment context.
 func (x *AccountCalDAV) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AccountCalDAV")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AccountCalDAV) ValidateInto(c *validation.Collector) { x.validate(c, "", "AccountCalDAV") }
 
 func (x *AccountCalDAV) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -983,9 +1059,13 @@ func (x *AccountCalDAV) validate(c *validation.Collector, path, supportPath stri
 // that every present key is supported on that OS version and enrollment context.
 func (x *AccountCardDAV) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AccountCardDAV")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AccountCardDAV) ValidateInto(c *validation.Collector) { x.validate(c, "", "AccountCardDAV") }
 
 func (x *AccountCardDAV) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -1030,9 +1110,13 @@ func (x *AccountCardDAV) validate(c *validation.Collector, path, supportPath str
 // that every present key is supported on that OS version and enrollment context.
 func (x *AccountExchange) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AccountExchange")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AccountExchange) ValidateInto(c *validation.Collector) { x.validate(c, "", "AccountExchange") }
 
 func (x *AccountExchange) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -1316,9 +1400,13 @@ func (x *AccountExchangeSMIMEEncryption) validate(c *validation.Collector, path,
 // that every present key is supported on that OS version and enrollment context.
 func (x *AccountGoogle) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AccountGoogle")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AccountGoogle) ValidateInto(c *validation.Collector) { x.validate(c, "", "AccountGoogle") }
 
 func (x *AccountGoogle) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -1345,9 +1433,13 @@ func (x *AccountGoogle) validate(c *validation.Collector, path, supportPath stri
 // that every present key is supported on that OS version and enrollment context.
 func (x *AccountLDAP) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AccountLDAP")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AccountLDAP) ValidateInto(c *validation.Collector) { x.validate(c, "", "AccountLDAP") }
 
 func (x *AccountLDAP) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -1424,9 +1516,13 @@ func (x *AccountLDAPSearchSettings) validate(c *validation.Collector, path, supp
 // that every present key is supported on that OS version and enrollment context.
 func (x *AccountMail) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AccountMail")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AccountMail) ValidateInto(c *validation.Collector) { x.validate(c, "", "AccountMail") }
 
 func (x *AccountMail) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -1664,9 +1760,13 @@ func (x *AccountMailSMIMEEncryption) validate(c *validation.Collector, path, sup
 // that every present key is supported on that OS version and enrollment context.
 func (x *AccountSettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AccountSettings")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AccountSettings) ValidateInto(c *validation.Collector) { x.validate(c, "", "AccountSettings") }
 
 func (x *AccountSettings) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -1702,8 +1802,14 @@ func (x *AccountSettingsExchange) validate(c *validation.Collector, path, suppor
 // that every present key is supported on that OS version and enrollment context.
 func (x *AccountSubscribedCalendar) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AccountSubscribedCalendar")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AccountSubscribedCalendar) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "AccountSubscribedCalendar")
 }
 
 func (x *AccountSubscribedCalendar) validate(c *validation.Collector, path, supportPath string) {
@@ -1737,9 +1843,13 @@ func (x *AccountSubscribedCalendar) validate(c *validation.Collector, path, supp
 // that every present key is supported on that OS version and enrollment context.
 func (x *AppManaged) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AppManaged")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AppManaged) ValidateInto(c *validation.Collector) { x.validate(c, "", "AppManaged") }
 
 func (x *AppManaged) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -2059,9 +2169,13 @@ func (x *AppManagedCredentialConfig) validate(c *validation.Collector, path, sup
 // that every present key is supported on that OS version and enrollment context.
 func (x *AppSettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AppSettings")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AppSettings) ValidateInto(c *validation.Collector) { x.validate(c, "", "AppSettings") }
 
 func (x *AppSettings) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -2326,8 +2440,14 @@ func (x *AppSettingsAppDictionary) validate(c *validation.Collector, path, suppo
 // that every present key is supported on that OS version and enrollment context.
 func (x *AudioAccessorySettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "AudioAccessorySettings")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *AudioAccessorySettings) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "AudioAccessorySettings")
 }
 
 func (x *AudioAccessorySettings) validate(c *validation.Collector, path, supportPath string) {
@@ -2416,9 +2536,13 @@ func (x *AudioAccessorySettingsTemporaryPairingConfigurationUnpairingTime) valid
 // that every present key is supported on that OS version and enrollment context.
 func (x *ContentCaching) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "ContentCaching")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *ContentCaching) ValidateInto(c *validation.Collector) { x.validate(c, "", "ContentCaching") }
 
 func (x *ContentCaching) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -2670,8 +2794,14 @@ func (x *ContentCachingRangesItem) validate(c *validation.Collector, path, suppo
 // that every present key is supported on that OS version and enrollment context.
 func (x *DiskManagementSettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "DiskManagementSettings")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *DiskManagementSettings) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "DiskManagementSettings")
 }
 
 func (x *DiskManagementSettings) validate(c *validation.Collector, path, supportPath string) {
@@ -2720,9 +2850,13 @@ func (x *DiskManagementSettingsRestrictions) validate(c *validation.Collector, p
 // that every present key is supported on that OS version and enrollment context.
 func (x *ExtensibleSSO) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "ExtensibleSSO")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *ExtensibleSSO) ValidateInto(c *validation.Collector) { x.validate(c, "", "ExtensibleSSO") }
 
 func (x *ExtensibleSSO) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -3152,8 +3286,14 @@ func (x *ExtensibleSSOPlatformSSOWebAuthentication) validate(c *validation.Colle
 // that every present key is supported on that OS version and enrollment context.
 func (x *ExternalIntelligenceSettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "ExternalIntelligenceSettings")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *ExternalIntelligenceSettings) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "ExternalIntelligenceSettings")
 }
 
 func (x *ExternalIntelligenceSettings) validate(c *validation.Collector, path, supportPath string) {
@@ -3186,8 +3326,14 @@ func (x *ExternalIntelligenceSettings) validate(c *validation.Collector, path, s
 // that every present key is supported on that OS version and enrollment context.
 func (x *IntelligenceSettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "IntelligenceSettings")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *IntelligenceSettings) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "IntelligenceSettings")
 }
 
 func (x *IntelligenceSettings) validate(c *validation.Collector, path, supportPath string) {
@@ -3378,8 +3524,14 @@ func (x *IntelligenceSettingsAppsCalendar) validate(c *validation.Collector, pat
 // that every present key is supported on that OS version and enrollment context.
 func (x *KeyboardSettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "KeyboardSettings")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *KeyboardSettings) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "KeyboardSettings")
 }
 
 func (x *KeyboardSettings) validate(c *validation.Collector, path, supportPath string) {
@@ -3442,8 +3594,14 @@ func (x *KeyboardSettings) validate(c *validation.Collector, path, supportPath s
 // that every present key is supported on that OS version and enrollment context.
 func (x *LegacyInteractiveProfile) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "LegacyInteractiveProfile")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *LegacyInteractiveProfile) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "LegacyInteractiveProfile")
 }
 
 func (x *LegacyInteractiveProfile) validate(c *validation.Collector, path, supportPath string) {
@@ -3478,9 +3636,13 @@ func (x *LegacyInteractiveProfile) validate(c *validation.Collector, path, suppo
 // that every present key is supported on that OS version and enrollment context.
 func (x *LegacyProfile) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "LegacyProfile")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *LegacyProfile) ValidateInto(c *validation.Collector) { x.validate(c, "", "LegacyProfile") }
 
 func (x *LegacyProfile) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -3507,8 +3669,14 @@ func (x *LegacyProfile) validate(c *validation.Collector, path, supportPath stri
 // that every present key is supported on that OS version and enrollment context.
 func (x *ManagementStatusSubscriptions) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "ManagementStatusSubscriptions")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *ManagementStatusSubscriptions) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "ManagementStatusSubscriptions")
 }
 
 func (x *ManagementStatusSubscriptions) validate(c *validation.Collector, path, supportPath string) {
@@ -3547,9 +3715,13 @@ func (x *ManagementStatusSubscriptionsStatusItems) validate(c *validation.Collec
 // that every present key is supported on that OS version and enrollment context.
 func (x *ManagementTest) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "ManagementTest")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *ManagementTest) ValidateInto(c *validation.Collector) { x.validate(c, "", "ManagementTest") }
 
 func (x *ManagementTest) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -3585,9 +3757,13 @@ func (x *ManagementTest) validate(c *validation.Collector, path, supportPath str
 // that every present key is supported on that OS version and enrollment context.
 func (x *MathSettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "MathSettings")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *MathSettings) ValidateInto(c *validation.Collector) { x.validate(c, "", "MathSettings") }
 
 func (x *MathSettings) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -3769,8 +3945,14 @@ func (x *MathSettingsSystemBehavior) validate(c *validation.Collector, path, sup
 // that every present key is supported on that OS version and enrollment context.
 func (x *MigrationAssistantSettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "MigrationAssistantSettings")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *MigrationAssistantSettings) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "MigrationAssistantSettings")
 }
 
 func (x *MigrationAssistantSettings) validate(c *validation.Collector, path, supportPath string) {
@@ -3817,9 +3999,13 @@ func (x *MigrationAssistantSettings) validate(c *validation.Collector, path, sup
 // that every present key is supported on that OS version and enrollment context.
 func (x *NetworkDNSProxy) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "NetworkDNSProxy")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *NetworkDNSProxy) ValidateInto(c *validation.Collector) { x.validate(c, "", "NetworkDNSProxy") }
 
 func (x *NetworkDNSProxy) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -3865,8 +4051,14 @@ func (x *NetworkDNSProxy) validate(c *validation.Collector, path, supportPath st
 // that every present key is supported on that OS version and enrollment context.
 func (x *NetworkDNSSettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "NetworkDNSSettings")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *NetworkDNSSettings) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "NetworkDNSSettings")
 }
 
 func (x *NetworkDNSSettings) validate(c *validation.Collector, path, supportPath string) {
@@ -4049,9 +4241,13 @@ func (x *NetworkDNSSettingsOnDemandRulesElementActionParameters) validate(c *val
 // that every present key is supported on that OS version and enrollment context.
 func (x *NetworkRelay) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "NetworkRelay")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *NetworkRelay) ValidateInto(c *validation.Collector) { x.validate(c, "", "NetworkRelay") }
 
 func (x *NetworkRelay) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -4161,8 +4357,14 @@ func (x *NetworkRelayRelays) validate(c *validation.Collector, path, supportPath
 // that every present key is supported on that OS version and enrollment context.
 func (x *NetworkVPNAlwaysOn) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "NetworkVPNAlwaysOn")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *NetworkVPNAlwaysOn) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "NetworkVPNAlwaysOn")
 }
 
 func (x *NetworkVPNAlwaysOn) validate(c *validation.Collector, path, supportPath string) {
@@ -4667,9 +4869,13 @@ func (x *NetworkVPNAlwaysOnAllowedCaptiveNetworkPlugins) validate(c *validation.
 // that every present key is supported on that OS version and enrollment context.
 func (x *NetworkVPNIKEV2) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "NetworkVPNIKEV2")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *NetworkVPNIKEV2) ValidateInto(c *validation.Collector) { x.validate(c, "", "NetworkVPNIKEV2") }
 
 func (x *NetworkVPNIKEV2) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -5389,9 +5595,13 @@ func (x *NetworkVPNIKEV2ProxiesProtocolHTTPS) validate(c *validation.Collector, 
 // that every present key is supported on that OS version and enrollment context.
 func (x *NetworkVPNIPSec) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "NetworkVPNIPSec")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *NetworkVPNIPSec) ValidateInto(c *validation.Collector) { x.validate(c, "", "NetworkVPNIPSec") }
 
 func (x *NetworkVPNIPSec) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -5860,8 +6070,14 @@ func (x *NetworkVPNIPSecProxiesProtocolHTTPS) validate(c *validation.Collector, 
 // that every present key is supported on that OS version and enrollment context.
 func (x *NetworkVPNVPNPlugin) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "NetworkVPNVPNPlugin")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *NetworkVPNVPNPlugin) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "NetworkVPNVPNPlugin")
 }
 
 func (x *NetworkVPNVPNPlugin) validate(c *validation.Collector, path, supportPath string) {
@@ -6408,9 +6624,13 @@ func (x *NetworkVPNVPNPluginProxiesProtocolHTTPS) validate(c *validation.Collect
 // that every present key is supported on that OS version and enrollment context.
 func (x *Package) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "Package")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *Package) ValidateInto(c *validation.Collector) { x.validate(c, "", "Package") }
 
 func (x *Package) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -6478,8 +6698,14 @@ func (x *PackageUninstallBehavior) validate(c *validation.Collector, path, suppo
 // that every present key is supported on that OS version and enrollment context.
 func (x *PasscodeSettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "PasscodeSettings")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *PasscodeSettings) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "PasscodeSettings")
 }
 
 func (x *PasscodeSettings) validate(c *validation.Collector, path, supportPath string) {
@@ -6613,9 +6839,13 @@ func (x *PasscodeSettingsCustomRegex) validate(c *validation.Collector, path, su
 // that every present key is supported on that OS version and enrollment context.
 func (x *SafariBookmarks) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "SafariBookmarks")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *SafariBookmarks) ValidateInto(c *validation.Collector) { x.validate(c, "", "SafariBookmarks") }
 
 func (x *SafariBookmarks) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -6698,8 +6928,14 @@ func (x *SafariBookmarksBookmarksItem) validate(c *validation.Collector, path, s
 // that every present key is supported on that OS version and enrollment context.
 func (x *SafariExtensionSettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "SafariExtensionSettings")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *SafariExtensionSettings) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "SafariExtensionSettings")
 }
 
 func (x *SafariExtensionSettings) validate(c *validation.Collector, path, supportPath string) {
@@ -6761,9 +6997,13 @@ func (x *SafariExtensionSettingsExtensionDictionary) validate(c *validation.Coll
 // that every present key is supported on that OS version and enrollment context.
 func (x *SafariSettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "SafariSettings")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *SafariSettings) ValidateInto(c *validation.Collector) { x.validate(c, "", "SafariSettings") }
 
 func (x *SafariSettings) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -6918,8 +7158,14 @@ func (x *SafariSettingsWebsiteDictionary) validate(c *validation.Collector, path
 // that every present key is supported on that OS version and enrollment context.
 func (x *ScreenSharingConnectionGroup) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "ScreenSharingConnectionGroup")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *ScreenSharingConnectionGroup) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "ScreenSharingConnectionGroup")
 }
 
 func (x *ScreenSharingConnectionGroup) validate(c *validation.Collector, path, supportPath string) {
@@ -6955,8 +7201,14 @@ func (x *ScreenSharingConnectionGroup) validate(c *validation.Collector, path, s
 // that every present key is supported on that OS version and enrollment context.
 func (x *ScreenSharingConnection) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "ScreenSharingConnection")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *ScreenSharingConnection) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "ScreenSharingConnection")
 }
 
 func (x *ScreenSharingConnection) validate(c *validation.Collector, path, supportPath string) {
@@ -7031,8 +7283,14 @@ func (x *ScreenSharingConnectionDisplayConfiguration) validate(c *validation.Col
 // that every present key is supported on that OS version and enrollment context.
 func (x *ScreenSharingHostSettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "ScreenSharingHostSettings")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *ScreenSharingHostSettings) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "ScreenSharingHostSettings")
 }
 
 func (x *ScreenSharingHostSettings) validate(c *validation.Collector, path, supportPath string) {
@@ -7083,8 +7341,14 @@ func (x *ScreenSharingHostSettings) validate(c *validation.Collector, path, supp
 // that every present key is supported on that OS version and enrollment context.
 func (x *SecurityCertificate) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "SecurityCertificate")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *SecurityCertificate) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "SecurityCertificate")
 }
 
 func (x *SecurityCertificate) validate(c *validation.Collector, path, supportPath string) {
@@ -7106,8 +7370,14 @@ func (x *SecurityCertificate) validate(c *validation.Collector, path, supportPat
 // that every present key is supported on that OS version and enrollment context.
 func (x *SecurityIdentity) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "SecurityIdentity")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *SecurityIdentity) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "SecurityIdentity")
 }
 
 func (x *SecurityIdentity) validate(c *validation.Collector, path, supportPath string) {
@@ -7141,8 +7411,14 @@ func (x *SecurityIdentity) validate(c *validation.Collector, path, supportPath s
 // that every present key is supported on that OS version and enrollment context.
 func (x *SecurityPasskeyAttestation) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "SecurityPasskeyAttestation")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *SecurityPasskeyAttestation) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "SecurityPasskeyAttestation")
 }
 
 func (x *SecurityPasskeyAttestation) validate(c *validation.Collector, path, supportPath string) {
@@ -7177,8 +7453,14 @@ func (x *SecurityPasskeyAttestation) validate(c *validation.Collector, path, sup
 // that every present key is supported on that OS version and enrollment context.
 func (x *ServicesBackgroundTasks) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "ServicesBackgroundTasks")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *ServicesBackgroundTasks) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "ServicesBackgroundTasks")
 }
 
 func (x *ServicesBackgroundTasks) validate(c *validation.Collector, path, supportPath string) {
@@ -7245,8 +7527,14 @@ func (x *ServicesBackgroundTasksLaunchdConfigurations) validate(c *validation.Co
 // that every present key is supported on that OS version and enrollment context.
 func (x *ServicesConfigurationFiles) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "ServicesConfigurationFiles")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *ServicesConfigurationFiles) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "ServicesConfigurationFiles")
 }
 
 func (x *ServicesConfigurationFiles) validate(c *validation.Collector, path, supportPath string) {
@@ -7275,9 +7563,13 @@ func (x *ServicesConfigurationFiles) validate(c *validation.Collector, path, sup
 // that every present key is supported on that OS version and enrollment context.
 func (x *SiriSettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "SiriSettings")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *SiriSettings) ValidateInto(c *validation.Collector) { x.validate(c, "", "SiriSettings") }
 
 func (x *SiriSettings) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -7327,8 +7619,14 @@ func (x *SiriSettings) validate(c *validation.Collector, path, supportPath strin
 // that every present key is supported on that OS version and enrollment context.
 func (x *SoftwareUpdateEnforcementSpecific) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "SoftwareUpdateEnforcementSpecific")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *SoftwareUpdateEnforcementSpecific) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "SoftwareUpdateEnforcementSpecific")
 }
 
 func (x *SoftwareUpdateEnforcementSpecific) validate(c *validation.Collector, path, supportPath string) {
@@ -7370,8 +7668,14 @@ func (x *SoftwareUpdateEnforcementSpecific) validate(c *validation.Collector, pa
 // that every present key is supported on that OS version and enrollment context.
 func (x *SoftwareUpdateSettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "SoftwareUpdateSettings")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *SoftwareUpdateSettings) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "SoftwareUpdateSettings")
 }
 
 func (x *SoftwareUpdateSettings) validate(c *validation.Collector, path, supportPath string) {
@@ -7620,9 +7924,13 @@ func (x *SoftwareUpdateSettingsBetaRequireProgram) validate(c *validation.Collec
 // that every present key is supported on that OS version and enrollment context.
 func (x *WatchEnrollment) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "WatchEnrollment")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *WatchEnrollment) ValidateInto(c *validation.Collector) { x.validate(c, "", "WatchEnrollment") }
 
 func (x *WatchEnrollment) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -7649,8 +7957,14 @@ func (x *WatchEnrollment) validate(c *validation.Collector, path, supportPath st
 // that every present key is supported on that OS version and enrollment context.
 func (x *WebContentFilterPlugin) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "WebContentFilterPlugin")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *WebContentFilterPlugin) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "WebContentFilterPlugin")
 }
 
 func (x *WebContentFilterPlugin) validate(c *validation.Collector, path, supportPath string) {
@@ -7935,9 +8249,13 @@ func (x *WebContentFilterPluginFilterURLsParametersPIR) validate(c *validation.C
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeclarationBase) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "DeclarationBase")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *DeclarationBase) ValidateInto(c *validation.Collector) { x.validate(c, "", "DeclarationBase") }
 
 func (x *DeclarationBase) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -7979,8 +8297,14 @@ func (x *DeclarationBase) validate(c *validation.Collector, path, supportPath st
 // that every present key is supported on that OS version and enrollment context.
 func (x *ManagementOrganizationInformation) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "ManagementOrganizationInformation")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *ManagementOrganizationInformation) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "ManagementOrganizationInformation")
 }
 
 func (x *ManagementOrganizationInformation) validate(c *validation.Collector, path, supportPath string) {
@@ -8036,8 +8360,14 @@ func (x *ManagementOrganizationInformationProof) validate(c *validation.Collecto
 // that every present key is supported on that OS version and enrollment context.
 func (x *ManagementProperties) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "ManagementProperties")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *ManagementProperties) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "ManagementProperties")
 }
 
 func (x *ManagementProperties) validate(c *validation.Collector, path, supportPath string) {
@@ -8058,8 +8388,14 @@ func (x *ManagementProperties) validate(c *validation.Collector, path, supportPa
 // that every present key is supported on that OS version and enrollment context.
 func (x *ManagementServerCapabilities) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "ManagementServerCapabilities")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *ManagementServerCapabilities) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "ManagementServerCapabilities")
 }
 
 func (x *ManagementServerCapabilities) validate(c *validation.Collector, path, supportPath string) {

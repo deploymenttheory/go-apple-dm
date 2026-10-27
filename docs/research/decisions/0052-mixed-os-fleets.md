@@ -93,6 +93,21 @@ ordinary scope list, including an explicit empty list that permits no scope.
 Omitted channels preserve OS/version-only validation. Local enrollment is not
 inferred from an unsupervised MDM target.
 
+Availability results are machine-readable. Each support check names the rule it
+applied: `not-available`, `introduced`, `removed`, `deprecated`, `channel`,
+`scope`, `enrollment` or `context`. A removed key rejects the target; a
+deprecated key is reported as a warning and is still delivered, so `Validate`
+returns only blocking errors. Generated `ValidateInto` methods record into a
+caller's `validation.Collector`, which returns key-level availability issues for
+errors and warnings: the key's schema key path, target OS, rule, severity and the
+key's introduced, deprecated and removed versions on that OS, where a zero
+version is an absent bound. Issues never contain configuration values; schema key
+paths omit wire map keys and array positions, and repeated values of one key
+yield one issue. The DDM compatibility report attaches these issues to its
+declaration issues. A withheld `unsupported-target` declaration lists its keys,
+and an eligible declaration with deprecated keys has a non-withheld `deprecated`
+issue listing them.
+
 An acknowledged, tracked device-channel inventory result refreshes product, OS
 and build versions. Missing and malformed observations preserve previous values;
 user-channel responses cannot replace the parent device's inventory. Queued work
@@ -122,3 +137,7 @@ validation without relaxing public API checks. Generator tests merge two retaine
 releases and record them newest first, and require each retained release named in
 `.gitmodules` to be checked out. Workflow tests adopt a new major release both when the
 pin is the previous major's final release and when Apple published a later one.
+Compatibility tests report a macOS 27.0 key as withheld for macOS 26.4 and
+eligible for 27.2, a key Apple removed in iOS 18.0 with its window, keys that are
+unavailable on macOS, and a key deprecated in iOS 27.0 as a delivered warning.
+They serialize each report and require it to contain no fixture values.

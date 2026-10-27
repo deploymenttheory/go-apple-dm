@@ -1,13 +1,16 @@
 package validation
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"math"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
 
@@ -26,10 +29,47 @@ type Error struct {
 	Path    string // dotted wire-key path from the top-level type
 	Rule    string
 	Message string
+	// Availability is the key-level availability issue behind a RuleSupport
+	// error or deprecation warning, and nil for every other rule.
+	Availability *AvailabilityIssue
 }
 
-// Error implements error.
-func (e *Error) Error() string { return e.Path + ": " + e.Message }
+// Severity grades an availability issue.
+type Severity string
+
+// Severities.
+const (
+	// SeverityError: the key blocks delivery to the target.
+	SeverityError Severity = "error"
+	// SeverityWarning: the key is delivered, but the target has deprecated it.
+	SeverityWarning Severity = "warning"
+)
+
+// AvailabilityIssue reports one present key whose availability rejects the
+// target or warns about it. Path is the key's schema key path, as used by
+// support.Lookup, so an issue never contains configuration values: wire map
+// keys and array positions are not part of it.
+type AvailabilityIssue struct {
+	Path     string
+	OS       support.OS
+	Rule     support.Rule
+	Severity Severity
+	// Introduced, Deprecated and Removed are the key's availability window
+	// on OS. A zero version means the window has no such bound; all three
+	// are zero when the key is not available on OS.
+	Introduced osversion.Version
+	Deprecated osversion.Version
+	Removed    osversion.Version
+}
+
+// Error implements error. A failure of the top-level value itself has an
+// empty path and reports only its message.
+func (e *Error) Error() string {
+	if e.Path == "" {
+		return e.Message
+	}
+	return e.Path + ": " + e.Message
+}
 
 // Errors is every failure found. It implements error.
 type Errors []*Error
@@ -176,7 +216,8 @@ func (c *Collector) Repetition(path string, present bool, n, minLen, maxLen int)
 }
 
 // Support records an error when a present key is not supported by the
-// target, and a warning when it is deprecated there.
+// target, and a warning when it is deprecated there. Both carry the key's
+// availability issue.
 func (c *Collector) Support(path string, present bool, e *support.Entry) {
 	if !present || e == nil || c.target.OS == "" {
 		return
@@ -184,10 +225,19 @@ func (c *Collector) Support(path string, present bool, e *support.Entry) {
 	r := e.Check(c.target)
 	switch {
 	case !r.Supported:
-		c.add(path, RuleSupport, r.Reason)
+		c.errs = append(c.errs, &Error{Path: path, Rule: RuleSupport, Message: r.Reason, Availability: c.issue(e, r, SeverityError)})
 	case r.Deprecated:
-		c.warnings = append(c.warnings, &Error{Path: path, Rule: RuleSupport, Message: r.Reason})
+		c.warnings = append(c.warnings, &Error{Path: path, Rule: RuleSupport, Message: r.Reason, Availability: c.issue(e, r, SeverityWarning)})
 	}
+}
+
+// issue describes the availability check r of entry e for the collector's target.
+func (c *Collector) issue(e *support.Entry, r support.Result, severity Severity) *AvailabilityIssue {
+	issue := &AvailabilityIssue{Path: e.Path, OS: c.target.OS, Rule: r.Rule, Severity: severity}
+	if r.OS != nil && !r.OS.NotAvailable {
+		issue.Introduced, issue.Deprecated, issue.Removed = r.OS.Introduced, r.OS.Deprecated, r.OS.Removed
+	}
+	return issue
 }
 
 // Err returns the collected errors, or nil when there are none.
@@ -200,6 +250,39 @@ func (c *Collector) Err() error {
 
 // Warnings returns deprecation warnings collected so far.
 func (c *Collector) Warnings() Errors { return c.warnings }
+
+// Availability returns the availability issues behind the collected errors
+// and warnings: errors first, then by path and rule, with one issue for each
+// key and rule however many values of that key were checked.
+func (c *Collector) Availability() []AvailabilityIssue {
+	return availability(slices.Concat(c.errs, c.warnings))
+}
+
+// AvailabilityIssues returns the availability issues carried by the
+// validation errors in err, ordered as Collector.Availability orders them.
+// It returns nil when err holds no Errors value.
+func AvailabilityIssues(err error) []AvailabilityIssue {
+	var es Errors
+	if !errors.As(err, &es) {
+		return nil
+	}
+	return availability(es)
+}
+
+// availability collects the distinct availability issues carried by es in a
+// stable order.
+func availability(es Errors) []AvailabilityIssue {
+	var out []AvailabilityIssue
+	for _, e := range es {
+		if e.Availability != nil && !slices.Contains(out, *e.Availability) {
+			out = append(out, *e.Availability)
+		}
+	}
+	slices.SortFunc(out, func(a, b AvailabilityIssue) int {
+		return cmp.Or(cmp.Compare(a.Severity, b.Severity), cmp.Compare(a.Path, b.Path), cmp.Compare(a.Rule, b.Rule))
+	})
+	return out
+}
 
 // Join concatenates key paths.
 func Join(prefix, key string) string {

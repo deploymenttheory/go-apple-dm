@@ -57,7 +57,9 @@ rules. Callers no longer need a separate compatibility-validation wrapper.
 `GET /enrollments/{channel}/{id}/compatibility` and
 `dmctl enrollments compatibility device DEVICE-ID` preview eligibility without
 persisting snapshots, changing tokens or sending notifications. Reasons contain
-identifiers and fixed codes, not payload values. Unknown/custom profile payloads
+identifiers and fixed codes, not payload values. Withheld and deprecated
+declarations list their affected keys by schema key path, with the target OS,
+availability rule, severity and the key's version window. Unknown/custom profile payloads
 and encrypted contents remain explicitly **unvalidated** in inspection reports;
 the server does not claim it can decrypt them. External legacy-profile URLs are
 not fetched by validation. Device-advertised status capabilities select automatic

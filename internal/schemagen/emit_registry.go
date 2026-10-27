@@ -12,7 +12,7 @@ func (e *emitter) registryFile() []byte {
 	b := buf()
 	b.WriteString(e.header())
 	b.WriteString(
-		"import (\n\t\"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support\"\n)\n\n",
+		"import (\n\t\"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support\"\n\t\"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/validation\"\n)\n\n",
 	)
 
 	iface, method := e.familyInterface(), e.identifierMethod()
@@ -28,7 +28,7 @@ func (e *emitter) registryFile() []byte {
 		"\t// SchemaPath returns the schema file the type was generated from.\n\tSchemaPath() string\n",
 	)
 	b.WriteString(
-		"\t// Validate checks the value against the schema for the target.\n\tValidate(t support.Target) error\n}\n\n",
+		"\t// Validate checks the value against the schema for the target.\n\tValidate(t support.Target) error\n\t// ValidateInto records the value's errors, deprecation warnings and\n\t// availability issues in c, checked against c's target.\n\tValidateInto(c *validation.Collector)\n}\n\n",
 	)
 	if e.pkg.Family == FamilyCommands {
 		b.WriteString(
@@ -37,7 +37,7 @@ func (e *emitter) registryFile() []byte {
 		b.WriteString(
 			"\t// ResponseRequestTypeName returns the RequestType this responds to.\n\tResponseRequestTypeName() string\n",
 		)
-		b.WriteString("\tSchemaPath() string\n\tValidate(t support.Target) error\n}\n\n")
+		b.WriteString("\tSchemaPath() string\n\tValidate(t support.Target) error\n\tValidateInto(c *validation.Collector)\n}\n\n")
 	}
 	if e.pkg.Family == FamilyDDM {
 		b.WriteString(

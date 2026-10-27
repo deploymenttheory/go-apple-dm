@@ -13,6 +13,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/mdmprotocol/plist"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/profiles"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/validation"
 )
 
 // Errors returned by this package.
@@ -80,6 +81,9 @@ func (*Raw) SchemaPath() string { return "" }
 
 // Validate implements profiles.Payload; raw payloads are not validated.
 func (*Raw) Validate(support.Target) error { return nil }
+
+// ValidateInto implements profiles.Payload; raw payloads are not validated.
+func (*Raw) ValidateInto(*validation.Collector) {}
 
 // common are the per-payload keys the builder controls. PayloadContent is
 // not among them: SCEP, certificate, and other payloads use it for their

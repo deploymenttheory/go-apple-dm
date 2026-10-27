@@ -38,26 +38,27 @@ func TestCheck(t *testing.T) {
 		target     support.Target
 		supported  bool
 		deprecated bool
+		rule       support.Rule
 	}{
-		{"nil entry", support.Target{OS: support.IOS}, true, false},
-		{"no target OS", support.Target{}, true, false},
-		{"not available", support.Target{OS: support.TvOS}, false, false},
-		{"unknown OS", support.Target{OS: support.WatchOS}, false, false},
-		{"before introduced", support.Target{OS: support.IOS, Version: osversion.New(6, 0, 0), Supervised: true}, false, false},
-		{"supported", support.Target{OS: support.IOS, Version: osversion.New(15, 0, 0), Supervised: true}, true, false},
-		{"deprecated", support.Target{OS: support.IOS, Version: osversion.New(21, 0, 0), Supervised: true}, true, true},
-		{"removed", support.Target{OS: support.IOS, Version: osversion.New(25, 0, 0), Supervised: true}, false, false},
-		{"unsupervised", support.Target{OS: support.IOS, Version: osversion.New(15, 0, 0)}, false, false},
-		{"user channel", support.Target{OS: support.IOS, Version: osversion.New(15, 0, 0), Supervised: true, Channel: support.ChannelUser}, false, false},
-		{"device channel", support.Target{OS: support.IOS, Version: osversion.New(15, 0, 0), Supervised: true, Channel: support.ChannelDevice}, true, false},
-		{"user enrollment forbidden", support.Target{OS: support.IOS, Supervised: true, UserEnrollment: true}, false, false},
-		{"needs DEP", support.Target{OS: support.MacOS, Version: osversion.New(osversion.MacOS14, 0, 0)}, false, false},
-		{"needs UAMDM", support.Target{OS: support.MacOS, Version: osversion.New(osversion.MacOS14, 0, 0), DEP: true}, false, false},
-		{"mac ok", support.Target{OS: support.MacOS, Version: osversion.New(osversion.MacOS14, 0, 0), DEP: true, UserApproved: true}, true, false},
-		{"mac shared ipad device channel", support.Target{OS: support.MacOS, DEP: true, UserApproved: true, SharedIPad: true, Channel: support.ChannelDevice}, false, false},
-		{"mac shared ipad user channel", support.Target{OS: support.MacOS, DEP: true, UserApproved: true, SharedIPad: true, Channel: support.ChannelUser}, false, false},
-		{"shared ipad required", support.Target{OS: support.VisionOS}, false, false},
-		{"shared ipad required ok", support.Target{OS: support.VisionOS, SharedIPad: true}, true, false},
+		{"nil entry", support.Target{OS: support.IOS}, true, false, ""},
+		{"no target OS", support.Target{}, true, false, ""},
+		{"not available", support.Target{OS: support.TvOS}, false, false, support.RuleNotAvailable},
+		{"unknown OS", support.Target{OS: support.WatchOS}, false, false, support.RuleNotAvailable},
+		{"before introduced", support.Target{OS: support.IOS, Version: osversion.New(6, 0, 0), Supervised: true}, false, false, support.RuleIntroduced},
+		{"supported", support.Target{OS: support.IOS, Version: osversion.New(15, 0, 0), Supervised: true}, true, false, ""},
+		{"deprecated", support.Target{OS: support.IOS, Version: osversion.New(21, 0, 0), Supervised: true}, true, true, support.RuleDeprecated},
+		{"removed", support.Target{OS: support.IOS, Version: osversion.New(25, 0, 0), Supervised: true}, false, false, support.RuleRemoved},
+		{"unsupervised", support.Target{OS: support.IOS, Version: osversion.New(15, 0, 0)}, false, false, support.RuleContext},
+		{"user channel", support.Target{OS: support.IOS, Version: osversion.New(15, 0, 0), Supervised: true, Channel: support.ChannelUser}, false, false, support.RuleChannel},
+		{"device channel", support.Target{OS: support.IOS, Version: osversion.New(15, 0, 0), Supervised: true, Channel: support.ChannelDevice}, true, false, ""},
+		{"user enrollment forbidden", support.Target{OS: support.IOS, Supervised: true, UserEnrollment: true}, false, false, support.RuleContext},
+		{"needs DEP", support.Target{OS: support.MacOS, Version: osversion.New(osversion.MacOS14, 0, 0)}, false, false, support.RuleContext},
+		{"needs UAMDM", support.Target{OS: support.MacOS, Version: osversion.New(osversion.MacOS14, 0, 0), DEP: true}, false, false, support.RuleContext},
+		{"mac ok", support.Target{OS: support.MacOS, Version: osversion.New(osversion.MacOS14, 0, 0), DEP: true, UserApproved: true}, true, false, ""},
+		{"mac shared ipad device channel", support.Target{OS: support.MacOS, DEP: true, UserApproved: true, SharedIPad: true, Channel: support.ChannelDevice}, false, false, support.RuleChannel},
+		{"mac shared ipad user channel", support.Target{OS: support.MacOS, DEP: true, UserApproved: true, SharedIPad: true, Channel: support.ChannelUser}, false, false, support.RuleChannel},
+		{"shared ipad required", support.Target{OS: support.VisionOS}, false, false, support.RuleContext},
+		{"shared ipad required ok", support.Target{OS: support.VisionOS, SharedIPad: true}, true, false, ""},
 	}
 	for _, c := range cases {
 		var r support.Result
@@ -66,8 +67,8 @@ func TestCheck(t *testing.T) {
 		} else {
 			r = e.Check(c.target)
 		}
-		if r.Supported != c.supported || r.Deprecated != c.deprecated {
-			t.Errorf("%s: got supported=%v deprecated=%v (%s), want %v/%v", c.name, r.Supported, r.Deprecated, r.Reason, c.supported, c.deprecated)
+		if r.Supported != c.supported || r.Deprecated != c.deprecated || r.Rule != c.rule {
+			t.Errorf("%s: got supported=%v deprecated=%v rule=%q (%s), want %v/%v/%q", c.name, r.Supported, r.Deprecated, r.Rule, r.Reason, c.supported, c.deprecated, c.rule)
 		}
 		if !r.Supported && r.Reason == "" {
 			t.Errorf("%s: unsupported without reason", c.name)
@@ -137,6 +138,17 @@ func TestDeclarationContexts(t *testing.T) {
 			got := entry.Check(target)
 			if got.Supported != tc.want || (!tc.want && got.Reason == "") {
 				t.Fatalf("Check(%+v) = %+v, want supported=%t", target, got, tc.want)
+			}
+			// Each rejected case restricts either scopes or enrollments.
+			wantRule := support.Rule("")
+			if !tc.want {
+				wantRule = support.RuleEnrollment
+				if tc.os.AllowedScopes != nil {
+					wantRule = support.RuleScope
+				}
+			}
+			if got.Rule != wantRule {
+				t.Fatalf("Check(%+v) rule = %q, want %q", target, got.Rule, wantRule)
 			}
 		})
 	}

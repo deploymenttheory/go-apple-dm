@@ -12,8 +12,14 @@ import (
 // that every present key is supported on that OS version and enrollment context.
 func (x *EnrollmentSSODocument) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "EnrollmentSSODocument")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *EnrollmentSSODocument) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "EnrollmentSSODocument")
 }
 
 func (x *EnrollmentSSODocument) validate(c *validation.Collector, path, supportPath string) {
@@ -64,9 +70,13 @@ func (x *EnrollmentSSODocument) validate(c *validation.Collector, path, supportP
 // that every present key is supported on that OS version and enrollment context.
 func (x *MachineInfo) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "MachineInfo")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *MachineInfo) ValidateInto(c *validation.Collector) { x.validate(c, "", "MachineInfo") }
 
 func (x *MachineInfo) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -175,9 +185,13 @@ func (x *MachineInfo) validate(c *validation.Collector, path, supportPath string
 // that every present key is supported on that OS version and enrollment context.
 func (x *ManifestURL) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "ManifestURL")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *ManifestURL) ValidateInto(c *validation.Collector) { x.validate(c, "", "ManifestURL") }
 
 func (x *ManifestURL) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -371,9 +385,13 @@ func (x *ManifestURLItemsMetadataItems) validate(c *validation.Collector, path, 
 // that every present key is supported on that OS version and enrollment context.
 func (x *PasswordHash) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "PasswordHash")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *PasswordHash) ValidateInto(c *validation.Collector) { x.validate(c, "", "PasswordHash") }
 
 func (x *PasswordHash) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -425,9 +443,13 @@ func (x *PasswordHashSALTEDSHA512PBKDF2) validate(c *validation.Collector, path,
 // that every present key is supported on that OS version and enrollment context.
 func (x *SkipKeys) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "SkipKeys")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *SkipKeys) ValidateInto(c *validation.Collector) { x.validate(c, "", "SkipKeys") }
 
 func (x *SkipKeys) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {

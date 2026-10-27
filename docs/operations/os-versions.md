@@ -68,6 +68,30 @@ checks. Every feature's introduction, deprecation and removal boundaries apply a
 every version, so a best-effort device is offered only what its version supports
 and a guaranteed device is refused a feature that requires a later release.
 
+## Availability issues
+
+`support.Result.Rule` names the requirement a check applied, such as
+`introduced`, `removed`, `deprecated` or `not-available`. To read every
+availability issue for a payload, including deprecation warnings that
+`Validate` does not return, validate into a collector:
+
+```go
+c := validation.New(target)
+payload.ValidateInto(c)
+if err := c.Err(); err != nil {
+    // Blocking errors; validation.AvailabilityIssues(err) returns their keys.
+}
+for _, issue := range c.Availability() {
+    log.Printf("%s %s %s %s introduced=%s removed=%s",
+        issue.Path, issue.OS, issue.Rule, issue.Severity, issue.Introduced, issue.Removed)
+}
+```
+
+`issue.Path` is the key's schema key path, which `support.Lookup` accepts, and
+an issue never contains configuration values. A zero `Introduced`, `Deprecated` or
+`Removed` version is an absent bound. A removed key is an error; a deprecated
+key is a warning, and the payload is still delivered.
+
 ## Inputs and validation
 
 Use `osversion.Version` in application fields and public interfaces. Keep the

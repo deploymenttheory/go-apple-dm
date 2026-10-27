@@ -12,8 +12,14 @@ import (
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeclarationItemsResponse) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "DeclarationItemsResponse")
+	x.ValidateInto(c)
 	return c.Err()
+}
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *DeclarationItemsResponse) ValidateInto(c *validation.Collector) {
+	x.validate(c, "", "DeclarationItemsResponse")
 }
 
 func (x *DeclarationItemsResponse) validate(c *validation.Collector, path, supportPath string) {
@@ -113,9 +119,13 @@ func (x *DeclarationItemsResponseDeclarationItem) validate(c *validation.Collect
 // that every present key is supported on that OS version and enrollment context.
 func (x *StatusReport) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "StatusReport")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *StatusReport) ValidateInto(c *validation.Collector) { x.validate(c, "", "StatusReport") }
 
 func (x *StatusReport) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
@@ -201,9 +211,13 @@ func (x *StatusReportStatusReason) validate(c *validation.Collector, path, suppo
 // that every present key is supported on that OS version and enrollment context.
 func (x *TokensResponse) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "", "TokensResponse")
+	x.ValidateInto(c)
 	return c.Err()
 }
+
+// ValidateInto checks x as Validate does for the collector's target and records
+// the errors, deprecation warnings and availability issues in c.
+func (x *TokensResponse) ValidateInto(c *validation.Collector) { x.validate(c, "", "TokensResponse") }
 
 func (x *TokensResponse) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {

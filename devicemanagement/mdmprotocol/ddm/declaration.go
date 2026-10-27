@@ -9,6 +9,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/internal/canonjson"
 	schemaddm "github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/ddm"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/validation"
 )
 
 // declarationEnvelope is the top level of an uploaded declaration.
@@ -25,6 +26,13 @@ type declarationEnvelope struct {
 // one of the standalone families in schema/ddm and the generated Validate
 // must pass for target.
 func ParseDeclaration(raw []byte, target support.Target) (*Declaration, error) {
+	return parseDeclaration(raw, validation.New(target))
+}
+
+// parseDeclaration is ParseDeclaration for the collector's target. It records
+// the payload's validation results, including deprecation warnings and
+// availability issues, in c.
+func parseDeclaration(raw []byte, c *validation.Collector) (*Declaration, error) {
 	var env declarationEnvelope
 	if err := json.Unmarshal(raw, &env, json.RejectUnknownMembers(true)); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrInvalidDeclaration, err)
@@ -47,7 +55,8 @@ func ParseDeclaration(raw []byte, target support.Target) (*Declaration, error) {
 	if err := json.Unmarshal(payload, typed); err != nil {
 		return nil, fmt.Errorf("%w: %s payload: %w", ErrInvalidDeclaration, env.Type, err)
 	}
-	if err := typed.Validate(target); err != nil {
+	typed.ValidateInto(c)
+	if err := c.Err(); err != nil {
 		return nil, fmt.Errorf("%w: %s: %w", ErrInvalidDeclaration, env.Type, err)
 	}
 	canonical, err := canonicalDeclaration(env.Identifier, env.Type, payload)

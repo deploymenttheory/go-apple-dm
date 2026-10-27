@@ -98,10 +98,41 @@ type Target struct {
 	UserApproved   bool
 }
 
-// Result of a support check.
+// Rule identifies the availability requirement a check rejected or warned
+// about. Rule values are stable and safe to expose; they never contain
+// configuration values.
+type Rule string
+
+// Rules.
+const (
+	// RuleNotAvailable: the key is not available on the target OS.
+	RuleNotAvailable Rule = "not-available"
+	// RuleIntroduced: the target version predates the key's introduction.
+	RuleIntroduced Rule = "introduced"
+	// RuleRemoved: the target version is at or after the key's removal.
+	RuleRemoved Rule = "removed"
+	// RuleDeprecated: the target version is at or after the key's
+	// deprecation. The key is still supported.
+	RuleDeprecated Rule = "deprecated"
+	// RuleChannel: the key is not supported on the target's MDM channel.
+	RuleChannel Rule = "channel"
+	// RuleScope: the key is not supported in the target channel's
+	// declaration scope.
+	RuleScope Rule = "scope"
+	// RuleEnrollment: the key is not supported with the target's enrollment.
+	RuleEnrollment Rule = "enrollment"
+	// RuleContext: the target lacks a required management context, such as
+	// supervision, Automated Device Enrollment, user-approved MDM, or a
+	// required or forbidden shared iPad or user enrollment mode.
+	RuleContext Rule = "context"
+)
+
+// Result of a support check. Rule is empty when the key is supported and not
+// deprecated.
 type Result struct {
 	Supported  bool
 	Deprecated bool
+	Rule       Rule
 	Reason     string
 	OS         *OSSupport
 }
@@ -119,29 +150,29 @@ func (e *Entry) Check(t Target) Result {
 	}
 	os, ok := e.OS[t.OS]
 	if !ok || os == nil || os.NotAvailable {
-		return Result{Reason: fmt.Sprintf("%s: not available on %s", e.Path, t.OS)}
+		return Result{Rule: RuleNotAvailable, Reason: fmt.Sprintf("%s: not available on %s", e.Path, t.OS)}
 	}
 	r := Result{Supported: true, OS: os}
 	if !t.Version.IsZero() {
 		if !os.Introduced.IsZero() && t.Version.Compare(os.Introduced) < 0 {
-			return Result{OS: os, Reason: fmt.Sprintf("%s: requires %s %s, target is %s", e.Path, t.OS, os.Introduced, t.Version)}
+			return Result{OS: os, Rule: RuleIntroduced, Reason: fmt.Sprintf("%s: requires %s %s, target is %s", e.Path, t.OS, os.Introduced, t.Version)}
 		}
 		if !os.Removed.IsZero() && t.Version.Compare(os.Removed) >= 0 {
-			return Result{OS: os, Reason: fmt.Sprintf("%s: removed in %s %s", e.Path, t.OS, os.Removed)}
+			return Result{OS: os, Rule: RuleRemoved, Reason: fmt.Sprintf("%s: removed in %s %s", e.Path, t.OS, os.Removed)}
 		}
 		if !os.Deprecated.IsZero() && t.Version.Compare(os.Deprecated) >= 0 {
-			r.Deprecated = true
+			r.Deprecated, r.Rule = true, RuleDeprecated
 			r.Reason = fmt.Sprintf("%s: deprecated in %s %s", e.Path, t.OS, os.Deprecated)
 		}
 	}
 	switch t.Channel {
 	case ChannelDevice:
 		if os.DeviceChannel != nil && !*os.DeviceChannel {
-			return Result{OS: os, Reason: fmt.Sprintf("%s: not supported on the device channel on %s", e.Path, t.OS)}
+			return Result{OS: os, Rule: RuleChannel, Reason: fmt.Sprintf("%s: not supported on the device channel on %s", e.Path, t.OS)}
 		}
 	case ChannelUser:
 		if os.UserChannel != nil && !*os.UserChannel {
-			return Result{OS: os, Reason: fmt.Sprintf("%s: not supported on the user channel on %s", e.Path, t.OS)}
+			return Result{OS: os, Rule: RuleChannel, Reason: fmt.Sprintf("%s: not supported on the user channel on %s", e.Path, t.OS)}
 		}
 	}
 	// DDM expresses channel and enrollment restrictions as lists rather than
@@ -157,7 +188,7 @@ func (e *Entry) Check(t Target) Result {
 			scopes = os.SharedIPadScopes
 		}
 		if scopes != nil && !slices.Contains(scopes, scope) {
-			return Result{OS: os, Reason: fmt.Sprintf("%s: not supported in %s scope on %s (shared iPad: %t)", e.Path, scope, t.OS, t.SharedIPad)}
+			return Result{OS: os, Rule: RuleScope, Reason: fmt.Sprintf("%s: not supported in %s scope on %s (shared iPad: %t)", e.Path, scope, t.OS, t.SharedIPad)}
 		}
 		enrollment := "device"
 		if t.UserEnrollment {
@@ -166,30 +197,30 @@ func (e *Entry) Check(t Target) Result {
 			enrollment = "supervised"
 		}
 		if os.AllowedEnrollments != nil && !slices.Contains(os.AllowedEnrollments, enrollment) {
-			return Result{OS: os, Reason: fmt.Sprintf("%s: not supported with %s enrollment on %s", e.Path, enrollment, t.OS)}
+			return Result{OS: os, Rule: RuleEnrollment, Reason: fmt.Sprintf("%s: not supported with %s enrollment on %s", e.Path, enrollment, t.OS)}
 		}
 	}
 	if os.Supervised != nil && *os.Supervised && !t.Supervised {
-		return Result{OS: os, Reason: fmt.Sprintf("%s: requires supervision on %s", e.Path, t.OS)}
+		return Result{OS: os, Rule: RuleContext, Reason: fmt.Sprintf("%s: requires supervision on %s", e.Path, t.OS)}
 	}
 	if os.RequiresDEP != nil && *os.RequiresDEP && !t.DEP {
-		return Result{OS: os, Reason: fmt.Sprintf("%s: requires Automated Device Enrollment on %s", e.Path, t.OS)}
+		return Result{OS: os, Rule: RuleContext, Reason: fmt.Sprintf("%s: requires Automated Device Enrollment on %s", e.Path, t.OS)}
 	}
 	if os.UserApprovedMDM != nil && *os.UserApprovedMDM && !t.UserApproved {
-		return Result{OS: os, Reason: fmt.Sprintf("%s: requires user-approved MDM on %s", e.Path, t.OS)}
+		return Result{OS: os, Rule: RuleContext, Reason: fmt.Sprintf("%s: requires user-approved MDM on %s", e.Path, t.OS)}
 	}
 	if reason := modeCheck(e.Path, "shared iPad", os.SharedIPadMode, t.SharedIPad); reason != "" {
-		return Result{OS: os, Reason: reason}
+		return Result{OS: os, Rule: RuleContext, Reason: reason}
 	}
 	if reason := modeCheck(e.Path, "user enrollment", os.UserEnrollmentMode, t.UserEnrollment); reason != "" {
-		return Result{OS: os, Reason: reason}
+		return Result{OS: os, Rule: RuleContext, Reason: reason}
 	}
 	if t.SharedIPad {
 		if t.Channel == ChannelDevice && os.SharedIPadDeviceChannel != nil && !*os.SharedIPadDeviceChannel {
-			return Result{OS: os, Reason: fmt.Sprintf("%s: not supported on the device channel of a shared iPad", e.Path)}
+			return Result{OS: os, Rule: RuleChannel, Reason: fmt.Sprintf("%s: not supported on the device channel of a shared iPad", e.Path)}
 		}
 		if t.Channel == ChannelUser && os.SharedIPadUserChannel != nil && !*os.SharedIPadUserChannel {
-			return Result{OS: os, Reason: fmt.Sprintf("%s: not supported on the user channel of a shared iPad", e.Path)}
+			return Result{OS: os, Rule: RuleChannel, Reason: fmt.Sprintf("%s: not supported on the user channel of a shared iPad", e.Path)}
 		}
 	}
 	return r
