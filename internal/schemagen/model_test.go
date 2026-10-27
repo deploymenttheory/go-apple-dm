@@ -38,7 +38,7 @@ func TestLoadAllYAMLNoUnknownKeys(t *testing.T) {
 	// means Apple added or removed files: update GENERATED_FROM and this table.
 	want := map[Family]int{
 		FamilyCommands: 67, FamilyCheckin: 9, FamilyErrors: 5, FamilyProfiles: 127,
-		FamilyDDM: 64, FamilyDDMProto: 3, FamilyStatus: 63, FamilyOther: 5,
+		FamilyDDM: 65, FamilyDDMProto: 3, FamilyStatus: 64, FamilyOther: 5,
 	}
 	for f, n := range want {
 		if counts[f] != n {
