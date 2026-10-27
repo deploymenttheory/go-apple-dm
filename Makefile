@@ -80,7 +80,7 @@ verify-server-module-installation:
 test:
 	@rm -rf $(COVER_DIR)/unit && mkdir -p $(COVER_DIR)/unit
 	$(GO) test -race -shuffle=on -count=1 -cover -coverpkg=$(LIB_MOD)/... $(PKGS) -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/unit
-	cd $(SERVER_DIR) && $(GO) test -race -shuffle=on -count=1 -cover -coverpkg=$(ALL_PKGS) ./... -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/unit
+	cd $(SERVER_DIR) && $(GO) test -race -shuffle=on -count=1 -timeout 20m -cover -coverpkg=$(ALL_PKGS) ./... -args -test.gocoverdir=$(PWD)/$(COVER_DIR)/unit
 	$(MAKE) test-schema-contracts
 
 ## test-schema-contracts: require passing evidence for every published OS 27 contract

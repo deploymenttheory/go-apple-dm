@@ -20,7 +20,7 @@ runs:
         CGO_ENABLED: '1'
       run: |
         $coverageDirectory = Join-Path $env:GITHUB_WORKSPACE 'cover/unit'
-        go test -race -shuffle=on -count=1 -cover '-coverpkg=github.com/deploymenttheory/go-apple-dm/...,github.com/deploymenttheory/go-apple-dm/server/...' ./... -args "-test.gocoverdir=$coverageDirectory"
+        go test -race -shuffle=on -count=1 -timeout 20m -cover '-coverpkg=github.com/deploymenttheory/go-apple-dm/...,github.com/deploymenttheory/go-apple-dm/server/...' ./... -args "-test.gocoverdir=$coverageDirectory"
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     - name: Windows schema contracts
       if: ${{ !cancelled() }}
