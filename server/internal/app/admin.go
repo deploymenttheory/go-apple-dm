@@ -80,7 +80,7 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 			writeError(w, statusFor(err), err)
 			return
 		}
-		writeJSON(w, http.StatusOK, report)
+		writeJSON(w, http.StatusOK, viewCompatibility(report, nil))
 	})
 	add(ActionPutDeclaration, "PUT /declarations", func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(io.LimitReader(r.Body, MaxAdminBody+1))
@@ -164,7 +164,7 @@ func (a *App) ddmAdminRoutes() []adminRoute {
 				return
 			}
 			changed, err := e.AssignSet(r.Context(), id, r.PathValue("set"))
-			respondChanged(w, changed, err)
+			a.respondAssignment(w, r, id, r.PathValue("set"), changed, err)
 		},
 	)
 	add(ActionAssignSet,

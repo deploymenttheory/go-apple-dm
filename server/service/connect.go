@@ -127,11 +127,11 @@ func (c *Core) nextEligible(
 		decoded, invalid := validatedCommand(cmd)
 		reason := "invalid-command"
 		if invalid == nil {
-			_, skipped, checkErr := c.checkTargets(ctx, []mdm.EnrollmentID{id}, decoded)
+			check, checkErr := c.checkTargets(ctx, []mdm.EnrollmentID{id}, decoded)
 			if checkErr != nil {
 				return nil, checkErr
 			}
-			invalid = skipped[id]
+			invalid = check.unsupported[id]
 			reason = "unsupported-target"
 		}
 		if invalid == nil {

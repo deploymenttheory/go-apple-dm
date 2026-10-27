@@ -121,7 +121,7 @@ func (a *App) blueprintAdminRoutes() []adminRoute {
 				return
 			}
 			changed, err := a.Blueprints.Assign(r.Context(), id, r.PathValue("blueprint"), r.Method == http.MethodPut)
-			respondChanged(w, changed, err)
+			a.respondAssignment(w, r, id, blueprint.SetName(r.PathValue("blueprint")), changed, err)
 		})
 	}
 	return routes

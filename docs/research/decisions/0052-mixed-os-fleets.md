@@ -108,6 +108,17 @@ declaration issues. A withheld `unsupported-target` declaration lists its keys,
 and an eligible declaration with deprecated keys has a non-withheld `deprecated`
 issue listing them.
 
+Scoping configuration remains an accepted operation and returns a per-device
+verdict; delivery gating is unchanged, so an incompatible item is never sent and
+a device that upgrades becomes eligible. The reference server's set and Blueprint
+assignment responses include the enrollment's compatibility for the assigned
+set's declarations. Its command enqueue response includes the availability keys
+behind a skipped target, and the deprecated keys of a queued target, which the
+service records in `EnqueueResult.Warnings`. The admin API renders versions as
+dotted strings, an absent deprecation or removal bound as `"latest"`, and no
+window for a key that is not available on the OS. If no verdict can be produced
+after an assignment, the assignment stands and the response omits it.
+
 An acknowledged, tracked device-channel inventory result refreshes product, OS
 and build versions. Missing and malformed observations preserve previous values;
 user-channel responses cannot replace the parent device's inventory. Queued work
@@ -140,4 +151,7 @@ pin is the previous major's final release and when Apple published a later one.
 Compatibility tests report a macOS 27.0 key as withheld for macOS 26.4 and
 eligible for 27.2, a key Apple removed in iOS 18.0 with its window, keys that are
 unavailable on macOS, and a key deprecated in iOS 27.0 as a delivered warning.
-They serialize each report and require it to contain no fixture values.
+They serialize each report and require it to contain no fixture values. Admin
+API tests assign a set with a macOS 27.0 key to macOS 26.4 and 27.2 devices and
+enqueue a `DeviceInformation` query that macOS 26 deprecates and macOS 27 removes,
+checking the verdicts, `"latest"` bounds and the absence of configuration values.

@@ -453,7 +453,8 @@ new commands need new UUIDs, while a retry of this command retains its UUID:
 </dict></plist>
 ```
 
-Queue it, inspect `Queued`/`Skipped`, then wake the device explicitly:
+Queue it, inspect `Queued`/`Skipped` and any `Availability` keys, then wake the
+device explicitly:
 
 ```sh
 dmctl commands send device "$DEVICE_ID" -file - < "$GS_DIR/inventory.plist"

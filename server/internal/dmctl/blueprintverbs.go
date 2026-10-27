@@ -121,5 +121,8 @@ func runBlueprints(ctx context.Context, e *env, args []string) error {
 	if resp.Status == http.StatusNoContent {
 		return nil
 	}
+	if sub == "assign" || sub == "unassign" {
+		return e.emitVerdict(resp)
+	}
 	return e.emit(resp, nil)
 }

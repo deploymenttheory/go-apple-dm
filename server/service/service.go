@@ -19,6 +19,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/checkin"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/commands"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/validation"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 )
 
@@ -394,17 +395,17 @@ func (c *Core) enqueue(
 	if o.Now.IsZero() {
 		o.Now = c.clock.Now()
 	}
-	ids, unsupported, err := c.checkTargets(ctx, ids, cmd)
+	check, err := c.checkTargets(ctx, ids, cmd)
 	if err != nil {
 		err = wrapCode(CodeInternal, err)
 		after(err)
 		return storage.EnqueueResult{}, err
 	}
 	var res storage.EnqueueResult
-	if len(ids) > 0 || len(unsupported) == 0 {
+	if len(check.keep) > 0 || len(check.unsupported) == 0 {
 		// The store validates the command itself; skip it only when every
 		// target was filtered out above.
-		res, err = c.store.Enqueue(ctx, ids, cmd, o)
+		res, err = c.store.Enqueue(ctx, check.keep, cmd, o)
 		if err != nil {
 			err = wrapCode(codeForStorage(err), err)
 			after(err)
@@ -414,8 +415,14 @@ func (c *Core) enqueue(
 	if res.Skipped == nil {
 		res.Skipped = map[mdm.EnrollmentID]error{}
 	}
-	maps.Copy(res.Skipped, unsupported)
+	maps.Copy(res.Skipped, check.unsupported)
 	for _, id := range res.Queued {
+		if issues := check.warnings[id]; issues != nil {
+			if res.Warnings == nil {
+				res.Warnings = map[mdm.EnrollmentID][]validation.AvailabilityIssue{}
+			}
+			res.Warnings[id] = issues
+		}
 		c.publish(ctx, event.CommandQueued, id, "admin", cmd)
 	}
 	after(nil)
@@ -439,63 +446,83 @@ func codeForStorage(err error) Code {
 // support per Apple's schema metadata.
 var ErrUnsupportedTarget = errors.New("service: request type not supported on this enrollment")
 
+// targetCheck is the outcome of target validation for one Enqueue call.
+type targetCheck struct {
+	// keep lists the targets to queue.
+	keep []mdm.EnrollmentID
+	// unsupported holds the reason for each target that was filtered out.
+	unsupported map[mdm.EnrollmentID]error
+	// warnings holds availability warnings, such as deprecated keys, for
+	// supported targets.
+	warnings map[mdm.EnrollmentID][]validation.AvailabilityIssue
+}
+
 // checkTargets splits ids into supported targets and unsupported ones with
-// the reason (decision record 0029). Unknown enrollments pass through so
-// the store reports them as it always has.
+// the reason (decision record 0029), and records availability warnings for
+// supported targets. Unknown enrollments pass through so the store reports
+// them as it always has.
 func (c *Core) checkTargets(
 	ctx context.Context,
 	ids []mdm.EnrollmentID,
 	cmd *mdm.Command,
-) ([]mdm.EnrollmentID, map[mdm.EnrollmentID]error, error) {
+) (targetCheck, error) {
 	if !c.validateTargets || cmd == nil {
-		return ids, nil, nil
+		return targetCheck{keep: ids}, nil
 	}
 	entry := commands.Support(cmd.RequestType)
 	if entry == nil {
-		return ids, nil, nil
+		return targetCheck{keep: ids}, nil
 	}
-	var keep []mdm.EnrollmentID
-	unsupported := map[mdm.EnrollmentID]error{}
+	check := targetCheck{
+		unsupported: map[mdm.EnrollmentID]error{},
+		warnings:    map[mdm.EnrollmentID][]validation.AvailabilityIssue{},
+	}
 	for _, id := range ids {
 		e, err := c.store.Get(ctx, id)
 		if errors.Is(err, storage.ErrNotFound) {
-			keep = append(keep, id)
+			check.keep = append(check.keep, id)
 			continue
 		}
 		if err != nil {
-			return nil, nil, err
+			return targetCheck{}, err
 		}
 		target, err := targetFor(ctx, c.store, e)
 		if err != nil {
-			return nil, nil, err
+			return targetCheck{}, err
 		}
 		// Unspecified Target is useful for schema-only validation, but cannot
 		// establish fleet eligibility. Inventory commands bootstrap these facts.
 		if (target.OS == "" || target.Version.IsZero()) && cmd.RequestType != "DeviceInformation" &&
 			cmd.RequestType != "SecurityInfo" {
-			unsupported[id] = fmt.Errorf(
+			check.unsupported[id] = fmt.Errorf(
 				"%w: device OS and version inventory are required",
 				ErrUnsupportedTarget,
 			)
 			continue
 		}
-		if r := entry.Check(target); !r.Supported {
-			unsupported[id] = fmt.Errorf("%w: %s", ErrUnsupportedTarget, r.Reason)
+		// The request type is checked first; its payload is validated only
+		// when the target supports the command at all.
+		collector := validation.New(target)
+		collector.Support("", true, entry)
+		if collector.Err() == nil && cmd.Payload != nil {
+			cmd.Payload.ValidateInto(collector)
+		}
+		if err := collector.Err(); err != nil {
+			check.unsupported[id] = fmt.Errorf("%w: %w", ErrUnsupportedTarget, err)
 			continue
 		}
 		if cmd.Payload != nil {
-			if err := cmd.Payload.Validate(target); err != nil {
-				unsupported[id] = fmt.Errorf("%w: %w", ErrUnsupportedTarget, err)
-				continue
-			}
 			if err := validateInstallProfileContents(cmd, target); err != nil {
-				unsupported[id] = fmt.Errorf("%w: %w", ErrUnsupportedTarget, err)
+				check.unsupported[id] = fmt.Errorf("%w: %w", ErrUnsupportedTarget, err)
 				continue
 			}
 		}
-		keep = append(keep, id)
+		if issues := collector.Availability(); len(issues) > 0 {
+			check.warnings[id] = issues
+		}
+		check.keep = append(check.keep, id)
 	}
-	return keep, unsupported, nil
+	return check, nil
 }
 
 // EnrollmentTarget resolves authoritative device inventory and capabilities for

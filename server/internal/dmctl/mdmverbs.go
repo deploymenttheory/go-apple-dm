@@ -148,7 +148,7 @@ func runCommands(ctx context.Context, e *env, args []string) error {
 		if err != nil {
 			return e.explainNotFound(ctx, c, "mdm", err)
 		}
-		return e.emit(resp, nil)
+		return e.emitVerdict(resp)
 	case "list":
 		fs := e.verbFlags("commands list")
 		typ := fs.String("type", "", "only this RequestType")
@@ -365,7 +365,7 @@ func runSets(ctx context.Context, e *env, args []string) error {
 		if err != nil {
 			return e.explainNotFound(ctx, c, "ddm", err)
 		}
-		return e.emit(resp, nil)
+		return e.emitVerdict(resp)
 	default:
 		return fmt.Errorf("%w: unknown sets subcommand %q", ErrUsage, sub)
 	}

@@ -224,6 +224,8 @@ and test the chosen route end to end.
 Call `service.Core.Enqueue` with an `mdm.Command`, enrollment IDs and
 `storage.EnqueueOptions`. Inspect both its error and `EnqueueResult.Skipped`:
 the core can reject unsupported targets without failing the whole request.
+`validation.AvailabilityIssues` returns the keys behind a skipped target, and
+`EnqueueResult.Warnings` lists keys that a queued target has deprecated.
 Targets need recorded OS/channel/capability evidence; do not invent supervision
 or ADE state to get a command accepted.
 

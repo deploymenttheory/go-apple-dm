@@ -59,7 +59,21 @@ rules. Callers no longer need a separate compatibility-validation wrapper.
 persisting snapshots, changing tokens or sending notifications. Reasons contain
 identifiers and fixed codes, not payload values. Withheld and deprecated
 declarations list their affected keys by schema key path, with the target OS,
-availability rule, severity and the key's version window. Unknown/custom profile payloads
+availability rule, severity and the key's version window.
+
+Scoping returns the same verdict. Assigning a set (`PUT
+/enrollments/{channel}/{id}/sets/{set}`) or a Blueprint returns `Changed` and a
+`Verdict` covering that set's declarations: `Eligible` references and `Issues`
+with their `Availability` keys. The assignment is accepted whatever the verdict,
+and delivery stays gated. Enqueuing a command (`POST
+/enrollments/{channel}/{id}/commands`) returns `Availability` keys with the
+`Skipped` reason, or, when the command is queued, the keys the target has
+deprecated. Each key has `Path`, `OS`, `Rule`, `Severity` and its `Introduced`,
+`Deprecated` and `Removed` versions; an absent deprecation or removal bound is
+`"latest"`, and a key that is not available on the OS has no versions. `dmctl
+sets assign`, `dmctl blueprints assign` and `dmctl commands send` print the
+verdict in human output and the server's JSON with `-output json`. `dmctl
+explain` shows each key's deprecation alongside its introduction and removal. Unknown/custom profile payloads
 and encrypted contents remain explicitly **unvalidated** in inspection reports;
 the server does not claim it can decrypt them. External legacy-profile URLs are
 not fetched by validation. Device-advertised status capabilities select automatic

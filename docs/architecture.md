@@ -208,7 +208,8 @@ The deployment must establish certificate trust and proof of possession for its 
 Command enqueueing validates the actual wire envelope and known payloads before
 storage. Required fields and value constraints always apply. With target validation
 enabled, both command and populated-field availability are checked per enrollment;
-unsupported targets appear in the enqueue result's skipped entries. Unknown command
+unsupported targets appear in the enqueue result's skipped entries, and queued
+targets carry warnings for keys they have deprecated. Unknown command
 types retain their wire bytes for caller-supplied extensions. Known commands require valid input before queueing.
 
 Fleet eligibility requires known OS and version inventory; inventory commands
