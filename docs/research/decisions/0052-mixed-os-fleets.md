@@ -7,11 +7,18 @@ Date: 2026-09-12
 ## Context
 
 A fleet can simultaneously run older releases, the current release, and the next
-release or its seed. macOS 15, 26 and 27 are distinct fleet members. Their release labels are not an arithmetic sequence. Updating Apple's
-schema must preserve management of older devices, including properties Apple has
-deleted from newer documentation.
+release or its seed. macOS release labels are not an arithmetic sequence: 26
+follows 15. Updating Apple's schema must preserve management of older devices,
+including properties Apple has deleted from newer documentation.
 
 ## Decision
+
+Support is guaranteed from macOS 26 onwards: the schema contracts and acceptance
+scenarios target macOS 26 and later. Earlier macOS releases are best effort; they
+may function but are not actively tested. Per-item availability applies in both
+tiers. Each feature's introduction, deprecation and removal boundaries decide its
+eligibility at every OS version, so a best-effort device receives only what its
+version supports and a guaranteed device is still refused a feature it predates.
 
 Generate a combined API from the current schema and the final schema release of
 each earlier supported major version. `schemagen -history` merges each retained
@@ -33,6 +40,9 @@ a new versioned submodule, keeps the existing retained releases and moves `curre
 Adopting 28.0 therefore retains 27.x's final release as n-1 and keeps 26.4 as n-2.
 Retained releases accumulate: removing one ends generated support for devices on
 that major, so it is a reviewed change whose exported-name removals must be recorded.
+A release retained for a guaranteed major, such as `26.4` for macOS 26, stays
+retained while that major is guaranteed; removing it requires first moving the
+guaranteed floor above that major.
 
 Normal generation, verification and the OS 27 contracts discover retained releases
 from `.gitmodules`. `GENERATED_FROM.json` records the current commit and each
@@ -101,7 +111,9 @@ filter field.
 
 Mixed-fleet tests use one core and one enqueue call across macOS 15.7, 26.4 and
 27.0. They exercise shared inventory, pre-27 software-update commands and 27-only
-enhanced logging on the appropriate user channel. An upgrade regression proves
+enhanced logging on the appropriate user channel. The macOS 15.7 member checks
+per-item floor evaluation for a best-effort device; it does not make macOS 15 a
+tested release. An upgrade regression proves
 that refreshed inventory rejects an obsolete queued command while preserving
 the valid work behind it. Storage contract tests run the same inventory refresh
 and exact clearing against every built-in backend. Generator and schema tests

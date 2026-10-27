@@ -78,15 +78,18 @@ Not planned:
    imports it ([0001](docs/research/decisions/0001-architecture.md),
    [0044](docs/research/decisions/0044-repository-layout.md)).
 2. Generated from Apple's pinned schema. Types, validation and support metadata are
-   regenerated, never hand-edited, and a pinned historical schema keeps older devices
-   manageable ([0003](docs/research/decisions/0003-schema-generator.md),
+   regenerated, never hand-edited, and each key's availability comes from Apple's
+   per-key `supportedOS` metadata. Pinned releases of earlier major versions keep older
+   devices manageable ([0003](docs/research/decisions/0003-schema-generator.md),
    [0046](docs/research/decisions/0046-generated-from-is-generated.md),
    [0052](docs/research/decisions/0052-mixed-os-fleets.md)).
 3. MDM and DDM together. Declarative management extends the MDM enrollment instead of
    running beside it ([0039](docs/research/decisions/0039-ddm-is-an-extension-of-mdm.md)).
 4. Schema-defined Apple platforms. Availability is evaluated against each device's
-   observed OS, version, channel and capabilities. The pinned compatibility schema
-   retains support for older devices; individual features keep Apple's release floors.
+   observed OS, version, channel and capabilities. Support is guaranteed from macOS 26
+   onwards; earlier macOS releases may function but are not actively tested. In both
+   tiers, individual features keep Apple's introduction and removal boundaries
+   ([OS versions](docs/operations/os-versions.md#support-tiers)).
 5. Storage-agnostic. Domain contracts and a shared contract suite define backend behavior for
    memory, SQLite, PostgreSQL and MySQL
    ([0005](docs/research/decisions/0005-storage-interfaces.md),
