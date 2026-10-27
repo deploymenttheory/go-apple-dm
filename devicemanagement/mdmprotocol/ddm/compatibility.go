@@ -39,6 +39,9 @@ type CompatibilityIssue struct {
 type CompatibilityReport struct {
 	Enforced bool
 	Target   support.Target
+	// Tier marks the target's release as guaranteed or best effort. It is
+	// empty for an unknown OS or version and never changes eligibility.
+	Tier     support.Tier
 	Eligible []DeclarationRef
 	Issues   []CompatibilityIssue
 }
@@ -67,7 +70,7 @@ func (e *Engine) Compatibility(ctx context.Context, id mdm.EnrollmentID) (Compat
 	}
 	report := CompatibilityReport{Enforced: target != nil, Eligible: []DeclarationRef{}, Issues: []CompatibilityIssue{}}
 	if target != nil {
-		report.Target = *target
+		report.Target, report.Tier = *target, target.Tier()
 	}
 	err = e.store.Update(ctx, func(tx Tx) error {
 		_, items, err := e.manifestFor(ctx, tx, id, target, &report.Issues)

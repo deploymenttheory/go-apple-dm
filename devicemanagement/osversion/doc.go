@@ -5,7 +5,10 @@
 // Version retains major, minor and patch components, including older macOS
 // versions such as 10.15.4. Its zero value means unspecified. Named macOS major
 // constants can be combined with New to express precise release floors without
-// assuming that release numbers are consecutive.
+// assuming that release numbers are consecutive. The supported version floors,
+// such as MacOSSupportedVersionFloor and IOSSupportedVersionFloor, name the base
+// release of each OS's guaranteed support tier: release 26 and every later
+// release are guaranteed, and earlier releases are best effort.
 //
 // The package has no schema or protocol dependencies. Feature availability,
 // removal boundaries and enrollment requirements belong to schema/support;

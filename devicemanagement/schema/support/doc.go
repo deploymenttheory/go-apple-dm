@@ -18,6 +18,14 @@
 // major release constants while retaining the minor and patch components
 // supplied by Apple's schema.
 //
+// # Support tiers
+//
+// Target.Tier reports TierGuaranteed for a release at or above its OS's
+// supported version floor, such as osversion.MacOSSupportedVersionFloor
+// (release 26 of every OS), TierBestEffort for an earlier release, and an empty
+// Tier for an unknown OS or version. The tier records the
+// project's testing guarantee; it never changes a Check result.
+//
 // The tables describe the pinned Apple schema. Missing support or target data
 // limits what can be inferred; consumers must inspect the result reason rather
 // than treat an unspecified target as verified compatibility.

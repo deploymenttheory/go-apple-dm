@@ -86,9 +86,10 @@ Not planned:
 3. MDM and DDM together. Declarative management extends the MDM enrollment instead of
    running beside it ([0039](docs/research/decisions/0039-ddm-is-an-extension-of-mdm.md)).
 4. Schema-defined Apple platforms. Availability is evaluated against each device's
-   observed OS, version, channel and capabilities. Support is guaranteed from macOS 26
-   onwards; earlier macOS releases may function but are not actively tested. In both
-   tiers, individual features keep Apple's introduction and removal boundaries
+   observed OS, version, channel and capabilities. Support is guaranteed from release 26
+   onwards of macOS, iOS and iPadOS, tvOS, visionOS and watchOS; earlier releases may
+   function but are not actively tested. In both tiers, individual features keep
+   Apple's introduction and removal boundaries
    ([OS versions](docs/operations/os-versions.md#support-tiers)).
 5. Storage-agnostic. Domain contracts and a shared contract suite define backend behavior for
    memory, SQLite, PostgreSQL and MySQL

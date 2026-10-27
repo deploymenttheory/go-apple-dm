@@ -98,6 +98,45 @@ type Target struct {
 	UserApproved   bool
 }
 
+// Tier is the support tier of a target's OS release (decision record 0052). It
+// never changes an availability check.
+type Tier string
+
+// Tiers.
+const (
+	// TierGuaranteed: the release is at or above its OS's supported version
+	// floor; it is supported and actively tested.
+	TierGuaranteed Tier = "guaranteed"
+	// TierBestEffort: the release may function but is not actively tested.
+	TierBestEffort Tier = "best-effort"
+)
+
+// supportedVersionFloors maps each OS to the major release of its supported
+// version floor.
+var supportedVersionFloors = map[OS]int{
+	IOS:      osversion.IOSSupportedVersionFloor,
+	MacOS:    osversion.MacOSSupportedVersionFloor,
+	TvOS:     osversion.TvOSSupportedVersionFloor,
+	VisionOS: osversion.VisionOSSupportedVersionFloor,
+	WatchOS:  osversion.WatchOSSupportedVersionFloor,
+}
+
+// Tier returns the support tier of the target's release: guaranteed for its
+// OS's supported version floor, such as osversion.MacOSSupportedVersionFloor,
+// and every later release, best effort before it. It is empty for an unknown
+// OS or version, which claims neither tier.
+func (t Target) Tier() Tier {
+	floor, ok := supportedVersionFloors[t.OS]
+	switch {
+	case !ok || t.Version.IsZero():
+		return ""
+	case t.Version.Compare(osversion.New(floor, 0, 0)) >= 0:
+		return TierGuaranteed
+	default:
+		return TierBestEffort
+	}
+}
+
 // Rule identifies the availability requirement a check rejected or warned
 // about. Rule values are stable and safe to expose; they never contain
 // configuration values.

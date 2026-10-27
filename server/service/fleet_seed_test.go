@@ -17,7 +17,10 @@ import (
 )
 
 // TestSeedOS27MixedFleet checks shared inventory, legacy update, and enhanced-logging commands
-// across macOS 15, 26, and 27 device and user enrollments.
+// across macOS 15, 26, and 27 device and user enrollments. macOS 26 and 27 are
+// guaranteed releases. The macOS 15.7 member is best effort: it checks per-item
+// floor evaluation below the macOS supported version floor, not guaranteed
+// coverage.
 func TestSeedOS27MixedFleet(t *testing.T) {
 	// Identity policy has separate coverage. This test isolates version and
 	// channel routing through one core and one enqueue request for the fleet.

@@ -13,12 +13,22 @@ including properties Apple has deleted from newer documentation.
 
 ## Decision
 
-Support is guaranteed from macOS 26 onwards: the schema contracts and acceptance
-scenarios target macOS 26 and later. Earlier macOS releases are best effort; they
-may function but are not actively tested. Per-item availability applies in both
-tiers. Each feature's introduction, deprecation and removal boundaries decide its
-eligibility at every OS version, so a best-effort device receives only what its
-version supports and a guaranteed device is still refused a feature it predates.
+Support is guaranteed from release 26 onwards of every Apple OS: macOS, iOS and
+iPadOS, tvOS, visionOS and watchOS. Apple's schema numbers each platform's next
+release after macOS 15, iOS and tvOS 18, visionOS 2 and watchOS 11 as 26, so the
+floor is the same release on every platform. The schema contracts and acceptance
+scenarios target macOS 26 and later. Earlier releases are best effort; they may
+function but are not actively tested, and hardware that cannot run release 26 is
+best effort. Per-item availability applies in both tiers. Each feature's
+introduction, deprecation and removal boundaries decide its eligibility at every
+OS version, so a best-effort device receives only what its version supports and a
+guaranteed device is still refused a feature it predates. Each OS's supported
+version floor in `osversion`, such as `MacOSSupportedVersionFloor` and
+`IOSSupportedVersionFloor`, is release 26. `support.Target.Tier` reports
+`guaranteed` for the floor release and every later one, including release 27,
+`best-effort` for an earlier release, and no tier for an unknown OS or version.
+The DDM compatibility report carries the target's tier; it never changes
+eligibility.
 
 Generate a combined API from the current schema and the final schema release of
 each earlier supported major version. `schemagen -history` merges each retained
@@ -40,9 +50,9 @@ a new versioned submodule, keeps the existing retained releases and moves `curre
 Adopting 28.0 therefore retains 27.x's final release as n-1 and keeps 26.4 as n-2.
 Retained releases accumulate: removing one ends generated support for devices on
 that major, so it is a reviewed change whose exported-name removals must be recorded.
-A release retained for a guaranteed major, such as `26.4` for macOS 26, stays
+A release retained for a guaranteed major, such as `26.4` for release 26, stays
 retained while that major is guaranteed; removing it requires first moving the
-guaranteed floor above that major.
+supported version floors above that major.
 
 Normal generation, verification and the OS 27 contracts discover retained releases
 from `.gitmodules`. `GENERATED_FROM.json` records the current commit and each
