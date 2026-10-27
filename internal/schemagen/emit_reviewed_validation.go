@@ -9,7 +9,7 @@ func (e *emitter) reviewedValidation(b *bytes.Buffer, td *TypeDef) {
 	if td.Name == "ContentCaching" && (e.pkg.Family == FamilyDDM || e.pkg.Family == FamilyProfiles) {
 		// Both the DDM and legacy profile cache contracts require one cache class.
 		b.WriteString(`
-	c.Require(validation.Join(p, "AllowSharedCaching"),
+	c.Require(validation.Join(path, "AllowSharedCaching"),
 		!(x.AllowPersonalCaching != nil && !*x.AllowPersonalCaching && x.AllowSharedCaching != nil && !*x.AllowSharedCaching),
 		"personal or shared caching must be enabled")
 `)
@@ -19,10 +19,10 @@ func (e *emitter) reviewedValidation(b *bytes.Buffer, td *TypeDef) {
 	}
 	switch td.Name {
 	case "SoftwareUpdateEnforcementSpecific":
-		b.WriteString("\tc.LocalDateTime(validation.Join(p, \"TargetLocalDateTime\"), x.TargetLocalDateTime != \"\", x.TargetLocalDateTime)\n")
+		b.WriteString("\tc.LocalDateTime(validation.Join(path, \"TargetLocalDateTime\"), x.TargetLocalDateTime != \"\", x.TargetLocalDateTime)\n")
 	case "SoftwareUpdateSettingsAutomaticActions":
 		b.WriteString(`
-	c.Require(p, !(x.Download != nil && *x.Download == "AlwaysOff" &&
+	c.Require(path, !(x.Download != nil && *x.Download == "AlwaysOff" &&
 		((x.InstallOSUpdates != nil && *x.InstallOSUpdates == "AlwaysOn") ||
 		(x.InstallSecurityUpdate != nil && *x.InstallSecurityUpdate == "AlwaysOn"))),
 		"automatic installation requires automatic downloads")
@@ -30,7 +30,7 @@ func (e *emitter) reviewedValidation(b *bytes.Buffer, td *TypeDef) {
 	case "ContentCaching":
 		b.WriteString(`
 	if x.ManagementSecurityConfig != nil && (*x.ManagementSecurityConfig == "signedByCACert" || *x.ManagementSecurityConfig == "specificServerCert") {
-		c.Require(validation.Join(p, "ManagementStatusCertificateReference"),
+		c.Require(validation.Join(path, "ManagementStatusCertificateReference"),
 			x.ManagementStatusCertificateReference != nil && *x.ManagementStatusCertificateReference != "",
 			"certificate reference is required for the selected trust mode")
 	}
@@ -41,18 +41,18 @@ func (e *emitter) reviewedValidation(b *bytes.Buffer, td *TypeDef) {
 	for _, identifier := range []*string{x.AppStoreID, x.BundleID, x.ManifestURL, x.AppComposedIdentifier} {
 		if identifier != nil && *identifier != "" { identifiers++ }
 	}
-	c.Require(p, identifiers == 1, "exactly one app identifier or manifest is required")
+	c.Require(path, identifiers == 1, "exactly one app identifier or manifest is required")
 `)
 	case "AppSettingsAllowedAllowedBinaries":
 		// app.settings.yaml: qualifiers cannot identify an allowed binary alone.
 		b.WriteString(`
-	c.Require(p, (x.CDHash != nil && *x.CDHash != "") || (x.TeamID != nil && *x.TeamID != ""),
+	c.Require(path, (x.CDHash != nil && *x.CDHash != "") || (x.TeamID != nil && *x.TeamID != ""),
 		"a code directory hash or team identifier is required")
 `)
 	case "AppSettingsAllowedDeniedBinaries":
 		// Deny rules may also use a signing identifier without a hash or team.
 		b.WriteString(`
-	c.Require(p, (x.CDHash != nil && *x.CDHash != "") || (x.TeamID != nil && *x.TeamID != "") ||
+	c.Require(path, (x.CDHash != nil && *x.CDHash != "") || (x.TeamID != nil && *x.TeamID != "") ||
 		(x.SigningID != nil && *x.SigningID != ""),
 		"a code directory hash, team identifier or signing identifier is required")
 `)

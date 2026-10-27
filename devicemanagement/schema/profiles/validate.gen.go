@@ -23,64 +23,64 @@ var (
 // that every present key is supported on that OS version and enrollment context.
 func (x *CommonPayloadKeys) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "CommonPayloadKeys")
 	return c.Err()
 }
 
-func (x *CommonPayloadKeys) validate(c *validation.Collector, p string) {
+func (x *CommonPayloadKeys) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["CommonPayloadKeys"])
+	c.Support(path, true, supportTable["CommonPayloadKeys"])
 	{
-		path := validation.Join(p, "PayloadIdentifier")
+		fieldPath := validation.Join(path, "PayloadIdentifier")
 		present := x.PayloadIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CommonPayloadKeys.PayloadIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadIdentifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "PayloadUUID")
+		fieldPath := validation.Join(path, "PayloadUUID")
 		present := x.PayloadUUID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CommonPayloadKeys.PayloadUUID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadUUID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "PayloadType")
+		fieldPath := validation.Join(path, "PayloadType")
 		present := x.PayloadType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CommonPayloadKeys.PayloadType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadType"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "PayloadVersion")
+		fieldPath := validation.Join(path, "PayloadVersion")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["CommonPayloadKeys.PayloadVersion"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadVersion"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.PayloadVersion, []any{int64(1)})
+			c.Enum(fieldPath, true, x.PayloadVersion, []any{int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "PayloadDescription")
+		fieldPath := validation.Join(path, "PayloadDescription")
 		present := x.PayloadDescription != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CommonPayloadKeys.PayloadDescription"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadDescription"])
 	}
 	{
-		path := validation.Join(p, "PayloadDisplayName")
+		fieldPath := validation.Join(path, "PayloadDisplayName")
 		present := x.PayloadDisplayName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CommonPayloadKeys.PayloadDisplayName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadDisplayName"])
 	}
 	{
-		path := validation.Join(p, "PayloadOrganization")
+		fieldPath := validation.Join(path, "PayloadOrganization")
 		present := x.PayloadOrganization != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CommonPayloadKeys.PayloadOrganization"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadOrganization"])
 	}
 }
 
@@ -88,27 +88,27 @@ func (x *CommonPayloadKeys) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *GlobalPreferences) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "GlobalPreferences")
 	return c.Err()
 }
 
-func (x *GlobalPreferences) validate(c *validation.Collector, p string) {
+func (x *GlobalPreferences) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["GlobalPreferences"])
+	c.Support(path, true, supportTable["GlobalPreferences"])
 	{
-		path := validation.Join(p, "MultipleSessionEnabled")
+		fieldPath := validation.Join(path, "MultipleSessionEnabled")
 		present := x.MultipleSessionEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GlobalPreferences.MultipleSessionEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MultipleSessionEnabled"])
 	}
 	{
-		path := validation.Join(p, "com.apple.autologout.AutoLogOutDelay")
+		fieldPath := validation.Join(path, "com.apple.autologout.AutoLogOutDelay")
 		present := x.ComAppleAutologoutAutoLogOutDelay != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GlobalPreferences.com.apple.autologout.AutoLogOutDelay"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".com.apple.autologout.AutoLogOutDelay"])
 	}
 }
 
@@ -116,162 +116,162 @@ func (x *GlobalPreferences) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *TopLevel) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "TopLevel")
 	return c.Err()
 }
 
-func (x *TopLevel) validate(c *validation.Collector, p string) {
+func (x *TopLevel) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["TopLevel"])
+	c.Support(path, true, supportTable["TopLevel"])
 	{
-		path := validation.Join(p, "PayloadIdentifier")
+		fieldPath := validation.Join(path, "PayloadIdentifier")
 		present := x.PayloadIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.PayloadIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadIdentifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "PayloadUUID")
+		fieldPath := validation.Join(path, "PayloadUUID")
 		present := x.PayloadUUID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.PayloadUUID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadUUID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "PayloadType")
+		fieldPath := validation.Join(path, "PayloadType")
 		present := x.PayloadType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.PayloadType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.PayloadType, []any{"Configuration"})
+			c.Enum(fieldPath, true, x.PayloadType, []any{"Configuration"})
 		}
 	}
 	{
-		path := validation.Join(p, "PayloadVersion")
+		fieldPath := validation.Join(path, "PayloadVersion")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.PayloadVersion"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadVersion"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.PayloadVersion, []any{int64(1)})
+			c.Enum(fieldPath, true, x.PayloadVersion, []any{int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "PayloadContent")
+		fieldPath := validation.Join(path, "PayloadContent")
 		present := len(x.PayloadContent) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.PayloadContent"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadContent"])
+		c.Required(fieldPath, present)
 		for i := range x.PayloadContent {
-			x.PayloadContent[i].validate(c, validation.Index(path, i))
+			x.PayloadContent[i].validate(c, validation.Index(fieldPath, i), supportPath+".PayloadContent.PayloadContentItem")
 		}
 	}
 	{
-		path := validation.Join(p, "EncryptedPayloadContent")
+		fieldPath := validation.Join(path, "EncryptedPayloadContent")
 		present := len(x.EncryptedPayloadContent) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.EncryptedPayloadContent"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EncryptedPayloadContent"])
 	}
 	{
-		path := validation.Join(p, "PayloadDescription")
+		fieldPath := validation.Join(path, "PayloadDescription")
 		present := x.PayloadDescription != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.PayloadDescription"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadDescription"])
 	}
 	{
-		path := validation.Join(p, "PayloadDisplayName")
+		fieldPath := validation.Join(path, "PayloadDisplayName")
 		present := x.PayloadDisplayName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.PayloadDisplayName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadDisplayName"])
 	}
 	{
-		path := validation.Join(p, "PayloadOrganization")
+		fieldPath := validation.Join(path, "PayloadOrganization")
 		present := x.PayloadOrganization != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.PayloadOrganization"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadOrganization"])
 	}
 	{
-		path := validation.Join(p, "PayloadRemovalDisallowed")
+		fieldPath := validation.Join(path, "PayloadRemovalDisallowed")
 		present := x.PayloadRemovalDisallowed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.PayloadRemovalDisallowed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadRemovalDisallowed"])
 	}
 	{
-		path := validation.Join(p, "PayloadScope")
+		fieldPath := validation.Join(path, "PayloadScope")
 		present := x.PayloadScope != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.PayloadScope"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadScope"])
 		if present {
-			c.Enum(path, true, *x.PayloadScope, []any{"System", "User"})
+			c.Enum(fieldPath, true, *x.PayloadScope, []any{"System", "User"})
 		}
 	}
 	{
-		path := validation.Join(p, "RemovalDate")
+		fieldPath := validation.Join(path, "RemovalDate")
 		present := x.RemovalDate != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.RemovalDate"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RemovalDate"])
 	}
 	{
-		path := validation.Join(p, "DurationUntilRemoval")
+		fieldPath := validation.Join(path, "DurationUntilRemoval")
 		present := x.DurationUntilRemoval != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.DurationUntilRemoval"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DurationUntilRemoval"])
 	}
 	{
-		path := validation.Join(p, "PayloadExpirationDate")
+		fieldPath := validation.Join(path, "PayloadExpirationDate")
 		present := x.PayloadExpirationDate != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.PayloadExpirationDate"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadExpirationDate"])
 	}
 	{
-		path := validation.Join(p, "TargetDeviceType")
+		fieldPath := validation.Join(path, "TargetDeviceType")
 		present := x.TargetDeviceType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.TargetDeviceType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TargetDeviceType"])
 		if present {
-			c.Enum(path, true, *x.TargetDeviceType, []any{int64(0), int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)})
+			c.Enum(fieldPath, true, *x.TargetDeviceType, []any{int64(0), int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)})
 		}
 	}
 	{
-		path := validation.Join(p, "ConsentText")
+		fieldPath := validation.Join(path, "ConsentText")
 		present := x.ConsentText != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.ConsentText"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ConsentText"])
 		if present {
-			x.ConsentText.validate(c, path)
+			x.ConsentText.validate(c, fieldPath, supportPath+".ConsentText")
 		}
 	}
 }
 
-func (x *TopLevelPayloadContent) validate(c *validation.Collector, p string) {
+func (x *TopLevelPayloadContent) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "ANY")
+		fieldPath := validation.Join(path, "ANY")
 		present := x.ANY != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.PayloadContent.PayloadContentItem.ANY"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ANY"])
+		c.Required(fieldPath, present)
 	}
 }
 
-func (x *TopLevelConsentText) validate(c *validation.Collector, p string) {
+func (x *TopLevelConsentText) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "ConsentTextItem")
+		fieldPath := validation.Join(path, "ConsentTextItem")
 		present := len(x.ConsentTextItem) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["TopLevel.ConsentText.ConsentTextItem"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ConsentTextItem"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -279,83 +279,83 @@ func (x *TopLevelConsentText) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ActiveDirectoryCertificate) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ActiveDirectoryCertificate")
 	return c.Err()
 }
 
-func (x *ActiveDirectoryCertificate) validate(c *validation.Collector, p string) {
+func (x *ActiveDirectoryCertificate) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ActiveDirectoryCertificate"])
+	c.Support(path, true, supportTable["ActiveDirectoryCertificate"])
 	{
-		path := validation.Join(p, "CertServer")
+		fieldPath := validation.Join(path, "CertServer")
 		present := x.CertServer != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ActiveDirectoryCertificate.CertServer"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CertServer"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "CertTemplate")
+		fieldPath := validation.Join(path, "CertTemplate")
 		present := x.CertTemplate != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ActiveDirectoryCertificate.CertTemplate"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CertTemplate"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Description")
+		fieldPath := validation.Join(path, "Description")
 		present := x.Description != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ActiveDirectoryCertificate.Description"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Description"])
 	}
 	{
-		path := validation.Join(p, "CertificateRenewalTimeInterval")
+		fieldPath := validation.Join(path, "CertificateRenewalTimeInterval")
 		present := x.CertificateRenewalTimeInterval != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ActiveDirectoryCertificate.CertificateRenewalTimeInterval"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CertificateRenewalTimeInterval"])
 	}
 	{
-		path := validation.Join(p, "CertificateAuthority")
+		fieldPath := validation.Join(path, "CertificateAuthority")
 		present := x.CertificateAuthority != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ActiveDirectoryCertificate.CertificateAuthority"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CertificateAuthority"])
 	}
 	{
-		path := validation.Join(p, "CertificateAcquisitionMechanism")
+		fieldPath := validation.Join(path, "CertificateAcquisitionMechanism")
 		present := x.CertificateAcquisitionMechanism != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ActiveDirectoryCertificate.CertificateAcquisitionMechanism"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CertificateAcquisitionMechanism"])
 	}
 	{
-		path := validation.Join(p, "AllowAllAppsAccess")
+		fieldPath := validation.Join(path, "AllowAllAppsAccess")
 		present := x.AllowAllAppsAccess != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ActiveDirectoryCertificate.AllowAllAppsAccess"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowAllAppsAccess"])
 	}
 	{
-		path := validation.Join(p, "PromptForCredentials")
+		fieldPath := validation.Join(path, "PromptForCredentials")
 		present := x.PromptForCredentials != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ActiveDirectoryCertificate.PromptForCredentials"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PromptForCredentials"])
 	}
 	{
-		path := validation.Join(p, "KeyIsExtractable")
+		fieldPath := validation.Join(path, "KeyIsExtractable")
 		present := x.KeyIsExtractable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ActiveDirectoryCertificate.KeyIsExtractable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".KeyIsExtractable"])
 	}
 	{
-		path := validation.Join(p, "Keysize")
+		fieldPath := validation.Join(path, "Keysize")
 		present := x.Keysize != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ActiveDirectoryCertificate.Keysize"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Keysize"])
 	}
 	{
-		path := validation.Join(p, "EnableAutoRenewal")
+		fieldPath := validation.Join(path, "EnableAutoRenewal")
 		present := x.EnableAutoRenewal != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ActiveDirectoryCertificate.EnableAutoRenewal"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableAutoRenewal"])
 	}
 }
 
@@ -363,67 +363,67 @@ func (x *ActiveDirectoryCertificate) validate(c *validation.Collector, p string)
 // that every present key is supported on that OS version and enrollment context.
 func (x *AIMAccount) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AIMAccount")
 	return c.Err()
 }
 
-func (x *AIMAccount) validate(c *validation.Collector, p string) {
+func (x *AIMAccount) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AIMAccount"])
+	c.Support(path, true, supportTable["AIMAccount"])
 	{
-		path := validation.Join(p, "AIMAccountDescription")
+		fieldPath := validation.Join(path, "AIMAccountDescription")
 		present := x.AIMAccountDescription != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AIMAccount.AIMAccountDescription"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AIMAccountDescription"])
 	}
 	{
-		path := validation.Join(p, "AIMHostName")
+		fieldPath := validation.Join(path, "AIMHostName")
 		present := x.AIMHostName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AIMAccount.AIMHostName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AIMHostName"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.AIMHostName, []any{"slogin.oscar.aol.com"})
+			c.Enum(fieldPath, true, x.AIMHostName, []any{"slogin.oscar.aol.com"})
 		}
 	}
 	{
-		path := validation.Join(p, "AIMUserName")
+		fieldPath := validation.Join(path, "AIMUserName")
 		present := x.AIMUserName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AIMAccount.AIMUserName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AIMUserName"])
 	}
 	{
-		path := validation.Join(p, "AIMPassword")
+		fieldPath := validation.Join(path, "AIMPassword")
 		present := x.AIMPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AIMAccount.AIMPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AIMPassword"])
 	}
 	{
-		path := validation.Join(p, "AIMUseSSL")
+		fieldPath := validation.Join(path, "AIMUseSSL")
 		present := x.AIMUseSSL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AIMAccount.AIMUseSSL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AIMUseSSL"])
 	}
 	{
-		path := validation.Join(p, "AIMPort")
+		fieldPath := validation.Join(path, "AIMPort")
 		present := x.AIMPort != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AIMAccount.AIMPort"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AIMPort"])
 		if present {
-			c.Range(path, true, float64(*x.AIMPort), new(0.0), new(65535.0))
+			c.Range(fieldPath, true, float64(*x.AIMPort), new(0.0), new(65535.0))
 		}
 	}
 	{
-		path := validation.Join(p, "AIMAuthentication")
+		fieldPath := validation.Join(path, "AIMAuthentication")
 		present := x.AIMAuthentication != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AIMAccount.AIMAuthentication"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AIMAuthentication"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.AIMAuthentication, []any{"AIMAuthPassword"})
+			c.Enum(fieldPath, true, x.AIMAuthentication, []any{"AIMAuthPassword"})
 		}
 	}
 }
@@ -432,196 +432,196 @@ func (x *AIMAccount) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ContentCaching) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ContentCaching")
 	return c.Err()
 }
 
-func (x *ContentCaching) validate(c *validation.Collector, p string) {
+func (x *ContentCaching) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ContentCaching"])
+	c.Support(path, true, supportTable["ContentCaching"])
 
-	c.Require(validation.Join(p, "AllowSharedCaching"),
+	c.Require(validation.Join(path, "AllowSharedCaching"),
 		!(x.AllowPersonalCaching != nil && !*x.AllowPersonalCaching && x.AllowSharedCaching != nil && !*x.AllowSharedCaching),
 		"personal or shared caching must be enabled")
 	{
-		path := validation.Join(p, "AllowCacheDelete")
+		fieldPath := validation.Join(path, "AllowCacheDelete")
 		present := x.AllowCacheDelete != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.AllowCacheDelete"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowCacheDelete"])
 	}
 	{
-		path := validation.Join(p, "AllowPersonalCaching")
+		fieldPath := validation.Join(path, "AllowPersonalCaching")
 		present := x.AllowPersonalCaching != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.AllowPersonalCaching"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowPersonalCaching"])
 	}
 	{
-		path := validation.Join(p, "AllowSharedCaching")
+		fieldPath := validation.Join(path, "AllowSharedCaching")
 		present := x.AllowSharedCaching != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.AllowSharedCaching"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowSharedCaching"])
 	}
 	{
-		path := validation.Join(p, "AutoActivation")
+		fieldPath := validation.Join(path, "AutoActivation")
 		present := x.AutoActivation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.AutoActivation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AutoActivation"])
 	}
 	{
-		path := validation.Join(p, "AutoEnableTetheredCaching")
+		fieldPath := validation.Join(path, "AutoEnableTetheredCaching")
 		present := x.AutoEnableTetheredCaching != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.AutoEnableTetheredCaching"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AutoEnableTetheredCaching"])
 	}
 	{
-		path := validation.Join(p, "CacheLimit")
+		fieldPath := validation.Join(path, "CacheLimit")
 		present := x.CacheLimit != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.CacheLimit"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CacheLimit"])
 	}
 	{
-		path := validation.Join(p, "DataPath")
+		fieldPath := validation.Join(path, "DataPath")
 		present := x.DataPath != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.DataPath"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DataPath"])
 	}
 	{
-		path := validation.Join(p, "DenyTetheredCaching")
+		fieldPath := validation.Join(path, "DenyTetheredCaching")
 		present := x.DenyTetheredCaching != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.DenyTetheredCaching"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DenyTetheredCaching"])
 	}
 	{
-		path := validation.Join(p, "DisplayAlerts")
+		fieldPath := validation.Join(path, "DisplayAlerts")
 		present := x.DisplayAlerts != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.DisplayAlerts"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisplayAlerts"])
 	}
 	{
-		path := validation.Join(p, "KeepAwake")
+		fieldPath := validation.Join(path, "KeepAwake")
 		present := x.KeepAwake != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.KeepAwake"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".KeepAwake"])
 	}
 	{
-		path := validation.Join(p, "ListenRanges")
+		fieldPath := validation.Join(path, "ListenRanges")
 		present := len(x.ListenRanges) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.ListenRanges"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ListenRanges"])
 		for i := range x.ListenRanges {
-			x.ListenRanges[i].validate(c, validation.Index(path, i))
+			x.ListenRanges[i].validate(c, validation.Index(fieldPath, i), supportPath+".ListenRanges.RangesItem")
 		}
 	}
 	{
-		path := validation.Join(p, "ListenRangesOnly")
+		fieldPath := validation.Join(path, "ListenRangesOnly")
 		present := x.ListenRangesOnly != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.ListenRangesOnly"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ListenRangesOnly"])
 	}
 	{
-		path := validation.Join(p, "ListenWithPeersAndParents")
+		fieldPath := validation.Join(path, "ListenWithPeersAndParents")
 		present := x.ListenWithPeersAndParents != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.ListenWithPeersAndParents"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ListenWithPeersAndParents"])
 	}
 	{
-		path := validation.Join(p, "LocalSubnetsOnly")
+		fieldPath := validation.Join(path, "LocalSubnetsOnly")
 		present := x.LocalSubnetsOnly != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.LocalSubnetsOnly"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LocalSubnetsOnly"])
 	}
 	{
-		path := validation.Join(p, "LogClientIdentity")
+		fieldPath := validation.Join(path, "LogClientIdentity")
 		present := x.LogClientIdentity != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.LogClientIdentity"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LogClientIdentity"])
 	}
 	{
-		path := validation.Join(p, "Parents")
+		fieldPath := validation.Join(path, "Parents")
 		present := len(x.Parents) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.Parents"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Parents"])
 	}
 	{
-		path := validation.Join(p, "ParentSelectionPolicy")
+		fieldPath := validation.Join(path, "ParentSelectionPolicy")
 		present := x.ParentSelectionPolicy != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.ParentSelectionPolicy"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ParentSelectionPolicy"])
 		if present {
-			c.Enum(path, true, *x.ParentSelectionPolicy, []any{"first-available", "url-path-hash", "random", "round-robin", "sticky-available"})
+			c.Enum(fieldPath, true, *x.ParentSelectionPolicy, []any{"first-available", "url-path-hash", "random", "round-robin", "sticky-available"})
 		}
 	}
 	{
-		path := validation.Join(p, "PeerFilterRanges")
+		fieldPath := validation.Join(path, "PeerFilterRanges")
 		present := len(x.PeerFilterRanges) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.PeerFilterRanges"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PeerFilterRanges"])
 		for i := range x.PeerFilterRanges {
-			x.PeerFilterRanges[i].validate(c, validation.Index(path, i))
+			x.PeerFilterRanges[i].validate(c, validation.Index(fieldPath, i), supportPath+".PeerFilterRanges.RangesItem")
 		}
 	}
 	{
-		path := validation.Join(p, "PeerListenRanges")
+		fieldPath := validation.Join(path, "PeerListenRanges")
 		present := len(x.PeerListenRanges) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.PeerListenRanges"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PeerListenRanges"])
 		for i := range x.PeerListenRanges {
-			x.PeerListenRanges[i].validate(c, validation.Index(path, i))
+			x.PeerListenRanges[i].validate(c, validation.Index(fieldPath, i), supportPath+".PeerListenRanges.RangesItem")
 		}
 	}
 	{
-		path := validation.Join(p, "PeerLocalSubnetsOnly")
+		fieldPath := validation.Join(path, "PeerLocalSubnetsOnly")
 		present := x.PeerLocalSubnetsOnly != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.PeerLocalSubnetsOnly"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PeerLocalSubnetsOnly"])
 	}
 	{
-		path := validation.Join(p, "Port")
+		fieldPath := validation.Join(path, "Port")
 		present := x.Port != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.Port"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Port"])
 	}
 	{
-		path := validation.Join(p, "PublicRanges")
+		fieldPath := validation.Join(path, "PublicRanges")
 		present := len(x.PublicRanges) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.PublicRanges"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PublicRanges"])
 		for i := range x.PublicRanges {
-			x.PublicRanges[i].validate(c, validation.Index(path, i))
+			x.PublicRanges[i].validate(c, validation.Index(fieldPath, i), supportPath+".PublicRanges.RangesItem")
 		}
 	}
 }
 
-func (x *ContentCachingRanges) validate(c *validation.Collector, p string) {
+func (x *ContentCachingRanges) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "type")
+		fieldPath := validation.Join(path, "type")
 		present := x.Type != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.ListenRanges.RangesItem.type"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".type"])
 		if present {
-			c.Enum(path, true, *x.Type, []any{"IPv4", "IPv6"})
+			c.Enum(fieldPath, true, *x.Type, []any{"IPv4", "IPv6"})
 		}
 	}
 	{
-		path := validation.Join(p, "first")
+		fieldPath := validation.Join(path, "first")
 		present := x.First != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.ListenRanges.RangesItem.first"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".first"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "last")
+		fieldPath := validation.Join(path, "last")
 		present := x.Last != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ContentCaching.ListenRanges.RangesItem.last"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".last"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -629,22 +629,22 @@ func (x *ContentCachingRanges) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ParentalControlsDictionary) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ParentalControlsDictionary")
 	return c.Err()
 }
 
-func (x *ParentalControlsDictionary) validate(c *validation.Collector, p string) {
+func (x *ParentalControlsDictionary) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ParentalControlsDictionary"])
+	c.Support(path, true, supportTable["ParentalControlsDictionary"])
 	{
-		path := validation.Join(p, "parentalControl")
+		fieldPath := validation.Join(path, "parentalControl")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsDictionary.parentalControl"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".parentalControl"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -652,250 +652,250 @@ func (x *ParentalControlsDictionary) validate(c *validation.Collector, p string)
 // that every present key is supported on that OS version and enrollment context.
 func (x *DirectoryService) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DirectoryService")
 	return c.Err()
 }
 
-func (x *DirectoryService) validate(c *validation.Collector, p string) {
+func (x *DirectoryService) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DirectoryService"])
+	c.Support(path, true, supportTable["DirectoryService"])
 	{
-		path := validation.Join(p, "HostName")
+		fieldPath := validation.Join(path, "HostName")
 		present := x.HostName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.HostName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HostName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "UserName")
+		fieldPath := validation.Join(path, "UserName")
 		present := x.UserName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.UserName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserName"])
 	}
 	{
-		path := validation.Join(p, "Password")
+		fieldPath := validation.Join(path, "Password")
 		present := x.Password != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.Password"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Password"])
 	}
 	{
-		path := validation.Join(p, "ClientID")
+		fieldPath := validation.Join(path, "ClientID")
 		present := x.ClientID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ClientID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ClientID"])
 	}
 	{
-		path := validation.Join(p, "Description")
+		fieldPath := validation.Join(path, "Description")
 		present := x.Description != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.Description"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Description"])
 	}
 	{
-		path := validation.Join(p, "ADOrganizationalUnit")
+		fieldPath := validation.Join(path, "ADOrganizationalUnit")
 		present := x.ADOrganizationalUnit != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADOrganizationalUnit"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADOrganizationalUnit"])
 	}
 	{
-		path := validation.Join(p, "ADMountStyle")
+		fieldPath := validation.Join(path, "ADMountStyle")
 		present := x.ADMountStyle != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADMountStyle"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADMountStyle"])
 	}
 	{
-		path := validation.Join(p, "ADCreateMobileAccountAtLoginFlag")
+		fieldPath := validation.Join(path, "ADCreateMobileAccountAtLoginFlag")
 		present := x.ADCreateMobileAccountAtLoginFlag != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADCreateMobileAccountAtLoginFlag"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADCreateMobileAccountAtLoginFlag"])
 	}
 	{
-		path := validation.Join(p, "ADCreateMobileAccountAtLogin")
+		fieldPath := validation.Join(path, "ADCreateMobileAccountAtLogin")
 		present := x.ADCreateMobileAccountAtLogin != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADCreateMobileAccountAtLogin"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADCreateMobileAccountAtLogin"])
 	}
 	{
-		path := validation.Join(p, "ADWarnUserBeforeCreatingMAFlag")
+		fieldPath := validation.Join(path, "ADWarnUserBeforeCreatingMAFlag")
 		present := x.ADWarnUserBeforeCreatingMAFlag != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADWarnUserBeforeCreatingMAFlag"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADWarnUserBeforeCreatingMAFlag"])
 	}
 	{
-		path := validation.Join(p, "ADWarnUserBeforeCreatingMA")
+		fieldPath := validation.Join(path, "ADWarnUserBeforeCreatingMA")
 		present := x.ADWarnUserBeforeCreatingMA != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADWarnUserBeforeCreatingMA"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADWarnUserBeforeCreatingMA"])
 	}
 	{
-		path := validation.Join(p, "ADForceHomeLocalFlag")
+		fieldPath := validation.Join(path, "ADForceHomeLocalFlag")
 		present := x.ADForceHomeLocalFlag != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADForceHomeLocalFlag"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADForceHomeLocalFlag"])
 	}
 	{
-		path := validation.Join(p, "ADForceHomeLocal")
+		fieldPath := validation.Join(path, "ADForceHomeLocal")
 		present := x.ADForceHomeLocal != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADForceHomeLocal"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADForceHomeLocal"])
 	}
 	{
-		path := validation.Join(p, "ADUseWindowsUNCPathFlag")
+		fieldPath := validation.Join(path, "ADUseWindowsUNCPathFlag")
 		present := x.ADUseWindowsUNCPathFlag != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADUseWindowsUNCPathFlag"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADUseWindowsUNCPathFlag"])
 	}
 	{
-		path := validation.Join(p, "ADUseWindowsUNCPath")
+		fieldPath := validation.Join(path, "ADUseWindowsUNCPath")
 		present := x.ADUseWindowsUNCPath != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADUseWindowsUNCPath"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADUseWindowsUNCPath"])
 	}
 	{
-		path := validation.Join(p, "ADAllowMultiDomainAuthFlag")
+		fieldPath := validation.Join(path, "ADAllowMultiDomainAuthFlag")
 		present := x.ADAllowMultiDomainAuthFlag != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADAllowMultiDomainAuthFlag"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADAllowMultiDomainAuthFlag"])
 	}
 	{
-		path := validation.Join(p, "ADAllowMultiDomainAuth")
+		fieldPath := validation.Join(path, "ADAllowMultiDomainAuth")
 		present := x.ADAllowMultiDomainAuth != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADAllowMultiDomainAuth"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADAllowMultiDomainAuth"])
 	}
 	{
-		path := validation.Join(p, "ADDefaultUserShellFlag")
+		fieldPath := validation.Join(path, "ADDefaultUserShellFlag")
 		present := x.ADDefaultUserShellFlag != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADDefaultUserShellFlag"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADDefaultUserShellFlag"])
 	}
 	{
-		path := validation.Join(p, "ADDefaultUserShell")
+		fieldPath := validation.Join(path, "ADDefaultUserShell")
 		present := x.ADDefaultUserShell != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADDefaultUserShell"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADDefaultUserShell"])
 	}
 	{
-		path := validation.Join(p, "ADMapUIDAttributeFlag")
+		fieldPath := validation.Join(path, "ADMapUIDAttributeFlag")
 		present := x.ADMapUIDAttributeFlag != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADMapUIDAttributeFlag"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADMapUIDAttributeFlag"])
 	}
 	{
-		path := validation.Join(p, "ADMapUIDAttribute")
+		fieldPath := validation.Join(path, "ADMapUIDAttribute")
 		present := x.ADMapUIDAttribute != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADMapUIDAttribute"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADMapUIDAttribute"])
 	}
 	{
-		path := validation.Join(p, "ADMapGIDAttributeFlag")
+		fieldPath := validation.Join(path, "ADMapGIDAttributeFlag")
 		present := x.ADMapGIDAttributeFlag != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADMapGIDAttributeFlag"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADMapGIDAttributeFlag"])
 	}
 	{
-		path := validation.Join(p, "ADMapGIDAttribute")
+		fieldPath := validation.Join(path, "ADMapGIDAttribute")
 		present := x.ADMapGIDAttribute != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADMapGIDAttribute"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADMapGIDAttribute"])
 	}
 	{
-		path := validation.Join(p, "ADMapGGIDAttributeFlag")
+		fieldPath := validation.Join(path, "ADMapGGIDAttributeFlag")
 		present := x.ADMapGGIDAttributeFlag != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADMapGGIDAttributeFlag"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADMapGGIDAttributeFlag"])
 	}
 	{
-		path := validation.Join(p, "ADMapGGIDAttribute")
+		fieldPath := validation.Join(path, "ADMapGGIDAttribute")
 		present := x.ADMapGGIDAttribute != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADMapGGIDAttribute"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADMapGGIDAttribute"])
 	}
 	{
-		path := validation.Join(p, "ADPreferredDCServerFlag")
+		fieldPath := validation.Join(path, "ADPreferredDCServerFlag")
 		present := x.ADPreferredDCServerFlag != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADPreferredDCServerFlag"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADPreferredDCServerFlag"])
 	}
 	{
-		path := validation.Join(p, "ADPreferredDCServer")
+		fieldPath := validation.Join(path, "ADPreferredDCServer")
 		present := x.ADPreferredDCServer != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADPreferredDCServer"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADPreferredDCServer"])
 	}
 	{
-		path := validation.Join(p, "ADDomainAdminGroupListFlag")
+		fieldPath := validation.Join(path, "ADDomainAdminGroupListFlag")
 		present := x.ADDomainAdminGroupListFlag != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADDomainAdminGroupListFlag"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADDomainAdminGroupListFlag"])
 	}
 	{
-		path := validation.Join(p, "ADDomainAdminGroupList")
+		fieldPath := validation.Join(path, "ADDomainAdminGroupList")
 		present := len(x.ADDomainAdminGroupList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADDomainAdminGroupList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADDomainAdminGroupList"])
 	}
 	{
-		path := validation.Join(p, "ADNamespaceFlag")
+		fieldPath := validation.Join(path, "ADNamespaceFlag")
 		present := x.ADNamespaceFlag != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADNamespaceFlag"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADNamespaceFlag"])
 	}
 	{
-		path := validation.Join(p, "ADNamespace")
+		fieldPath := validation.Join(path, "ADNamespace")
 		present := x.ADNamespace != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADNamespace"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADNamespace"])
 	}
 	{
-		path := validation.Join(p, "ADPacketSignFlag")
+		fieldPath := validation.Join(path, "ADPacketSignFlag")
 		present := x.ADPacketSignFlag != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADPacketSignFlag"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADPacketSignFlag"])
 	}
 	{
-		path := validation.Join(p, "ADPacketSign")
+		fieldPath := validation.Join(path, "ADPacketSign")
 		present := x.ADPacketSign != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADPacketSign"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADPacketSign"])
 	}
 	{
-		path := validation.Join(p, "ADPacketEncryptFlag")
+		fieldPath := validation.Join(path, "ADPacketEncryptFlag")
 		present := x.ADPacketEncryptFlag != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADPacketEncryptFlag"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADPacketEncryptFlag"])
 	}
 	{
-		path := validation.Join(p, "ADPacketEncrypt")
+		fieldPath := validation.Join(path, "ADPacketEncrypt")
 		present := x.ADPacketEncrypt != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADPacketEncrypt"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADPacketEncrypt"])
 	}
 	{
-		path := validation.Join(p, "ADRestrictDDNSFlag")
+		fieldPath := validation.Join(path, "ADRestrictDDNSFlag")
 		present := x.ADRestrictDDNSFlag != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADRestrictDDNSFlag"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADRestrictDDNSFlag"])
 	}
 	{
-		path := validation.Join(p, "ADRestrictDDNS")
+		fieldPath := validation.Join(path, "ADRestrictDDNS")
 		present := len(x.ADRestrictDDNS) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADRestrictDDNS"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADRestrictDDNS"])
 	}
 	{
-		path := validation.Join(p, "ADTrustChangePassIntervalDaysFlag")
+		fieldPath := validation.Join(path, "ADTrustChangePassIntervalDaysFlag")
 		present := x.ADTrustChangePassIntervalDaysFlag != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADTrustChangePassIntervalDaysFlag"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADTrustChangePassIntervalDaysFlag"])
 	}
 	{
-		path := validation.Join(p, "ADTrustChangePassIntervalDays")
+		fieldPath := validation.Join(path, "ADTrustChangePassIntervalDays")
 		present := x.ADTrustChangePassIntervalDays != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DirectoryService.ADTrustChangePassIntervalDays"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ADTrustChangePassIntervalDays"])
 	}
 }
 
@@ -903,24 +903,24 @@ func (x *DirectoryService) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *MediaManagementDiscBurning) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "MediaManagementDiscBurning")
 	return c.Err()
 }
 
-func (x *MediaManagementDiscBurning) validate(c *validation.Collector, p string) {
+func (x *MediaManagementDiscBurning) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["MediaManagementDiscBurning"])
+	c.Support(path, true, supportTable["MediaManagementDiscBurning"])
 	{
-		path := validation.Join(p, "BurnSupport")
+		fieldPath := validation.Join(path, "BurnSupport")
 		present := x.BurnSupport != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["MediaManagementDiscBurning.BurnSupport"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BurnSupport"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.BurnSupport, []any{"off", "authenticate", "on"})
+			c.Enum(fieldPath, true, x.BurnSupport, []any{"off", "authenticate", "on"})
 		}
 	}
 }
@@ -929,27 +929,27 @@ func (x *MediaManagementDiscBurning) validate(c *validation.Collector, p string)
 // that every present key is supported on that OS version and enrollment context.
 func (x *Accounts) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Accounts")
 	return c.Err()
 }
 
-func (x *Accounts) validate(c *validation.Collector, p string) {
+func (x *Accounts) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Accounts"])
+	c.Support(path, true, supportTable["Accounts"])
 	{
-		path := validation.Join(p, "EnableGuestAccount")
+		fieldPath := validation.Join(path, "EnableGuestAccount")
 		present := x.EnableGuestAccount != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accounts.EnableGuestAccount"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableGuestAccount"])
 	}
 	{
-		path := validation.Join(p, "DisableGuestAccount")
+		fieldPath := validation.Join(path, "DisableGuestAccount")
 		present := x.DisableGuestAccount != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accounts.DisableGuestAccount"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisableGuestAccount"])
 	}
 }
 
@@ -957,190 +957,190 @@ func (x *Accounts) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *EnergySaver) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "EnergySaver")
 	return c.Err()
 }
 
-func (x *EnergySaver) validate(c *validation.Collector, p string) {
+func (x *EnergySaver) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["EnergySaver"])
+	c.Support(path, true, supportTable["EnergySaver"])
 	{
-		path := validation.Join(p, "com.apple.EnergySaver.desktop.ACPower")
+		fieldPath := validation.Join(path, "com.apple.EnergySaver.desktop.ACPower")
 		present := x.ComAppleEnergySaverDesktopACPower != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.com.apple.EnergySaver.desktop.ACPower"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".com.apple.EnergySaver.desktop.ACPower"])
 		if present {
-			x.ComAppleEnergySaverDesktopACPower.validate(c, path)
+			x.ComAppleEnergySaverDesktopACPower.validate(c, fieldPath, supportPath+".com.apple.EnergySaver.desktop.ACPower")
 		}
 	}
 	{
-		path := validation.Join(p, "com.apple.EnergySaver.portable.ACPower")
+		fieldPath := validation.Join(path, "com.apple.EnergySaver.portable.ACPower")
 		present := x.ComAppleEnergySaverPortableACPower != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.com.apple.EnergySaver.portable.ACPower"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".com.apple.EnergySaver.portable.ACPower"])
 		if present {
-			x.ComAppleEnergySaverPortableACPower.validate(c, path)
+			x.ComAppleEnergySaverPortableACPower.validate(c, fieldPath, supportPath+".com.apple.EnergySaver.portable.ACPower")
 		}
 	}
 	{
-		path := validation.Join(p, "com.apple.EnergySaver.portable.BatteryPower")
+		fieldPath := validation.Join(path, "com.apple.EnergySaver.portable.BatteryPower")
 		present := x.ComAppleEnergySaverPortableBatteryPower != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.com.apple.EnergySaver.portable.BatteryPower"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".com.apple.EnergySaver.portable.BatteryPower"])
 		if present {
-			x.ComAppleEnergySaverPortableBatteryPower.validate(c, path)
+			x.ComAppleEnergySaverPortableBatteryPower.validate(c, fieldPath, supportPath+".com.apple.EnergySaver.portable.BatteryPower")
 		}
 	}
 	{
-		path := validation.Join(p, "com.apple.EnergySaver.desktop.Schedule")
+		fieldPath := validation.Join(path, "com.apple.EnergySaver.desktop.Schedule")
 		present := x.ComAppleEnergySaverDesktopSchedule != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.com.apple.EnergySaver.desktop.Schedule"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".com.apple.EnergySaver.desktop.Schedule"])
 		if present {
-			x.ComAppleEnergySaverDesktopSchedule.validate(c, path)
+			x.ComAppleEnergySaverDesktopSchedule.validate(c, fieldPath, supportPath+".com.apple.EnergySaver.desktop.Schedule")
 		}
 	}
 	{
-		path := validation.Join(p, "SleepDisabled")
+		fieldPath := validation.Join(path, "SleepDisabled")
 		present := x.SleepDisabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.SleepDisabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SleepDisabled"])
 	}
 }
 
-func (x *EnergySaverPowerSettings) validate(c *validation.Collector, p string) {
+func (x *EnergySaverPowerSettings) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Display Sleep Timer")
+		fieldPath := validation.Join(path, "Display Sleep Timer")
 		present := x.DisplaySleepTimer != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.com.apple.EnergySaver.desktop.ACPower.Display Sleep Timer"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Display Sleep Timer"])
 		if present {
-			c.Range(path, true, float64(*x.DisplaySleepTimer), new(0.0), new(180.0))
+			c.Range(fieldPath, true, float64(*x.DisplaySleepTimer), new(0.0), new(180.0))
 		}
 	}
 	{
-		path := validation.Join(p, "Disk Sleep Timer")
+		fieldPath := validation.Join(path, "Disk Sleep Timer")
 		present := x.DiskSleepTimer != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.com.apple.EnergySaver.desktop.ACPower.Disk Sleep Timer"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Disk Sleep Timer"])
 		if present {
-			c.Range(path, true, float64(*x.DiskSleepTimer), new(0.0), new(180.0))
+			c.Range(fieldPath, true, float64(*x.DiskSleepTimer), new(0.0), new(180.0))
 		}
 	}
 	{
-		path := validation.Join(p, "System Sleep Timer")
+		fieldPath := validation.Join(path, "System Sleep Timer")
 		present := x.SystemSleepTimer != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.com.apple.EnergySaver.desktop.ACPower.System Sleep Timer"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".System Sleep Timer"])
 		if present {
-			c.Range(path, true, float64(*x.SystemSleepTimer), new(0.0), new(180.0))
+			c.Range(fieldPath, true, float64(*x.SystemSleepTimer), new(0.0), new(180.0))
 		}
 	}
 	{
-		path := validation.Join(p, "Reduce Processor Speed")
+		fieldPath := validation.Join(path, "Reduce Processor Speed")
 		present := x.ReduceProcessorSpeed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.com.apple.EnergySaver.desktop.ACPower.Reduce Processor Speed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Reduce Processor Speed"])
 		if present {
-			c.Enum(path, true, *x.ReduceProcessorSpeed, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.ReduceProcessorSpeed, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "Dynamic Power Step")
+		fieldPath := validation.Join(path, "Dynamic Power Step")
 		present := x.DynamicPowerStep != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.com.apple.EnergySaver.desktop.ACPower.Dynamic Power Step"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Dynamic Power Step"])
 		if present {
-			c.Enum(path, true, *x.DynamicPowerStep, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.DynamicPowerStep, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "Wake on LAN")
+		fieldPath := validation.Join(path, "Wake on LAN")
 		present := x.WakeOnLAN != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.com.apple.EnergySaver.desktop.ACPower.Wake on LAN"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Wake on LAN"])
 		if present {
-			c.Enum(path, true, *x.WakeOnLAN, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.WakeOnLAN, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "Wake On Modem Ring")
+		fieldPath := validation.Join(path, "Wake On Modem Ring")
 		present := x.WakeOnModemRing != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.com.apple.EnergySaver.desktop.ACPower.Wake On Modem Ring"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Wake On Modem Ring"])
 		if present {
-			c.Enum(path, true, *x.WakeOnModemRing, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.WakeOnModemRing, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "Automatic Restart On Power Loss")
+		fieldPath := validation.Join(path, "Automatic Restart On Power Loss")
 		present := x.AutomaticRestartOnPowerLoss != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.com.apple.EnergySaver.desktop.ACPower.Automatic Restart On Power Loss"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Automatic Restart On Power Loss"])
 		if present {
-			c.Enum(path, true, *x.AutomaticRestartOnPowerLoss, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.AutomaticRestartOnPowerLoss, []any{int64(0), int64(1)})
 		}
 	}
 }
 
-func (x *EnergySaverEnergySaverSchedule) validate(c *validation.Collector, p string) {
+func (x *EnergySaverEnergySaverSchedule) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "RepeatingPowerOn")
+		fieldPath := validation.Join(path, "RepeatingPowerOn")
 		present := x.RepeatingPowerOn != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.com.apple.EnergySaver.desktop.Schedule.RepeatingPowerOn"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RepeatingPowerOn"])
 		if present {
-			x.RepeatingPowerOn.validate(c, path)
+			x.RepeatingPowerOn.validate(c, fieldPath, supportPath+".RepeatingPowerOn")
 		}
 	}
 	{
-		path := validation.Join(p, "RepeatingPowerOff")
+		fieldPath := validation.Join(path, "RepeatingPowerOff")
 		present := x.RepeatingPowerOff != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.com.apple.EnergySaver.desktop.Schedule.RepeatingPowerOff"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RepeatingPowerOff"])
 		if present {
-			x.RepeatingPowerOff.validate(c, path)
+			x.RepeatingPowerOff.validate(c, fieldPath, supportPath+".RepeatingPowerOff")
 		}
 	}
 }
 
-func (x *EnergySaverRepeatingPowerItem) validate(c *validation.Collector, p string) {
+func (x *EnergySaverRepeatingPowerItem) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "eventtype")
+		fieldPath := validation.Join(path, "eventtype")
 		present := x.Eventtype != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.com.apple.EnergySaver.desktop.Schedule.RepeatingPowerOn.eventtype"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".eventtype"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Eventtype, []any{"wake", "poweron", "wakepoweron", "sleep", "shutdown", "restart"})
+			c.Enum(fieldPath, true, x.Eventtype, []any{"wake", "poweron", "wakepoweron", "sleep", "shutdown", "restart"})
 		}
 	}
 	{
-		path := validation.Join(p, "weekdays")
+		fieldPath := validation.Join(path, "weekdays")
 		present := x.Weekdays != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.com.apple.EnergySaver.desktop.Schedule.RepeatingPowerOn.weekdays"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".weekdays"])
 	}
 	{
-		path := validation.Join(p, "time")
+		fieldPath := validation.Join(path, "time")
 		present := x.Time != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnergySaver.com.apple.EnergySaver.desktop.Schedule.RepeatingPowerOn.time"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".time"])
 	}
 }
 
@@ -1148,33 +1148,33 @@ func (x *EnergySaverRepeatingPowerItem) validate(c *validation.Collector, p stri
 // that every present key is supported on that OS version and enrollment context.
 func (x *FDEFileVaultOptions) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "FDEFileVaultOptions")
 	return c.Err()
 }
 
-func (x *FDEFileVaultOptions) validate(c *validation.Collector, p string) {
+func (x *FDEFileVaultOptions) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["FDEFileVaultOptions"])
+	c.Support(path, true, supportTable["FDEFileVaultOptions"])
 	{
-		path := validation.Join(p, "dontAllowFDEDisable")
+		fieldPath := validation.Join(path, "dontAllowFDEDisable")
 		present := x.DontAllowFDEDisable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDEFileVaultOptions.dontAllowFDEDisable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".dontAllowFDEDisable"])
 	}
 	{
-		path := validation.Join(p, "dontAllowFDEEnable")
+		fieldPath := validation.Join(path, "dontAllowFDEEnable")
 		present := x.DontAllowFDEEnable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDEFileVaultOptions.dontAllowFDEEnable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".dontAllowFDEEnable"])
 	}
 	{
-		path := validation.Join(p, "DestroyFVKeyOnStandby")
+		fieldPath := validation.Join(path, "DestroyFVKeyOnStandby")
 		present := x.DestroyFVKeyOnStandby != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDEFileVaultOptions.DestroyFVKeyOnStandby"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DestroyFVKeyOnStandby"])
 	}
 }
 
@@ -1182,45 +1182,45 @@ func (x *FDEFileVaultOptions) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *MobileAccounts) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "MobileAccounts")
 	return c.Err()
 }
 
-func (x *MobileAccounts) validate(c *validation.Collector, p string) {
+func (x *MobileAccounts) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["MobileAccounts"])
+	c.Support(path, true, supportTable["MobileAccounts"])
 	{
-		path := validation.Join(p, "com.apple.cachedaccounts.CreateAtLogin")
+		fieldPath := validation.Join(path, "com.apple.cachedaccounts.CreateAtLogin")
 		present := x.ComAppleCachedaccountsCreateAtLogin != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MobileAccounts.com.apple.cachedaccounts.CreateAtLogin"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".com.apple.cachedaccounts.CreateAtLogin"])
 	}
 	{
-		path := validation.Join(p, "com.apple.cachedaccounts.WarnOnCreate")
+		fieldPath := validation.Join(path, "com.apple.cachedaccounts.WarnOnCreate")
 		present := x.ComAppleCachedaccountsWarnOnCreate != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MobileAccounts.com.apple.cachedaccounts.WarnOnCreate"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".com.apple.cachedaccounts.WarnOnCreate"])
 	}
 	{
-		path := validation.Join(p, "cachedaccounts.WarnOnCreate.allowNever")
+		fieldPath := validation.Join(path, "cachedaccounts.WarnOnCreate.allowNever")
 		present := x.CachedaccountsWarnOnCreateAllowNever != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MobileAccounts.cachedaccounts.WarnOnCreate.allowNever"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".cachedaccounts.WarnOnCreate.allowNever"])
 	}
 	{
-		path := validation.Join(p, "cachedaccounts.expiry.delete.disusedSeconds")
+		fieldPath := validation.Join(path, "cachedaccounts.expiry.delete.disusedSeconds")
 		present := x.CachedaccountsExpiryDeleteDisusedSeconds != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MobileAccounts.cachedaccounts.expiry.delete.disusedSeconds"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".cachedaccounts.expiry.delete.disusedSeconds"])
 	}
 	{
-		path := validation.Join(p, "cachedaccounts.askForSecureTokenAuthBypass")
+		fieldPath := validation.Join(path, "cachedaccounts.askForSecureTokenAuthBypass")
 		present := x.CachedaccountsAskForSecureTokenAuthBypass != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MobileAccounts.cachedaccounts.askForSecureTokenAuthBypass"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".cachedaccounts.askForSecureTokenAuthBypass"])
 	}
 }
 
@@ -1228,27 +1228,27 @@ func (x *MobileAccounts) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *TimeServer) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "TimeServer")
 	return c.Err()
 }
 
-func (x *TimeServer) validate(c *validation.Collector, p string) {
+func (x *TimeServer) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["TimeServer"])
+	c.Support(path, true, supportTable["TimeServer"])
 	{
-		path := validation.Join(p, "timeServer")
+		fieldPath := validation.Join(path, "timeServer")
 		present := x.TimeServer != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TimeServer.timeServer"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".timeServer"])
 	}
 	{
-		path := validation.Join(p, "timeZone")
+		fieldPath := validation.Join(path, "timeZone")
 		present := x.TimeZone != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TimeServer.timeZone"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".timeZone"])
 	}
 }
 
@@ -1256,33 +1256,33 @@ func (x *TimeServer) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *WiFiManagedSettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "WiFiManagedSettings")
 	return c.Err()
 }
 
-func (x *WiFiManagedSettings) validate(c *validation.Collector, p string) {
+func (x *WiFiManagedSettings) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["WiFiManagedSettings"])
+	c.Support(path, true, supportTable["WiFiManagedSettings"])
 	{
-		path := validation.Join(p, "RequireAdminForIBSS")
+		fieldPath := validation.Join(path, "RequireAdminForIBSS")
 		present := x.RequireAdminForIBSS != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFiManagedSettings.RequireAdminForIBSS"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RequireAdminForIBSS"])
 	}
 	{
-		path := validation.Join(p, "RequireAdminForAirPortNetworkChange")
+		fieldPath := validation.Join(path, "RequireAdminForAirPortNetworkChange")
 		present := x.RequireAdminForAirPortNetworkChange != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFiManagedSettings.RequireAdminForAirPortNetworkChange"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RequireAdminForAirPortNetworkChange"])
 	}
 	{
-		path := validation.Join(p, "RequireAdminToTurnAirPortOnOff")
+		fieldPath := validation.Join(path, "RequireAdminToTurnAirPortOnOff")
 		present := x.RequireAdminToTurnAirPortOnOff != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFiManagedSettings.RequireAdminToTurnAirPortOnOff"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RequireAdminToTurnAirPortOnOff"])
 	}
 }
 
@@ -1290,106 +1290,106 @@ func (x *WiFiManagedSettings) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *FDEFileVault) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "FDEFileVault")
 	return c.Err()
 }
 
-func (x *FDEFileVault) validate(c *validation.Collector, p string) {
+func (x *FDEFileVault) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["FDEFileVault"])
+	c.Support(path, true, supportTable["FDEFileVault"])
 	{
-		path := validation.Join(p, "Enable")
+		fieldPath := validation.Join(path, "Enable")
 		present := x.Enable != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDEFileVault.Enable"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Enable"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Enable, []any{"On", "Off"})
+			c.Enum(fieldPath, true, x.Enable, []any{"On", "Off"})
 		}
 	}
 	{
-		path := validation.Join(p, "Defer")
+		fieldPath := validation.Join(path, "Defer")
 		present := x.Defer != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDEFileVault.Defer"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Defer"])
 	}
 	{
-		path := validation.Join(p, "UserEntersMissingInfo")
+		fieldPath := validation.Join(path, "UserEntersMissingInfo")
 		present := x.UserEntersMissingInfo != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDEFileVault.UserEntersMissingInfo"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserEntersMissingInfo"])
 	}
 	{
-		path := validation.Join(p, "UseRecoveryKey")
+		fieldPath := validation.Join(path, "UseRecoveryKey")
 		present := x.UseRecoveryKey != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDEFileVault.UseRecoveryKey"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UseRecoveryKey"])
 	}
 	{
-		path := validation.Join(p, "ShowRecoveryKey")
+		fieldPath := validation.Join(path, "ShowRecoveryKey")
 		present := x.ShowRecoveryKey != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDEFileVault.ShowRecoveryKey"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ShowRecoveryKey"])
 	}
 	{
-		path := validation.Join(p, "OutputPath")
+		fieldPath := validation.Join(path, "OutputPath")
 		present := x.OutputPath != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDEFileVault.OutputPath"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OutputPath"])
 	}
 	{
-		path := validation.Join(p, "Certificate")
+		fieldPath := validation.Join(path, "Certificate")
 		present := len(x.Certificate) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDEFileVault.Certificate"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Certificate"])
 	}
 	{
-		path := validation.Join(p, "PayloadCertificateUUID")
+		fieldPath := validation.Join(path, "PayloadCertificateUUID")
 		present := x.PayloadCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDEFileVault.PayloadCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateUUID"])
 	}
 	{
-		path := validation.Join(p, "Username")
+		fieldPath := validation.Join(path, "Username")
 		present := x.Username != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDEFileVault.Username"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Username"])
 	}
 	{
-		path := validation.Join(p, "Password")
+		fieldPath := validation.Join(path, "Password")
 		present := x.Password != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDEFileVault.Password"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Password"])
 	}
 	{
-		path := validation.Join(p, "UseKeychain")
+		fieldPath := validation.Join(path, "UseKeychain")
 		present := x.UseKeychain != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDEFileVault.UseKeychain"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UseKeychain"])
 	}
 	{
-		path := validation.Join(p, "DeferForceAtUserLoginMaxBypassAttempts")
+		fieldPath := validation.Join(path, "DeferForceAtUserLoginMaxBypassAttempts")
 		present := x.DeferForceAtUserLoginMaxBypassAttempts != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDEFileVault.DeferForceAtUserLoginMaxBypassAttempts"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeferForceAtUserLoginMaxBypassAttempts"])
 		if present {
-			c.Range(path, true, float64(*x.DeferForceAtUserLoginMaxBypassAttempts), new(-1.0), new(9999.0))
+			c.Range(fieldPath, true, float64(*x.DeferForceAtUserLoginMaxBypassAttempts), new(-1.0), new(9999.0))
 		}
 	}
 	{
-		path := validation.Join(p, "DeferDontAskAtUserLogout")
+		fieldPath := validation.Join(path, "DeferDontAskAtUserLogout")
 		present := x.DeferDontAskAtUserLogout != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDEFileVault.DeferDontAskAtUserLogout"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeferDontAskAtUserLogout"])
 	}
 	{
-		path := validation.Join(p, "ForceEnableInSetupAssistant")
+		fieldPath := validation.Join(path, "ForceEnableInSetupAssistant")
 		present := x.ForceEnableInSetupAssistant != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDEFileVault.ForceEnableInSetupAssistant"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ForceEnableInSetupAssistant"])
 	}
 }
 
@@ -1397,64 +1397,64 @@ func (x *FDEFileVault) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *TimeMachine) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "TimeMachine")
 	return c.Err()
 }
 
-func (x *TimeMachine) validate(c *validation.Collector, p string) {
+func (x *TimeMachine) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["TimeMachine"])
+	c.Support(path, true, supportTable["TimeMachine"])
 	{
-		path := validation.Join(p, "AutoBackup")
+		fieldPath := validation.Join(path, "AutoBackup")
 		present := x.AutoBackup != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TimeMachine.AutoBackup"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AutoBackup"])
 	}
 	{
-		path := validation.Join(p, "BackupAllVolumes")
+		fieldPath := validation.Join(path, "BackupAllVolumes")
 		present := x.BackupAllVolumes != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TimeMachine.BackupAllVolumes"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BackupAllVolumes"])
 	}
 	{
-		path := validation.Join(p, "BackupDestURL")
+		fieldPath := validation.Join(path, "BackupDestURL")
 		present := x.BackupDestURL != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["TimeMachine.BackupDestURL"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BackupDestURL"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "BackupSizeMB")
+		fieldPath := validation.Join(path, "BackupSizeMB")
 		present := x.BackupSizeMB != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TimeMachine.BackupSizeMB"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BackupSizeMB"])
 	}
 	{
-		path := validation.Join(p, "BackupSkipSys")
+		fieldPath := validation.Join(path, "BackupSkipSys")
 		present := x.BackupSkipSys != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TimeMachine.BackupSkipSys"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BackupSkipSys"])
 	}
 	{
-		path := validation.Join(p, "MobileBackups")
+		fieldPath := validation.Join(path, "MobileBackups")
 		present := x.MobileBackups != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TimeMachine.MobileBackups"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MobileBackups"])
 	}
 	{
-		path := validation.Join(p, "BasePaths")
+		fieldPath := validation.Join(path, "BasePaths")
 		present := len(x.BasePaths) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["TimeMachine.BasePaths"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BasePaths"])
 	}
 	{
-		path := validation.Join(p, "SkipPaths")
+		fieldPath := validation.Join(path, "SkipPaths")
 		present := len(x.SkipPaths) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["TimeMachine.SkipPaths"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SkipPaths"])
 	}
 }
 
@@ -1462,79 +1462,79 @@ func (x *TimeMachine) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ManagedPreferences) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ManagedPreferences")
 	return c.Err()
 }
 
-func (x *ManagedPreferences) validate(c *validation.Collector, p string) {
+func (x *ManagedPreferences) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ManagedPreferences"])
+	c.Support(path, true, supportTable["ManagedPreferences"])
 	{
-		path := validation.Join(p, "PayloadContent")
+		fieldPath := validation.Join(path, "PayloadContent")
 		present := len(x.PayloadContent) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedPreferences.PayloadContent"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadContent"])
+		c.Required(fieldPath, present)
 		for k := range x.PayloadContent {
 			v := x.PayloadContent[k]
-			v.validate(c, validation.Join(path, k))
+			v.validate(c, validation.Join(fieldPath, k), supportPath+".PayloadContent.ANY")
 		}
 	}
 }
 
-func (x *ManagedPreferencesPreferenceDomain) validate(c *validation.Collector, p string) {
+func (x *ManagedPreferencesPreferenceDomain) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Forced")
+		fieldPath := validation.Join(path, "Forced")
 		present := len(x.Forced) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedPreferences.PayloadContent.ANY.Forced"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Forced"])
 		for i := range x.Forced {
-			x.Forced[i].validate(c, validation.Index(path, i))
+			x.Forced[i].validate(c, validation.Index(fieldPath, i), supportPath+".Forced.Settings")
 		}
 	}
 	{
-		path := validation.Join(p, "Set-Once")
+		fieldPath := validation.Join(path, "Set-Once")
 		present := len(x.SetOnce) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedPreferences.PayloadContent.ANY.Set-Once"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Set-Once"])
 		for i := range x.SetOnce {
-			x.SetOnce[i].validate(c, validation.Index(path, i))
+			x.SetOnce[i].validate(c, validation.Index(fieldPath, i), supportPath+".Set-Once.Settings")
 		}
 	}
 }
 
-func (x *ManagedPreferencesPreferenceDomainForced) validate(c *validation.Collector, p string) {
+func (x *ManagedPreferencesPreferenceDomainForced) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "mcx_preference_settings")
+		fieldPath := validation.Join(path, "mcx_preference_settings")
 		present := len(x.McxPreferenceSettings) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedPreferences.PayloadContent.ANY.Forced.Settings.mcx_preference_settings"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".mcx_preference_settings"])
+		c.Required(fieldPath, present)
 	}
 }
 
-func (x *ManagedPreferencesPreferenceDomainSetOnce) validate(c *validation.Collector, p string) {
+func (x *ManagedPreferencesPreferenceDomainSetOnce) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "mcx_preference_settings")
+		fieldPath := validation.Join(path, "mcx_preference_settings")
 		present := len(x.McxPreferenceSettings) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedPreferences.PayloadContent.ANY.Set-Once.Settings.mcx_preference_settings"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".mcx_preference_settings"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -1542,33 +1542,33 @@ func (x *ManagedPreferencesPreferenceDomainSetOnce) validate(c *validation.Colle
 // that every present key is supported on that OS version and enrollment context.
 func (x *NSExtensionManagement) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "NSExtensionManagement")
 	return c.Err()
 }
 
-func (x *NSExtensionManagement) validate(c *validation.Collector, p string) {
+func (x *NSExtensionManagement) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["NSExtensionManagement"])
+	c.Support(path, true, supportTable["NSExtensionManagement"])
 	{
-		path := validation.Join(p, "AllowedExtensions")
+		fieldPath := validation.Join(path, "AllowedExtensions")
 		present := len(x.AllowedExtensions) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["NSExtensionManagement.AllowedExtensions"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowedExtensions"])
 	}
 	{
-		path := validation.Join(p, "DeniedExtensions")
+		fieldPath := validation.Join(path, "DeniedExtensions")
 		present := len(x.DeniedExtensions) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["NSExtensionManagement.DeniedExtensions"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeniedExtensions"])
 	}
 	{
-		path := validation.Join(p, "DeniedExtensionPoints")
+		fieldPath := validation.Join(path, "DeniedExtensionPoints")
 		present := len(x.DeniedExtensionPoints) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["NSExtensionManagement.DeniedExtensionPoints"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeniedExtensionPoints"])
 	}
 }
 
@@ -1576,87 +1576,87 @@ func (x *NSExtensionManagement) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *SetupAssistant) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SetupAssistant")
 	return c.Err()
 }
 
-func (x *SetupAssistant) validate(c *validation.Collector, p string) {
+func (x *SetupAssistant) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SetupAssistant"])
+	c.Support(path, true, supportTable["SetupAssistant"])
 	{
-		path := validation.Join(p, "SkipCloudSetup")
+		fieldPath := validation.Join(path, "SkipCloudSetup")
 		present := x.SkipCloudSetup != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SetupAssistant.SkipCloudSetup"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SkipCloudSetup"])
 	}
 	{
-		path := validation.Join(p, "SkipSiriSetup")
+		fieldPath := validation.Join(path, "SkipSiriSetup")
 		present := x.SkipSiriSetup != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SetupAssistant.SkipSiriSetup"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SkipSiriSetup"])
 	}
 	{
-		path := validation.Join(p, "SkipPrivacySetup")
+		fieldPath := validation.Join(path, "SkipPrivacySetup")
 		present := x.SkipPrivacySetup != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SetupAssistant.SkipPrivacySetup"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SkipPrivacySetup"])
 	}
 	{
-		path := validation.Join(p, "SkipiCloudStorageSetup")
+		fieldPath := validation.Join(path, "SkipiCloudStorageSetup")
 		present := x.SkipiCloudStorageSetup != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SetupAssistant.SkipiCloudStorageSetup"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SkipiCloudStorageSetup"])
 	}
 	{
-		path := validation.Join(p, "SkipTrueTone")
+		fieldPath := validation.Join(path, "SkipTrueTone")
 		present := x.SkipTrueTone != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SetupAssistant.SkipTrueTone"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SkipTrueTone"])
 	}
 	{
-		path := validation.Join(p, "SkipAppearance")
+		fieldPath := validation.Join(path, "SkipAppearance")
 		present := x.SkipAppearance != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SetupAssistant.SkipAppearance"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SkipAppearance"])
 	}
 	{
-		path := validation.Join(p, "SkipTouchIDSetup")
+		fieldPath := validation.Join(path, "SkipTouchIDSetup")
 		present := x.SkipTouchIDSetup != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SetupAssistant.SkipTouchIDSetup"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SkipTouchIDSetup"])
 	}
 	{
-		path := validation.Join(p, "SkipScreenTime")
+		fieldPath := validation.Join(path, "SkipScreenTime")
 		present := x.SkipScreenTime != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SetupAssistant.SkipScreenTime"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SkipScreenTime"])
 	}
 	{
-		path := validation.Join(p, "SkipAccessibility")
+		fieldPath := validation.Join(path, "SkipAccessibility")
 		present := x.SkipAccessibility != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SetupAssistant.SkipAccessibility"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SkipAccessibility"])
 	}
 	{
-		path := validation.Join(p, "SkipSetupItems")
+		fieldPath := validation.Join(path, "SkipSetupItems")
 		present := len(x.SkipSetupItems) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SetupAssistant.SkipSetupItems"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SkipSetupItems"])
 	}
 	{
-		path := validation.Join(p, "SkipUnlockWithWatch")
+		fieldPath := validation.Join(path, "SkipUnlockWithWatch")
 		present := x.SkipUnlockWithWatch != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SetupAssistant.SkipUnlockWithWatch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SkipUnlockWithWatch"])
 	}
 	{
-		path := validation.Join(p, "SkipWallpaper")
+		fieldPath := validation.Join(path, "SkipWallpaper")
 		present := x.SkipWallpaper != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SetupAssistant.SkipWallpaper"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SkipWallpaper"])
 	}
 }
 
@@ -1664,27 +1664,27 @@ func (x *SetupAssistant) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ShareKit) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ShareKit")
 	return c.Err()
 }
 
-func (x *ShareKit) validate(c *validation.Collector, p string) {
+func (x *ShareKit) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ShareKit"])
+	c.Support(path, true, supportTable["ShareKit"])
 	{
-		path := validation.Join(p, "SHKAllowedShareServices")
+		fieldPath := validation.Join(path, "SHKAllowedShareServices")
 		present := len(x.SHKAllowedShareServices) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ShareKit.SHKAllowedShareServices"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SHKAllowedShareServices"])
 	}
 	{
-		path := validation.Join(p, "SHKDeniedShareServices")
+		fieldPath := validation.Join(path, "SHKDeniedShareServices")
 		present := len(x.SHKDeniedShareServices) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ShareKit.SHKDeniedShareServices"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SHKDeniedShareServices"])
 	}
 }
 
@@ -1692,69 +1692,69 @@ func (x *ShareKit) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *SoftwareUpdate) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SoftwareUpdate")
 	return c.Err()
 }
 
-func (x *SoftwareUpdate) validate(c *validation.Collector, p string) {
+func (x *SoftwareUpdate) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SoftwareUpdate"])
+	c.Support(path, true, supportTable["SoftwareUpdate"])
 	{
-		path := validation.Join(p, "CatalogURL")
+		fieldPath := validation.Join(path, "CatalogURL")
 		present := x.CatalogURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SoftwareUpdate.CatalogURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CatalogURL"])
 	}
 	{
-		path := validation.Join(p, "AllowPreReleaseInstallation")
+		fieldPath := validation.Join(path, "AllowPreReleaseInstallation")
 		present := x.AllowPreReleaseInstallation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SoftwareUpdate.AllowPreReleaseInstallation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowPreReleaseInstallation"])
 	}
 	{
-		path := validation.Join(p, "restrict-software-update-require-admin-to-install")
+		fieldPath := validation.Join(path, "restrict-software-update-require-admin-to-install")
 		present := x.RestrictSoftwareUpdateRequireAdminToInstall != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SoftwareUpdate.restrict-software-update-require-admin-to-install"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".restrict-software-update-require-admin-to-install"])
 	}
 	{
-		path := validation.Join(p, "AutomaticallyInstallMacOSUpdates")
+		fieldPath := validation.Join(path, "AutomaticallyInstallMacOSUpdates")
 		present := x.AutomaticallyInstallMacOSUpdates != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SoftwareUpdate.AutomaticallyInstallMacOSUpdates"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AutomaticallyInstallMacOSUpdates"])
 	}
 	{
-		path := validation.Join(p, "AutomaticallyInstallAppUpdates")
+		fieldPath := validation.Join(path, "AutomaticallyInstallAppUpdates")
 		present := x.AutomaticallyInstallAppUpdates != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SoftwareUpdate.AutomaticallyInstallAppUpdates"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AutomaticallyInstallAppUpdates"])
 	}
 	{
-		path := validation.Join(p, "AutomaticCheckEnabled")
+		fieldPath := validation.Join(path, "AutomaticCheckEnabled")
 		present := x.AutomaticCheckEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SoftwareUpdate.AutomaticCheckEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AutomaticCheckEnabled"])
 	}
 	{
-		path := validation.Join(p, "AutomaticDownload")
+		fieldPath := validation.Join(path, "AutomaticDownload")
 		present := x.AutomaticDownload != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SoftwareUpdate.AutomaticDownload"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AutomaticDownload"])
 	}
 	{
-		path := validation.Join(p, "CriticalUpdateInstall")
+		fieldPath := validation.Join(path, "CriticalUpdateInstall")
 		present := x.CriticalUpdateInstall != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SoftwareUpdate.CriticalUpdateInstall"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CriticalUpdateInstall"])
 	}
 	{
-		path := validation.Join(p, "ConfigDataInstall")
+		fieldPath := validation.Join(path, "ConfigDataInstall")
 		present := x.ConfigDataInstall != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SoftwareUpdate.ConfigDataInstall"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ConfigDataInstall"])
 	}
 }
 
@@ -1762,176 +1762,176 @@ func (x *SoftwareUpdate) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *NetworkProxyConfiguration) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "NetworkProxyConfiguration")
 	return c.Err()
 }
 
-func (x *NetworkProxyConfiguration) validate(c *validation.Collector, p string) {
+func (x *NetworkProxyConfiguration) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["NetworkProxyConfiguration"])
+	c.Support(path, true, supportTable["NetworkProxyConfiguration"])
 	{
-		path := validation.Join(p, "Proxies")
+		fieldPath := validation.Join(path, "Proxies")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Proxies"])
+		c.Required(fieldPath, present)
 		if present {
-			x.Proxies.validate(c, path)
+			x.Proxies.validate(c, fieldPath, supportPath+".Proxies")
 		}
 	}
 }
 
-func (x *NetworkProxyConfigurationProxies) validate(c *validation.Collector, p string) {
+func (x *NetworkProxyConfigurationProxies) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "FTPEnable")
+		fieldPath := validation.Join(path, "FTPEnable")
 		present := x.FTPEnable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.FTPEnable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FTPEnable"])
 	}
 	{
-		path := validation.Join(p, "FTPPassive")
+		fieldPath := validation.Join(path, "FTPPassive")
 		present := x.FTPPassive != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.FTPPassive"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FTPPassive"])
 	}
 	{
-		path := validation.Join(p, "FTPPort")
+		fieldPath := validation.Join(path, "FTPPort")
 		present := x.FTPPort != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.FTPPort"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FTPPort"])
 	}
 	{
-		path := validation.Join(p, "FTPProxy")
+		fieldPath := validation.Join(path, "FTPProxy")
 		present := x.FTPProxy != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.FTPProxy"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FTPProxy"])
 	}
 	{
-		path := validation.Join(p, "GopherEnable")
+		fieldPath := validation.Join(path, "GopherEnable")
 		present := x.GopherEnable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.GopherEnable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".GopherEnable"])
 	}
 	{
-		path := validation.Join(p, "GopherPort")
+		fieldPath := validation.Join(path, "GopherPort")
 		present := x.GopherPort != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.GopherPort"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".GopherPort"])
 	}
 	{
-		path := validation.Join(p, "GopherProxy")
+		fieldPath := validation.Join(path, "GopherProxy")
 		present := x.GopherProxy != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.GopherProxy"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".GopherProxy"])
 	}
 	{
-		path := validation.Join(p, "HTTPEnable")
+		fieldPath := validation.Join(path, "HTTPEnable")
 		present := x.HTTPEnable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.HTTPEnable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HTTPEnable"])
 	}
 	{
-		path := validation.Join(p, "HTTPPort")
+		fieldPath := validation.Join(path, "HTTPPort")
 		present := x.HTTPPort != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.HTTPPort"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HTTPPort"])
 	}
 	{
-		path := validation.Join(p, "HTTPProxy")
+		fieldPath := validation.Join(path, "HTTPProxy")
 		present := x.HTTPProxy != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.HTTPProxy"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HTTPProxy"])
 	}
 	{
-		path := validation.Join(p, "HTTPSEnable")
+		fieldPath := validation.Join(path, "HTTPSEnable")
 		present := x.HTTPSEnable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.HTTPSEnable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HTTPSEnable"])
 	}
 	{
-		path := validation.Join(p, "HTTPSPort")
+		fieldPath := validation.Join(path, "HTTPSPort")
 		present := x.HTTPSPort != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.HTTPSPort"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HTTPSPort"])
 	}
 	{
-		path := validation.Join(p, "HTTPSProxy")
+		fieldPath := validation.Join(path, "HTTPSProxy")
 		present := x.HTTPSProxy != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.HTTPSProxy"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HTTPSProxy"])
 	}
 	{
-		path := validation.Join(p, "ProxyAutoConfigEnable")
+		fieldPath := validation.Join(path, "ProxyAutoConfigEnable")
 		present := x.ProxyAutoConfigEnable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.ProxyAutoConfigEnable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyAutoConfigEnable"])
 	}
 	{
-		path := validation.Join(p, "ProxyAutoConfigURLString")
+		fieldPath := validation.Join(path, "ProxyAutoConfigURLString")
 		present := x.ProxyAutoConfigURLString != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.ProxyAutoConfigURLString"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyAutoConfigURLString"])
 	}
 	{
-		path := validation.Join(p, "ProxyCaptiveLoginAllowed")
+		fieldPath := validation.Join(path, "ProxyCaptiveLoginAllowed")
 		present := x.ProxyCaptiveLoginAllowed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.ProxyCaptiveLoginAllowed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyCaptiveLoginAllowed"])
 	}
 	{
-		path := validation.Join(p, "RTSPEnable")
+		fieldPath := validation.Join(path, "RTSPEnable")
 		present := x.RTSPEnable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.RTSPEnable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RTSPEnable"])
 	}
 	{
-		path := validation.Join(p, "RTSPPort")
+		fieldPath := validation.Join(path, "RTSPPort")
 		present := x.RTSPPort != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.RTSPPort"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RTSPPort"])
 	}
 	{
-		path := validation.Join(p, "RTSPProxy")
+		fieldPath := validation.Join(path, "RTSPProxy")
 		present := x.RTSPProxy != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.RTSPProxy"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RTSPProxy"])
 	}
 	{
-		path := validation.Join(p, "SOCKSEnable")
+		fieldPath := validation.Join(path, "SOCKSEnable")
 		present := x.SOCKSEnable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.SOCKSEnable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SOCKSEnable"])
 	}
 	{
-		path := validation.Join(p, "SOCKSPortinteger")
+		fieldPath := validation.Join(path, "SOCKSPortinteger")
 		present := x.SOCKSPortinteger != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.SOCKSPortinteger"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SOCKSPortinteger"])
 	}
 	{
-		path := validation.Join(p, "SOCKSProxy")
+		fieldPath := validation.Join(path, "SOCKSProxy")
 		present := x.SOCKSProxy != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.SOCKSProxy"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SOCKSProxy"])
 	}
 	{
-		path := validation.Join(p, "FallBackAllowed")
+		fieldPath := validation.Join(path, "FallBackAllowed")
 		present := x.FallBackAllowed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.FallBackAllowed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FallBackAllowed"])
 	}
 	{
-		path := validation.Join(p, "ExceptionsList")
+		fieldPath := validation.Join(path, "ExceptionsList")
 		present := len(x.ExceptionsList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkProxyConfiguration.Proxies.ExceptionsList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExceptionsList"])
 	}
 }
 
@@ -1939,327 +1939,327 @@ func (x *NetworkProxyConfigurationProxies) validate(c *validation.Collector, p s
 // that every present key is supported on that OS version and enrollment context.
 func (x *PrivacyPreferencesPolicyControl) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "PrivacyPreferencesPolicyControl")
 	return c.Err()
 }
 
-func (x *PrivacyPreferencesPolicyControl) validate(c *validation.Collector, p string) {
+func (x *PrivacyPreferencesPolicyControl) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["PrivacyPreferencesPolicyControl"])
+	c.Support(path, true, supportTable["PrivacyPreferencesPolicyControl"])
 	{
-		path := validation.Join(p, "Services")
+		fieldPath := validation.Join(path, "Services")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Services"])
+		c.Required(fieldPath, present)
 		if present {
-			x.Services.validate(c, path)
+			x.Services.validate(c, fieldPath, supportPath+".Services")
 		}
 	}
 }
 
-func (x *PrivacyPreferencesPolicyControlServices) validate(c *validation.Collector, p string) {
+func (x *PrivacyPreferencesPolicyControlServices) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "AddressBook")
+		fieldPath := validation.Join(path, "AddressBook")
 		present := len(x.AddressBook) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.AddressBook"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AddressBook"])
 		for i := range x.AddressBook {
-			x.AddressBook[i].validate(c, validation.Index(path, i))
+			x.AddressBook[i].validate(c, validation.Index(fieldPath, i), supportPath+".AddressBook.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "Calendar")
+		fieldPath := validation.Join(path, "Calendar")
 		present := len(x.Calendar) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.Calendar"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Calendar"])
 		for i := range x.Calendar {
-			x.Calendar[i].validate(c, validation.Index(path, i))
+			x.Calendar[i].validate(c, validation.Index(fieldPath, i), supportPath+".Calendar.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "Reminders")
+		fieldPath := validation.Join(path, "Reminders")
 		present := len(x.Reminders) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.Reminders"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Reminders"])
 		for i := range x.Reminders {
-			x.Reminders[i].validate(c, validation.Index(path, i))
+			x.Reminders[i].validate(c, validation.Index(fieldPath, i), supportPath+".Reminders.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "Photos")
+		fieldPath := validation.Join(path, "Photos")
 		present := len(x.Photos) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.Photos"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Photos"])
 		for i := range x.Photos {
-			x.Photos[i].validate(c, validation.Index(path, i))
+			x.Photos[i].validate(c, validation.Index(fieldPath, i), supportPath+".Photos.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "Camera")
+		fieldPath := validation.Join(path, "Camera")
 		present := len(x.Camera) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.Camera"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Camera"])
 		for i := range x.Camera {
-			x.Camera[i].validate(c, validation.Index(path, i))
+			x.Camera[i].validate(c, validation.Index(fieldPath, i), supportPath+".Camera.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "Microphone")
+		fieldPath := validation.Join(path, "Microphone")
 		present := len(x.Microphone) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.Microphone"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Microphone"])
 		for i := range x.Microphone {
-			x.Microphone[i].validate(c, validation.Index(path, i))
+			x.Microphone[i].validate(c, validation.Index(fieldPath, i), supportPath+".Microphone.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "Accessibility")
+		fieldPath := validation.Join(path, "Accessibility")
 		present := len(x.Accessibility) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.Accessibility"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Accessibility"])
 		for i := range x.Accessibility {
-			x.Accessibility[i].validate(c, validation.Index(path, i))
+			x.Accessibility[i].validate(c, validation.Index(fieldPath, i), supportPath+".Accessibility.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "PostEvent")
+		fieldPath := validation.Join(path, "PostEvent")
 		present := len(x.PostEvent) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.PostEvent"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PostEvent"])
 		for i := range x.PostEvent {
-			x.PostEvent[i].validate(c, validation.Index(path, i))
+			x.PostEvent[i].validate(c, validation.Index(fieldPath, i), supportPath+".PostEvent.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "SystemPolicyAllFiles")
+		fieldPath := validation.Join(path, "SystemPolicyAllFiles")
 		present := len(x.SystemPolicyAllFiles) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.SystemPolicyAllFiles"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SystemPolicyAllFiles"])
 		for i := range x.SystemPolicyAllFiles {
-			x.SystemPolicyAllFiles[i].validate(c, validation.Index(path, i))
+			x.SystemPolicyAllFiles[i].validate(c, validation.Index(fieldPath, i), supportPath+".SystemPolicyAllFiles.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "SystemPolicySysAdminFiles")
+		fieldPath := validation.Join(path, "SystemPolicySysAdminFiles")
 		present := len(x.SystemPolicySysAdminFiles) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.SystemPolicySysAdminFiles"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SystemPolicySysAdminFiles"])
 		for i := range x.SystemPolicySysAdminFiles {
-			x.SystemPolicySysAdminFiles[i].validate(c, validation.Index(path, i))
+			x.SystemPolicySysAdminFiles[i].validate(c, validation.Index(fieldPath, i), supportPath+".SystemPolicySysAdminFiles.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "AppleEvents")
+		fieldPath := validation.Join(path, "AppleEvents")
 		present := len(x.AppleEvents) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.AppleEvents"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AppleEvents"])
 		for i := range x.AppleEvents {
-			x.AppleEvents[i].validate(c, validation.Index(path, i))
+			x.AppleEvents[i].validate(c, validation.Index(fieldPath, i), supportPath+".AppleEvents.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "MediaLibrary")
+		fieldPath := validation.Join(path, "MediaLibrary")
 		present := len(x.MediaLibrary) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.MediaLibrary"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MediaLibrary"])
 		for i := range x.MediaLibrary {
-			x.MediaLibrary[i].validate(c, validation.Index(path, i))
+			x.MediaLibrary[i].validate(c, validation.Index(fieldPath, i), supportPath+".MediaLibrary.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "FileProviderPresence")
+		fieldPath := validation.Join(path, "FileProviderPresence")
 		present := len(x.FileProviderPresence) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.FileProviderPresence"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FileProviderPresence"])
 		for i := range x.FileProviderPresence {
-			x.FileProviderPresence[i].validate(c, validation.Index(path, i))
+			x.FileProviderPresence[i].validate(c, validation.Index(fieldPath, i), supportPath+".FileProviderPresence.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "ListenEvent")
+		fieldPath := validation.Join(path, "ListenEvent")
 		present := len(x.ListenEvent) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.ListenEvent"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ListenEvent"])
 		for i := range x.ListenEvent {
-			x.ListenEvent[i].validate(c, validation.Index(path, i))
+			x.ListenEvent[i].validate(c, validation.Index(fieldPath, i), supportPath+".ListenEvent.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "ScreenCapture")
+		fieldPath := validation.Join(path, "ScreenCapture")
 		present := len(x.ScreenCapture) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.ScreenCapture"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ScreenCapture"])
 		for i := range x.ScreenCapture {
-			x.ScreenCapture[i].validate(c, validation.Index(path, i))
+			x.ScreenCapture[i].validate(c, validation.Index(fieldPath, i), supportPath+".ScreenCapture.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "SpeechRecognition")
+		fieldPath := validation.Join(path, "SpeechRecognition")
 		present := len(x.SpeechRecognition) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.SpeechRecognition"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SpeechRecognition"])
 		for i := range x.SpeechRecognition {
-			x.SpeechRecognition[i].validate(c, validation.Index(path, i))
+			x.SpeechRecognition[i].validate(c, validation.Index(fieldPath, i), supportPath+".SpeechRecognition.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "SystemPolicyDesktopFolder")
+		fieldPath := validation.Join(path, "SystemPolicyDesktopFolder")
 		present := len(x.SystemPolicyDesktopFolder) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.SystemPolicyDesktopFolder"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SystemPolicyDesktopFolder"])
 		for i := range x.SystemPolicyDesktopFolder {
-			x.SystemPolicyDesktopFolder[i].validate(c, validation.Index(path, i))
+			x.SystemPolicyDesktopFolder[i].validate(c, validation.Index(fieldPath, i), supportPath+".SystemPolicyDesktopFolder.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "SystemPolicyDocumentsFolder")
+		fieldPath := validation.Join(path, "SystemPolicyDocumentsFolder")
 		present := len(x.SystemPolicyDocumentsFolder) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.SystemPolicyDocumentsFolder"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SystemPolicyDocumentsFolder"])
 		for i := range x.SystemPolicyDocumentsFolder {
-			x.SystemPolicyDocumentsFolder[i].validate(c, validation.Index(path, i))
+			x.SystemPolicyDocumentsFolder[i].validate(c, validation.Index(fieldPath, i), supportPath+".SystemPolicyDocumentsFolder.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "SystemPolicyDownloadsFolder")
+		fieldPath := validation.Join(path, "SystemPolicyDownloadsFolder")
 		present := len(x.SystemPolicyDownloadsFolder) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.SystemPolicyDownloadsFolder"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SystemPolicyDownloadsFolder"])
 		for i := range x.SystemPolicyDownloadsFolder {
-			x.SystemPolicyDownloadsFolder[i].validate(c, validation.Index(path, i))
+			x.SystemPolicyDownloadsFolder[i].validate(c, validation.Index(fieldPath, i), supportPath+".SystemPolicyDownloadsFolder.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "SystemPolicyNetworkVolumes")
+		fieldPath := validation.Join(path, "SystemPolicyNetworkVolumes")
 		present := len(x.SystemPolicyNetworkVolumes) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.SystemPolicyNetworkVolumes"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SystemPolicyNetworkVolumes"])
 		for i := range x.SystemPolicyNetworkVolumes {
-			x.SystemPolicyNetworkVolumes[i].validate(c, validation.Index(path, i))
+			x.SystemPolicyNetworkVolumes[i].validate(c, validation.Index(fieldPath, i), supportPath+".SystemPolicyNetworkVolumes.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "SystemPolicyRemovableVolumes")
+		fieldPath := validation.Join(path, "SystemPolicyRemovableVolumes")
 		present := len(x.SystemPolicyRemovableVolumes) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.SystemPolicyRemovableVolumes"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SystemPolicyRemovableVolumes"])
 		for i := range x.SystemPolicyRemovableVolumes {
-			x.SystemPolicyRemovableVolumes[i].validate(c, validation.Index(path, i))
+			x.SystemPolicyRemovableVolumes[i].validate(c, validation.Index(fieldPath, i), supportPath+".SystemPolicyRemovableVolumes.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "SystemPolicyAppBundles")
+		fieldPath := validation.Join(path, "SystemPolicyAppBundles")
 		present := len(x.SystemPolicyAppBundles) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.SystemPolicyAppBundles"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SystemPolicyAppBundles"])
 		for i := range x.SystemPolicyAppBundles {
-			x.SystemPolicyAppBundles[i].validate(c, validation.Index(path, i))
+			x.SystemPolicyAppBundles[i].validate(c, validation.Index(fieldPath, i), supportPath+".SystemPolicyAppBundles.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "SystemPolicyAppData")
+		fieldPath := validation.Join(path, "SystemPolicyAppData")
 		present := len(x.SystemPolicyAppData) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.SystemPolicyAppData"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SystemPolicyAppData"])
 		for i := range x.SystemPolicyAppData {
-			x.SystemPolicyAppData[i].validate(c, validation.Index(path, i))
+			x.SystemPolicyAppData[i].validate(c, validation.Index(fieldPath, i), supportPath+".SystemPolicyAppData.IdentityDict")
 		}
 	}
 	{
-		path := validation.Join(p, "BluetoothAlways")
+		fieldPath := validation.Join(path, "BluetoothAlways")
 		present := len(x.BluetoothAlways) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.BluetoothAlways"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BluetoothAlways"])
 		for i := range x.BluetoothAlways {
-			x.BluetoothAlways[i].validate(c, validation.Index(path, i))
+			x.BluetoothAlways[i].validate(c, validation.Index(fieldPath, i), supportPath+".BluetoothAlways.IdentityDict")
 		}
 	}
 }
 
-func (x *PrivacyPreferencesPolicyControlIdentity) validate(c *validation.Collector, p string) {
+func (x *PrivacyPreferencesPolicyControlIdentity) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Identifier")
+		fieldPath := validation.Join(path, "Identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.AddressBook.IdentityDict.Identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "IdentifierType")
+		fieldPath := validation.Join(path, "IdentifierType")
 		present := x.IdentifierType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.AddressBook.IdentityDict.IdentifierType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IdentifierType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.IdentifierType, []any{"bundleID", "path"})
+			c.Enum(fieldPath, true, x.IdentifierType, []any{"bundleID", "path"})
 		}
 	}
 	{
-		path := validation.Join(p, "CodeRequirement")
+		fieldPath := validation.Join(path, "CodeRequirement")
 		present := x.CodeRequirement != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.AddressBook.IdentityDict.CodeRequirement"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CodeRequirement"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "StaticCode")
+		fieldPath := validation.Join(path, "StaticCode")
 		present := x.StaticCode != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.AddressBook.IdentityDict.StaticCode"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".StaticCode"])
 	}
 	{
-		path := validation.Join(p, "Allowed")
+		fieldPath := validation.Join(path, "Allowed")
 		present := x.Allowed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.AddressBook.IdentityDict.Allowed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Allowed"])
 	}
 	{
-		path := validation.Join(p, "Authorization")
+		fieldPath := validation.Join(path, "Authorization")
 		present := x.Authorization != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.AddressBook.IdentityDict.Authorization"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Authorization"])
 		if present {
-			c.Enum(path, true, *x.Authorization, []any{"Allow", "Deny", "AllowStandardUserToSetSystemService"})
+			c.Enum(fieldPath, true, *x.Authorization, []any{"Allow", "Deny", "AllowStandardUserToSetSystemService"})
 		}
 	}
 	{
-		path := validation.Join(p, "Comment")
+		fieldPath := validation.Join(path, "Comment")
 		present := x.Comment != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.AddressBook.IdentityDict.Comment"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Comment"])
 	}
 	{
-		path := validation.Join(p, "AEReceiverIdentifier")
+		fieldPath := validation.Join(path, "AEReceiverIdentifier")
 		present := x.AEReceiverIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.AddressBook.IdentityDict.AEReceiverIdentifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AEReceiverIdentifier"])
 	}
 	{
-		path := validation.Join(p, "AEReceiverIdentifierType")
+		fieldPath := validation.Join(path, "AEReceiverIdentifierType")
 		present := x.AEReceiverIdentifierType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.AddressBook.IdentityDict.AEReceiverIdentifierType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AEReceiverIdentifierType"])
 		if present {
-			c.Enum(path, true, *x.AEReceiverIdentifierType, []any{"bundleID", "path"})
+			c.Enum(fieldPath, true, *x.AEReceiverIdentifierType, []any{"bundleID", "path"})
 		}
 	}
 	{
-		path := validation.Join(p, "AEReceiverCodeRequirement")
+		fieldPath := validation.Join(path, "AEReceiverCodeRequirement")
 		present := x.AEReceiverCodeRequirement != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["PrivacyPreferencesPolicyControl.Services.AddressBook.IdentityDict.AEReceiverCodeRequirement"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AEReceiverCodeRequirement"])
 	}
 }
 
@@ -2267,41 +2267,41 @@ func (x *PrivacyPreferencesPolicyControlIdentity) validate(c *validation.Collect
 // that every present key is supported on that OS version and enrollment context.
 func (x *AirPlaySecurity) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AirPlaySecurity")
 	return c.Err()
 }
 
-func (x *AirPlaySecurity) validate(c *validation.Collector, p string) {
+func (x *AirPlaySecurity) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AirPlaySecurity"])
+	c.Support(path, true, supportTable["AirPlaySecurity"])
 	{
-		path := validation.Join(p, "SecurityType")
+		fieldPath := validation.Join(path, "SecurityType")
 		present := x.SecurityType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPlaySecurity.SecurityType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SecurityType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.SecurityType, []any{"PASSCODE_ONCE", "PASSCODE_ALWAYS", "PASSWORD"})
+			c.Enum(fieldPath, true, x.SecurityType, []any{"PASSCODE_ONCE", "PASSCODE_ALWAYS", "PASSWORD"})
 		}
 	}
 	{
-		path := validation.Join(p, "AccessType")
+		fieldPath := validation.Join(path, "AccessType")
 		present := x.AccessType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPlaySecurity.AccessType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AccessType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.AccessType, []any{"ANY", "WIFI_ONLY"})
+			c.Enum(fieldPath, true, x.AccessType, []any{"ANY", "WIFI_ONLY"})
 		}
 	}
 	{
-		path := validation.Join(p, "Password")
+		fieldPath := validation.Join(path, "Password")
 		present := x.Password != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPlaySecurity.Password"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Password"])
 	}
 }
 
@@ -2309,112 +2309,112 @@ func (x *AirPlaySecurity) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *AirPlay) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AirPlay")
 	return c.Err()
 }
 
-func (x *AirPlay) validate(c *validation.Collector, p string) {
+func (x *AirPlay) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AirPlay"])
+	c.Support(path, true, supportTable["AirPlay"])
 	{
-		path := validation.Join(p, "AllowList")
+		fieldPath := validation.Join(path, "AllowList")
 		present := len(x.AllowList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPlay.AllowList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowList"])
 		for i := range x.AllowList {
-			x.AllowList[i].validate(c, validation.Index(path, i))
+			x.AllowList[i].validate(c, validation.Index(fieldPath, i), supportPath+".AllowList.AllowListItem")
 		}
 	}
 	{
-		path := validation.Join(p, "Passwords")
+		fieldPath := validation.Join(path, "Passwords")
 		present := len(x.Passwords) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPlay.Passwords"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Passwords"])
 		for i := range x.Passwords {
-			x.Passwords[i].validate(c, validation.Index(path, i))
+			x.Passwords[i].validate(c, validation.Index(fieldPath, i), supportPath+".Passwords.PasswordsItem")
 		}
 	}
 	{
-		path := validation.Join(p, "Whitelist")
+		fieldPath := validation.Join(path, "Whitelist")
 		present := len(x.Whitelist) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPlay.Whitelist"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Whitelist"])
 		for i := range x.Whitelist {
-			x.Whitelist[i].validate(c, validation.Index(path, i))
+			x.Whitelist[i].validate(c, validation.Index(fieldPath, i), supportPath+".Whitelist.AllowListItem")
 		}
 	}
 }
 
-func (x *AirPlayAllowList) validate(c *validation.Collector, p string) {
+func (x *AirPlayAllowList) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "DeviceID")
+		fieldPath := validation.Join(path, "DeviceID")
 		present := x.DeviceID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPlay.AllowList.AllowListItem.DeviceID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeviceID"])
 		if present {
-			c.Pattern(path, true, *x.DeviceID, format0)
+			c.Pattern(fieldPath, true, *x.DeviceID, format0)
 		}
 	}
 	{
-		path := validation.Join(p, "DeviceName")
+		fieldPath := validation.Join(path, "DeviceName")
 		present := x.DeviceName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPlay.AllowList.AllowListItem.DeviceName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeviceName"])
 	}
 }
 
-func (x *AirPlayPasswords) validate(c *validation.Collector, p string) {
+func (x *AirPlayPasswords) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "DeviceName")
+		fieldPath := validation.Join(path, "DeviceName")
 		present := x.DeviceName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPlay.Passwords.PasswordsItem.DeviceName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeviceName"])
 	}
 	{
-		path := validation.Join(p, "Password")
+		fieldPath := validation.Join(path, "Password")
 		present := x.Password != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPlay.Passwords.PasswordsItem.Password"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Password"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "DeviceID")
+		fieldPath := validation.Join(path, "DeviceID")
 		present := x.DeviceID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPlay.Passwords.PasswordsItem.DeviceID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeviceID"])
 	}
 }
 
-func (x *AirPlayWhitelist) validate(c *validation.Collector, p string) {
+func (x *AirPlayWhitelist) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "DeviceID")
+		fieldPath := validation.Join(path, "DeviceID")
 		present := x.DeviceID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPlay.Whitelist.AllowListItem.DeviceID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeviceID"])
 		if present {
-			c.Pattern(path, true, *x.DeviceID, format0)
+			c.Pattern(fieldPath, true, *x.DeviceID, format0)
 		}
 	}
 	{
-		path := validation.Join(p, "DeviceName")
+		fieldPath := validation.Join(path, "DeviceName")
 		present := x.DeviceName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPlay.Whitelist.AllowListItem.DeviceName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeviceName"])
 	}
 }
 
@@ -2422,61 +2422,61 @@ func (x *AirPlayWhitelist) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *AirPrint) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AirPrint")
 	return c.Err()
 }
 
-func (x *AirPrint) validate(c *validation.Collector, p string) {
+func (x *AirPrint) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AirPrint"])
+	c.Support(path, true, supportTable["AirPrint"])
 	{
-		path := validation.Join(p, "AirPrint")
+		fieldPath := validation.Join(path, "AirPrint")
 		present := len(x.AirPrint) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPrint.AirPrint"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AirPrint"])
+		c.Required(fieldPath, present)
 		for i := range x.AirPrint {
-			x.AirPrint[i].validate(c, validation.Index(path, i))
+			x.AirPrint[i].validate(c, validation.Index(fieldPath, i), supportPath+".AirPrint.AirPrintItem")
 		}
 	}
 }
 
-func (x *AirPrintAirPrint) validate(c *validation.Collector, p string) {
+func (x *AirPrintAirPrint) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "IPAddress")
+		fieldPath := validation.Join(path, "IPAddress")
 		present := x.IPAddress != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPrint.AirPrint.AirPrintItem.IPAddress"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IPAddress"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "ResourcePath")
+		fieldPath := validation.Join(path, "ResourcePath")
 		present := x.ResourcePath != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPrint.AirPrint.AirPrintItem.ResourcePath"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ResourcePath"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Port")
+		fieldPath := validation.Join(path, "Port")
 		present := x.Port != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPrint.AirPrint.AirPrintItem.Port"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Port"])
 		if present {
-			c.Range(path, true, float64(*x.Port), new(0.0), new(65535.0))
+			c.Range(fieldPath, true, float64(*x.Port), new(0.0), new(65535.0))
 		}
 	}
 	{
-		path := validation.Join(p, "ForceTLS")
+		fieldPath := validation.Join(path, "ForceTLS")
 		present := x.ForceTLS != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AirPrint.AirPrint.AirPrintItem.ForceTLS"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ForceTLS"])
 	}
 }
 
@@ -2484,90 +2484,90 @@ func (x *AirPrintAirPrint) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *APN) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "APN")
 	return c.Err()
 }
 
-func (x *APN) validate(c *validation.Collector, p string) {
+func (x *APN) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["APN"])
+	c.Support(path, true, supportTable["APN"])
 	{
-		path := validation.Join(p, "DefaultsData")
+		fieldPath := validation.Join(path, "DefaultsData")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["APN.DefaultsData"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DefaultsData"])
+		c.Required(fieldPath, present)
 		if present {
-			x.DefaultsData.validate(c, path)
+			x.DefaultsData.validate(c, fieldPath, supportPath+".DefaultsData")
 		}
 	}
 	{
-		path := validation.Join(p, "DefaultsDomainName")
+		fieldPath := validation.Join(path, "DefaultsDomainName")
 		present := x.DefaultsDomainName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["APN.DefaultsDomainName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DefaultsDomainName"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.DefaultsDomainName, []any{"com.apple.managedCarrier"})
+			c.Enum(fieldPath, true, x.DefaultsDomainName, []any{"com.apple.managedCarrier"})
 		}
 	}
 }
 
-func (x *APNDefaultsData) validate(c *validation.Collector, p string) {
+func (x *APNDefaultsData) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "apns")
+		fieldPath := validation.Join(path, "apns")
 		present := len(x.Apns) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["APN.DefaultsData.apns"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".apns"])
+		c.Required(fieldPath, present)
 		for i := range x.Apns {
-			x.Apns[i].validate(c, validation.Index(path, i))
+			x.Apns[i].validate(c, validation.Index(fieldPath, i), supportPath+".apns.apnsItem")
 		}
 	}
 }
 
-func (x *APNDefaultsDataApns) validate(c *validation.Collector, p string) {
+func (x *APNDefaultsDataApns) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "apn")
+		fieldPath := validation.Join(path, "apn")
 		present := x.Apn != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["APN.DefaultsData.apns.apnsItem.apn"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".apn"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "username")
+		fieldPath := validation.Join(path, "username")
 		present := x.Username != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["APN.DefaultsData.apns.apnsItem.username"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".username"])
 	}
 	{
-		path := validation.Join(p, "password")
+		fieldPath := validation.Join(path, "password")
 		present := len(x.Password) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["APN.DefaultsData.apns.apnsItem.password"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".password"])
 	}
 	{
-		path := validation.Join(p, "proxy")
+		fieldPath := validation.Join(path, "proxy")
 		present := x.Proxy != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["APN.DefaultsData.apns.apnsItem.proxy"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".proxy"])
 	}
 	{
-		path := validation.Join(p, "proxyPort")
+		fieldPath := validation.Join(path, "proxyPort")
 		present := x.ProxyPort != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["APN.DefaultsData.apns.apnsItem.proxyPort"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".proxyPort"])
 	}
 }
 
@@ -2575,179 +2575,179 @@ func (x *APNDefaultsDataApns) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *AppLock) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AppLock")
 	return c.Err()
 }
 
-func (x *AppLock) validate(c *validation.Collector, p string) {
+func (x *AppLock) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AppLock"])
+	c.Support(path, true, supportTable["AppLock"])
 	{
-		path := validation.Join(p, "App")
+		fieldPath := validation.Join(path, "App")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".App"])
+		c.Required(fieldPath, present)
 		if present {
-			x.App.validate(c, path)
+			x.App.validate(c, fieldPath, supportPath+".App")
 		}
 	}
 }
 
-func (x *AppLockApp) validate(c *validation.Collector, p string) {
+func (x *AppLockApp) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Identifier")
+		fieldPath := validation.Join(path, "Identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.Identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Options")
+		fieldPath := validation.Join(path, "Options")
 		present := x.Options != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.Options"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Options"])
 		if present {
-			x.Options.validate(c, path)
+			x.Options.validate(c, fieldPath, supportPath+".Options")
 		}
 	}
 	{
-		path := validation.Join(p, "UserEnabledOptions")
+		fieldPath := validation.Join(path, "UserEnabledOptions")
 		present := x.UserEnabledOptions != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.UserEnabledOptions"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserEnabledOptions"])
 		if present {
-			x.UserEnabledOptions.validate(c, path)
+			x.UserEnabledOptions.validate(c, fieldPath, supportPath+".UserEnabledOptions")
 		}
 	}
 }
 
-func (x *AppLockAppOptions) validate(c *validation.Collector, p string) {
+func (x *AppLockAppOptions) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "DisableTouch")
+		fieldPath := validation.Join(path, "DisableTouch")
 		present := x.DisableTouch != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.Options.DisableTouch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisableTouch"])
 	}
 	{
-		path := validation.Join(p, "DisableDeviceRotation")
+		fieldPath := validation.Join(path, "DisableDeviceRotation")
 		present := x.DisableDeviceRotation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.Options.DisableDeviceRotation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisableDeviceRotation"])
 	}
 	{
-		path := validation.Join(p, "DisableVolumeButtons")
+		fieldPath := validation.Join(path, "DisableVolumeButtons")
 		present := x.DisableVolumeButtons != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.Options.DisableVolumeButtons"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisableVolumeButtons"])
 	}
 	{
-		path := validation.Join(p, "DisableRingerSwitch")
+		fieldPath := validation.Join(path, "DisableRingerSwitch")
 		present := x.DisableRingerSwitch != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.Options.DisableRingerSwitch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisableRingerSwitch"])
 	}
 	{
-		path := validation.Join(p, "DisableSleepWakeButton")
+		fieldPath := validation.Join(path, "DisableSleepWakeButton")
 		present := x.DisableSleepWakeButton != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.Options.DisableSleepWakeButton"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisableSleepWakeButton"])
 	}
 	{
-		path := validation.Join(p, "DisableAutoLock")
+		fieldPath := validation.Join(path, "DisableAutoLock")
 		present := x.DisableAutoLock != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.Options.DisableAutoLock"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisableAutoLock"])
 	}
 	{
-		path := validation.Join(p, "EnableVoiceOver")
+		fieldPath := validation.Join(path, "EnableVoiceOver")
 		present := x.EnableVoiceOver != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.Options.EnableVoiceOver"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableVoiceOver"])
 	}
 	{
-		path := validation.Join(p, "EnableZoom")
+		fieldPath := validation.Join(path, "EnableZoom")
 		present := x.EnableZoom != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.Options.EnableZoom"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableZoom"])
 	}
 	{
-		path := validation.Join(p, "EnableInvertColors")
+		fieldPath := validation.Join(path, "EnableInvertColors")
 		present := x.EnableInvertColors != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.Options.EnableInvertColors"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableInvertColors"])
 	}
 	{
-		path := validation.Join(p, "EnableAssistiveTouch")
+		fieldPath := validation.Join(path, "EnableAssistiveTouch")
 		present := x.EnableAssistiveTouch != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.Options.EnableAssistiveTouch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableAssistiveTouch"])
 	}
 	{
-		path := validation.Join(p, "EnableSpeakSelection")
+		fieldPath := validation.Join(path, "EnableSpeakSelection")
 		present := x.EnableSpeakSelection != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.Options.EnableSpeakSelection"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableSpeakSelection"])
 	}
 	{
-		path := validation.Join(p, "EnableMonoAudio")
+		fieldPath := validation.Join(path, "EnableMonoAudio")
 		present := x.EnableMonoAudio != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.Options.EnableMonoAudio"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableMonoAudio"])
 	}
 	{
-		path := validation.Join(p, "EnableVoiceControl")
+		fieldPath := validation.Join(path, "EnableVoiceControl")
 		present := x.EnableVoiceControl != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.Options.EnableVoiceControl"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableVoiceControl"])
 	}
 }
 
-func (x *AppLockAppUserEnabledOptions) validate(c *validation.Collector, p string) {
+func (x *AppLockAppUserEnabledOptions) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "VoiceControl")
+		fieldPath := validation.Join(path, "VoiceControl")
 		present := x.VoiceControl != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.UserEnabledOptions.VoiceControl"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VoiceControl"])
 	}
 	{
-		path := validation.Join(p, "VoiceOver")
+		fieldPath := validation.Join(path, "VoiceOver")
 		present := x.VoiceOver != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.UserEnabledOptions.VoiceOver"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VoiceOver"])
 	}
 	{
-		path := validation.Join(p, "Zoom")
+		fieldPath := validation.Join(path, "Zoom")
 		present := x.Zoom != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.UserEnabledOptions.Zoom"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Zoom"])
 	}
 	{
-		path := validation.Join(p, "InvertColors")
+		fieldPath := validation.Join(path, "InvertColors")
 		present := x.InvertColors != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.UserEnabledOptions.InvertColors"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".InvertColors"])
 	}
 	{
-		path := validation.Join(p, "AssistiveTouch")
+		fieldPath := validation.Join(path, "AssistiveTouch")
 		present := x.AssistiveTouch != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLock.App.UserEnabledOptions.AssistiveTouch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AssistiveTouch"])
 	}
 }
 
@@ -2755,154 +2755,154 @@ func (x *AppLockAppUserEnabledOptions) validate(c *validation.Collector, p strin
 // that every present key is supported on that OS version and enrollment context.
 func (x *ParentalControlsApplicationRestrictions) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ParentalControlsApplicationRestrictions")
 	return c.Err()
 }
 
-func (x *ParentalControlsApplicationRestrictions) validate(c *validation.Collector, p string) {
+func (x *ParentalControlsApplicationRestrictions) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ParentalControlsApplicationRestrictions"])
+	c.Support(path, true, supportTable["ParentalControlsApplicationRestrictions"])
 	{
-		path := validation.Join(p, "familyControlsEnabled")
+		fieldPath := validation.Join(path, "familyControlsEnabled")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.familyControlsEnabled"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".familyControlsEnabled"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "whiteList")
+		fieldPath := validation.Join(path, "whiteList")
 		present := len(x.WhiteList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.whiteList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".whiteList"])
 		for i := range x.WhiteList {
-			x.WhiteList[i].validate(c, validation.Index(path, i))
+			x.WhiteList[i].validate(c, validation.Index(fieldPath, i), supportPath+".whiteList.allowListItem")
 		}
 	}
 	{
-		path := validation.Join(p, "pathBlackList")
+		fieldPath := validation.Join(path, "pathBlackList")
 		present := len(x.PathBlackList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.pathBlackList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".pathBlackList"])
 	}
 	{
-		path := validation.Join(p, "pathWhiteList")
+		fieldPath := validation.Join(path, "pathWhiteList")
 		present := len(x.PathWhiteList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.pathWhiteList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".pathWhiteList"])
 	}
 	{
-		path := validation.Join(p, "allowList")
+		fieldPath := validation.Join(path, "allowList")
 		present := len(x.AllowList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.allowList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowList"])
 		for i := range x.AllowList {
-			x.AllowList[i].validate(c, validation.Index(path, i))
+			x.AllowList[i].validate(c, validation.Index(fieldPath, i), supportPath+".allowList.allowListItem")
 		}
 	}
 	{
-		path := validation.Join(p, "pathDenyList")
+		fieldPath := validation.Join(path, "pathDenyList")
 		present := len(x.PathDenyList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.pathDenyList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".pathDenyList"])
 	}
 	{
-		path := validation.Join(p, "pathAllowList")
+		fieldPath := validation.Join(path, "pathAllowList")
 		present := len(x.PathAllowList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.pathAllowList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".pathAllowList"])
 	}
 }
 
-func (x *ParentalControlsApplicationRestrictionsApplicationItem) validate(c *validation.Collector, p string) {
+func (x *ParentalControlsApplicationRestrictionsApplicationItem) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "bundleID")
+		fieldPath := validation.Join(path, "bundleID")
 		present := x.BundleID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.whiteList.allowListItem.bundleID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".bundleID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "appID")
+		fieldPath := validation.Join(path, "appID")
 		present := len(x.AppID) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.whiteList.allowListItem.appID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".appID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "detachedSignature")
+		fieldPath := validation.Join(path, "detachedSignature")
 		present := len(x.DetachedSignature) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.whiteList.allowListItem.detachedSignature"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".detachedSignature"])
 	}
 	{
-		path := validation.Join(p, "disabled")
+		fieldPath := validation.Join(path, "disabled")
 		present := x.Disabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.whiteList.allowListItem.disabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".disabled"])
 	}
 	{
-		path := validation.Join(p, "subApps")
+		fieldPath := validation.Join(path, "subApps")
 		present := len(x.SubApps) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.whiteList.allowListItem.subApps"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".subApps"])
 	}
 	{
-		path := validation.Join(p, "displayName")
+		fieldPath := validation.Join(path, "displayName")
 		present := x.DisplayName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.whiteList.allowListItem.displayName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".displayName"])
 	}
 }
 
-func (x *ParentalControlsApplicationRestrictionsAllowListAllowListItem) validate(c *validation.Collector, p string) {
+func (x *ParentalControlsApplicationRestrictionsAllowListAllowListItem) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "bundleID")
+		fieldPath := validation.Join(path, "bundleID")
 		present := x.BundleID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.allowList.allowListItem.bundleID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".bundleID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "appID")
+		fieldPath := validation.Join(path, "appID")
 		present := len(x.AppID) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.allowList.allowListItem.appID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".appID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "detachedSignature")
+		fieldPath := validation.Join(path, "detachedSignature")
 		present := len(x.DetachedSignature) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.allowList.allowListItem.detachedSignature"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".detachedSignature"])
 	}
 	{
-		path := validation.Join(p, "disabled")
+		fieldPath := validation.Join(path, "disabled")
 		present := x.Disabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.allowList.allowListItem.disabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".disabled"])
 	}
 	{
-		path := validation.Join(p, "subApps")
+		fieldPath := validation.Join(path, "subApps")
 		present := len(x.SubApps) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.allowList.allowListItem.subApps"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".subApps"])
 	}
 	{
-		path := validation.Join(p, "displayName")
+		fieldPath := validation.Join(path, "displayName")
 		present := x.DisplayName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsApplicationRestrictions.allowList.allowListItem.displayName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".displayName"])
 	}
 }
 
@@ -2910,1302 +2910,1302 @@ func (x *ParentalControlsApplicationRestrictionsAllowListAllowListItem) validate
 // that every present key is supported on that OS version and enrollment context.
 func (x *Restrictions) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Restrictions")
 	return c.Err()
 }
 
-func (x *Restrictions) validate(c *validation.Collector, p string) {
+func (x *Restrictions) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Restrictions"])
+	c.Support(path, true, supportTable["Restrictions"])
 	{
-		path := validation.Join(p, "allowAccountModification")
+		fieldPath := validation.Join(path, "allowAccountModification")
 		present := x.AllowAccountModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAccountModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAccountModification"])
 	}
 	{
-		path := validation.Join(p, "allowActivityContinuation")
+		fieldPath := validation.Join(path, "allowActivityContinuation")
 		present := x.AllowActivityContinuation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowActivityContinuation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowActivityContinuation"])
 	}
 	{
-		path := validation.Join(p, "allowAddingGameCenterFriends")
+		fieldPath := validation.Join(path, "allowAddingGameCenterFriends")
 		present := x.AllowAddingGameCenterFriends != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAddingGameCenterFriends"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAddingGameCenterFriends"])
 	}
 	{
-		path := validation.Join(p, "allowAirDrop")
+		fieldPath := validation.Join(path, "allowAirDrop")
 		present := x.AllowAirDrop != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAirDrop"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAirDrop"])
 	}
 	{
-		path := validation.Join(p, "allowAirPlayIncomingRequests")
+		fieldPath := validation.Join(path, "allowAirPlayIncomingRequests")
 		present := x.AllowAirPlayIncomingRequests != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAirPlayIncomingRequests"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAirPlayIncomingRequests"])
 	}
 	{
-		path := validation.Join(p, "allowAirPrint")
+		fieldPath := validation.Join(path, "allowAirPrint")
 		present := x.AllowAirPrint != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAirPrint"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAirPrint"])
 	}
 	{
-		path := validation.Join(p, "allowAirPrintCredentialsStorage")
+		fieldPath := validation.Join(path, "allowAirPrintCredentialsStorage")
 		present := x.AllowAirPrintCredentialsStorage != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAirPrintCredentialsStorage"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAirPrintCredentialsStorage"])
 	}
 	{
-		path := validation.Join(p, "allowAirPrintiBeaconDiscovery")
+		fieldPath := validation.Join(path, "allowAirPrintiBeaconDiscovery")
 		present := x.AllowAirPrintiBeaconDiscovery != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAirPrintiBeaconDiscovery"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAirPrintiBeaconDiscovery"])
 	}
 	{
-		path := validation.Join(p, "allowAppCellularDataModification")
+		fieldPath := validation.Join(path, "allowAppCellularDataModification")
 		present := x.AllowAppCellularDataModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAppCellularDataModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAppCellularDataModification"])
 	}
 	{
-		path := validation.Join(p, "allowAppClips")
+		fieldPath := validation.Join(path, "allowAppClips")
 		present := x.AllowAppClips != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAppClips"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAppClips"])
 	}
 	{
-		path := validation.Join(p, "allowAppInstallation")
+		fieldPath := validation.Join(path, "allowAppInstallation")
 		present := x.AllowAppInstallation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAppInstallation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAppInstallation"])
 	}
 	{
-		path := validation.Join(p, "allowAppleIntelligenceReport")
+		fieldPath := validation.Join(path, "allowAppleIntelligenceReport")
 		present := x.AllowAppleIntelligenceReport != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAppleIntelligenceReport"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAppleIntelligenceReport"])
 	}
 	{
-		path := validation.Join(p, "allowApplePersonalizedAdvertising")
+		fieldPath := validation.Join(path, "allowApplePersonalizedAdvertising")
 		present := x.AllowApplePersonalizedAdvertising != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowApplePersonalizedAdvertising"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowApplePersonalizedAdvertising"])
 	}
 	{
-		path := validation.Join(p, "allowAppRemoval")
+		fieldPath := validation.Join(path, "allowAppRemoval")
 		present := x.AllowAppRemoval != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAppRemoval"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAppRemoval"])
 	}
 	{
-		path := validation.Join(p, "allowAppsToBeHidden")
+		fieldPath := validation.Join(path, "allowAppsToBeHidden")
 		present := x.AllowAppsToBeHidden != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAppsToBeHidden"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAppsToBeHidden"])
 	}
 	{
-		path := validation.Join(p, "allowAppsToBeLocked")
+		fieldPath := validation.Join(path, "allowAppsToBeLocked")
 		present := x.AllowAppsToBeLocked != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAppsToBeLocked"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAppsToBeLocked"])
 	}
 	{
-		path := validation.Join(p, "allowARDRemoteManagementModification")
+		fieldPath := validation.Join(path, "allowARDRemoteManagementModification")
 		present := x.AllowARDRemoteManagementModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowARDRemoteManagementModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowARDRemoteManagementModification"])
 	}
 	{
-		path := validation.Join(p, "allowAssistant")
+		fieldPath := validation.Join(path, "allowAssistant")
 		present := x.AllowAssistant != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAssistant"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAssistant"])
 	}
 	{
-		path := validation.Join(p, "allowAssistantUserGeneratedContent")
+		fieldPath := validation.Join(path, "allowAssistantUserGeneratedContent")
 		present := x.AllowAssistantUserGeneratedContent != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAssistantUserGeneratedContent"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAssistantUserGeneratedContent"])
 	}
 	{
-		path := validation.Join(p, "allowAssistantWhileLocked")
+		fieldPath := validation.Join(path, "allowAssistantWhileLocked")
 		present := x.AllowAssistantWhileLocked != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAssistantWhileLocked"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAssistantWhileLocked"])
 	}
 	{
-		path := validation.Join(p, "allowAutoCorrection")
+		fieldPath := validation.Join(path, "allowAutoCorrection")
 		present := x.AllowAutoCorrection != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAutoCorrection"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAutoCorrection"])
 	}
 	{
-		path := validation.Join(p, "allowAutoDim")
+		fieldPath := validation.Join(path, "allowAutoDim")
 		present := x.AllowAutoDim != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAutoDim"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAutoDim"])
 	}
 	{
-		path := validation.Join(p, "allowAutomaticAppDownloads")
+		fieldPath := validation.Join(path, "allowAutomaticAppDownloads")
 		present := x.AllowAutomaticAppDownloads != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAutomaticAppDownloads"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAutomaticAppDownloads"])
 	}
 	{
-		path := validation.Join(p, "allowAutomaticScreenSaver")
+		fieldPath := validation.Join(path, "allowAutomaticScreenSaver")
 		present := x.AllowAutomaticScreenSaver != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAutomaticScreenSaver"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAutomaticScreenSaver"])
 	}
 	{
-		path := validation.Join(p, "allowAutoUnlock")
+		fieldPath := validation.Join(path, "allowAutoUnlock")
 		present := x.AllowAutoUnlock != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowAutoUnlock"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAutoUnlock"])
 	}
 	{
-		path := validation.Join(p, "allowBluetoothModification")
+		fieldPath := validation.Join(path, "allowBluetoothModification")
 		present := x.AllowBluetoothModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowBluetoothModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowBluetoothModification"])
 	}
 	{
-		path := validation.Join(p, "allowBluetoothSharingModification")
+		fieldPath := validation.Join(path, "allowBluetoothSharingModification")
 		present := x.AllowBluetoothSharingModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowBluetoothSharingModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowBluetoothSharingModification"])
 	}
 	{
-		path := validation.Join(p, "allowBookstore")
+		fieldPath := validation.Join(path, "allowBookstore")
 		present := x.AllowBookstore != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowBookstore"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowBookstore"])
 	}
 	{
-		path := validation.Join(p, "allowBookstoreErotica")
+		fieldPath := validation.Join(path, "allowBookstoreErotica")
 		present := x.AllowBookstoreErotica != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowBookstoreErotica"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowBookstoreErotica"])
 	}
 	{
-		path := validation.Join(p, "allowCallRecording")
+		fieldPath := validation.Join(path, "allowCallRecording")
 		present := x.AllowCallRecording != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowCallRecording"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowCallRecording"])
 	}
 	{
-		path := validation.Join(p, "allowCamera")
+		fieldPath := validation.Join(path, "allowCamera")
 		present := x.AllowCamera != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowCamera"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowCamera"])
 	}
 	{
-		path := validation.Join(p, "allowCellularPlanModification")
+		fieldPath := validation.Join(path, "allowCellularPlanModification")
 		present := x.AllowCellularPlanModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowCellularPlanModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowCellularPlanModification"])
 	}
 	{
-		path := validation.Join(p, "allowChat")
+		fieldPath := validation.Join(path, "allowChat")
 		present := x.AllowChat != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowChat"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowChat"])
 	}
 	{
-		path := validation.Join(p, "allowCloudAddressBook")
+		fieldPath := validation.Join(path, "allowCloudAddressBook")
 		present := x.AllowCloudAddressBook != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowCloudAddressBook"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowCloudAddressBook"])
 	}
 	{
-		path := validation.Join(p, "allowCloudBackup")
+		fieldPath := validation.Join(path, "allowCloudBackup")
 		present := x.AllowCloudBackup != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowCloudBackup"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowCloudBackup"])
 	}
 	{
-		path := validation.Join(p, "allowCloudBookmarks")
+		fieldPath := validation.Join(path, "allowCloudBookmarks")
 		present := x.AllowCloudBookmarks != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowCloudBookmarks"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowCloudBookmarks"])
 	}
 	{
-		path := validation.Join(p, "allowCloudCalendar")
+		fieldPath := validation.Join(path, "allowCloudCalendar")
 		present := x.AllowCloudCalendar != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowCloudCalendar"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowCloudCalendar"])
 	}
 	{
-		path := validation.Join(p, "allowCloudDesktopAndDocuments")
+		fieldPath := validation.Join(path, "allowCloudDesktopAndDocuments")
 		present := x.AllowCloudDesktopAndDocuments != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowCloudDesktopAndDocuments"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowCloudDesktopAndDocuments"])
 	}
 	{
-		path := validation.Join(p, "allowCloudDocumentSync")
+		fieldPath := validation.Join(path, "allowCloudDocumentSync")
 		present := x.AllowCloudDocumentSync != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowCloudDocumentSync"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowCloudDocumentSync"])
 	}
 	{
-		path := validation.Join(p, "allowCloudFreeform")
+		fieldPath := validation.Join(path, "allowCloudFreeform")
 		present := x.AllowCloudFreeform != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowCloudFreeform"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowCloudFreeform"])
 	}
 	{
-		path := validation.Join(p, "allowCloudKeychainSync")
+		fieldPath := validation.Join(path, "allowCloudKeychainSync")
 		present := x.AllowCloudKeychainSync != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowCloudKeychainSync"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowCloudKeychainSync"])
 	}
 	{
-		path := validation.Join(p, "allowCloudMail")
+		fieldPath := validation.Join(path, "allowCloudMail")
 		present := x.AllowCloudMail != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowCloudMail"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowCloudMail"])
 	}
 	{
-		path := validation.Join(p, "allowCloudNotes")
+		fieldPath := validation.Join(path, "allowCloudNotes")
 		present := x.AllowCloudNotes != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowCloudNotes"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowCloudNotes"])
 	}
 	{
-		path := validation.Join(p, "allowCloudPhotoLibrary")
+		fieldPath := validation.Join(path, "allowCloudPhotoLibrary")
 		present := x.AllowCloudPhotoLibrary != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowCloudPhotoLibrary"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowCloudPhotoLibrary"])
 	}
 	{
-		path := validation.Join(p, "allowCloudPrivateRelay")
+		fieldPath := validation.Join(path, "allowCloudPrivateRelay")
 		present := x.AllowCloudPrivateRelay != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowCloudPrivateRelay"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowCloudPrivateRelay"])
 	}
 	{
-		path := validation.Join(p, "allowCloudReminders")
+		fieldPath := validation.Join(path, "allowCloudReminders")
 		present := x.AllowCloudReminders != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowCloudReminders"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowCloudReminders"])
 	}
 	{
-		path := validation.Join(p, "allowContentCaching")
+		fieldPath := validation.Join(path, "allowContentCaching")
 		present := x.AllowContentCaching != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowContentCaching"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowContentCaching"])
 	}
 	{
-		path := validation.Join(p, "allowContinuousPathKeyboard")
+		fieldPath := validation.Join(path, "allowContinuousPathKeyboard")
 		present := x.AllowContinuousPathKeyboard != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowContinuousPathKeyboard"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowContinuousPathKeyboard"])
 	}
 	{
-		path := validation.Join(p, "allowDefaultBrowserModification")
+		fieldPath := validation.Join(path, "allowDefaultBrowserModification")
 		present := x.AllowDefaultBrowserModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowDefaultBrowserModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowDefaultBrowserModification"])
 	}
 	{
-		path := validation.Join(p, "allowDefaultCallingAppModification")
+		fieldPath := validation.Join(path, "allowDefaultCallingAppModification")
 		present := x.AllowDefaultCallingAppModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowDefaultCallingAppModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowDefaultCallingAppModification"])
 	}
 	{
-		path := validation.Join(p, "allowDefaultMessagingAppModification")
+		fieldPath := validation.Join(path, "allowDefaultMessagingAppModification")
 		present := x.AllowDefaultMessagingAppModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowDefaultMessagingAppModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowDefaultMessagingAppModification"])
 	}
 	{
-		path := validation.Join(p, "allowDefinitionLookup")
+		fieldPath := validation.Join(path, "allowDefinitionLookup")
 		present := x.AllowDefinitionLookup != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowDefinitionLookup"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowDefinitionLookup"])
 	}
 	{
-		path := validation.Join(p, "allowDeviceNameModification")
+		fieldPath := validation.Join(path, "allowDeviceNameModification")
 		present := x.AllowDeviceNameModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowDeviceNameModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowDeviceNameModification"])
 	}
 	{
-		path := validation.Join(p, "allowDeviceSleep")
+		fieldPath := validation.Join(path, "allowDeviceSleep")
 		present := x.AllowDeviceSleep != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowDeviceSleep"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowDeviceSleep"])
 	}
 	{
-		path := validation.Join(p, "allowDiagnosticSubmission")
+		fieldPath := validation.Join(path, "allowDiagnosticSubmission")
 		present := x.AllowDiagnosticSubmission != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowDiagnosticSubmission"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowDiagnosticSubmission"])
 	}
 	{
-		path := validation.Join(p, "allowDiagnosticSubmissionModification")
+		fieldPath := validation.Join(path, "allowDiagnosticSubmissionModification")
 		present := x.AllowDiagnosticSubmissionModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowDiagnosticSubmissionModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowDiagnosticSubmissionModification"])
 	}
 	{
-		path := validation.Join(p, "allowDictation")
+		fieldPath := validation.Join(path, "allowDictation")
 		present := x.AllowDictation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowDictation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowDictation"])
 	}
 	{
-		path := validation.Join(p, "allowedCameraRestrictionBundleIDs")
+		fieldPath := validation.Join(path, "allowedCameraRestrictionBundleIDs")
 		present := len(x.AllowedCameraRestrictionBundleIDs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowedCameraRestrictionBundleIDs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowedCameraRestrictionBundleIDs"])
 	}
 	{
-		path := validation.Join(p, "allowedExternalIntelligenceWorkspaceIDs")
+		fieldPath := validation.Join(path, "allowedExternalIntelligenceWorkspaceIDs")
 		present := len(x.AllowedExternalIntelligenceWorkspaceIDs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowedExternalIntelligenceWorkspaceIDs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowedExternalIntelligenceWorkspaceIDs"])
 	}
 	{
-		path := validation.Join(p, "allowEnablingRestrictions")
+		fieldPath := validation.Join(path, "allowEnablingRestrictions")
 		present := x.AllowEnablingRestrictions != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowEnablingRestrictions"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowEnablingRestrictions"])
 	}
 	{
-		path := validation.Join(p, "allowEnterpriseAppTrust")
+		fieldPath := validation.Join(path, "allowEnterpriseAppTrust")
 		present := x.AllowEnterpriseAppTrust != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowEnterpriseAppTrust"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowEnterpriseAppTrust"])
 	}
 	{
-		path := validation.Join(p, "allowEnterpriseBookBackup")
+		fieldPath := validation.Join(path, "allowEnterpriseBookBackup")
 		present := x.AllowEnterpriseBookBackup != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowEnterpriseBookBackup"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowEnterpriseBookBackup"])
 	}
 	{
-		path := validation.Join(p, "allowEnterpriseBookMetadataSync")
+		fieldPath := validation.Join(path, "allowEnterpriseBookMetadataSync")
 		present := x.AllowEnterpriseBookMetadataSync != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowEnterpriseBookMetadataSync"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowEnterpriseBookMetadataSync"])
 	}
 	{
-		path := validation.Join(p, "allowEraseContentAndSettings")
+		fieldPath := validation.Join(path, "allowEraseContentAndSettings")
 		present := x.AllowEraseContentAndSettings != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowEraseContentAndSettings"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowEraseContentAndSettings"])
 	}
 	{
-		path := validation.Join(p, "allowESIMModification")
+		fieldPath := validation.Join(path, "allowESIMModification")
 		present := x.AllowESIMModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowESIMModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowESIMModification"])
 	}
 	{
-		path := validation.Join(p, "allowESIMOutgoingTransfers")
+		fieldPath := validation.Join(path, "allowESIMOutgoingTransfers")
 		present := x.AllowESIMOutgoingTransfers != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowESIMOutgoingTransfers"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowESIMOutgoingTransfers"])
 	}
 	{
-		path := validation.Join(p, "allowExplicitContent")
+		fieldPath := validation.Join(path, "allowExplicitContent")
 		present := x.AllowExplicitContent != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowExplicitContent"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowExplicitContent"])
 	}
 	{
-		path := validation.Join(p, "allowExternalIntelligenceIntegrations")
+		fieldPath := validation.Join(path, "allowExternalIntelligenceIntegrations")
 		present := x.AllowExternalIntelligenceIntegrations != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowExternalIntelligenceIntegrations"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowExternalIntelligenceIntegrations"])
 	}
 	{
-		path := validation.Join(p, "allowExternalIntelligenceIntegrationsSignIn")
+		fieldPath := validation.Join(path, "allowExternalIntelligenceIntegrationsSignIn")
 		present := x.AllowExternalIntelligenceIntegrationsSignIn != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowExternalIntelligenceIntegrationsSignIn"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowExternalIntelligenceIntegrationsSignIn"])
 	}
 	{
-		path := validation.Join(p, "allowFileSharingModification")
+		fieldPath := validation.Join(path, "allowFileSharingModification")
 		present := x.AllowFileSharingModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowFileSharingModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowFileSharingModification"])
 	}
 	{
-		path := validation.Join(p, "allowFilesNetworkDriveAccess")
+		fieldPath := validation.Join(path, "allowFilesNetworkDriveAccess")
 		present := x.AllowFilesNetworkDriveAccess != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowFilesNetworkDriveAccess"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowFilesNetworkDriveAccess"])
 	}
 	{
-		path := validation.Join(p, "allowFilesUSBDriveAccess")
+		fieldPath := validation.Join(path, "allowFilesUSBDriveAccess")
 		present := x.AllowFilesUSBDriveAccess != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowFilesUSBDriveAccess"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowFilesUSBDriveAccess"])
 	}
 	{
-		path := validation.Join(p, "allowFindMyDevice")
+		fieldPath := validation.Join(path, "allowFindMyDevice")
 		present := x.AllowFindMyDevice != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowFindMyDevice"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowFindMyDevice"])
 	}
 	{
-		path := validation.Join(p, "allowFindMyFriends")
+		fieldPath := validation.Join(path, "allowFindMyFriends")
 		present := x.AllowFindMyFriends != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowFindMyFriends"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowFindMyFriends"])
 	}
 	{
-		path := validation.Join(p, "allowFindMyFriendsModification")
+		fieldPath := validation.Join(path, "allowFindMyFriendsModification")
 		present := x.AllowFindMyFriendsModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowFindMyFriendsModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowFindMyFriendsModification"])
 	}
 	{
-		path := validation.Join(p, "allowFingerprintForUnlock")
+		fieldPath := validation.Join(path, "allowFingerprintForUnlock")
 		present := x.AllowFingerprintForUnlock != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowFingerprintForUnlock"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowFingerprintForUnlock"])
 	}
 	{
-		path := validation.Join(p, "allowFingerprintModification")
+		fieldPath := validation.Join(path, "allowFingerprintModification")
 		present := x.AllowFingerprintModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowFingerprintModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowFingerprintModification"])
 	}
 	{
-		path := validation.Join(p, "allowGameCenter")
+		fieldPath := validation.Join(path, "allowGameCenter")
 		present := x.AllowGameCenter != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowGameCenter"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowGameCenter"])
 	}
 	{
-		path := validation.Join(p, "allowGenmoji")
+		fieldPath := validation.Join(path, "allowGenmoji")
 		present := x.AllowGenmoji != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowGenmoji"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowGenmoji"])
 	}
 	{
-		path := validation.Join(p, "allowGlobalBackgroundFetchWhenRoaming")
+		fieldPath := validation.Join(path, "allowGlobalBackgroundFetchWhenRoaming")
 		present := x.AllowGlobalBackgroundFetchWhenRoaming != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowGlobalBackgroundFetchWhenRoaming"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowGlobalBackgroundFetchWhenRoaming"])
 	}
 	{
-		path := validation.Join(p, "allowHostPairing")
+		fieldPath := validation.Join(path, "allowHostPairing")
 		present := x.AllowHostPairing != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowHostPairing"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowHostPairing"])
 	}
 	{
-		path := validation.Join(p, "allowImagePlayground")
+		fieldPath := validation.Join(path, "allowImagePlayground")
 		present := x.AllowImagePlayground != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowImagePlayground"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowImagePlayground"])
 	}
 	{
-		path := validation.Join(p, "allowImageWand")
+		fieldPath := validation.Join(path, "allowImageWand")
 		present := x.AllowImageWand != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowImageWand"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowImageWand"])
 	}
 	{
-		path := validation.Join(p, "allowInAppPurchases")
+		fieldPath := validation.Join(path, "allowInAppPurchases")
 		present := x.AllowInAppPurchases != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowInAppPurchases"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowInAppPurchases"])
 	}
 	{
-		path := validation.Join(p, "allowInternetSharingModification")
+		fieldPath := validation.Join(path, "allowInternetSharingModification")
 		present := x.AllowInternetSharingModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowInternetSharingModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowInternetSharingModification"])
 	}
 	{
-		path := validation.Join(p, "allowiPhoneMirroring")
+		fieldPath := validation.Join(path, "allowiPhoneMirroring")
 		present := x.AllowiPhoneMirroring != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowiPhoneMirroring"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowiPhoneMirroring"])
 	}
 	{
-		path := validation.Join(p, "allowiPhoneWidgetsOnMac")
+		fieldPath := validation.Join(path, "allowiPhoneWidgetsOnMac")
 		present := x.AllowiPhoneWidgetsOnMac != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowiPhoneWidgetsOnMac"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowiPhoneWidgetsOnMac"])
 	}
 	{
-		path := validation.Join(p, "allowiTunes")
+		fieldPath := validation.Join(path, "allowiTunes")
 		present := x.AllowiTunes != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowiTunes"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowiTunes"])
 	}
 	{
-		path := validation.Join(p, "allowiTunesFileSharing")
+		fieldPath := validation.Join(path, "allowiTunesFileSharing")
 		present := x.AllowiTunesFileSharing != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowiTunesFileSharing"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowiTunesFileSharing"])
 	}
 	{
-		path := validation.Join(p, "allowKeyboardShortcuts")
+		fieldPath := validation.Join(path, "allowKeyboardShortcuts")
 		present := x.AllowKeyboardShortcuts != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowKeyboardShortcuts"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowKeyboardShortcuts"])
 	}
 	{
-		path := validation.Join(p, "allowListedAppBundleIDs")
+		fieldPath := validation.Join(path, "allowListedAppBundleIDs")
 		present := len(x.AllowListedAppBundleIDs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowListedAppBundleIDs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowListedAppBundleIDs"])
 	}
 	{
-		path := validation.Join(p, "allowLiveVoicemail")
+		fieldPath := validation.Join(path, "allowLiveVoicemail")
 		present := x.AllowLiveVoicemail != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowLiveVoicemail"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowLiveVoicemail"])
 	}
 	{
-		path := validation.Join(p, "allowLocalUserCreation")
+		fieldPath := validation.Join(path, "allowLocalUserCreation")
 		present := x.AllowLocalUserCreation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowLocalUserCreation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowLocalUserCreation"])
 	}
 	{
-		path := validation.Join(p, "allowLockScreenControlCenter")
+		fieldPath := validation.Join(path, "allowLockScreenControlCenter")
 		present := x.AllowLockScreenControlCenter != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowLockScreenControlCenter"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowLockScreenControlCenter"])
 	}
 	{
-		path := validation.Join(p, "allowLockScreenNotificationsView")
+		fieldPath := validation.Join(path, "allowLockScreenNotificationsView")
 		present := x.AllowLockScreenNotificationsView != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowLockScreenNotificationsView"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowLockScreenNotificationsView"])
 	}
 	{
-		path := validation.Join(p, "allowLockScreenTodayView")
+		fieldPath := validation.Join(path, "allowLockScreenTodayView")
 		present := x.AllowLockScreenTodayView != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowLockScreenTodayView"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowLockScreenTodayView"])
 	}
 	{
-		path := validation.Join(p, "allowMailPrivacyProtection")
+		fieldPath := validation.Join(path, "allowMailPrivacyProtection")
 		present := x.AllowMailPrivacyProtection != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowMailPrivacyProtection"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowMailPrivacyProtection"])
 	}
 	{
-		path := validation.Join(p, "allowMailSmartReplies")
+		fieldPath := validation.Join(path, "allowMailSmartReplies")
 		present := x.AllowMailSmartReplies != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowMailSmartReplies"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowMailSmartReplies"])
 	}
 	{
-		path := validation.Join(p, "allowMailSummary")
+		fieldPath := validation.Join(path, "allowMailSummary")
 		present := x.AllowMailSummary != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowMailSummary"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowMailSummary"])
 	}
 	{
-		path := validation.Join(p, "allowManagedAppsCloudSync")
+		fieldPath := validation.Join(path, "allowManagedAppsCloudSync")
 		present := x.AllowManagedAppsCloudSync != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowManagedAppsCloudSync"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowManagedAppsCloudSync"])
 	}
 	{
-		path := validation.Join(p, "allowManagedToWriteUnmanagedContacts")
+		fieldPath := validation.Join(path, "allowManagedToWriteUnmanagedContacts")
 		present := x.AllowManagedToWriteUnmanagedContacts != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowManagedToWriteUnmanagedContacts"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowManagedToWriteUnmanagedContacts"])
 	}
 	{
-		path := validation.Join(p, "allowMarketplaceAppInstallation")
+		fieldPath := validation.Join(path, "allowMarketplaceAppInstallation")
 		present := x.AllowMarketplaceAppInstallation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowMarketplaceAppInstallation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowMarketplaceAppInstallation"])
 	}
 	{
-		path := validation.Join(p, "allowMediaSharingModification")
+		fieldPath := validation.Join(path, "allowMediaSharingModification")
 		present := x.AllowMediaSharingModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowMediaSharingModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowMediaSharingModification"])
 	}
 	{
-		path := validation.Join(p, "allowMultiplayerGaming")
+		fieldPath := validation.Join(path, "allowMultiplayerGaming")
 		present := x.AllowMultiplayerGaming != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowMultiplayerGaming"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowMultiplayerGaming"])
 	}
 	{
-		path := validation.Join(p, "allowMusicService")
+		fieldPath := validation.Join(path, "allowMusicService")
 		present := x.AllowMusicService != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowMusicService"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowMusicService"])
 	}
 	{
-		path := validation.Join(p, "allowNews")
+		fieldPath := validation.Join(path, "allowNews")
 		present := x.AllowNews != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowNews"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowNews"])
 	}
 	{
-		path := validation.Join(p, "allowNFC")
+		fieldPath := validation.Join(path, "allowNFC")
 		present := x.AllowNFC != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowNFC"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowNFC"])
 	}
 	{
-		path := validation.Join(p, "allowNotesTranscription")
+		fieldPath := validation.Join(path, "allowNotesTranscription")
 		present := x.AllowNotesTranscription != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowNotesTranscription"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowNotesTranscription"])
 	}
 	{
-		path := validation.Join(p, "allowNotesTranscriptionSummary")
+		fieldPath := validation.Join(path, "allowNotesTranscriptionSummary")
 		present := x.AllowNotesTranscriptionSummary != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowNotesTranscriptionSummary"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowNotesTranscriptionSummary"])
 	}
 	{
-		path := validation.Join(p, "allowNotificationsModification")
+		fieldPath := validation.Join(path, "allowNotificationsModification")
 		present := x.AllowNotificationsModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowNotificationsModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowNotificationsModification"])
 	}
 	{
-		path := validation.Join(p, "allowOpenFromManagedToUnmanaged")
+		fieldPath := validation.Join(path, "allowOpenFromManagedToUnmanaged")
 		present := x.AllowOpenFromManagedToUnmanaged != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowOpenFromManagedToUnmanaged"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowOpenFromManagedToUnmanaged"])
 	}
 	{
-		path := validation.Join(p, "allowOpenFromUnmanagedToManaged")
+		fieldPath := validation.Join(path, "allowOpenFromUnmanagedToManaged")
 		present := x.AllowOpenFromUnmanagedToManaged != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowOpenFromUnmanagedToManaged"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowOpenFromUnmanagedToManaged"])
 	}
 	{
-		path := validation.Join(p, "allowOTAPKIUpdates")
+		fieldPath := validation.Join(path, "allowOTAPKIUpdates")
 		present := x.AllowOTAPKIUpdates != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowOTAPKIUpdates"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowOTAPKIUpdates"])
 	}
 	{
-		path := validation.Join(p, "allowPairedWatch")
+		fieldPath := validation.Join(path, "allowPairedWatch")
 		present := x.AllowPairedWatch != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowPairedWatch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowPairedWatch"])
 	}
 	{
-		path := validation.Join(p, "allowPassbookWhileLocked")
+		fieldPath := validation.Join(path, "allowPassbookWhileLocked")
 		present := x.AllowPassbookWhileLocked != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowPassbookWhileLocked"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowPassbookWhileLocked"])
 	}
 	{
-		path := validation.Join(p, "allowPasscodeModification")
+		fieldPath := validation.Join(path, "allowPasscodeModification")
 		present := x.AllowPasscodeModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowPasscodeModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowPasscodeModification"])
 	}
 	{
-		path := validation.Join(p, "allowPasswordAutoFill")
+		fieldPath := validation.Join(path, "allowPasswordAutoFill")
 		present := x.AllowPasswordAutoFill != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowPasswordAutoFill"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowPasswordAutoFill"])
 	}
 	{
-		path := validation.Join(p, "allowPasswordProximityRequests")
+		fieldPath := validation.Join(path, "allowPasswordProximityRequests")
 		present := x.AllowPasswordProximityRequests != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowPasswordProximityRequests"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowPasswordProximityRequests"])
 	}
 	{
-		path := validation.Join(p, "allowPasswordSharing")
+		fieldPath := validation.Join(path, "allowPasswordSharing")
 		present := x.AllowPasswordSharing != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowPasswordSharing"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowPasswordSharing"])
 	}
 	{
-		path := validation.Join(p, "allowPersonalHotspotModification")
+		fieldPath := validation.Join(path, "allowPersonalHotspotModification")
 		present := x.AllowPersonalHotspotModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowPersonalHotspotModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowPersonalHotspotModification"])
 	}
 	{
-		path := validation.Join(p, "allowPersonalizedHandwritingResults")
+		fieldPath := validation.Join(path, "allowPersonalizedHandwritingResults")
 		present := x.AllowPersonalizedHandwritingResults != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowPersonalizedHandwritingResults"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowPersonalizedHandwritingResults"])
 	}
 	{
-		path := validation.Join(p, "allowPhotoStream")
+		fieldPath := validation.Join(path, "allowPhotoStream")
 		present := x.AllowPhotoStream != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowPhotoStream"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowPhotoStream"])
 	}
 	{
-		path := validation.Join(p, "allowPodcasts")
+		fieldPath := validation.Join(path, "allowPodcasts")
 		present := x.AllowPodcasts != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowPodcasts"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowPodcasts"])
 	}
 	{
-		path := validation.Join(p, "allowPredictiveKeyboard")
+		fieldPath := validation.Join(path, "allowPredictiveKeyboard")
 		present := x.AllowPredictiveKeyboard != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowPredictiveKeyboard"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowPredictiveKeyboard"])
 	}
 	{
-		path := validation.Join(p, "allowPrinterSharingModification")
+		fieldPath := validation.Join(path, "allowPrinterSharingModification")
 		present := x.AllowPrinterSharingModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowPrinterSharingModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowPrinterSharingModification"])
 	}
 	{
-		path := validation.Join(p, "allowProximitySetupToNewDevice")
+		fieldPath := validation.Join(path, "allowProximitySetupToNewDevice")
 		present := x.AllowProximitySetupToNewDevice != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowProximitySetupToNewDevice"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowProximitySetupToNewDevice"])
 	}
 	{
-		path := validation.Join(p, "allowRadioService")
+		fieldPath := validation.Join(path, "allowRadioService")
 		present := x.AllowRadioService != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowRadioService"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowRadioService"])
 	}
 	{
-		path := validation.Join(p, "allowRapidSecurityResponseInstallation")
+		fieldPath := validation.Join(path, "allowRapidSecurityResponseInstallation")
 		present := x.AllowRapidSecurityResponseInstallation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowRapidSecurityResponseInstallation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowRapidSecurityResponseInstallation"])
 	}
 	{
-		path := validation.Join(p, "allowRapidSecurityResponseRemoval")
+		fieldPath := validation.Join(path, "allowRapidSecurityResponseRemoval")
 		present := x.AllowRapidSecurityResponseRemoval != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowRapidSecurityResponseRemoval"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowRapidSecurityResponseRemoval"])
 	}
 	{
-		path := validation.Join(p, "allowRCSMessaging")
+		fieldPath := validation.Join(path, "allowRCSMessaging")
 		present := x.AllowRCSMessaging != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowRCSMessaging"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowRCSMessaging"])
 	}
 	{
-		path := validation.Join(p, "allowRemoteAppleEventsModification")
+		fieldPath := validation.Join(path, "allowRemoteAppleEventsModification")
 		present := x.AllowRemoteAppleEventsModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowRemoteAppleEventsModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowRemoteAppleEventsModification"])
 	}
 	{
-		path := validation.Join(p, "allowRemoteAppPairing")
+		fieldPath := validation.Join(path, "allowRemoteAppPairing")
 		present := x.AllowRemoteAppPairing != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowRemoteAppPairing"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowRemoteAppPairing"])
 	}
 	{
-		path := validation.Join(p, "allowRemoteScreenObservation")
+		fieldPath := validation.Join(path, "allowRemoteScreenObservation")
 		present := x.AllowRemoteScreenObservation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowRemoteScreenObservation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowRemoteScreenObservation"])
 	}
 	{
-		path := validation.Join(p, "allowRosettaUsageAwareness")
+		fieldPath := validation.Join(path, "allowRosettaUsageAwareness")
 		present := x.AllowRosettaUsageAwareness != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowRosettaUsageAwareness"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowRosettaUsageAwareness"])
 	}
 	{
-		path := validation.Join(p, "allowSafari")
+		fieldPath := validation.Join(path, "allowSafari")
 		present := x.AllowSafari != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowSafari"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowSafari"])
 	}
 	{
-		path := validation.Join(p, "allowSafariHistoryClearing")
+		fieldPath := validation.Join(path, "allowSafariHistoryClearing")
 		present := x.AllowSafariHistoryClearing != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowSafariHistoryClearing"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowSafariHistoryClearing"])
 	}
 	{
-		path := validation.Join(p, "allowSafariPrivateBrowsing")
+		fieldPath := validation.Join(path, "allowSafariPrivateBrowsing")
 		present := x.AllowSafariPrivateBrowsing != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowSafariPrivateBrowsing"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowSafariPrivateBrowsing"])
 	}
 	{
-		path := validation.Join(p, "allowSafariSummary")
+		fieldPath := validation.Join(path, "allowSafariSummary")
 		present := x.AllowSafariSummary != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowSafariSummary"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowSafariSummary"])
 	}
 	{
-		path := validation.Join(p, "allowSatelliteConnection")
+		fieldPath := validation.Join(path, "allowSatelliteConnection")
 		present := x.AllowSatelliteConnection != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowSatelliteConnection"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowSatelliteConnection"])
 	}
 	{
-		path := validation.Join(p, "allowScreenShot")
+		fieldPath := validation.Join(path, "allowScreenShot")
 		present := x.AllowScreenShot != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowScreenShot"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowScreenShot"])
 	}
 	{
-		path := validation.Join(p, "allowSharedDeviceTemporarySession")
+		fieldPath := validation.Join(path, "allowSharedDeviceTemporarySession")
 		present := x.AllowSharedDeviceTemporarySession != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowSharedDeviceTemporarySession"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowSharedDeviceTemporarySession"])
 	}
 	{
-		path := validation.Join(p, "allowSharedStream")
+		fieldPath := validation.Join(path, "allowSharedStream")
 		present := x.AllowSharedStream != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowSharedStream"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowSharedStream"])
 	}
 	{
-		path := validation.Join(p, "allowSpellCheck")
+		fieldPath := validation.Join(path, "allowSpellCheck")
 		present := x.AllowSpellCheck != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowSpellCheck"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowSpellCheck"])
 	}
 	{
-		path := validation.Join(p, "allowSpotlightInternetResults")
+		fieldPath := validation.Join(path, "allowSpotlightInternetResults")
 		present := x.AllowSpotlightInternetResults != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowSpotlightInternetResults"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowSpotlightInternetResults"])
 	}
 	{
-		path := validation.Join(p, "allowStartupDiskModification")
+		fieldPath := validation.Join(path, "allowStartupDiskModification")
 		present := x.AllowStartupDiskModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowStartupDiskModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowStartupDiskModification"])
 	}
 	{
-		path := validation.Join(p, "allowSystemAppRemoval")
+		fieldPath := validation.Join(path, "allowSystemAppRemoval")
 		present := x.AllowSystemAppRemoval != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowSystemAppRemoval"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowSystemAppRemoval"])
 	}
 	{
-		path := validation.Join(p, "allowTimeMachineBackup")
+		fieldPath := validation.Join(path, "allowTimeMachineBackup")
 		present := x.AllowTimeMachineBackup != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowTimeMachineBackup"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowTimeMachineBackup"])
 	}
 	{
-		path := validation.Join(p, "allowUIAppInstallation")
+		fieldPath := validation.Join(path, "allowUIAppInstallation")
 		present := x.AllowUIAppInstallation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowUIAppInstallation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowUIAppInstallation"])
 	}
 	{
-		path := validation.Join(p, "allowUIConfigurationProfileInstallation")
+		fieldPath := validation.Join(path, "allowUIConfigurationProfileInstallation")
 		present := x.AllowUIConfigurationProfileInstallation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowUIConfigurationProfileInstallation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowUIConfigurationProfileInstallation"])
 	}
 	{
-		path := validation.Join(p, "allowUniversalControl")
+		fieldPath := validation.Join(path, "allowUniversalControl")
 		present := x.AllowUniversalControl != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowUniversalControl"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowUniversalControl"])
 	}
 	{
-		path := validation.Join(p, "allowUnmanagedToReadManagedContacts")
+		fieldPath := validation.Join(path, "allowUnmanagedToReadManagedContacts")
 		present := x.AllowUnmanagedToReadManagedContacts != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowUnmanagedToReadManagedContacts"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowUnmanagedToReadManagedContacts"])
 	}
 	{
-		path := validation.Join(p, "allowUnpairedExternalBootToRecovery")
+		fieldPath := validation.Join(path, "allowUnpairedExternalBootToRecovery")
 		present := x.AllowUnpairedExternalBootToRecovery != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowUnpairedExternalBootToRecovery"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowUnpairedExternalBootToRecovery"])
 	}
 	{
-		path := validation.Join(p, "allowUntrustedTLSPrompt")
+		fieldPath := validation.Join(path, "allowUntrustedTLSPrompt")
 		present := x.AllowUntrustedTLSPrompt != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowUntrustedTLSPrompt"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowUntrustedTLSPrompt"])
 	}
 	{
-		path := validation.Join(p, "allowUSBRestrictedMode")
+		fieldPath := validation.Join(path, "allowUSBRestrictedMode")
 		present := x.AllowUSBRestrictedMode != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowUSBRestrictedMode"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowUSBRestrictedMode"])
 	}
 	{
-		path := validation.Join(p, "allowVideoConferencing")
+		fieldPath := validation.Join(path, "allowVideoConferencing")
 		present := x.AllowVideoConferencing != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowVideoConferencing"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowVideoConferencing"])
 	}
 	{
-		path := validation.Join(p, "allowVideoConferencingRemoteControl")
+		fieldPath := validation.Join(path, "allowVideoConferencingRemoteControl")
 		present := x.AllowVideoConferencingRemoteControl != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowVideoConferencingRemoteControl"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowVideoConferencingRemoteControl"])
 	}
 	{
-		path := validation.Join(p, "allowVisualIntelligenceSummary")
+		fieldPath := validation.Join(path, "allowVisualIntelligenceSummary")
 		present := x.AllowVisualIntelligenceSummary != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowVisualIntelligenceSummary"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowVisualIntelligenceSummary"])
 	}
 	{
-		path := validation.Join(p, "allowVoiceDialing")
+		fieldPath := validation.Join(path, "allowVoiceDialing")
 		present := x.AllowVoiceDialing != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowVoiceDialing"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowVoiceDialing"])
 	}
 	{
-		path := validation.Join(p, "allowVPNCreation")
+		fieldPath := validation.Join(path, "allowVPNCreation")
 		present := x.AllowVPNCreation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowVPNCreation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowVPNCreation"])
 	}
 	{
-		path := validation.Join(p, "allowWallpaperModification")
+		fieldPath := validation.Join(path, "allowWallpaperModification")
 		present := x.AllowWallpaperModification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowWallpaperModification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowWallpaperModification"])
 	}
 	{
-		path := validation.Join(p, "allowWebDistributionAppInstallation")
+		fieldPath := validation.Join(path, "allowWebDistributionAppInstallation")
 		present := x.AllowWebDistributionAppInstallation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowWebDistributionAppInstallation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowWebDistributionAppInstallation"])
 	}
 	{
-		path := validation.Join(p, "allowWritingTools")
+		fieldPath := validation.Join(path, "allowWritingTools")
 		present := x.AllowWritingTools != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowWritingTools"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowWritingTools"])
 	}
 	{
-		path := validation.Join(p, "autonomousSingleAppModePermittedAppIDs")
+		fieldPath := validation.Join(path, "autonomousSingleAppModePermittedAppIDs")
 		present := len(x.AutonomousSingleAppModePermittedAppIDs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.autonomousSingleAppModePermittedAppIDs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".autonomousSingleAppModePermittedAppIDs"])
 	}
 	{
-		path := validation.Join(p, "blacklistedAppBundleIDs")
+		fieldPath := validation.Join(path, "blacklistedAppBundleIDs")
 		present := len(x.BlacklistedAppBundleIDs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.blacklistedAppBundleIDs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".blacklistedAppBundleIDs"])
 	}
 	{
-		path := validation.Join(p, "blockedAppBundleIDs")
+		fieldPath := validation.Join(path, "blockedAppBundleIDs")
 		present := len(x.BlockedAppBundleIDs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.blockedAppBundleIDs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".blockedAppBundleIDs"])
 	}
 	{
-		path := validation.Join(p, "deniedICCIDsForiMessageFaceTime")
+		fieldPath := validation.Join(path, "deniedICCIDsForiMessageFaceTime")
 		present := len(x.DeniedICCIDsForiMessageFaceTime) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.deniedICCIDsForiMessageFaceTime"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".deniedICCIDsForiMessageFaceTime"])
 	}
 	{
-		path := validation.Join(p, "deniedICCIDsForRCS")
+		fieldPath := validation.Join(path, "deniedICCIDsForRCS")
 		present := len(x.DeniedICCIDsForRCS) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.deniedICCIDsForRCS"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".deniedICCIDsForRCS"])
 	}
 	{
-		path := validation.Join(p, "enforcedFingerprintTimeout")
+		fieldPath := validation.Join(path, "enforcedFingerprintTimeout")
 		present := x.EnforcedFingerprintTimeout != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.enforcedFingerprintTimeout"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".enforcedFingerprintTimeout"])
 	}
 	{
-		path := validation.Join(p, "enforcedSoftwareUpdateDelay")
+		fieldPath := validation.Join(path, "enforcedSoftwareUpdateDelay")
 		present := x.EnforcedSoftwareUpdateDelay != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.enforcedSoftwareUpdateDelay"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".enforcedSoftwareUpdateDelay"])
 		if present {
-			c.Range(path, true, float64(*x.EnforcedSoftwareUpdateDelay), new(1.0), new(90.0))
+			c.Range(fieldPath, true, float64(*x.EnforcedSoftwareUpdateDelay), new(1.0), new(90.0))
 		}
 	}
 	{
-		path := validation.Join(p, "enforcedSoftwareUpdateMajorOSDeferredInstallDelay")
+		fieldPath := validation.Join(path, "enforcedSoftwareUpdateMajorOSDeferredInstallDelay")
 		present := x.EnforcedSoftwareUpdateMajorOSDeferredInstallDelay != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.enforcedSoftwareUpdateMajorOSDeferredInstallDelay"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".enforcedSoftwareUpdateMajorOSDeferredInstallDelay"])
 		if present {
-			c.Range(path, true, float64(*x.EnforcedSoftwareUpdateMajorOSDeferredInstallDelay), new(1.0), new(90.0))
+			c.Range(fieldPath, true, float64(*x.EnforcedSoftwareUpdateMajorOSDeferredInstallDelay), new(1.0), new(90.0))
 		}
 	}
 	{
-		path := validation.Join(p, "enforcedSoftwareUpdateMinorOSDeferredInstallDelay")
+		fieldPath := validation.Join(path, "enforcedSoftwareUpdateMinorOSDeferredInstallDelay")
 		present := x.EnforcedSoftwareUpdateMinorOSDeferredInstallDelay != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.enforcedSoftwareUpdateMinorOSDeferredInstallDelay"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".enforcedSoftwareUpdateMinorOSDeferredInstallDelay"])
 		if present {
-			c.Range(path, true, float64(*x.EnforcedSoftwareUpdateMinorOSDeferredInstallDelay), new(1.0), new(90.0))
+			c.Range(fieldPath, true, float64(*x.EnforcedSoftwareUpdateMinorOSDeferredInstallDelay), new(1.0), new(90.0))
 		}
 	}
 	{
-		path := validation.Join(p, "enforcedSoftwareUpdateNonOSDeferredInstallDelay")
+		fieldPath := validation.Join(path, "enforcedSoftwareUpdateNonOSDeferredInstallDelay")
 		present := x.EnforcedSoftwareUpdateNonOSDeferredInstallDelay != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.enforcedSoftwareUpdateNonOSDeferredInstallDelay"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".enforcedSoftwareUpdateNonOSDeferredInstallDelay"])
 		if present {
-			c.Range(path, true, float64(*x.EnforcedSoftwareUpdateNonOSDeferredInstallDelay), new(1.0), new(90.0))
+			c.Range(fieldPath, true, float64(*x.EnforcedSoftwareUpdateNonOSDeferredInstallDelay), new(1.0), new(90.0))
 		}
 	}
 	{
-		path := validation.Join(p, "forceAirDropUnmanaged")
+		fieldPath := validation.Join(path, "forceAirDropUnmanaged")
 		present := x.ForceAirDropUnmanaged != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceAirDropUnmanaged"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceAirDropUnmanaged"])
 	}
 	{
-		path := validation.Join(p, "forceAirPlayIncomingRequestsPairingPassword")
+		fieldPath := validation.Join(path, "forceAirPlayIncomingRequestsPairingPassword")
 		present := x.ForceAirPlayIncomingRequestsPairingPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceAirPlayIncomingRequestsPairingPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceAirPlayIncomingRequestsPairingPassword"])
 	}
 	{
-		path := validation.Join(p, "forceAirPlayOutgoingRequestsPairingPassword")
+		fieldPath := validation.Join(path, "forceAirPlayOutgoingRequestsPairingPassword")
 		present := x.ForceAirPlayOutgoingRequestsPairingPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceAirPlayOutgoingRequestsPairingPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceAirPlayOutgoingRequestsPairingPassword"])
 	}
 	{
-		path := validation.Join(p, "forceAirPrintTrustedTLSRequirement")
+		fieldPath := validation.Join(path, "forceAirPrintTrustedTLSRequirement")
 		present := x.ForceAirPrintTrustedTLSRequirement != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceAirPrintTrustedTLSRequirement"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceAirPrintTrustedTLSRequirement"])
 	}
 	{
-		path := validation.Join(p, "forceAssistantProfanityFilter")
+		fieldPath := validation.Join(path, "forceAssistantProfanityFilter")
 		present := x.ForceAssistantProfanityFilter != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceAssistantProfanityFilter"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceAssistantProfanityFilter"])
 	}
 	{
-		path := validation.Join(p, "forceAuthenticationBeforeAutoFill")
+		fieldPath := validation.Join(path, "forceAuthenticationBeforeAutoFill")
 		present := x.ForceAuthenticationBeforeAutoFill != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceAuthenticationBeforeAutoFill"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceAuthenticationBeforeAutoFill"])
 	}
 	{
-		path := validation.Join(p, "forceAutomaticDateAndTime")
+		fieldPath := validation.Join(path, "forceAutomaticDateAndTime")
 		present := x.ForceAutomaticDateAndTime != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceAutomaticDateAndTime"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceAutomaticDateAndTime"])
 	}
 	{
-		path := validation.Join(p, "forceBypassScreenCaptureAlert")
+		fieldPath := validation.Join(path, "forceBypassScreenCaptureAlert")
 		present := x.ForceBypassScreenCaptureAlert != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceBypassScreenCaptureAlert"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceBypassScreenCaptureAlert"])
 	}
 	{
-		path := validation.Join(p, "forceClassroomAutomaticallyJoinClasses")
+		fieldPath := validation.Join(path, "forceClassroomAutomaticallyJoinClasses")
 		present := x.ForceClassroomAutomaticallyJoinClasses != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceClassroomAutomaticallyJoinClasses"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceClassroomAutomaticallyJoinClasses"])
 	}
 	{
-		path := validation.Join(p, "forceClassroomRequestPermissionToLeaveClasses")
+		fieldPath := validation.Join(path, "forceClassroomRequestPermissionToLeaveClasses")
 		present := x.ForceClassroomRequestPermissionToLeaveClasses != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceClassroomRequestPermissionToLeaveClasses"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceClassroomRequestPermissionToLeaveClasses"])
 	}
 	{
-		path := validation.Join(p, "forceClassroomUnpromptedAppAndDeviceLock")
+		fieldPath := validation.Join(path, "forceClassroomUnpromptedAppAndDeviceLock")
 		present := x.ForceClassroomUnpromptedAppAndDeviceLock != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceClassroomUnpromptedAppAndDeviceLock"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceClassroomUnpromptedAppAndDeviceLock"])
 	}
 	{
-		path := validation.Join(p, "forceClassroomUnpromptedScreenObservation")
+		fieldPath := validation.Join(path, "forceClassroomUnpromptedScreenObservation")
 		present := x.ForceClassroomUnpromptedScreenObservation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceClassroomUnpromptedScreenObservation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceClassroomUnpromptedScreenObservation"])
 	}
 	{
-		path := validation.Join(p, "forceDelayedAppSoftwareUpdates")
+		fieldPath := validation.Join(path, "forceDelayedAppSoftwareUpdates")
 		present := x.ForceDelayedAppSoftwareUpdates != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceDelayedAppSoftwareUpdates"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceDelayedAppSoftwareUpdates"])
 	}
 	{
-		path := validation.Join(p, "forceDelayedMajorSoftwareUpdates")
+		fieldPath := validation.Join(path, "forceDelayedMajorSoftwareUpdates")
 		present := x.ForceDelayedMajorSoftwareUpdates != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceDelayedMajorSoftwareUpdates"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceDelayedMajorSoftwareUpdates"])
 	}
 	{
-		path := validation.Join(p, "forceDelayedSoftwareUpdates")
+		fieldPath := validation.Join(path, "forceDelayedSoftwareUpdates")
 		present := x.ForceDelayedSoftwareUpdates != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceDelayedSoftwareUpdates"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceDelayedSoftwareUpdates"])
 	}
 	{
-		path := validation.Join(p, "forceEncryptedBackup")
+		fieldPath := validation.Join(path, "forceEncryptedBackup")
 		present := x.ForceEncryptedBackup != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceEncryptedBackup"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceEncryptedBackup"])
 	}
 	{
-		path := validation.Join(p, "forceITunesStorePasswordEntry")
+		fieldPath := validation.Join(path, "forceITunesStorePasswordEntry")
 		present := x.ForceITunesStorePasswordEntry != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceITunesStorePasswordEntry"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceITunesStorePasswordEntry"])
 	}
 	{
-		path := validation.Join(p, "forceLimitAdTracking")
+		fieldPath := validation.Join(path, "forceLimitAdTracking")
 		present := x.ForceLimitAdTracking != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceLimitAdTracking"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceLimitAdTracking"])
 	}
 	{
-		path := validation.Join(p, "forceOnDeviceOnlyDictation")
+		fieldPath := validation.Join(path, "forceOnDeviceOnlyDictation")
 		present := x.ForceOnDeviceOnlyDictation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceOnDeviceOnlyDictation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceOnDeviceOnlyDictation"])
 	}
 	{
-		path := validation.Join(p, "forceOnDeviceOnlyTranslation")
+		fieldPath := validation.Join(path, "forceOnDeviceOnlyTranslation")
 		present := x.ForceOnDeviceOnlyTranslation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceOnDeviceOnlyTranslation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceOnDeviceOnlyTranslation"])
 	}
 	{
-		path := validation.Join(p, "forcePreserveESIMOnErase")
+		fieldPath := validation.Join(path, "forcePreserveESIMOnErase")
 		present := x.ForcePreserveESIMOnErase != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forcePreserveESIMOnErase"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forcePreserveESIMOnErase"])
 	}
 	{
-		path := validation.Join(p, "forceWatchWristDetection")
+		fieldPath := validation.Join(path, "forceWatchWristDetection")
 		present := x.ForceWatchWristDetection != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceWatchWristDetection"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceWatchWristDetection"])
 	}
 	{
-		path := validation.Join(p, "forceWiFiPowerOn")
+		fieldPath := validation.Join(path, "forceWiFiPowerOn")
 		present := x.ForceWiFiPowerOn != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceWiFiPowerOn"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceWiFiPowerOn"])
 	}
 	{
-		path := validation.Join(p, "forceWiFiToAllowedNetworksOnly")
+		fieldPath := validation.Join(path, "forceWiFiToAllowedNetworksOnly")
 		present := x.ForceWiFiToAllowedNetworksOnly != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceWiFiToAllowedNetworksOnly"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceWiFiToAllowedNetworksOnly"])
 	}
 	{
-		path := validation.Join(p, "forceWiFiWhitelisting")
+		fieldPath := validation.Join(path, "forceWiFiWhitelisting")
 		present := x.ForceWiFiWhitelisting != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.forceWiFiWhitelisting"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forceWiFiWhitelisting"])
 	}
 	{
-		path := validation.Join(p, "ratingApps")
+		fieldPath := validation.Join(path, "ratingApps")
 		present := x.RatingApps != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.ratingApps"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ratingApps"])
 		if present {
-			c.Range(path, true, float64(*x.RatingApps), new(0.0), new(1000.0))
+			c.Range(fieldPath, true, float64(*x.RatingApps), new(0.0), new(1000.0))
 		}
 	}
 	{
-		path := validation.Join(p, "ratingAppsExemptedBundleIDs")
+		fieldPath := validation.Join(path, "ratingAppsExemptedBundleIDs")
 		present := len(x.RatingAppsExemptedBundleIDs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.ratingAppsExemptedBundleIDs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ratingAppsExemptedBundleIDs"])
 	}
 	{
-		path := validation.Join(p, "ratingMovies")
+		fieldPath := validation.Join(path, "ratingMovies")
 		present := x.RatingMovies != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.ratingMovies"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ratingMovies"])
 		if present {
-			c.Range(path, true, float64(*x.RatingMovies), new(0.0), new(1000.0))
+			c.Range(fieldPath, true, float64(*x.RatingMovies), new(0.0), new(1000.0))
 		}
 	}
 	{
-		path := validation.Join(p, "ratingRegion")
+		fieldPath := validation.Join(path, "ratingRegion")
 		present := x.RatingRegion != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.ratingRegion"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ratingRegion"])
 		if present {
-			c.Enum(path, true, *x.RatingRegion, []any{"us", "au", "ca", "de", "fr", "ie", "jp", "nz", "gb"})
+			c.Enum(fieldPath, true, *x.RatingRegion, []any{"us", "au", "ca", "de", "fr", "ie", "jp", "nz", "gb"})
 		}
 	}
 	{
-		path := validation.Join(p, "ratingTVShows")
+		fieldPath := validation.Join(path, "ratingTVShows")
 		present := x.RatingTVShows != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.ratingTVShows"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ratingTVShows"])
 		if present {
-			c.Range(path, true, float64(*x.RatingTVShows), new(0.0), new(1000.0))
+			c.Range(fieldPath, true, float64(*x.RatingTVShows), new(0.0), new(1000.0))
 		}
 	}
 	{
-		path := validation.Join(p, "requireManagedPasteboard")
+		fieldPath := validation.Join(path, "requireManagedPasteboard")
 		present := x.RequireManagedPasteboard != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.requireManagedPasteboard"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".requireManagedPasteboard"])
 	}
 	{
-		path := validation.Join(p, "safariAcceptCookies")
+		fieldPath := validation.Join(path, "safariAcceptCookies")
 		present := x.SafariAcceptCookies != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.safariAcceptCookies"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".safariAcceptCookies"])
 		if present {
-			c.Enum(path, true, *x.SafariAcceptCookies, []any{0.0, 1.0, 1.5, 2.0})
+			c.Enum(fieldPath, true, *x.SafariAcceptCookies, []any{0.0, 1.0, 1.5, 2.0})
 		}
 	}
 	{
-		path := validation.Join(p, "safariAllowAutoFill")
+		fieldPath := validation.Join(path, "safariAllowAutoFill")
 		present := x.SafariAllowAutoFill != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.safariAllowAutoFill"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".safariAllowAutoFill"])
 	}
 	{
-		path := validation.Join(p, "safariAllowJavaScript")
+		fieldPath := validation.Join(path, "safariAllowJavaScript")
 		present := x.SafariAllowJavaScript != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.safariAllowJavaScript"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".safariAllowJavaScript"])
 	}
 	{
-		path := validation.Join(p, "safariAllowPopups")
+		fieldPath := validation.Join(path, "safariAllowPopups")
 		present := x.SafariAllowPopups != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.safariAllowPopups"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".safariAllowPopups"])
 	}
 	{
-		path := validation.Join(p, "safariForceFraudWarning")
+		fieldPath := validation.Join(path, "safariForceFraudWarning")
 		present := x.SafariForceFraudWarning != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.safariForceFraudWarning"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".safariForceFraudWarning"])
 	}
 	{
-		path := validation.Join(p, "whitelistedAppBundleIDs")
+		fieldPath := validation.Join(path, "whitelistedAppBundleIDs")
 		present := len(x.WhitelistedAppBundleIDs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.whitelistedAppBundleIDs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".whitelistedAppBundleIDs"])
 	}
 	{
-		path := validation.Join(p, "allowSiriAI")
+		fieldPath := validation.Join(path, "allowSiriAI")
 		present := x.AllowSiriAI != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Restrictions.allowSiriAI"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowSiriAI"])
 	}
 }
 
@@ -4213,39 +4213,39 @@ func (x *Restrictions) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *AppStore) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AppStore")
 	return c.Err()
 }
 
-func (x *AppStore) validate(c *validation.Collector, p string) {
+func (x *AppStore) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AppStore"])
+	c.Support(path, true, supportTable["AppStore"])
 	{
-		path := validation.Join(p, "restrict-store-require-admin-to-install")
+		fieldPath := validation.Join(path, "restrict-store-require-admin-to-install")
 		present := x.RestrictStoreRequireAdminToInstall != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppStore.restrict-store-require-admin-to-install"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".restrict-store-require-admin-to-install"])
 	}
 	{
-		path := validation.Join(p, "restrict-store-softwareupdate-only")
+		fieldPath := validation.Join(path, "restrict-store-softwareupdate-only")
 		present := x.RestrictStoreSoftwareupdateOnly != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppStore.restrict-store-softwareupdate-only"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".restrict-store-softwareupdate-only"])
 	}
 	{
-		path := validation.Join(p, "restrict-store-disable-app-adoption")
+		fieldPath := validation.Join(path, "restrict-store-disable-app-adoption")
 		present := x.RestrictStoreDisableAppAdoption != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppStore.restrict-store-disable-app-adoption"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".restrict-store-disable-app-adoption"])
 	}
 	{
-		path := validation.Join(p, "DisableSoftwareUpdateNotifications")
+		fieldPath := validation.Join(path, "DisableSoftwareUpdateNotifications")
 		present := x.DisableSoftwareUpdateNotifications != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppStore.DisableSoftwareUpdateNotifications"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisableSoftwareUpdateNotifications"])
 	}
 }
 
@@ -4253,46 +4253,46 @@ func (x *AppStore) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *AutonomousSingleAppMode) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AutonomousSingleAppMode")
 	return c.Err()
 }
 
-func (x *AutonomousSingleAppMode) validate(c *validation.Collector, p string) {
+func (x *AutonomousSingleAppMode) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AutonomousSingleAppMode"])
+	c.Support(path, true, supportTable["AutonomousSingleAppMode"])
 	{
-		path := validation.Join(p, "AllowedApplications")
+		fieldPath := validation.Join(path, "AllowedApplications")
 		present := len(x.AllowedApplications) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AutonomousSingleAppMode.AllowedApplications"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowedApplications"])
+		c.Required(fieldPath, present)
 		for i := range x.AllowedApplications {
-			x.AllowedApplications[i].validate(c, validation.Index(path, i))
+			x.AllowedApplications[i].validate(c, validation.Index(fieldPath, i), supportPath+".AllowedApplications.AllowedApplicationsItem")
 		}
 	}
 }
 
-func (x *AutonomousSingleAppModeAllowedApplications) validate(c *validation.Collector, p string) {
+func (x *AutonomousSingleAppModeAllowedApplications) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "BundleIdentifier")
+		fieldPath := validation.Join(path, "BundleIdentifier")
 		present := x.BundleIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AutonomousSingleAppMode.AllowedApplications.AllowedApplicationsItem.BundleIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BundleIdentifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "TeamIdentifier")
+		fieldPath := validation.Join(path, "TeamIdentifier")
 		present := x.TeamIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AutonomousSingleAppMode.AllowedApplications.AllowedApplicationsItem.TeamIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TeamIdentifier"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -4300,52 +4300,52 @@ func (x *AutonomousSingleAppModeAllowedApplications) validate(c *validation.Coll
 // that every present key is supported on that OS version and enrollment context.
 func (x *AssociatedDomains) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AssociatedDomains")
 	return c.Err()
 }
 
-func (x *AssociatedDomains) validate(c *validation.Collector, p string) {
+func (x *AssociatedDomains) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AssociatedDomains"])
+	c.Support(path, true, supportTable["AssociatedDomains"])
 	{
-		path := validation.Join(p, "Configuration")
+		fieldPath := validation.Join(path, "Configuration")
 		present := len(x.Configuration) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AssociatedDomains.Configuration"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Configuration"])
+		c.Required(fieldPath, present)
 		for i := range x.Configuration {
-			x.Configuration[i].validate(c, validation.Index(path, i))
+			x.Configuration[i].validate(c, validation.Index(fieldPath, i), supportPath+".Configuration.ConfigurationItem")
 		}
 	}
 }
 
-func (x *AssociatedDomainsConfiguration) validate(c *validation.Collector, p string) {
+func (x *AssociatedDomainsConfiguration) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "ApplicationIdentifier")
+		fieldPath := validation.Join(path, "ApplicationIdentifier")
 		present := x.ApplicationIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AssociatedDomains.Configuration.ConfigurationItem.ApplicationIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ApplicationIdentifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "AssociatedDomains")
+		fieldPath := validation.Join(path, "AssociatedDomains")
 		present := len(x.AssociatedDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AssociatedDomains.Configuration.ConfigurationItem.AssociatedDomains"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AssociatedDomains"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "EnableDirectDownloads")
+		fieldPath := validation.Join(path, "EnableDirectDownloads")
 		present := x.EnableDirectDownloads != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AssociatedDomains.Configuration.ConfigurationItem.EnableDirectDownloads"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableDirectDownloads"])
 	}
 }
 
@@ -4353,64 +4353,64 @@ func (x *AssociatedDomainsConfiguration) validate(c *validation.Collector, p str
 // that every present key is supported on that OS version and enrollment context.
 func (x *CalDAV) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "CalDAV")
 	return c.Err()
 }
 
-func (x *CalDAV) validate(c *validation.Collector, p string) {
+func (x *CalDAV) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["CalDAV"])
+	c.Support(path, true, supportTable["CalDAV"])
 	{
-		path := validation.Join(p, "CalDAVAccountDescription")
+		fieldPath := validation.Join(path, "CalDAVAccountDescription")
 		present := x.CalDAVAccountDescription != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CalDAV.CalDAVAccountDescription"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CalDAVAccountDescription"])
 	}
 	{
-		path := validation.Join(p, "CalDAVHostName")
+		fieldPath := validation.Join(path, "CalDAVHostName")
 		present := x.CalDAVHostName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CalDAV.CalDAVHostName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CalDAVHostName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "CalDAVUsername")
+		fieldPath := validation.Join(path, "CalDAVUsername")
 		present := x.CalDAVUsername != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CalDAV.CalDAVUsername"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CalDAVUsername"])
 	}
 	{
-		path := validation.Join(p, "CalDAVPassword")
+		fieldPath := validation.Join(path, "CalDAVPassword")
 		present := x.CalDAVPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CalDAV.CalDAVPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CalDAVPassword"])
 	}
 	{
-		path := validation.Join(p, "CalDAVPrincipalURL")
+		fieldPath := validation.Join(path, "CalDAVPrincipalURL")
 		present := x.CalDAVPrincipalURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CalDAV.CalDAVPrincipalURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CalDAVPrincipalURL"])
 	}
 	{
-		path := validation.Join(p, "CalDAVUseSSL")
+		fieldPath := validation.Join(path, "CalDAVUseSSL")
 		present := x.CalDAVUseSSL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CalDAV.CalDAVUseSSL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CalDAVUseSSL"])
 	}
 	{
-		path := validation.Join(p, "CalDAVPort")
+		fieldPath := validation.Join(path, "CalDAVPort")
 		present := x.CalDAVPort != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CalDAV.CalDAVPort"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CalDAVPort"])
 	}
 	{
-		path := validation.Join(p, "VPNUUID")
+		fieldPath := validation.Join(path, "VPNUUID")
 		present := x.VPNUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CalDAV.VPNUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VPNUUID"])
 	}
 }
 
@@ -4418,102 +4418,102 @@ func (x *CalDAV) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *CardDAV) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "CardDAV")
 	return c.Err()
 }
 
-func (x *CardDAV) validate(c *validation.Collector, p string) {
+func (x *CardDAV) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["CardDAV"])
+	c.Support(path, true, supportTable["CardDAV"])
 	{
-		path := validation.Join(p, "CardDAVAccountDescription")
+		fieldPath := validation.Join(path, "CardDAVAccountDescription")
 		present := x.CardDAVAccountDescription != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CardDAV.CardDAVAccountDescription"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CardDAVAccountDescription"])
 	}
 	{
-		path := validation.Join(p, "CardDAVHostName")
+		fieldPath := validation.Join(path, "CardDAVHostName")
 		present := x.CardDAVHostName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CardDAV.CardDAVHostName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CardDAVHostName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "CardDAVUsername")
+		fieldPath := validation.Join(path, "CardDAVUsername")
 		present := x.CardDAVUsername != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CardDAV.CardDAVUsername"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CardDAVUsername"])
 	}
 	{
-		path := validation.Join(p, "CardDAVPassword")
+		fieldPath := validation.Join(path, "CardDAVPassword")
 		present := x.CardDAVPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CardDAV.CardDAVPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CardDAVPassword"])
 	}
 	{
-		path := validation.Join(p, "CardDAVPrincipalURL")
+		fieldPath := validation.Join(path, "CardDAVPrincipalURL")
 		present := x.CardDAVPrincipalURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CardDAV.CardDAVPrincipalURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CardDAVPrincipalURL"])
 	}
 	{
-		path := validation.Join(p, "CardDAVUseSSL")
+		fieldPath := validation.Join(path, "CardDAVUseSSL")
 		present := x.CardDAVUseSSL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CardDAV.CardDAVUseSSL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CardDAVUseSSL"])
 	}
 	{
-		path := validation.Join(p, "CardDAVPort")
+		fieldPath := validation.Join(path, "CardDAVPort")
 		present := x.CardDAVPort != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CardDAV.CardDAVPort"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CardDAVPort"])
 	}
 	{
-		path := validation.Join(p, "CommunicationServiceRules")
+		fieldPath := validation.Join(path, "CommunicationServiceRules")
 		present := x.CommunicationServiceRules != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CardDAV.CommunicationServiceRules"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CommunicationServiceRules"])
 		if present {
-			x.CommunicationServiceRules.validate(c, path)
+			x.CommunicationServiceRules.validate(c, fieldPath, supportPath+".CommunicationServiceRules")
 		}
 	}
 	{
-		path := validation.Join(p, "VPNUUID")
+		fieldPath := validation.Join(path, "VPNUUID")
 		present := x.VPNUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CardDAV.VPNUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VPNUUID"])
 	}
 }
 
-func (x *CardDAVCommunicationServiceRules) validate(c *validation.Collector, p string) {
+func (x *CardDAVCommunicationServiceRules) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "DefaultServiceHandlers")
+		fieldPath := validation.Join(path, "DefaultServiceHandlers")
 		present := x.DefaultServiceHandlers != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CardDAV.CommunicationServiceRules.DefaultServiceHandlers"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DefaultServiceHandlers"])
 		if present {
-			x.DefaultServiceHandlers.validate(c, path)
+			x.DefaultServiceHandlers.validate(c, fieldPath, supportPath+".DefaultServiceHandlers")
 		}
 	}
 }
 
-func (x *CardDAVCommunicationServiceRulesDefaultServiceHandlers) validate(c *validation.Collector, p string) {
+func (x *CardDAVCommunicationServiceRulesDefaultServiceHandlers) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "AudioCall")
+		fieldPath := validation.Join(path, "AudioCall")
 		present := x.AudioCall != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CardDAV.CommunicationServiceRules.DefaultServiceHandlers.AudioCall"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AudioCall"])
 	}
 }
 
@@ -4521,166 +4521,166 @@ func (x *CardDAVCommunicationServiceRulesDefaultServiceHandlers) validate(c *val
 // that every present key is supported on that OS version and enrollment context.
 func (x *Cellular) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Cellular")
 	return c.Err()
 }
 
-func (x *Cellular) validate(c *validation.Collector, p string) {
+func (x *Cellular) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Cellular"])
+	c.Support(path, true, supportTable["Cellular"])
 	{
-		path := validation.Join(p, "AttachAPN")
+		fieldPath := validation.Join(path, "AttachAPN")
 		present := x.AttachAPN != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.AttachAPN"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AttachAPN"])
 		if present {
-			x.AttachAPN.validate(c, path)
+			x.AttachAPN.validate(c, fieldPath, supportPath+".AttachAPN")
 		}
 	}
 	{
-		path := validation.Join(p, "APNs")
+		fieldPath := validation.Join(path, "APNs")
 		present := len(x.APNs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.APNs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".APNs"])
 		for i := range x.APNs {
-			x.APNs[i].validate(c, validation.Index(path, i))
+			x.APNs[i].validate(c, validation.Index(fieldPath, i), supportPath+".APNs.APNsItem")
 		}
 	}
 }
 
-func (x *CellularAttachAPN) validate(c *validation.Collector, p string) {
+func (x *CellularAttachAPN) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Name")
+		fieldPath := validation.Join(path, "Name")
 		present := x.Name != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.AttachAPN.Name"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Name"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "AuthenticationType")
+		fieldPath := validation.Join(path, "AuthenticationType")
 		present := x.AuthenticationType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.AttachAPN.AuthenticationType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthenticationType"])
 		if present {
-			c.Enum(path, true, *x.AuthenticationType, []any{"CHAP", "PAP"})
+			c.Enum(fieldPath, true, *x.AuthenticationType, []any{"CHAP", "PAP"})
 		}
 	}
 	{
-		path := validation.Join(p, "Username")
+		fieldPath := validation.Join(path, "Username")
 		present := x.Username != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.AttachAPN.Username"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Username"])
 	}
 	{
-		path := validation.Join(p, "Password")
+		fieldPath := validation.Join(path, "Password")
 		present := x.Password != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.AttachAPN.Password"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Password"])
 	}
 	{
-		path := validation.Join(p, "AllowedProtocolMask")
+		fieldPath := validation.Join(path, "AllowedProtocolMask")
 		present := x.AllowedProtocolMask != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.AttachAPN.AllowedProtocolMask"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowedProtocolMask"])
 		if present {
-			c.Enum(path, true, *x.AllowedProtocolMask, []any{int64(1), int64(2), int64(3)})
+			c.Enum(fieldPath, true, *x.AllowedProtocolMask, []any{int64(1), int64(2), int64(3)})
 		}
 	}
 }
 
-func (x *CellularAPNs) validate(c *validation.Collector, p string) {
+func (x *CellularAPNs) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Name")
+		fieldPath := validation.Join(path, "Name")
 		present := x.Name != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.APNs.APNsItem.Name"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Name"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "AuthenticationType")
+		fieldPath := validation.Join(path, "AuthenticationType")
 		present := x.AuthenticationType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.APNs.APNsItem.AuthenticationType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthenticationType"])
 		if present {
-			c.Enum(path, true, *x.AuthenticationType, []any{"CHAP", "PAP"})
+			c.Enum(fieldPath, true, *x.AuthenticationType, []any{"CHAP", "PAP"})
 		}
 	}
 	{
-		path := validation.Join(p, "Username")
+		fieldPath := validation.Join(path, "Username")
 		present := x.Username != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.APNs.APNsItem.Username"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Username"])
 	}
 	{
-		path := validation.Join(p, "Password")
+		fieldPath := validation.Join(path, "Password")
 		present := x.Password != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.APNs.APNsItem.Password"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Password"])
 	}
 	{
-		path := validation.Join(p, "ProxyServer")
+		fieldPath := validation.Join(path, "ProxyServer")
 		present := x.ProxyServer != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.APNs.APNsItem.ProxyServer"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyServer"])
 	}
 	{
-		path := validation.Join(p, "ProxyPort")
+		fieldPath := validation.Join(path, "ProxyPort")
 		present := x.ProxyPort != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.APNs.APNsItem.ProxyPort"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyPort"])
 	}
 	{
-		path := validation.Join(p, "DefaultProtocolMask")
+		fieldPath := validation.Join(path, "DefaultProtocolMask")
 		present := x.DefaultProtocolMask != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.APNs.APNsItem.DefaultProtocolMask"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DefaultProtocolMask"])
 		if present {
-			c.Enum(path, true, *x.DefaultProtocolMask, []any{int64(1), int64(2), int64(3)})
+			c.Enum(fieldPath, true, *x.DefaultProtocolMask, []any{int64(1), int64(2), int64(3)})
 		}
 	}
 	{
-		path := validation.Join(p, "AllowedProtocolMask")
+		fieldPath := validation.Join(path, "AllowedProtocolMask")
 		present := x.AllowedProtocolMask != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.APNs.APNsItem.AllowedProtocolMask"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowedProtocolMask"])
 		if present {
-			c.Enum(path, true, *x.AllowedProtocolMask, []any{int64(1), int64(2), int64(3)})
+			c.Enum(fieldPath, true, *x.AllowedProtocolMask, []any{int64(1), int64(2), int64(3)})
 		}
 	}
 	{
-		path := validation.Join(p, "AllowedProtocolMaskInRoaming")
+		fieldPath := validation.Join(path, "AllowedProtocolMaskInRoaming")
 		present := x.AllowedProtocolMaskInRoaming != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.APNs.APNsItem.AllowedProtocolMaskInRoaming"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowedProtocolMaskInRoaming"])
 		if present {
-			c.Enum(path, true, *x.AllowedProtocolMaskInRoaming, []any{int64(1), int64(2), int64(3)})
+			c.Enum(fieldPath, true, *x.AllowedProtocolMaskInRoaming, []any{int64(1), int64(2), int64(3)})
 		}
 	}
 	{
-		path := validation.Join(p, "AllowedProtocolMaskInDomesticRoaming")
+		fieldPath := validation.Join(path, "AllowedProtocolMaskInDomesticRoaming")
 		present := x.AllowedProtocolMaskInDomesticRoaming != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.APNs.APNsItem.AllowedProtocolMaskInDomesticRoaming"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowedProtocolMaskInDomesticRoaming"])
 		if present {
-			c.Enum(path, true, *x.AllowedProtocolMaskInDomesticRoaming, []any{int64(1), int64(2), int64(3)})
+			c.Enum(fieldPath, true, *x.AllowedProtocolMaskInDomesticRoaming, []any{int64(1), int64(2), int64(3)})
 		}
 	}
 	{
-		path := validation.Join(p, "EnableXLAT464")
+		fieldPath := validation.Join(path, "EnableXLAT464")
 		present := x.EnableXLAT464 != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Cellular.APNs.APNsItem.EnableXLAT464"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableXLAT464"])
 	}
 }
 
@@ -4688,106 +4688,106 @@ func (x *CellularAPNs) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *CellularPrivateNetwork) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "CellularPrivateNetwork")
 	return c.Err()
 }
 
-func (x *CellularPrivateNetwork) validate(c *validation.Collector, p string) {
+func (x *CellularPrivateNetwork) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["CellularPrivateNetwork"])
+	c.Support(path, true, supportTable["CellularPrivateNetwork"])
 	{
-		path := validation.Join(p, "Geofences")
+		fieldPath := validation.Join(path, "Geofences")
 		present := len(x.Geofences) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["CellularPrivateNetwork.Geofences"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Geofences"])
 		for i := range x.Geofences {
-			x.Geofences[i].validate(c, validation.Index(path, i))
+			x.Geofences[i].validate(c, validation.Index(fieldPath, i), supportPath+".Geofences.GeofenceItem")
 		}
 	}
 	{
-		path := validation.Join(p, "DataSetName")
+		fieldPath := validation.Join(path, "DataSetName")
 		present := x.DataSetName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CellularPrivateNetwork.DataSetName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DataSetName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "VersionNumber")
+		fieldPath := validation.Join(path, "VersionNumber")
 		present := x.VersionNumber != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CellularPrivateNetwork.VersionNumber"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VersionNumber"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "CellularDataPreferred")
+		fieldPath := validation.Join(path, "CellularDataPreferred")
 		present := x.CellularDataPreferred != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CellularPrivateNetwork.CellularDataPreferred"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CellularDataPreferred"])
 	}
 	{
-		path := validation.Join(p, "EnableNRStandalone")
+		fieldPath := validation.Join(path, "EnableNRStandalone")
 		present := x.EnableNRStandalone != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CellularPrivateNetwork.EnableNRStandalone"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableNRStandalone"])
 	}
 	{
-		path := validation.Join(p, "NetworkIdentifier")
+		fieldPath := validation.Join(path, "NetworkIdentifier")
 		present := x.NetworkIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CellularPrivateNetwork.NetworkIdentifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".NetworkIdentifier"])
 	}
 	{
-		path := validation.Join(p, "CsgNetworkIdentifier")
+		fieldPath := validation.Join(path, "CsgNetworkIdentifier")
 		present := x.CsgNetworkIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CellularPrivateNetwork.CsgNetworkIdentifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CsgNetworkIdentifier"])
 	}
 }
 
-func (x *CellularPrivateNetworkGeofences) validate(c *validation.Collector, p string) {
+func (x *CellularPrivateNetworkGeofences) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Longitude")
+		fieldPath := validation.Join(path, "Longitude")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["CellularPrivateNetwork.Geofences.GeofenceItem.Longitude"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Longitude"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Range(path, true, float64(x.Longitude), new(-180.0), new(180.0))
+			c.Range(fieldPath, true, float64(x.Longitude), new(-180.0), new(180.0))
 		}
 	}
 	{
-		path := validation.Join(p, "Latitude")
+		fieldPath := validation.Join(path, "Latitude")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["CellularPrivateNetwork.Geofences.GeofenceItem.Latitude"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Latitude"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Range(path, true, float64(x.Latitude), new(-90.0), new(90.0))
+			c.Range(fieldPath, true, float64(x.Latitude), new(-90.0), new(90.0))
 		}
 	}
 	{
-		path := validation.Join(p, "Radius")
+		fieldPath := validation.Join(path, "Radius")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["CellularPrivateNetwork.Geofences.GeofenceItem.Radius"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Radius"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Range(path, true, float64(x.Radius), new(100.0), new(6500.0))
+			c.Range(fieldPath, true, float64(x.Radius), new(100.0), new(6500.0))
 		}
 	}
 	{
-		path := validation.Join(p, "GeofenceId")
+		fieldPath := validation.Join(path, "GeofenceId")
 		present := x.GeofenceId != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CellularPrivateNetwork.Geofences.GeofenceItem.GeofenceId"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".GeofenceId"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -4795,21 +4795,21 @@ func (x *CellularPrivateNetworkGeofences) validate(c *validation.Collector, p st
 // that every present key is supported on that OS version and enrollment context.
 func (x *ConferenceRoomDisplay) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ConferenceRoomDisplay")
 	return c.Err()
 }
 
-func (x *ConferenceRoomDisplay) validate(c *validation.Collector, p string) {
+func (x *ConferenceRoomDisplay) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ConferenceRoomDisplay"])
+	c.Support(path, true, supportTable["ConferenceRoomDisplay"])
 	{
-		path := validation.Join(p, "Message")
+		fieldPath := validation.Join(path, "Message")
 		present := x.Message != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ConferenceRoomDisplay.Message"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Message"])
 	}
 }
 
@@ -4817,82 +4817,82 @@ func (x *ConferenceRoomDisplay) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *Identification) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Identification")
 	return c.Err()
 }
 
-func (x *Identification) validate(c *validation.Collector, p string) {
+func (x *Identification) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Identification"])
+	c.Support(path, true, supportTable["Identification"])
 	{
-		path := validation.Join(p, "PayloadIdentification")
+		fieldPath := validation.Join(path, "PayloadIdentification")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["Identification.PayloadIdentification"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadIdentification"])
+		c.Required(fieldPath, present)
 		if present {
-			x.PayloadIdentification.validate(c, path)
+			x.PayloadIdentification.validate(c, fieldPath, supportPath+".PayloadIdentification")
 		}
 	}
 }
 
-func (x *IdentificationPayloadIdentification) validate(c *validation.Collector, p string) {
+func (x *IdentificationPayloadIdentification) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "UserName")
+		fieldPath := validation.Join(path, "UserName")
 		present := x.UserName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Identification.PayloadIdentification.UserName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "FullName")
+		fieldPath := validation.Join(path, "FullName")
 		present := x.FullName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Identification.PayloadIdentification.FullName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FullName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "EmailAddress")
+		fieldPath := validation.Join(path, "EmailAddress")
 		present := x.EmailAddress != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Identification.PayloadIdentification.EmailAddress"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EmailAddress"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "AuthMethod")
+		fieldPath := validation.Join(path, "AuthMethod")
 		present := x.AuthMethod != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Identification.PayloadIdentification.AuthMethod"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthMethod"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.AuthMethod, []any{"Password", "UserEnteredPassword"})
+			c.Enum(fieldPath, true, x.AuthMethod, []any{"Password", "UserEnteredPassword"})
 		}
 	}
 	{
-		path := validation.Join(p, "Password")
+		fieldPath := validation.Join(path, "Password")
 		present := x.Password != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Identification.PayloadIdentification.Password"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Password"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Prompt")
+		fieldPath := validation.Join(path, "Prompt")
 		present := x.Prompt != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Identification.PayloadIdentification.Prompt"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Prompt"])
 	}
 	{
-		path := validation.Join(p, "PromptMessage")
+		fieldPath := validation.Join(path, "PromptMessage")
 		present := x.PromptMessage != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Identification.PayloadIdentification.PromptMessage"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PromptMessage"])
 	}
 }
 
@@ -4900,53 +4900,53 @@ func (x *IdentificationPayloadIdentification) validate(c *validation.Collector, 
 // that every present key is supported on that OS version and enrollment context.
 func (x *ParentalControlsDashboardWidgetRestrictions) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ParentalControlsDashboardWidgetRestrictions")
 	return c.Err()
 }
 
-func (x *ParentalControlsDashboardWidgetRestrictions) validate(c *validation.Collector, p string) {
+func (x *ParentalControlsDashboardWidgetRestrictions) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ParentalControlsDashboardWidgetRestrictions"])
+	c.Support(path, true, supportTable["ParentalControlsDashboardWidgetRestrictions"])
 	{
-		path := validation.Join(p, "whiteListEnabled")
+		fieldPath := validation.Join(path, "whiteListEnabled")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsDashboardWidgetRestrictions.whiteListEnabled"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".whiteListEnabled"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "WhiteList")
+		fieldPath := validation.Join(path, "WhiteList")
 		present := len(x.WhiteList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsDashboardWidgetRestrictions.WhiteList"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".WhiteList"])
+		c.Required(fieldPath, present)
 		for i := range x.WhiteList {
-			x.WhiteList[i].validate(c, validation.Index(path, i))
+			x.WhiteList[i].validate(c, validation.Index(fieldPath, i), supportPath+".WhiteList.WhiteListItem")
 		}
 	}
 }
 
-func (x *ParentalControlsDashboardWidgetRestrictionsWhiteList) validate(c *validation.Collector, p string) {
+func (x *ParentalControlsDashboardWidgetRestrictionsWhiteList) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Type")
+		fieldPath := validation.Join(path, "Type")
 		present := x.Type != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsDashboardWidgetRestrictions.WhiteList.WhiteListItem.Type"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Type"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "ID")
+		fieldPath := validation.Join(path, "ID")
 		present := x.ID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsDashboardWidgetRestrictions.WhiteList.WhiteListItem.ID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ID"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -4954,22 +4954,22 @@ func (x *ParentalControlsDashboardWidgetRestrictionsWhiteList) validate(c *valid
 // that every present key is supported on that OS version and enrollment context.
 func (x *Declarations) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Declarations")
 	return c.Err()
 }
 
-func (x *Declarations) validate(c *validation.Collector, p string) {
+func (x *Declarations) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Declarations"])
+	c.Support(path, true, supportTable["Declarations"])
 	{
-		path := validation.Join(p, "Declarations")
+		fieldPath := validation.Join(path, "Declarations")
 		present := len(x.Declarations) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Declarations.Declarations"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Declarations"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -4977,27 +4977,27 @@ func (x *Declarations) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *Desktop) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Desktop")
 	return c.Err()
 }
 
-func (x *Desktop) validate(c *validation.Collector, p string) {
+func (x *Desktop) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Desktop"])
+	c.Support(path, true, supportTable["Desktop"])
 	{
-		path := validation.Join(p, "locked")
+		fieldPath := validation.Join(path, "locked")
 		present := x.Locked != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Desktop.locked"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".locked"])
 	}
 	{
-		path := validation.Join(p, "override-picture-path")
+		fieldPath := validation.Join(path, "override-picture-path")
 		present := x.OverridePicturePath != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Desktop.override-picture-path"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".override-picture-path"])
 	}
 }
 
@@ -5005,46 +5005,46 @@ func (x *Desktop) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *DNSProxy) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DNSProxy")
 	return c.Err()
 }
 
-func (x *DNSProxy) validate(c *validation.Collector, p string) {
+func (x *DNSProxy) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DNSProxy"])
+	c.Support(path, true, supportTable["DNSProxy"])
 	{
-		path := validation.Join(p, "AppBundleIdentifier")
+		fieldPath := validation.Join(path, "AppBundleIdentifier")
 		present := x.AppBundleIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSProxy.AppBundleIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AppBundleIdentifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "ProviderBundleIdentifier")
+		fieldPath := validation.Join(path, "ProviderBundleIdentifier")
 		present := x.ProviderBundleIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSProxy.ProviderBundleIdentifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProviderBundleIdentifier"])
 	}
 	{
-		path := validation.Join(p, "ProviderConfiguration")
+		fieldPath := validation.Join(path, "ProviderConfiguration")
 		present := len(x.ProviderConfiguration) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSProxy.ProviderConfiguration"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProviderConfiguration"])
 	}
 	{
-		path := validation.Join(p, "DNSProxyUUID")
+		fieldPath := validation.Join(path, "DNSProxyUUID")
 		present := x.DNSProxyUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSProxy.DNSProxyUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DNSProxyUUID"])
 	}
 	{
-		path := validation.Join(p, "ProviderDesignatedRequirement")
+		fieldPath := validation.Join(path, "ProviderDesignatedRequirement")
 		present := x.ProviderDesignatedRequirement != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSProxy.ProviderDesignatedRequirement"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProviderDesignatedRequirement"])
 	}
 }
 
@@ -5052,178 +5052,178 @@ func (x *DNSProxy) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *DNSSettings) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DNSSettings")
 	return c.Err()
 }
 
-func (x *DNSSettings) validate(c *validation.Collector, p string) {
+func (x *DNSSettings) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DNSSettings"])
+	c.Support(path, true, supportTable["DNSSettings"])
 	{
-		path := validation.Join(p, "DNSSettings")
+		fieldPath := validation.Join(path, "DNSSettings")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.DNSSettings"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DNSSettings"])
+		c.Required(fieldPath, present)
 		if present {
-			x.DNSSettings.validate(c, path)
+			x.DNSSettings.validate(c, fieldPath, supportPath+".DNSSettings")
 		}
 	}
 	{
-		path := validation.Join(p, "OnDemandRules")
+		fieldPath := validation.Join(path, "OnDemandRules")
 		present := len(x.OnDemandRules) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.OnDemandRules"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandRules"])
 		for i := range x.OnDemandRules {
-			x.OnDemandRules[i].validate(c, validation.Index(path, i))
+			x.OnDemandRules[i].validate(c, validation.Index(fieldPath, i), supportPath+".OnDemandRules.OnDemandRulesElement")
 		}
 	}
 	{
-		path := validation.Join(p, "ProhibitDisablement")
+		fieldPath := validation.Join(path, "ProhibitDisablement")
 		present := x.ProhibitDisablement != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.ProhibitDisablement"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProhibitDisablement"])
 	}
 }
 
-func (x *DNSSettingsDNSSettings) validate(c *validation.Collector, p string) {
+func (x *DNSSettingsDNSSettings) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "DNSProtocol")
+		fieldPath := validation.Join(path, "DNSProtocol")
 		present := x.DNSProtocol != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.DNSSettings.DNSProtocol"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DNSProtocol"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.DNSProtocol, []any{"HTTPS", "TLS"})
+			c.Enum(fieldPath, true, x.DNSProtocol, []any{"HTTPS", "TLS"})
 		}
 	}
 	{
-		path := validation.Join(p, "ServerURL")
+		fieldPath := validation.Join(path, "ServerURL")
 		present := x.ServerURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.DNSSettings.ServerURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ServerURL"])
 	}
 	{
-		path := validation.Join(p, "ServerName")
+		fieldPath := validation.Join(path, "ServerName")
 		present := x.ServerName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.DNSSettings.ServerName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ServerName"])
 	}
 	{
-		path := validation.Join(p, "ServerAddresses")
+		fieldPath := validation.Join(path, "ServerAddresses")
 		present := len(x.ServerAddresses) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.DNSSettings.ServerAddresses"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ServerAddresses"])
 	}
 	{
-		path := validation.Join(p, "AllowFailover")
+		fieldPath := validation.Join(path, "AllowFailover")
 		present := x.AllowFailover != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.DNSSettings.AllowFailover"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowFailover"])
 	}
 	{
-		path := validation.Join(p, "PayloadCertificateUUID")
+		fieldPath := validation.Join(path, "PayloadCertificateUUID")
 		present := x.PayloadCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.DNSSettings.PayloadCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateUUID"])
 		if present {
-			c.Pattern(path, true, *x.PayloadCertificateUUID, format1)
+			c.Pattern(fieldPath, true, *x.PayloadCertificateUUID, format1)
 		}
 	}
 	{
-		path := validation.Join(p, "SupplementalMatchDomains")
+		fieldPath := validation.Join(path, "SupplementalMatchDomains")
 		present := len(x.SupplementalMatchDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.DNSSettings.SupplementalMatchDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SupplementalMatchDomains"])
 	}
 }
 
-func (x *DNSSettingsOnDemandRulesElement) validate(c *validation.Collector, p string) {
+func (x *DNSSettingsOnDemandRulesElement) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Action")
+		fieldPath := validation.Join(path, "Action")
 		present := x.Action != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.OnDemandRules.OnDemandRulesElement.Action"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Action"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Action, []any{"Connect", "Disconnect", "EvaluateConnection"})
+			c.Enum(fieldPath, true, x.Action, []any{"Connect", "Disconnect", "EvaluateConnection"})
 		}
 	}
 	{
-		path := validation.Join(p, "ActionParameters")
+		fieldPath := validation.Join(path, "ActionParameters")
 		present := len(x.ActionParameters) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.OnDemandRules.OnDemandRulesElement.ActionParameters"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ActionParameters"])
 		for i := range x.ActionParameters {
-			x.ActionParameters[i].validate(c, validation.Index(path, i))
+			x.ActionParameters[i].validate(c, validation.Index(fieldPath, i), supportPath+".ActionParameters.ActionParameter")
 		}
 	}
 	{
-		path := validation.Join(p, "DNSDomainMatch")
+		fieldPath := validation.Join(path, "DNSDomainMatch")
 		present := len(x.DNSDomainMatch) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.OnDemandRules.OnDemandRulesElement.DNSDomainMatch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DNSDomainMatch"])
 	}
 	{
-		path := validation.Join(p, "DNSServerAddressMatch")
+		fieldPath := validation.Join(path, "DNSServerAddressMatch")
 		present := len(x.DNSServerAddressMatch) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.OnDemandRules.OnDemandRulesElement.DNSServerAddressMatch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DNSServerAddressMatch"])
 	}
 	{
-		path := validation.Join(p, "InterfaceTypeMatch")
+		fieldPath := validation.Join(path, "InterfaceTypeMatch")
 		present := x.InterfaceTypeMatch != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.OnDemandRules.OnDemandRulesElement.InterfaceTypeMatch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".InterfaceTypeMatch"])
 		if present {
-			c.Enum(path, true, *x.InterfaceTypeMatch, []any{"Ethernet", "WiFi", "Cellular"})
+			c.Enum(fieldPath, true, *x.InterfaceTypeMatch, []any{"Ethernet", "WiFi", "Cellular"})
 		}
 	}
 	{
-		path := validation.Join(p, "SSIDMatch")
+		fieldPath := validation.Join(path, "SSIDMatch")
 		present := len(x.SSIDMatch) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.OnDemandRules.OnDemandRulesElement.SSIDMatch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SSIDMatch"])
 	}
 	{
-		path := validation.Join(p, "URLStringProbe")
+		fieldPath := validation.Join(path, "URLStringProbe")
 		present := x.URLStringProbe != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.OnDemandRules.OnDemandRulesElement.URLStringProbe"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".URLStringProbe"])
 	}
 }
 
-func (x *DNSSettingsOnDemandRulesElementActionParameters) validate(c *validation.Collector, p string) {
+func (x *DNSSettingsOnDemandRulesElementActionParameters) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Domains")
+		fieldPath := validation.Join(path, "Domains")
 		present := len(x.Domains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.OnDemandRules.OnDemandRulesElement.ActionParameters.ActionParameter.Domains"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Domains"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "DomainAction")
+		fieldPath := validation.Join(path, "DomainAction")
 		present := x.DomainAction != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["DNSSettings.OnDemandRules.OnDemandRulesElement.ActionParameters.ActionParameter.DomainAction"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DomainAction"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.DomainAction, []any{"NeverConnect", "ConnectIfNeeded"})
+			c.Enum(fieldPath, true, x.DomainAction, []any{"NeverConnect", "ConnectIfNeeded"})
 		}
 	}
 }
@@ -5232,304 +5232,304 @@ func (x *DNSSettingsOnDemandRulesElementActionParameters) validate(c *validation
 // that every present key is supported on that OS version and enrollment context.
 func (x *Dock) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Dock")
 	return c.Err()
 }
 
-func (x *Dock) validate(c *validation.Collector, p string) {
+func (x *Dock) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Dock"])
+	c.Support(path, true, supportTable["Dock"])
 	{
-		path := validation.Join(p, "tilesize")
+		fieldPath := validation.Join(path, "tilesize")
 		present := x.Tilesize != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.tilesize"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".tilesize"])
 		if present {
-			c.Range(path, true, float64(*x.Tilesize), new(16.0), new(128.0))
+			c.Range(fieldPath, true, float64(*x.Tilesize), new(16.0), new(128.0))
 		}
 	}
 	{
-		path := validation.Join(p, "size-immutable")
+		fieldPath := validation.Join(path, "size-immutable")
 		present := x.SizeImmutable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.size-immutable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".size-immutable"])
 	}
 	{
-		path := validation.Join(p, "magnification")
+		fieldPath := validation.Join(path, "magnification")
 		present := x.Magnification != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.magnification"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".magnification"])
 	}
 	{
-		path := validation.Join(p, "magnify-immutable")
+		fieldPath := validation.Join(path, "magnify-immutable")
 		present := x.MagnifyImmutable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.magnify-immutable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".magnify-immutable"])
 	}
 	{
-		path := validation.Join(p, "largesize")
+		fieldPath := validation.Join(path, "largesize")
 		present := x.Largesize != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.largesize"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".largesize"])
 		if present {
-			c.Range(path, true, float64(*x.Largesize), new(16.0), new(128.0))
+			c.Range(fieldPath, true, float64(*x.Largesize), new(16.0), new(128.0))
 		}
 	}
 	{
-		path := validation.Join(p, "magsize-immutable")
+		fieldPath := validation.Join(path, "magsize-immutable")
 		present := x.MagsizeImmutable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.magsize-immutable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".magsize-immutable"])
 	}
 	{
-		path := validation.Join(p, "orientation")
+		fieldPath := validation.Join(path, "orientation")
 		present := x.Orientation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.orientation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".orientation"])
 		if present {
-			c.Enum(path, true, *x.Orientation, []any{"bottom", "left", "right"})
+			c.Enum(fieldPath, true, *x.Orientation, []any{"bottom", "left", "right"})
 		}
 	}
 	{
-		path := validation.Join(p, "position-immutable")
+		fieldPath := validation.Join(path, "position-immutable")
 		present := x.PositionImmutable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.position-immutable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".position-immutable"])
 	}
 	{
-		path := validation.Join(p, "mineffect")
+		fieldPath := validation.Join(path, "mineffect")
 		present := x.Mineffect != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.mineffect"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".mineffect"])
 		if present {
-			c.Enum(path, true, *x.Mineffect, []any{"genie", "scale"})
+			c.Enum(fieldPath, true, *x.Mineffect, []any{"genie", "scale"})
 		}
 	}
 	{
-		path := validation.Join(p, "mineffect-immutable")
+		fieldPath := validation.Join(path, "mineffect-immutable")
 		present := x.MineffectImmutable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.mineffect-immutable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".mineffect-immutable"])
 	}
 	{
-		path := validation.Join(p, "windowtabbing")
+		fieldPath := validation.Join(path, "windowtabbing")
 		present := x.Windowtabbing != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.windowtabbing"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".windowtabbing"])
 		if present {
-			c.Enum(path, true, *x.Windowtabbing, []any{"manual", "always", "fullscreen"})
+			c.Enum(fieldPath, true, *x.Windowtabbing, []any{"manual", "always", "fullscreen"})
 		}
 	}
 	{
-		path := validation.Join(p, "windowtabbing-immutable")
+		fieldPath := validation.Join(path, "windowtabbing-immutable")
 		present := x.WindowtabbingImmutable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.windowtabbing-immutable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".windowtabbing-immutable"])
 	}
 	{
-		path := validation.Join(p, "dblclickbehavior")
+		fieldPath := validation.Join(path, "dblclickbehavior")
 		present := x.Dblclickbehavior != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.dblclickbehavior"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".dblclickbehavior"])
 		if present {
-			c.Enum(path, true, *x.Dblclickbehavior, []any{"minimize", "maximize", "none"})
+			c.Enum(fieldPath, true, *x.Dblclickbehavior, []any{"minimize", "maximize", "none"})
 		}
 	}
 	{
-		path := validation.Join(p, "dblclickbehavior-immutable")
+		fieldPath := validation.Join(path, "dblclickbehavior-immutable")
 		present := x.DblclickbehaviorImmutable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.dblclickbehavior-immutable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".dblclickbehavior-immutable"])
 	}
 	{
-		path := validation.Join(p, "minimize-to-application")
+		fieldPath := validation.Join(path, "minimize-to-application")
 		present := x.MinimizeToApplication != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.minimize-to-application"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".minimize-to-application"])
 	}
 	{
-		path := validation.Join(p, "minintoapp-immutable")
+		fieldPath := validation.Join(path, "minintoapp-immutable")
 		present := x.MinintoappImmutable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.minintoapp-immutable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".minintoapp-immutable"])
 	}
 	{
-		path := validation.Join(p, "launchanim")
+		fieldPath := validation.Join(path, "launchanim")
 		present := x.Launchanim != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.launchanim"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".launchanim"])
 	}
 	{
-		path := validation.Join(p, "launchanim-immutable")
+		fieldPath := validation.Join(path, "launchanim-immutable")
 		present := x.LaunchanimImmutable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.launchanim-immutable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".launchanim-immutable"])
 	}
 	{
-		path := validation.Join(p, "autohide")
+		fieldPath := validation.Join(path, "autohide")
 		present := x.Autohide != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.autohide"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".autohide"])
 	}
 	{
-		path := validation.Join(p, "autohide-immutable")
+		fieldPath := validation.Join(path, "autohide-immutable")
 		present := x.AutohideImmutable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.autohide-immutable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".autohide-immutable"])
 	}
 	{
-		path := validation.Join(p, "show-process-indicators")
+		fieldPath := validation.Join(path, "show-process-indicators")
 		present := x.ShowProcessIndicators != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.show-process-indicators"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".show-process-indicators"])
 	}
 	{
-		path := validation.Join(p, "showindicators-immutable")
+		fieldPath := validation.Join(path, "showindicators-immutable")
 		present := x.ShowindicatorsImmutable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.showindicators-immutable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".showindicators-immutable"])
 	}
 	{
-		path := validation.Join(p, "show-recents")
+		fieldPath := validation.Join(path, "show-recents")
 		present := x.ShowRecents != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.show-recents"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".show-recents"])
 	}
 	{
-		path := validation.Join(p, "showrecents-immutable")
+		fieldPath := validation.Join(path, "showrecents-immutable")
 		present := x.ShowrecentsImmutable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.showrecents-immutable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".showrecents-immutable"])
 	}
 	{
-		path := validation.Join(p, "contents-immutable")
+		fieldPath := validation.Join(path, "contents-immutable")
 		present := x.ContentsImmutable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.contents-immutable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".contents-immutable"])
 	}
 	{
-		path := validation.Join(p, "MCXDockSpecialFolders")
+		fieldPath := validation.Join(path, "MCXDockSpecialFolders")
 		present := len(x.MCXDockSpecialFolders) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.MCXDockSpecialFolders"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MCXDockSpecialFolders"])
 		for i, v := range x.MCXDockSpecialFolders {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"AddDockMCXMyApplicationsFolder", "AddDockMCXDocumentsFolder", "AddDockMCXSharedFolder", "AddDockMCXOriginalNetworkHomeFolder"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"AddDockMCXMyApplicationsFolder", "AddDockMCXDocumentsFolder", "AddDockMCXSharedFolder", "AddDockMCXOriginalNetworkHomeFolder"})
 		}
 	}
 	{
-		path := validation.Join(p, "AllowDockFixupOverride")
+		fieldPath := validation.Join(path, "AllowDockFixupOverride")
 		present := x.AllowDockFixupOverride != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.AllowDockFixupOverride"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowDockFixupOverride"])
 	}
 	{
-		path := validation.Join(p, "static-only")
+		fieldPath := validation.Join(path, "static-only")
 		present := x.StaticOnly != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.static-only"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".static-only"])
 	}
 	{
-		path := validation.Join(p, "static-others")
+		fieldPath := validation.Join(path, "static-others")
 		present := len(x.StaticOthers) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.static-others"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".static-others"])
 		for i := range x.StaticOthers {
-			x.StaticOthers[i].validate(c, validation.Index(path, i))
+			x.StaticOthers[i].validate(c, validation.Index(fieldPath, i), supportPath+".static-others.StaticItem")
 		}
 	}
 	{
-		path := validation.Join(p, "static-apps")
+		fieldPath := validation.Join(path, "static-apps")
 		present := len(x.StaticApps) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.static-apps"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".static-apps"])
 		for i := range x.StaticApps {
-			x.StaticApps[i].validate(c, validation.Index(path, i))
+			x.StaticApps[i].validate(c, validation.Index(fieldPath, i), supportPath+".static-apps.StaticItem")
 		}
 	}
 	{
-		path := validation.Join(p, "persistent-apps")
+		fieldPath := validation.Join(path, "persistent-apps")
 		present := len(x.PersistentApps) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.persistent-apps"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".persistent-apps"])
 		for i := range x.PersistentApps {
-			x.PersistentApps[i].validate(c, validation.Index(path, i))
+			x.PersistentApps[i].validate(c, validation.Index(fieldPath, i), supportPath+".persistent-apps.StaticItem")
 		}
 	}
 	{
-		path := validation.Join(p, "persistent-others")
+		fieldPath := validation.Join(path, "persistent-others")
 		present := len(x.PersistentOthers) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.persistent-others"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".persistent-others"])
 		for i := range x.PersistentOthers {
-			x.PersistentOthers[i].validate(c, validation.Index(path, i))
+			x.PersistentOthers[i].validate(c, validation.Index(fieldPath, i), supportPath+".persistent-others.StaticItem")
 		}
 	}
 }
 
-func (x *DockStaticItem) validate(c *validation.Collector, p string) {
+func (x *DockStaticItem) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "tile-data")
+		fieldPath := validation.Join(path, "tile-data")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.static-others.StaticItem.tile-data"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".tile-data"])
+		c.Required(fieldPath, present)
 		if present {
-			x.TileData.validate(c, path)
+			x.TileData.validate(c, fieldPath, supportPath+".tile-data")
 		}
 	}
 	{
-		path := validation.Join(p, "tile-type")
+		fieldPath := validation.Join(path, "tile-type")
 		present := x.TileType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.static-others.StaticItem.tile-type"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".tile-type"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.TileType, []any{"file-tile", "directory-tile", "url-tile"})
+			c.Enum(fieldPath, true, x.TileType, []any{"file-tile", "directory-tile", "url-tile"})
 		}
 	}
 }
 
-func (x *DockStaticItemTileData) validate(c *validation.Collector, p string) {
+func (x *DockStaticItemTileData) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "label")
+		fieldPath := validation.Join(path, "label")
 		present := x.Label != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.static-others.StaticItem.tile-data.label"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".label"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "url")
+		fieldPath := validation.Join(path, "url")
 		present := x.Url != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.static-others.StaticItem.tile-data.url"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".url"])
 	}
 	{
-		path := validation.Join(p, "file-type")
+		fieldPath := validation.Join(path, "file-type")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.static-others.StaticItem.tile-data.file-type"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".file-type"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.FileType, []any{int64(0), int64(1), int64(3)})
+			c.Enum(fieldPath, true, x.FileType, []any{int64(0), int64(1), int64(3)})
 		}
 	}
 	{
-		path := validation.Join(p, "file-data")
+		fieldPath := validation.Join(path, "file-data")
 		present := len(x.FileData) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Dock.static-others.StaticItem.tile-data.file-data"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".file-data"])
 	}
 }
 
@@ -5537,45 +5537,45 @@ func (x *DockStaticItemTileData) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *Domains) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Domains")
 	return c.Err()
 }
 
-func (x *Domains) validate(c *validation.Collector, p string) {
+func (x *Domains) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Domains"])
+	c.Support(path, true, supportTable["Domains"])
 	{
-		path := validation.Join(p, "EmailDomains")
+		fieldPath := validation.Join(path, "EmailDomains")
 		present := len(x.EmailDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Domains.EmailDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EmailDomains"])
 	}
 	{
-		path := validation.Join(p, "WebDomains")
+		fieldPath := validation.Join(path, "WebDomains")
 		present := len(x.WebDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Domains.WebDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".WebDomains"])
 	}
 	{
-		path := validation.Join(p, "SafariPasswordAutoFillDomains")
+		fieldPath := validation.Join(path, "SafariPasswordAutoFillDomains")
 		present := len(x.SafariPasswordAutoFillDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Domains.SafariPasswordAutoFillDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SafariPasswordAutoFillDomains"])
 	}
 	{
-		path := validation.Join(p, "CrossSiteTrackingPreventionRelaxedDomains")
+		fieldPath := validation.Join(path, "CrossSiteTrackingPreventionRelaxedDomains")
 		present := len(x.CrossSiteTrackingPreventionRelaxedDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Domains.CrossSiteTrackingPreventionRelaxedDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CrossSiteTrackingPreventionRelaxedDomains"])
 	}
 	{
-		path := validation.Join(p, "CrossSiteTrackingPreventionRelaxedApps")
+		fieldPath := validation.Join(path, "CrossSiteTrackingPreventionRelaxedApps")
 		present := len(x.CrossSiteTrackingPreventionRelaxedApps) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Domains.CrossSiteTrackingPreventionRelaxedApps"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CrossSiteTrackingPreventionRelaxedApps"])
 	}
 }
 
@@ -5583,317 +5583,317 @@ func (x *Domains) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ExchangeActiveSync) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ExchangeActiveSync")
 	return c.Err()
 }
 
-func (x *ExchangeActiveSync) validate(c *validation.Collector, p string) {
+func (x *ExchangeActiveSync) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ExchangeActiveSync"])
+	c.Support(path, true, supportTable["ExchangeActiveSync"])
 	{
-		path := validation.Join(p, "EmailAddress")
+		fieldPath := validation.Join(path, "EmailAddress")
 		present := x.EmailAddress != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.EmailAddress"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EmailAddress"])
 	}
 	{
-		path := validation.Join(p, "Host")
+		fieldPath := validation.Join(path, "Host")
 		present := x.Host != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.Host"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Host"])
 	}
 	{
-		path := validation.Join(p, "SSL")
+		fieldPath := validation.Join(path, "SSL")
 		present := x.SSL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.SSL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SSL"])
 	}
 	{
-		path := validation.Join(p, "OAuth")
+		fieldPath := validation.Join(path, "OAuth")
 		present := x.OAuth != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.OAuth"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OAuth"])
 	}
 	{
-		path := validation.Join(p, "UserName")
+		fieldPath := validation.Join(path, "UserName")
 		present := x.UserName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.UserName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserName"])
 	}
 	{
-		path := validation.Join(p, "Password")
+		fieldPath := validation.Join(path, "Password")
 		present := x.Password != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.Password"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Password"])
 	}
 	{
-		path := validation.Join(p, "Certificate")
+		fieldPath := validation.Join(path, "Certificate")
 		present := len(x.Certificate) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.Certificate"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Certificate"])
 	}
 	{
-		path := validation.Join(p, "CertificateName")
+		fieldPath := validation.Join(path, "CertificateName")
 		present := x.CertificateName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.CertificateName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CertificateName"])
 	}
 	{
-		path := validation.Join(p, "CertificatePassword")
+		fieldPath := validation.Join(path, "CertificatePassword")
 		present := x.CertificatePassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.CertificatePassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CertificatePassword"])
 	}
 	{
-		path := validation.Join(p, "PreventMove")
+		fieldPath := validation.Join(path, "PreventMove")
 		present := x.PreventMove != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.PreventMove"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PreventMove"])
 	}
 	{
-		path := validation.Join(p, "PreventAppSheet")
+		fieldPath := validation.Join(path, "PreventAppSheet")
 		present := x.PreventAppSheet != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.PreventAppSheet"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PreventAppSheet"])
 	}
 	{
-		path := validation.Join(p, "PayloadCertificateUUID")
+		fieldPath := validation.Join(path, "PayloadCertificateUUID")
 		present := x.PayloadCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.PayloadCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateUUID"])
 		if present {
-			c.Pattern(path, true, *x.PayloadCertificateUUID, format1)
+			c.Pattern(fieldPath, true, *x.PayloadCertificateUUID, format1)
 		}
 	}
 	{
-		path := validation.Join(p, "SMIMEEnabled")
+		fieldPath := validation.Join(path, "SMIMEEnabled")
 		present := x.SMIMEEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.SMIMEEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMEEnabled"])
 	}
 	{
-		path := validation.Join(p, "SMIMESigningEnabled")
+		fieldPath := validation.Join(path, "SMIMESigningEnabled")
 		present := x.SMIMESigningEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.SMIMESigningEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMESigningEnabled"])
 	}
 	{
-		path := validation.Join(p, "SMIMESigningCertificateUUID")
+		fieldPath := validation.Join(path, "SMIMESigningCertificateUUID")
 		present := x.SMIMESigningCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.SMIMESigningCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMESigningCertificateUUID"])
 		if present {
-			c.Pattern(path, true, *x.SMIMESigningCertificateUUID, format1)
+			c.Pattern(fieldPath, true, *x.SMIMESigningCertificateUUID, format1)
 		}
 	}
 	{
-		path := validation.Join(p, "SMIMEEncryptionEnabled")
+		fieldPath := validation.Join(path, "SMIMEEncryptionEnabled")
 		present := x.SMIMEEncryptionEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.SMIMEEncryptionEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMEEncryptionEnabled"])
 	}
 	{
-		path := validation.Join(p, "SMIMEEncryptionCertificateUUID")
+		fieldPath := validation.Join(path, "SMIMEEncryptionCertificateUUID")
 		present := x.SMIMEEncryptionCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.SMIMEEncryptionCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMEEncryptionCertificateUUID"])
 		if present {
-			c.Pattern(path, true, *x.SMIMEEncryptionCertificateUUID, format1)
+			c.Pattern(fieldPath, true, *x.SMIMEEncryptionCertificateUUID, format1)
 		}
 	}
 	{
-		path := validation.Join(p, "SMIMEEnablePerMessageSwitch")
+		fieldPath := validation.Join(path, "SMIMEEnablePerMessageSwitch")
 		present := x.SMIMEEnablePerMessageSwitch != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.SMIMEEnablePerMessageSwitch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMEEnablePerMessageSwitch"])
 	}
 	{
-		path := validation.Join(p, "disableMailRecentsSyncing")
+		fieldPath := validation.Join(path, "disableMailRecentsSyncing")
 		present := x.DisableMailRecentsSyncing != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.disableMailRecentsSyncing"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".disableMailRecentsSyncing"])
 	}
 	{
-		path := validation.Join(p, "MailNumberOfPastDaysToSync")
+		fieldPath := validation.Join(path, "MailNumberOfPastDaysToSync")
 		present := x.MailNumberOfPastDaysToSync != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.MailNumberOfPastDaysToSync"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MailNumberOfPastDaysToSync"])
 		if present {
-			c.Enum(path, true, *x.MailNumberOfPastDaysToSync, []any{int64(0), int64(1), int64(3), int64(7), int64(14), int64(31)})
+			c.Enum(fieldPath, true, *x.MailNumberOfPastDaysToSync, []any{int64(0), int64(1), int64(3), int64(7), int64(14), int64(31)})
 		}
 	}
 	{
-		path := validation.Join(p, "HeaderMagic")
+		fieldPath := validation.Join(path, "HeaderMagic")
 		present := x.HeaderMagic != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.HeaderMagic"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HeaderMagic"])
 	}
 	{
-		path := validation.Join(p, "CommunicationServiceRules")
+		fieldPath := validation.Join(path, "CommunicationServiceRules")
 		present := x.CommunicationServiceRules != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.CommunicationServiceRules"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CommunicationServiceRules"])
 		if present {
-			x.CommunicationServiceRules.validate(c, path)
+			x.CommunicationServiceRules.validate(c, fieldPath, supportPath+".CommunicationServiceRules")
 		}
 	}
 	{
-		path := validation.Join(p, "allowMailDrop")
+		fieldPath := validation.Join(path, "allowMailDrop")
 		present := x.AllowMailDrop != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.allowMailDrop"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowMailDrop"])
 	}
 	{
-		path := validation.Join(p, "SMIMESigningUserOverrideable")
+		fieldPath := validation.Join(path, "SMIMESigningUserOverrideable")
 		present := x.SMIMESigningUserOverrideable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.SMIMESigningUserOverrideable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMESigningUserOverrideable"])
 	}
 	{
-		path := validation.Join(p, "SMIMESigningCertificateUUIDUserOverrideable")
+		fieldPath := validation.Join(path, "SMIMESigningCertificateUUIDUserOverrideable")
 		present := x.SMIMESigningCertificateUUIDUserOverrideable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.SMIMESigningCertificateUUIDUserOverrideable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMESigningCertificateUUIDUserOverrideable"])
 	}
 	{
-		path := validation.Join(p, "SMIMEEncryptByDefault")
+		fieldPath := validation.Join(path, "SMIMEEncryptByDefault")
 		present := x.SMIMEEncryptByDefault != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.SMIMEEncryptByDefault"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMEEncryptByDefault"])
 	}
 	{
-		path := validation.Join(p, "SMIMEEncryptByDefaultUserOverrideable")
+		fieldPath := validation.Join(path, "SMIMEEncryptByDefaultUserOverrideable")
 		present := x.SMIMEEncryptByDefaultUserOverrideable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.SMIMEEncryptByDefaultUserOverrideable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMEEncryptByDefaultUserOverrideable"])
 	}
 	{
-		path := validation.Join(p, "SMIMEEncryptionCertificateUUIDUserOverrideable")
+		fieldPath := validation.Join(path, "SMIMEEncryptionCertificateUUIDUserOverrideable")
 		present := x.SMIMEEncryptionCertificateUUIDUserOverrideable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.SMIMEEncryptionCertificateUUIDUserOverrideable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMEEncryptionCertificateUUIDUserOverrideable"])
 	}
 	{
-		path := validation.Join(p, "SMIMEEnableEncryptionPerMessageSwitch")
+		fieldPath := validation.Join(path, "SMIMEEnableEncryptionPerMessageSwitch")
 		present := x.SMIMEEnableEncryptionPerMessageSwitch != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.SMIMEEnableEncryptionPerMessageSwitch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMEEnableEncryptionPerMessageSwitch"])
 	}
 	{
-		path := validation.Join(p, "EnableMail")
+		fieldPath := validation.Join(path, "EnableMail")
 		present := x.EnableMail != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.EnableMail"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableMail"])
 	}
 	{
-		path := validation.Join(p, "EnableContacts")
+		fieldPath := validation.Join(path, "EnableContacts")
 		present := x.EnableContacts != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.EnableContacts"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableContacts"])
 	}
 	{
-		path := validation.Join(p, "EnableCalendars")
+		fieldPath := validation.Join(path, "EnableCalendars")
 		present := x.EnableCalendars != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.EnableCalendars"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableCalendars"])
 	}
 	{
-		path := validation.Join(p, "EnableReminders")
+		fieldPath := validation.Join(path, "EnableReminders")
 		present := x.EnableReminders != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.EnableReminders"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableReminders"])
 	}
 	{
-		path := validation.Join(p, "EnableNotes")
+		fieldPath := validation.Join(path, "EnableNotes")
 		present := x.EnableNotes != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.EnableNotes"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableNotes"])
 	}
 	{
-		path := validation.Join(p, "EnableMailUserOverridable")
+		fieldPath := validation.Join(path, "EnableMailUserOverridable")
 		present := x.EnableMailUserOverridable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.EnableMailUserOverridable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableMailUserOverridable"])
 	}
 	{
-		path := validation.Join(p, "EnableContactsUserOverridable")
+		fieldPath := validation.Join(path, "EnableContactsUserOverridable")
 		present := x.EnableContactsUserOverridable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.EnableContactsUserOverridable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableContactsUserOverridable"])
 	}
 	{
-		path := validation.Join(p, "EnableCalendarsUserOverridable")
+		fieldPath := validation.Join(path, "EnableCalendarsUserOverridable")
 		present := x.EnableCalendarsUserOverridable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.EnableCalendarsUserOverridable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableCalendarsUserOverridable"])
 	}
 	{
-		path := validation.Join(p, "EnableRemindersUserOverridable")
+		fieldPath := validation.Join(path, "EnableRemindersUserOverridable")
 		present := x.EnableRemindersUserOverridable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.EnableRemindersUserOverridable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableRemindersUserOverridable"])
 	}
 	{
-		path := validation.Join(p, "EnableNotesUserOverridable")
+		fieldPath := validation.Join(path, "EnableNotesUserOverridable")
 		present := x.EnableNotesUserOverridable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.EnableNotesUserOverridable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableNotesUserOverridable"])
 	}
 	{
-		path := validation.Join(p, "OAuthSignInURL")
+		fieldPath := validation.Join(path, "OAuthSignInURL")
 		present := x.OAuthSignInURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.OAuthSignInURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OAuthSignInURL"])
 	}
 	{
-		path := validation.Join(p, "OAuthTokenRequestURL")
+		fieldPath := validation.Join(path, "OAuthTokenRequestURL")
 		present := x.OAuthTokenRequestURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.OAuthTokenRequestURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OAuthTokenRequestURL"])
 	}
 	{
-		path := validation.Join(p, "OverridePreviousPassword")
+		fieldPath := validation.Join(path, "OverridePreviousPassword")
 		present := x.OverridePreviousPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.OverridePreviousPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OverridePreviousPassword"])
 	}
 	{
-		path := validation.Join(p, "VPNUUID")
+		fieldPath := validation.Join(path, "VPNUUID")
 		present := x.VPNUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.VPNUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VPNUUID"])
 	}
 }
 
-func (x *ExchangeActiveSyncCommunicationServiceRules) validate(c *validation.Collector, p string) {
+func (x *ExchangeActiveSyncCommunicationServiceRules) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "DefaultServiceHandlers")
+		fieldPath := validation.Join(path, "DefaultServiceHandlers")
 		present := x.DefaultServiceHandlers != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.CommunicationServiceRules.DefaultServiceHandlers"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DefaultServiceHandlers"])
 		if present {
-			x.DefaultServiceHandlers.validate(c, path)
+			x.DefaultServiceHandlers.validate(c, fieldPath, supportPath+".DefaultServiceHandlers")
 		}
 	}
 }
 
-func (x *ExchangeActiveSyncCommunicationServiceRulesDefaultServiceHandlers) validate(c *validation.Collector, p string) {
+func (x *ExchangeActiveSyncCommunicationServiceRulesDefaultServiceHandlers) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "AudioCall")
+		fieldPath := validation.Join(path, "AudioCall")
 		present := x.AudioCall != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeActiveSync.CommunicationServiceRules.DefaultServiceHandlers.AudioCall"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AudioCall"])
 	}
 }
 
@@ -5901,283 +5901,283 @@ func (x *ExchangeActiveSyncCommunicationServiceRulesDefaultServiceHandlers) vali
 // that every present key is supported on that OS version and enrollment context.
 func (x *EducationConfiguration) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "EducationConfiguration")
 	return c.Err()
 }
 
-func (x *EducationConfiguration) validate(c *validation.Collector, p string) {
+func (x *EducationConfiguration) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["EducationConfiguration"])
+	c.Support(path, true, supportTable["EducationConfiguration"])
 	{
-		path := validation.Join(p, "OrganizationUUID")
+		fieldPath := validation.Join(path, "OrganizationUUID")
 		present := x.OrganizationUUID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.OrganizationUUID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OrganizationUUID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "OrganizationName")
+		fieldPath := validation.Join(path, "OrganizationName")
 		present := x.OrganizationName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.OrganizationName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OrganizationName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "PayloadCertificateUUID")
+		fieldPath := validation.Join(path, "PayloadCertificateUUID")
 		present := x.PayloadCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.PayloadCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateUUID"])
 	}
 	{
-		path := validation.Join(p, "LeaderPayloadCertificateAnchorUUID")
+		fieldPath := validation.Join(path, "LeaderPayloadCertificateAnchorUUID")
 		present := len(x.LeaderPayloadCertificateAnchorUUID) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.LeaderPayloadCertificateAnchorUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LeaderPayloadCertificateAnchorUUID"])
 	}
 	{
-		path := validation.Join(p, "MemberPayloadCertificateAnchorUUID")
+		fieldPath := validation.Join(path, "MemberPayloadCertificateAnchorUUID")
 		present := len(x.MemberPayloadCertificateAnchorUUID) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.MemberPayloadCertificateAnchorUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MemberPayloadCertificateAnchorUUID"])
 	}
 	{
-		path := validation.Join(p, "ResourcePayloadCertificateUUID")
+		fieldPath := validation.Join(path, "ResourcePayloadCertificateUUID")
 		present := x.ResourcePayloadCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.ResourcePayloadCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ResourcePayloadCertificateUUID"])
 	}
 	{
-		path := validation.Join(p, "UserIdentifier")
+		fieldPath := validation.Join(path, "UserIdentifier")
 		present := x.UserIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.UserIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserIdentifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Departments")
+		fieldPath := validation.Join(path, "Departments")
 		present := len(x.Departments) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Departments"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Departments"])
 		for i := range x.Departments {
-			x.Departments[i].validate(c, validation.Index(path, i))
+			x.Departments[i].validate(c, validation.Index(fieldPath, i), supportPath+".Departments.DepartmentsItem")
 		}
 	}
 	{
-		path := validation.Join(p, "Groups")
+		fieldPath := validation.Join(path, "Groups")
 		present := len(x.Groups) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Groups"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Groups"])
+		c.Required(fieldPath, present)
 		for i := range x.Groups {
-			x.Groups[i].validate(c, validation.Index(path, i))
+			x.Groups[i].validate(c, validation.Index(fieldPath, i), supportPath+".Groups.GroupsItem")
 		}
 	}
 	{
-		path := validation.Join(p, "Users")
+		fieldPath := validation.Join(path, "Users")
 		present := len(x.Users) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Users"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Users"])
+		c.Required(fieldPath, present)
 		for i := range x.Users {
-			x.Users[i].validate(c, validation.Index(path, i))
+			x.Users[i].validate(c, validation.Index(fieldPath, i), supportPath+".Users.UsersItem")
 		}
 	}
 	{
-		path := validation.Join(p, "DeviceGroups")
+		fieldPath := validation.Join(path, "DeviceGroups")
 		present := len(x.DeviceGroups) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.DeviceGroups"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeviceGroups"])
 		for i := range x.DeviceGroups {
-			x.DeviceGroups[i].validate(c, validation.Index(path, i))
+			x.DeviceGroups[i].validate(c, validation.Index(fieldPath, i), supportPath+".DeviceGroups.DeviceGroupsItem")
 		}
 	}
 	{
-		path := validation.Join(p, "ScreenObservationPermissionModificationAllowed")
+		fieldPath := validation.Join(path, "ScreenObservationPermissionModificationAllowed")
 		present := x.ScreenObservationPermissionModificationAllowed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.ScreenObservationPermissionModificationAllowed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ScreenObservationPermissionModificationAllowed"])
 	}
 }
 
-func (x *EducationConfigurationDepartments) validate(c *validation.Collector, p string) {
+func (x *EducationConfigurationDepartments) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Name")
+		fieldPath := validation.Join(path, "Name")
 		present := x.Name != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Departments.DepartmentsItem.Name"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Name"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "GroupBeaconIDs")
+		fieldPath := validation.Join(path, "GroupBeaconIDs")
 		present := len(x.GroupBeaconIDs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Departments.DepartmentsItem.GroupBeaconIDs"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".GroupBeaconIDs"])
+		c.Required(fieldPath, present)
 	}
 }
 
-func (x *EducationConfigurationGroups) validate(c *validation.Collector, p string) {
+func (x *EducationConfigurationGroups) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "BeaconID")
+		fieldPath := validation.Join(path, "BeaconID")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Groups.GroupsItem.BeaconID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BeaconID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Name")
+		fieldPath := validation.Join(path, "Name")
 		present := x.Name != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Groups.GroupsItem.Name"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Name"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Description")
+		fieldPath := validation.Join(path, "Description")
 		present := x.Description != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Groups.GroupsItem.Description"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Description"])
 	}
 	{
-		path := validation.Join(p, "ImageURL")
+		fieldPath := validation.Join(path, "ImageURL")
 		present := x.ImageURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Groups.GroupsItem.ImageURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ImageURL"])
 	}
 	{
-		path := validation.Join(p, "ConfigurationSource")
+		fieldPath := validation.Join(path, "ConfigurationSource")
 		present := x.ConfigurationSource != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Groups.GroupsItem.ConfigurationSource"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ConfigurationSource"])
 	}
 	{
-		path := validation.Join(p, "LeaderIdentifiers")
+		fieldPath := validation.Join(path, "LeaderIdentifiers")
 		present := len(x.LeaderIdentifiers) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Groups.GroupsItem.LeaderIdentifiers"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LeaderIdentifiers"])
 	}
 	{
-		path := validation.Join(p, "MemberIdentifiers")
+		fieldPath := validation.Join(path, "MemberIdentifiers")
 		present := len(x.MemberIdentifiers) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Groups.GroupsItem.MemberIdentifiers"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MemberIdentifiers"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "DeviceGroupIdentifiers")
+		fieldPath := validation.Join(path, "DeviceGroupIdentifiers")
 		present := len(x.DeviceGroupIdentifiers) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Groups.GroupsItem.DeviceGroupIdentifiers"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeviceGroupIdentifiers"])
 	}
 }
 
-func (x *EducationConfigurationUsers) validate(c *validation.Collector, p string) {
+func (x *EducationConfigurationUsers) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Identifier")
+		fieldPath := validation.Join(path, "Identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Users.UsersItem.Identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Name")
+		fieldPath := validation.Join(path, "Name")
 		present := x.Name != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Users.UsersItem.Name"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Name"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "GivenName")
+		fieldPath := validation.Join(path, "GivenName")
 		present := x.GivenName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Users.UsersItem.GivenName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".GivenName"])
 	}
 	{
-		path := validation.Join(p, "FamilyName")
+		fieldPath := validation.Join(path, "FamilyName")
 		present := x.FamilyName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Users.UsersItem.FamilyName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FamilyName"])
 	}
 	{
-		path := validation.Join(p, "PhoneticGivenName")
+		fieldPath := validation.Join(path, "PhoneticGivenName")
 		present := x.PhoneticGivenName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Users.UsersItem.PhoneticGivenName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PhoneticGivenName"])
 	}
 	{
-		path := validation.Join(p, "PhoneticFamilyName")
+		fieldPath := validation.Join(path, "PhoneticFamilyName")
 		present := x.PhoneticFamilyName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Users.UsersItem.PhoneticFamilyName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PhoneticFamilyName"])
 	}
 	{
-		path := validation.Join(p, "ImageURL")
+		fieldPath := validation.Join(path, "ImageURL")
 		present := x.ImageURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Users.UsersItem.ImageURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ImageURL"])
 	}
 	{
-		path := validation.Join(p, "FullScreenImageURL")
+		fieldPath := validation.Join(path, "FullScreenImageURL")
 		present := x.FullScreenImageURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Users.UsersItem.FullScreenImageURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FullScreenImageURL"])
 	}
 	{
-		path := validation.Join(p, "AppleID")
+		fieldPath := validation.Join(path, "AppleID")
 		present := x.AppleID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Users.UsersItem.AppleID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AppleID"])
 	}
 	{
-		path := validation.Join(p, "PasscodeType")
+		fieldPath := validation.Join(path, "PasscodeType")
 		present := x.PasscodeType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.Users.UsersItem.PasscodeType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PasscodeType"])
 		if present {
-			c.Enum(path, true, *x.PasscodeType, []any{"complex", "four", "six"})
+			c.Enum(fieldPath, true, *x.PasscodeType, []any{"complex", "four", "six"})
 		}
 	}
 }
 
-func (x *EducationConfigurationDeviceGroups) validate(c *validation.Collector, p string) {
+func (x *EducationConfigurationDeviceGroups) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Identifier")
+		fieldPath := validation.Join(path, "Identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.DeviceGroups.DeviceGroupsItem.Identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Name")
+		fieldPath := validation.Join(path, "Name")
 		present := x.Name != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.DeviceGroups.DeviceGroupsItem.Name"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Name"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "SerialNumbers")
+		fieldPath := validation.Join(path, "SerialNumbers")
 		present := len(x.SerialNumbers) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["EducationConfiguration.DeviceGroups.DeviceGroupsItem.SerialNumbers"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SerialNumbers"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -6185,114 +6185,114 @@ func (x *EducationConfigurationDeviceGroups) validate(c *validation.Collector, p
 // that every present key is supported on that OS version and enrollment context.
 func (x *ExchangeWebServices) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ExchangeWebServices")
 	return c.Err()
 }
 
-func (x *ExchangeWebServices) validate(c *validation.Collector, p string) {
+func (x *ExchangeWebServices) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ExchangeWebServices"])
+	c.Support(path, true, supportTable["ExchangeWebServices"])
 	{
-		path := validation.Join(p, "EmailAddress")
+		fieldPath := validation.Join(path, "EmailAddress")
 		present := x.EmailAddress != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeWebServices.EmailAddress"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EmailAddress"])
 	}
 	{
-		path := validation.Join(p, "Host")
+		fieldPath := validation.Join(path, "Host")
 		present := x.Host != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeWebServices.Host"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Host"])
 	}
 	{
-		path := validation.Join(p, "SSL")
+		fieldPath := validation.Join(path, "SSL")
 		present := x.SSL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeWebServices.SSL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SSL"])
 	}
 	{
-		path := validation.Join(p, "OAuth")
+		fieldPath := validation.Join(path, "OAuth")
 		present := x.OAuth != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeWebServices.OAuth"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OAuth"])
 	}
 	{
-		path := validation.Join(p, "OAuthSignInURL")
+		fieldPath := validation.Join(path, "OAuthSignInURL")
 		present := x.OAuthSignInURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeWebServices.OAuthSignInURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OAuthSignInURL"])
 	}
 	{
-		path := validation.Join(p, "UserName")
+		fieldPath := validation.Join(path, "UserName")
 		present := x.UserName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeWebServices.UserName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserName"])
 	}
 	{
-		path := validation.Join(p, "Password")
+		fieldPath := validation.Join(path, "Password")
 		present := x.Password != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeWebServices.Password"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Password"])
 	}
 	{
-		path := validation.Join(p, "PayloadCertificateUUID")
+		fieldPath := validation.Join(path, "PayloadCertificateUUID")
 		present := x.PayloadCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeWebServices.PayloadCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateUUID"])
 		if present {
-			c.Pattern(path, true, *x.PayloadCertificateUUID, format1)
+			c.Pattern(fieldPath, true, *x.PayloadCertificateUUID, format1)
 		}
 	}
 	{
-		path := validation.Join(p, "AuthenticationCertificateUUID")
+		fieldPath := validation.Join(path, "AuthenticationCertificateUUID")
 		present := x.AuthenticationCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeWebServices.AuthenticationCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthenticationCertificateUUID"])
 	}
 	{
-		path := validation.Join(p, "allowMailDrop")
+		fieldPath := validation.Join(path, "allowMailDrop")
 		present := x.AllowMailDrop != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeWebServices.allowMailDrop"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowMailDrop"])
 	}
 	{
-		path := validation.Join(p, "Path")
+		fieldPath := validation.Join(path, "Path")
 		present := x.Path != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeWebServices.Path"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Path"])
 	}
 	{
-		path := validation.Join(p, "Port")
+		fieldPath := validation.Join(path, "Port")
 		present := x.Port != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeWebServices.Port"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Port"])
 	}
 	{
-		path := validation.Join(p, "ExternalHost")
+		fieldPath := validation.Join(path, "ExternalHost")
 		present := x.ExternalHost != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeWebServices.ExternalHost"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExternalHost"])
 	}
 	{
-		path := validation.Join(p, "ExternalSSL")
+		fieldPath := validation.Join(path, "ExternalSSL")
 		present := x.ExternalSSL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeWebServices.ExternalSSL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExternalSSL"])
 	}
 	{
-		path := validation.Join(p, "ExternalPath")
+		fieldPath := validation.Join(path, "ExternalPath")
 		present := x.ExternalPath != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeWebServices.ExternalPath"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExternalPath"])
 	}
 	{
-		path := validation.Join(p, "ExternalPort")
+		fieldPath := validation.Join(path, "ExternalPort")
 		present := x.ExternalPort != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExchangeWebServices.ExternalPort"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExternalPort"])
 	}
 }
 
@@ -6300,321 +6300,321 @@ func (x *ExchangeWebServices) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ExtensibleSingleSignOnKerberos) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ExtensibleSingleSignOnKerberos")
 	return c.Err()
 }
 
-func (x *ExtensibleSingleSignOnKerberos) validate(c *validation.Collector, p string) {
+func (x *ExtensibleSingleSignOnKerberos) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ExtensibleSingleSignOnKerberos"])
+	c.Support(path, true, supportTable["ExtensibleSingleSignOnKerberos"])
 	{
-		path := validation.Join(p, "ExtensionIdentifier")
+		fieldPath := validation.Join(path, "ExtensionIdentifier")
 		present := x.ExtensionIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExtensionIdentifier"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.ExtensionIdentifier, []any{"com.apple.AppSSOKerberos.KerberosExtension"})
+			c.Enum(fieldPath, true, x.ExtensionIdentifier, []any{"com.apple.AppSSOKerberos.KerberosExtension"})
 		}
 	}
 	{
-		path := validation.Join(p, "TeamIdentifier")
+		fieldPath := validation.Join(path, "TeamIdentifier")
 		present := x.TeamIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.TeamIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TeamIdentifier"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.TeamIdentifier, []any{"apple"})
+			c.Enum(fieldPath, true, x.TeamIdentifier, []any{"apple"})
 		}
 	}
 	{
-		path := validation.Join(p, "Type")
+		fieldPath := validation.Join(path, "Type")
 		present := x.Type != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.Type"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Type"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Type, []any{"Credential"})
+			c.Enum(fieldPath, true, x.Type, []any{"Credential"})
 		}
 	}
 	{
-		path := validation.Join(p, "Realm")
+		fieldPath := validation.Join(path, "Realm")
 		present := x.Realm != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.Realm"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Realm"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "ExtensionData")
+		fieldPath := validation.Join(path, "ExtensionData")
 		present := x.ExtensionData != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExtensionData"])
 		if present {
-			x.ExtensionData.validate(c, path)
+			x.ExtensionData.validate(c, fieldPath, supportPath+".ExtensionData")
 		}
 	}
 	{
-		path := validation.Join(p, "Hosts")
+		fieldPath := validation.Join(path, "Hosts")
 		present := len(x.Hosts) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.Hosts"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Hosts"])
 	}
 }
 
-func (x *ExtensibleSingleSignOnKerberosExtensionData) validate(c *validation.Collector, p string) {
+func (x *ExtensibleSingleSignOnKerberosExtensionData) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "cacheName")
+		fieldPath := validation.Join(path, "cacheName")
 		present := x.CacheName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.cacheName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".cacheName"])
 	}
 	{
-		path := validation.Join(p, "principalName")
+		fieldPath := validation.Join(path, "principalName")
 		present := x.PrincipalName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.principalName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".principalName"])
 	}
 	{
-		path := validation.Join(p, "siteCode")
+		fieldPath := validation.Join(path, "siteCode")
 		present := x.SiteCode != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.siteCode"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".siteCode"])
 	}
 	{
-		path := validation.Join(p, "certificateUUID")
+		fieldPath := validation.Join(path, "certificateUUID")
 		present := x.CertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.certificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".certificateUUID"])
 	}
 	{
-		path := validation.Join(p, "useSiteAutoDiscovery")
+		fieldPath := validation.Join(path, "useSiteAutoDiscovery")
 		present := x.UseSiteAutoDiscovery != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.useSiteAutoDiscovery"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".useSiteAutoDiscovery"])
 	}
 	{
-		path := validation.Join(p, "credentialBundleIdACL")
+		fieldPath := validation.Join(path, "credentialBundleIdACL")
 		present := len(x.CredentialBundleIdACL) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.credentialBundleIdACL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".credentialBundleIdACL"])
 	}
 	{
-		path := validation.Join(p, "includeManagedAppsInBundleIdACL")
+		fieldPath := validation.Join(path, "includeManagedAppsInBundleIdACL")
 		present := x.IncludeManagedAppsInBundleIdACL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.includeManagedAppsInBundleIdACL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".includeManagedAppsInBundleIdACL"])
 	}
 	{
-		path := validation.Join(p, "includeKerberosAppsInBundleIdACL")
+		fieldPath := validation.Join(path, "includeKerberosAppsInBundleIdACL")
 		present := x.IncludeKerberosAppsInBundleIdACL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.includeKerberosAppsInBundleIdACL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".includeKerberosAppsInBundleIdACL"])
 	}
 	{
-		path := validation.Join(p, "domainRealmMapping")
+		fieldPath := validation.Join(path, "domainRealmMapping")
 		present := x.DomainRealmMapping != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.domainRealmMapping"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".domainRealmMapping"])
 		if present {
-			x.DomainRealmMapping.validate(c, path)
+			x.DomainRealmMapping.validate(c, fieldPath, supportPath+".domainRealmMapping")
 		}
 	}
 	{
-		path := validation.Join(p, "isDefaultRealm")
+		fieldPath := validation.Join(path, "isDefaultRealm")
 		present := x.IsDefaultRealm != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.isDefaultRealm"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".isDefaultRealm"])
 	}
 	{
-		path := validation.Join(p, "customUsernameLabel")
+		fieldPath := validation.Join(path, "customUsernameLabel")
 		present := x.CustomUsernameLabel != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.customUsernameLabel"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".customUsernameLabel"])
 	}
 	{
-		path := validation.Join(p, "helpText")
+		fieldPath := validation.Join(path, "helpText")
 		present := x.HelpText != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.helpText"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".helpText"])
 	}
 	{
-		path := validation.Join(p, "allowPasswordChange")
+		fieldPath := validation.Join(path, "allowPasswordChange")
 		present := x.AllowPasswordChange != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.allowPasswordChange"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowPasswordChange"])
 	}
 	{
-		path := validation.Join(p, "allowAutomaticLogin")
+		fieldPath := validation.Join(path, "allowAutomaticLogin")
 		present := x.AllowAutomaticLogin != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.allowAutomaticLogin"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowAutomaticLogin"])
 	}
 	{
-		path := validation.Join(p, "requireUserPresence")
+		fieldPath := validation.Join(path, "requireUserPresence")
 		present := x.RequireUserPresence != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.requireUserPresence"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".requireUserPresence"])
 	}
 	{
-		path := validation.Join(p, "pwExpireOverride")
+		fieldPath := validation.Join(path, "pwExpireOverride")
 		present := x.PwExpireOverride != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.pwExpireOverride"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".pwExpireOverride"])
 	}
 	{
-		path := validation.Join(p, "pwNotificationDays")
+		fieldPath := validation.Join(path, "pwNotificationDays")
 		present := x.PwNotificationDays != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.pwNotificationDays"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".pwNotificationDays"])
 	}
 	{
-		path := validation.Join(p, "pwReqLength")
+		fieldPath := validation.Join(path, "pwReqLength")
 		present := x.PwReqLength != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.pwReqLength"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".pwReqLength"])
 	}
 	{
-		path := validation.Join(p, "pwReqComplexity")
+		fieldPath := validation.Join(path, "pwReqComplexity")
 		present := x.PwReqComplexity != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.pwReqComplexity"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".pwReqComplexity"])
 	}
 	{
-		path := validation.Join(p, "pwReqMinAge")
+		fieldPath := validation.Join(path, "pwReqMinAge")
 		present := x.PwReqMinAge != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.pwReqMinAge"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".pwReqMinAge"])
 	}
 	{
-		path := validation.Join(p, "pwReqHistory")
+		fieldPath := validation.Join(path, "pwReqHistory")
 		present := x.PwReqHistory != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.pwReqHistory"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".pwReqHistory"])
 	}
 	{
-		path := validation.Join(p, "pwReqText")
+		fieldPath := validation.Join(path, "pwReqText")
 		present := x.PwReqText != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.pwReqText"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".pwReqText"])
 	}
 	{
-		path := validation.Join(p, "pwReqRTFData")
+		fieldPath := validation.Join(path, "pwReqRTFData")
 		present := len(x.PwReqRTFData) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.pwReqRTFData"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".pwReqRTFData"])
 	}
 	{
-		path := validation.Join(p, "pwChangeURL")
+		fieldPath := validation.Join(path, "pwChangeURL")
 		present := x.PwChangeURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.pwChangeURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".pwChangeURL"])
 	}
 	{
-		path := validation.Join(p, "syncLocalPassword")
+		fieldPath := validation.Join(path, "syncLocalPassword")
 		present := x.SyncLocalPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.syncLocalPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".syncLocalPassword"])
 	}
 	{
-		path := validation.Join(p, "replicationTime")
+		fieldPath := validation.Join(path, "replicationTime")
 		present := x.ReplicationTime != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.replicationTime"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".replicationTime"])
 	}
 	{
-		path := validation.Join(p, "delayUserSetup")
+		fieldPath := validation.Join(path, "delayUserSetup")
 		present := x.DelayUserSetup != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.delayUserSetup"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".delayUserSetup"])
 	}
 	{
-		path := validation.Join(p, "monitorCredentialsCache")
+		fieldPath := validation.Join(path, "monitorCredentialsCache")
 		present := x.MonitorCredentialsCache != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.monitorCredentialsCache"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".monitorCredentialsCache"])
 	}
 	{
-		path := validation.Join(p, "requireTLSForLDAP")
+		fieldPath := validation.Join(path, "requireTLSForLDAP")
 		present := x.RequireTLSForLDAP != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.requireTLSForLDAP"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".requireTLSForLDAP"])
 	}
 	{
-		path := validation.Join(p, "credentialUseMode")
+		fieldPath := validation.Join(path, "credentialUseMode")
 		present := x.CredentialUseMode != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.credentialUseMode"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".credentialUseMode"])
 		if present {
-			c.Enum(path, true, *x.CredentialUseMode, []any{"always", "whenNotSpecified", "kerberosDefault"})
+			c.Enum(fieldPath, true, *x.CredentialUseMode, []any{"always", "whenNotSpecified", "kerberosDefault"})
 		}
 	}
 	{
-		path := validation.Join(p, "preferredKDCs")
+		fieldPath := validation.Join(path, "preferredKDCs")
 		present := len(x.PreferredKDCs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.preferredKDCs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".preferredKDCs"])
 	}
 	{
-		path := validation.Join(p, "usePlatformSSOTGT")
+		fieldPath := validation.Join(path, "usePlatformSSOTGT")
 		present := x.UsePlatformSSOTGT != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.usePlatformSSOTGT"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".usePlatformSSOTGT"])
 	}
 	{
-		path := validation.Join(p, "allowPlatformSSOAuthFallback")
+		fieldPath := validation.Join(path, "allowPlatformSSOAuthFallback")
 		present := x.AllowPlatformSSOAuthFallback != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.allowPlatformSSOAuthFallback"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowPlatformSSOAuthFallback"])
 	}
 	{
-		path := validation.Join(p, "performKerberosOnly")
+		fieldPath := validation.Join(path, "performKerberosOnly")
 		present := x.PerformKerberosOnly != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.performKerberosOnly"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".performKerberosOnly"])
 	}
 	{
-		path := validation.Join(p, "identityIssuerAutoSelectFilter")
+		fieldPath := validation.Join(path, "identityIssuerAutoSelectFilter")
 		present := x.IdentityIssuerAutoSelectFilter != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.identityIssuerAutoSelectFilter"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".identityIssuerAutoSelectFilter"])
 	}
 	{
-		path := validation.Join(p, "allowSmartCard")
+		fieldPath := validation.Join(path, "allowSmartCard")
 		present := x.AllowSmartCard != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.allowSmartCard"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowSmartCard"])
 	}
 	{
-		path := validation.Join(p, "allowPassword")
+		fieldPath := validation.Join(path, "allowPassword")
 		present := x.AllowPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.allowPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowPassword"])
 	}
 	{
-		path := validation.Join(p, "startInSmartCardMode")
+		fieldPath := validation.Join(path, "startInSmartCardMode")
 		present := x.StartInSmartCardMode != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.startInSmartCardMode"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".startInSmartCardMode"])
 	}
 }
 
-func (x *ExtensibleSingleSignOnKerberosExtensionDataDomainRealmMapping) validate(c *validation.Collector, p string) {
+func (x *ExtensibleSingleSignOnKerberosExtensionDataDomainRealmMapping) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Realm")
+		fieldPath := validation.Join(path, "Realm")
 		present := len(x.Realm) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOnKerberos.ExtensionData.domainRealmMapping.Realm"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Realm"])
 	}
 }
 
@@ -6622,368 +6622,368 @@ func (x *ExtensibleSingleSignOnKerberosExtensionDataDomainRealmMapping) validate
 // that every present key is supported on that OS version and enrollment context.
 func (x *ExtensibleSingleSignOn) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ExtensibleSingleSignOn")
 	return c.Err()
 }
 
-func (x *ExtensibleSingleSignOn) validate(c *validation.Collector, p string) {
+func (x *ExtensibleSingleSignOn) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ExtensibleSingleSignOn"])
+	c.Support(path, true, supportTable["ExtensibleSingleSignOn"])
 	{
-		path := validation.Join(p, "ExtensionIdentifier")
+		fieldPath := validation.Join(path, "ExtensionIdentifier")
 		present := x.ExtensionIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.ExtensionIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExtensionIdentifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "TeamIdentifier")
+		fieldPath := validation.Join(path, "TeamIdentifier")
 		present := x.TeamIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.TeamIdentifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TeamIdentifier"])
 	}
 	{
-		path := validation.Join(p, "Type")
+		fieldPath := validation.Join(path, "Type")
 		present := x.Type != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.Type"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Type"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Type, []any{"Credential", "Redirect"})
+			c.Enum(fieldPath, true, x.Type, []any{"Credential", "Redirect"})
 		}
 	}
 	{
-		path := validation.Join(p, "Realm")
+		fieldPath := validation.Join(path, "Realm")
 		present := x.Realm != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.Realm"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Realm"])
 	}
 	{
-		path := validation.Join(p, "ExtensionData")
+		fieldPath := validation.Join(path, "ExtensionData")
 		present := len(x.ExtensionData) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.ExtensionData"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExtensionData"])
 	}
 	{
-		path := validation.Join(p, "URLs")
+		fieldPath := validation.Join(path, "URLs")
 		present := len(x.URLs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.URLs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".URLs"])
 	}
 	{
-		path := validation.Join(p, "Hosts")
+		fieldPath := validation.Join(path, "Hosts")
 		present := len(x.Hosts) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.Hosts"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Hosts"])
 	}
 	{
-		path := validation.Join(p, "ScreenLockedBehavior")
+		fieldPath := validation.Join(path, "ScreenLockedBehavior")
 		present := x.ScreenLockedBehavior != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.ScreenLockedBehavior"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ScreenLockedBehavior"])
 		if present {
-			c.Enum(path, true, *x.ScreenLockedBehavior, []any{"Cancel", "DoNotHandle"})
+			c.Enum(fieldPath, true, *x.ScreenLockedBehavior, []any{"Cancel", "DoNotHandle"})
 		}
 	}
 	{
-		path := validation.Join(p, "DeniedBundleIdentifiers")
+		fieldPath := validation.Join(path, "DeniedBundleIdentifiers")
 		present := len(x.DeniedBundleIdentifiers) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.DeniedBundleIdentifiers"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeniedBundleIdentifiers"])
 	}
 	{
-		path := validation.Join(p, "AuthenticationMethod")
+		fieldPath := validation.Join(path, "AuthenticationMethod")
 		present := x.AuthenticationMethod != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.AuthenticationMethod"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthenticationMethod"])
 		if present {
-			c.Support(path, true, ValueSupport("ExtensibleSingleSignOn.AuthenticationMethod", *x.AuthenticationMethod))
+			c.Support(fieldPath, true, ValueSupport(supportPath+".AuthenticationMethod", *x.AuthenticationMethod))
 		}
 		if present {
-			c.Enum(path, true, *x.AuthenticationMethod, []any{"Password", "UserSecureEnclaveKey", "SmartCard", "OpenID"})
+			c.Enum(fieldPath, true, *x.AuthenticationMethod, []any{"Password", "UserSecureEnclaveKey", "SmartCard", "OpenID"})
 		}
 	}
 	{
-		path := validation.Join(p, "RegistrationToken")
+		fieldPath := validation.Join(path, "RegistrationToken")
 		present := x.RegistrationToken != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.RegistrationToken"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RegistrationToken"])
 	}
 	{
-		path := validation.Join(p, "PlatformSSO")
+		fieldPath := validation.Join(path, "PlatformSSO")
 		present := x.PlatformSSO != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PlatformSSO"])
 		if present {
-			x.PlatformSSO.validate(c, path)
+			x.PlatformSSO.validate(c, fieldPath, supportPath+".PlatformSSO")
 		}
 	}
 }
 
-func (x *ExtensibleSingleSignOnPlatformSSO) validate(c *validation.Collector, p string) {
+func (x *ExtensibleSingleSignOnPlatformSSO) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "AuthenticationMethod")
+		fieldPath := validation.Join(path, "AuthenticationMethod")
 		present := x.AuthenticationMethod != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.AuthenticationMethod"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthenticationMethod"])
 		if present {
-			c.Support(path, true, ValueSupport("ExtensibleSingleSignOn.PlatformSSO.AuthenticationMethod", *x.AuthenticationMethod))
+			c.Support(fieldPath, true, ValueSupport(supportPath+".AuthenticationMethod", *x.AuthenticationMethod))
 		}
 		if present {
-			c.Enum(path, true, *x.AuthenticationMethod, []any{"Password", "UserSecureEnclaveKey", "SmartCard", "OpenID"})
+			c.Enum(fieldPath, true, *x.AuthenticationMethod, []any{"Password", "UserSecureEnclaveKey", "SmartCard", "OpenID"})
 		}
 	}
 	{
-		path := validation.Join(p, "UseSharedDeviceKeys")
+		fieldPath := validation.Join(path, "UseSharedDeviceKeys")
 		present := x.UseSharedDeviceKeys != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.UseSharedDeviceKeys"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UseSharedDeviceKeys"])
 	}
 	{
-		path := validation.Join(p, "AccountDisplayName")
+		fieldPath := validation.Join(path, "AccountDisplayName")
 		present := x.AccountDisplayName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.AccountDisplayName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AccountDisplayName"])
 	}
 	{
-		path := validation.Join(p, "LoginFrequency")
+		fieldPath := validation.Join(path, "LoginFrequency")
 		present := x.LoginFrequency != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.LoginFrequency"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LoginFrequency"])
 		if present {
-			c.Range(path, true, float64(*x.LoginFrequency), new(3600.0), nil)
+			c.Range(fieldPath, true, float64(*x.LoginFrequency), new(3600.0), nil)
 		}
 	}
 	{
-		path := validation.Join(p, "EnableCreateUserAtLogin")
+		fieldPath := validation.Join(path, "EnableCreateUserAtLogin")
 		present := x.EnableCreateUserAtLogin != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.EnableCreateUserAtLogin"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableCreateUserAtLogin"])
 	}
 	{
-		path := validation.Join(p, "EnableCreateFirstUserDuringSetup")
+		fieldPath := validation.Join(path, "EnableCreateFirstUserDuringSetup")
 		present := x.EnableCreateFirstUserDuringSetup != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.EnableCreateFirstUserDuringSetup"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableCreateFirstUserDuringSetup"])
 	}
 	{
-		path := validation.Join(p, "EnableAuthorization")
+		fieldPath := validation.Join(path, "EnableAuthorization")
 		present := x.EnableAuthorization != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.EnableAuthorization"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableAuthorization"])
 	}
 	{
-		path := validation.Join(p, "TokenToUserMapping")
+		fieldPath := validation.Join(path, "TokenToUserMapping")
 		present := x.TokenToUserMapping != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.TokenToUserMapping"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TokenToUserMapping"])
 		if present {
-			x.TokenToUserMapping.validate(c, path)
+			x.TokenToUserMapping.validate(c, fieldPath, supportPath+".TokenToUserMapping")
 		}
 	}
 	{
-		path := validation.Join(p, "NewUserAuthenticationMethods")
+		fieldPath := validation.Join(path, "NewUserAuthenticationMethods")
 		present := len(x.NewUserAuthenticationMethods) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.NewUserAuthenticationMethods"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".NewUserAuthenticationMethods"])
 		for i, v := range x.NewUserAuthenticationMethods {
-			c.Support(validation.Index(path, i), true, ValueSupport("ExtensibleSingleSignOn.PlatformSSO.NewUserAuthenticationMethods", v))
+			c.Support(validation.Index(fieldPath, i), true, ValueSupport(supportPath+".NewUserAuthenticationMethods", v))
 		}
 		for i, v := range x.NewUserAuthenticationMethods {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"Password", "SmartCard", "AccessKey", "OpenID"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"Password", "SmartCard", "AccessKey", "OpenID"})
 		}
 	}
 	{
-		path := validation.Join(p, "NewUserAuthorizationMode")
+		fieldPath := validation.Join(path, "NewUserAuthorizationMode")
 		present := x.NewUserAuthorizationMode != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.NewUserAuthorizationMode"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".NewUserAuthorizationMode"])
 		if present {
-			c.Enum(path, true, *x.NewUserAuthorizationMode, []any{"Standard", "Admin", "Groups", "Temporary"})
+			c.Enum(fieldPath, true, *x.NewUserAuthorizationMode, []any{"Standard", "Admin", "Groups", "Temporary"})
 		}
 	}
 	{
-		path := validation.Join(p, "UserAuthorizationMode")
+		fieldPath := validation.Join(path, "UserAuthorizationMode")
 		present := x.UserAuthorizationMode != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.UserAuthorizationMode"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserAuthorizationMode"])
 		if present {
-			c.Enum(path, true, *x.UserAuthorizationMode, []any{"Standard", "Admin", "Groups"})
+			c.Enum(fieldPath, true, *x.UserAuthorizationMode, []any{"Standard", "Admin", "Groups"})
 		}
 	}
 	{
-		path := validation.Join(p, "AdministratorGroups")
+		fieldPath := validation.Join(path, "AdministratorGroups")
 		present := len(x.AdministratorGroups) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.AdministratorGroups"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AdministratorGroups"])
 	}
 	{
-		path := validation.Join(p, "AdditionalGroups")
+		fieldPath := validation.Join(path, "AdditionalGroups")
 		present := len(x.AdditionalGroups) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.AdditionalGroups"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AdditionalGroups"])
 	}
 	{
-		path := validation.Join(p, "AuthorizationGroups")
+		fieldPath := validation.Join(path, "AuthorizationGroups")
 		present := len(x.AuthorizationGroups) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.AuthorizationGroups"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthorizationGroups"])
 	}
 	{
-		path := validation.Join(p, "AccessKeyReaderGroupIdentifier")
+		fieldPath := validation.Join(path, "AccessKeyReaderGroupIdentifier")
 		present := len(x.AccessKeyReaderGroupIdentifier) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.AccessKeyReaderGroupIdentifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AccessKeyReaderGroupIdentifier"])
 	}
 	{
-		path := validation.Join(p, "AccessKeyTerminalIdentityUUID")
+		fieldPath := validation.Join(path, "AccessKeyTerminalIdentityUUID")
 		present := x.AccessKeyTerminalIdentityUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.AccessKeyTerminalIdentityUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AccessKeyTerminalIdentityUUID"])
 	}
 	{
-		path := validation.Join(p, "AccessKeyReaderIssuerCertificateUUID")
+		fieldPath := validation.Join(path, "AccessKeyReaderIssuerCertificateUUID")
 		present := x.AccessKeyReaderIssuerCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.AccessKeyReaderIssuerCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AccessKeyReaderIssuerCertificateUUID"])
 	}
 	{
-		path := validation.Join(p, "AllowAccessKeyExpressMode")
+		fieldPath := validation.Join(path, "AllowAccessKeyExpressMode")
 		present := x.AllowAccessKeyExpressMode != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.AllowAccessKeyExpressMode"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowAccessKeyExpressMode"])
 	}
 	{
-		path := validation.Join(p, "FileVaultPolicy")
+		fieldPath := validation.Join(path, "FileVaultPolicy")
 		present := len(x.FileVaultPolicy) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.FileVaultPolicy"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FileVaultPolicy"])
 		for i, v := range x.FileVaultPolicy {
-			c.Support(validation.Index(path, i), true, ValueSupport("ExtensibleSingleSignOn.PlatformSSO.FileVaultPolicy", v))
+			c.Support(validation.Index(fieldPath, i), true, ValueSupport(supportPath+".FileVaultPolicy", v))
 		}
 		for i, v := range x.FileVaultPolicy {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"AttemptAuthentication", "RequireAuthentication", "AllowOfflineGracePeriod", "AllowAuthenticationGracePeriod", "RequireTouchID", "RequireTouchIDOrWatch", "AllowOpenIDForTouchIDFallback"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"AttemptAuthentication", "RequireAuthentication", "AllowOfflineGracePeriod", "AllowAuthenticationGracePeriod", "RequireTouchID", "RequireTouchIDOrWatch", "AllowOpenIDForTouchIDFallback"})
 		}
 	}
 	{
-		path := validation.Join(p, "LoginPolicy")
+		fieldPath := validation.Join(path, "LoginPolicy")
 		present := len(x.LoginPolicy) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.LoginPolicy"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LoginPolicy"])
 		for i, v := range x.LoginPolicy {
-			c.Support(validation.Index(path, i), true, ValueSupport("ExtensibleSingleSignOn.PlatformSSO.LoginPolicy", v))
+			c.Support(validation.Index(fieldPath, i), true, ValueSupport(supportPath+".LoginPolicy", v))
 		}
 		for i, v := range x.LoginPolicy {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"AttemptAuthentication", "RequireAuthentication", "AllowOfflineGracePeriod", "AllowAuthenticationGracePeriod", "RequireTouchID", "RequireTouchIDOrWatch", "AllowOpenIDForTouchIDFallback"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"AttemptAuthentication", "RequireAuthentication", "AllowOfflineGracePeriod", "AllowAuthenticationGracePeriod", "RequireTouchID", "RequireTouchIDOrWatch", "AllowOpenIDForTouchIDFallback"})
 		}
 	}
 	{
-		path := validation.Join(p, "UnlockPolicy")
+		fieldPath := validation.Join(path, "UnlockPolicy")
 		present := len(x.UnlockPolicy) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.UnlockPolicy"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UnlockPolicy"])
 		for i, v := range x.UnlockPolicy {
-			c.Support(validation.Index(path, i), true, ValueSupport("ExtensibleSingleSignOn.PlatformSSO.UnlockPolicy", v))
+			c.Support(validation.Index(fieldPath, i), true, ValueSupport(supportPath+".UnlockPolicy", v))
 		}
 		for i, v := range x.UnlockPolicy {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"AttemptAuthentication", "RequireAuthentication", "AllowOfflineGracePeriod", "AllowAuthenticationGracePeriod", "AllowTouchIDOrWatchForUnlock", "RequireTouchID", "RequireTouchIDOrWatch", "AllowOpenIDForTouchIDFallback"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"AttemptAuthentication", "RequireAuthentication", "AllowOfflineGracePeriod", "AllowAuthenticationGracePeriod", "AllowTouchIDOrWatchForUnlock", "RequireTouchID", "RequireTouchIDOrWatch", "AllowOpenIDForTouchIDFallback"})
 		}
 	}
 	{
-		path := validation.Join(p, "OfflineGracePeriod")
+		fieldPath := validation.Join(path, "OfflineGracePeriod")
 		present := x.OfflineGracePeriod != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.OfflineGracePeriod"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OfflineGracePeriod"])
 	}
 	{
-		path := validation.Join(p, "AuthenticationGracePeriod")
+		fieldPath := validation.Join(path, "AuthenticationGracePeriod")
 		present := x.AuthenticationGracePeriod != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.AuthenticationGracePeriod"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthenticationGracePeriod"])
 	}
 	{
-		path := validation.Join(p, "NonPlatformSSOAccounts")
+		fieldPath := validation.Join(path, "NonPlatformSSOAccounts")
 		present := len(x.NonPlatformSSOAccounts) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.NonPlatformSSOAccounts"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".NonPlatformSSOAccounts"])
 	}
 	{
-		path := validation.Join(p, "AllowDeviceIdentifiersInAttestation")
+		fieldPath := validation.Join(path, "AllowDeviceIdentifiersInAttestation")
 		present := x.AllowDeviceIdentifiersInAttestation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.AllowDeviceIdentifiersInAttestation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowDeviceIdentifiersInAttestation"])
 	}
 	{
-		path := validation.Join(p, "SynchronizeProfilePicture")
+		fieldPath := validation.Join(path, "SynchronizeProfilePicture")
 		present := x.SynchronizeProfilePicture != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.SynchronizeProfilePicture"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SynchronizeProfilePicture"])
 	}
 	{
-		path := validation.Join(p, "TemporarySessionQuickLogin")
+		fieldPath := validation.Join(path, "TemporarySessionQuickLogin")
 		present := x.TemporarySessionQuickLogin != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.TemporarySessionQuickLogin"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TemporarySessionQuickLogin"])
 	}
 	{
-		path := validation.Join(p, "EnableRegistrationDuringSetup")
+		fieldPath := validation.Join(path, "EnableRegistrationDuringSetup")
 		present := x.EnableRegistrationDuringSetup != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.EnableRegistrationDuringSetup"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableRegistrationDuringSetup"])
 	}
 	{
-		path := validation.Join(p, "AlwaysUseLoginUI")
+		fieldPath := validation.Join(path, "AlwaysUseLoginUI")
 		present := x.AlwaysUseLoginUI != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.AlwaysUseLoginUI"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AlwaysUseLoginUI"])
 	}
 	{
-		path := validation.Join(p, "WebLoginURLAllowList")
+		fieldPath := validation.Join(path, "WebLoginURLAllowList")
 		present := len(x.WebLoginURLAllowList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.WebLoginURLAllowList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".WebLoginURLAllowList"])
 	}
 	{
-		path := validation.Join(p, "AllowWebLoginPasswordSync")
+		fieldPath := validation.Join(path, "AllowWebLoginPasswordSync")
 		present := x.AllowWebLoginPasswordSync != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.AllowWebLoginPasswordSync"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowWebLoginPasswordSync"])
 	}
 	{
-		path := validation.Join(p, "AdditionalHTTPHeaders")
+		fieldPath := validation.Join(path, "AdditionalHTTPHeaders")
 		present := len(x.AdditionalHTTPHeaders) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.AdditionalHTTPHeaders"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AdditionalHTTPHeaders"])
 	}
 }
 
-func (x *ExtensibleSingleSignOnPlatformSSOTokenToUserMapping) validate(c *validation.Collector, p string) {
+func (x *ExtensibleSingleSignOnPlatformSSOTokenToUserMapping) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "AccountName")
+		fieldPath := validation.Join(path, "AccountName")
 		present := x.AccountName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.TokenToUserMapping.AccountName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AccountName"])
 	}
 	{
-		path := validation.Join(p, "FullName")
+		fieldPath := validation.Join(path, "FullName")
 		present := x.FullName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ExtensibleSingleSignOn.PlatformSSO.TokenToUserMapping.FullName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FullName"])
 	}
 }
 
@@ -6991,122 +6991,122 @@ func (x *ExtensibleSingleSignOnPlatformSSOTokenToUserMapping) validate(c *valida
 // that every present key is supported on that OS version and enrollment context.
 func (x *ParentalControlsContentFilter) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ParentalControlsContentFilter")
 	return c.Err()
 }
 
-func (x *ParentalControlsContentFilter) validate(c *validation.Collector, p string) {
+func (x *ParentalControlsContentFilter) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ParentalControlsContentFilter"])
+	c.Support(path, true, supportTable["ParentalControlsContentFilter"])
 	{
-		path := validation.Join(p, "restrictWeb")
+		fieldPath := validation.Join(path, "restrictWeb")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsContentFilter.restrictWeb"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".restrictWeb"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "useContentFilter")
+		fieldPath := validation.Join(path, "useContentFilter")
 		present := x.UseContentFilter != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsContentFilter.useContentFilter"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".useContentFilter"])
 	}
 	{
-		path := validation.Join(p, "allowListEnabled")
+		fieldPath := validation.Join(path, "allowListEnabled")
 		present := x.AllowListEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsContentFilter.allowListEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowListEnabled"])
 	}
 	{
-		path := validation.Join(p, "whitelistEnabled")
+		fieldPath := validation.Join(path, "whitelistEnabled")
 		present := x.WhitelistEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsContentFilter.whitelistEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".whitelistEnabled"])
 	}
 	{
-		path := validation.Join(p, "siteAllowList")
+		fieldPath := validation.Join(path, "siteAllowList")
 		present := len(x.SiteAllowList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsContentFilter.siteAllowList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".siteAllowList"])
 		for i := range x.SiteAllowList {
-			x.SiteAllowList[i].validate(c, validation.Index(path, i))
+			x.SiteAllowList[i].validate(c, validation.Index(fieldPath, i), supportPath+".siteAllowList.siteAllowListItem")
 		}
 	}
 	{
-		path := validation.Join(p, "siteWhitelist")
+		fieldPath := validation.Join(path, "siteWhitelist")
 		present := len(x.SiteWhitelist) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsContentFilter.siteWhitelist"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".siteWhitelist"])
 		for i := range x.SiteWhitelist {
-			x.SiteWhitelist[i].validate(c, validation.Index(path, i))
+			x.SiteWhitelist[i].validate(c, validation.Index(fieldPath, i), supportPath+".siteWhitelist.siteWhitelistItem")
 		}
 	}
 	{
-		path := validation.Join(p, "filterAllowList")
+		fieldPath := validation.Join(path, "filterAllowList")
 		present := len(x.FilterAllowList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsContentFilter.filterAllowList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".filterAllowList"])
 	}
 	{
-		path := validation.Join(p, "filterWhitelist")
+		fieldPath := validation.Join(path, "filterWhitelist")
 		present := len(x.FilterWhitelist) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsContentFilter.filterWhitelist"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".filterWhitelist"])
 	}
 	{
-		path := validation.Join(p, "filterDenyList")
+		fieldPath := validation.Join(path, "filterDenyList")
 		present := len(x.FilterDenyList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsContentFilter.filterDenyList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".filterDenyList"])
 	}
 	{
-		path := validation.Join(p, "filterBlacklist")
+		fieldPath := validation.Join(path, "filterBlacklist")
 		present := len(x.FilterBlacklist) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsContentFilter.filterBlacklist"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".filterBlacklist"])
 	}
 }
 
-func (x *ParentalControlsContentFilterSiteAllowList) validate(c *validation.Collector, p string) {
+func (x *ParentalControlsContentFilterSiteAllowList) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "address")
+		fieldPath := validation.Join(path, "address")
 		present := x.Address != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsContentFilter.siteAllowList.siteAllowListItem.address"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".address"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "pageTitle")
+		fieldPath := validation.Join(path, "pageTitle")
 		present := x.PageTitle != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsContentFilter.siteAllowList.siteAllowListItem.pageTitle"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".pageTitle"])
 	}
 }
 
-func (x *ParentalControlsContentFilterSiteWhitelist) validate(c *validation.Collector, p string) {
+func (x *ParentalControlsContentFilterSiteWhitelist) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "address")
+		fieldPath := validation.Join(path, "address")
 		present := x.Address != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsContentFilter.siteWhitelist.siteWhitelistItem.address"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".address"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "pageTitle")
+		fieldPath := validation.Join(path, "pageTitle")
 		present := x.PageTitle != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsContentFilter.siteWhitelist.siteWhitelistItem.pageTitle"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".pageTitle"])
 	}
 }
 
@@ -7114,116 +7114,116 @@ func (x *ParentalControlsContentFilterSiteWhitelist) validate(c *validation.Coll
 // that every present key is supported on that OS version and enrollment context.
 func (x *ParentalControlsTimeLimits) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ParentalControlsTimeLimits")
 	return c.Err()
 }
 
-func (x *ParentalControlsTimeLimits) validate(c *validation.Collector, p string) {
+func (x *ParentalControlsTimeLimits) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ParentalControlsTimeLimits"])
+	c.Support(path, true, supportTable["ParentalControlsTimeLimits"])
 	{
-		path := validation.Join(p, "familyControlsEnabled")
+		fieldPath := validation.Join(path, "familyControlsEnabled")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsTimeLimits.familyControlsEnabled"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".familyControlsEnabled"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "time-limits")
+		fieldPath := validation.Join(path, "time-limits")
 		present := x.TimeLimits != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsTimeLimits.time-limits"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".time-limits"])
 		if present {
-			x.TimeLimits.validate(c, path)
+			x.TimeLimits.validate(c, fieldPath, supportPath+".time-limits")
 		}
 	}
 }
 
-func (x *ParentalControlsTimeLimitsTimeLimits) validate(c *validation.Collector, p string) {
+func (x *ParentalControlsTimeLimitsTimeLimits) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "weekday-allowance")
+		fieldPath := validation.Join(path, "weekday-allowance")
 		present := x.WeekdayAllowance != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsTimeLimits.time-limits.weekday-allowance"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".weekday-allowance"])
 		if present {
-			x.WeekdayAllowance.validate(c, path)
+			x.WeekdayAllowance.validate(c, fieldPath, supportPath+".weekday-allowance")
 		}
 	}
 	{
-		path := validation.Join(p, "weekday-curfew")
+		fieldPath := validation.Join(path, "weekday-curfew")
 		present := x.WeekdayCurfew != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsTimeLimits.time-limits.weekday-curfew"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".weekday-curfew"])
 		if present {
-			x.WeekdayCurfew.validate(c, path)
+			x.WeekdayCurfew.validate(c, fieldPath, supportPath+".weekday-curfew")
 		}
 	}
 	{
-		path := validation.Join(p, "weekend-allowance")
+		fieldPath := validation.Join(path, "weekend-allowance")
 		present := x.WeekendAllowance != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsTimeLimits.time-limits.weekend-allowance"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".weekend-allowance"])
 		if present {
-			x.WeekendAllowance.validate(c, path)
+			x.WeekendAllowance.validate(c, fieldPath, supportPath+".weekend-allowance")
 		}
 	}
 	{
-		path := validation.Join(p, "weekend-curfew")
+		fieldPath := validation.Join(path, "weekend-curfew")
 		present := x.WeekendCurfew != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsTimeLimits.time-limits.weekend-curfew"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".weekend-curfew"])
 		if present {
-			x.WeekendCurfew.validate(c, path)
+			x.WeekendCurfew.validate(c, fieldPath, supportPath+".weekend-curfew")
 		}
 	}
 }
 
-func (x *ParentalControlsTimeLimitsAllowance) validate(c *validation.Collector, p string) {
+func (x *ParentalControlsTimeLimitsAllowance) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "enabled")
+		fieldPath := validation.Join(path, "enabled")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsTimeLimits.time-limits.weekday-allowance.enabled"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".enabled"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "rangeType")
+		fieldPath := validation.Join(path, "rangeType")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsTimeLimits.time-limits.weekday-allowance.rangeType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".rangeType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.RangeType, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, x.RangeType, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "start")
+		fieldPath := validation.Join(path, "start")
 		present := x.Start != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsTimeLimits.time-limits.weekday-allowance.start"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".start"])
 	}
 	{
-		path := validation.Join(p, "end")
+		fieldPath := validation.Join(path, "end")
 		present := x.End != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsTimeLimits.time-limits.weekday-allowance.end"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".end"])
 	}
 	{
-		path := validation.Join(p, "secondsPerDay")
+		fieldPath := validation.Join(path, "secondsPerDay")
 		present := x.SecondsPerDay != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsTimeLimits.time-limits.weekday-allowance.secondsPerDay"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".secondsPerDay"])
 	}
 }
 
@@ -7231,63 +7231,63 @@ func (x *ParentalControlsTimeLimitsAllowance) validate(c *validation.Collector, 
 // that every present key is supported on that OS version and enrollment context.
 func (x *FileProvider) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "FileProvider")
 	return c.Err()
 }
 
-func (x *FileProvider) validate(c *validation.Collector, p string) {
+func (x *FileProvider) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["FileProvider"])
+	c.Support(path, true, supportTable["FileProvider"])
 	{
-		path := validation.Join(p, "ManagementAllowsRemoteSyncing")
+		fieldPath := validation.Join(path, "ManagementAllowsRemoteSyncing")
 		present := x.ManagementAllowsRemoteSyncing != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FileProvider.ManagementAllowsRemoteSyncing"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ManagementAllowsRemoteSyncing"])
 	}
 	{
-		path := validation.Join(p, "ManagementRemoteSyncingAllowList")
+		fieldPath := validation.Join(path, "ManagementRemoteSyncingAllowList")
 		present := len(x.ManagementRemoteSyncingAllowList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["FileProvider.ManagementRemoteSyncingAllowList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ManagementRemoteSyncingAllowList"])
 	}
 	{
-		path := validation.Join(p, "AllowManagedFileProvidersToRequestAttribution")
+		fieldPath := validation.Join(path, "AllowManagedFileProvidersToRequestAttribution")
 		present := x.AllowManagedFileProvidersToRequestAttribution != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FileProvider.AllowManagedFileProvidersToRequestAttribution"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowManagedFileProvidersToRequestAttribution"])
 	}
 	{
-		path := validation.Join(p, "ManagementAllowsKnownFolderSyncing")
+		fieldPath := validation.Join(path, "ManagementAllowsKnownFolderSyncing")
 		present := x.ManagementAllowsKnownFolderSyncing != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FileProvider.ManagementAllowsKnownFolderSyncing"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ManagementAllowsKnownFolderSyncing"])
 	}
 	{
-		path := validation.Join(p, "ManagementKnownFolderSyncingAllowList")
+		fieldPath := validation.Join(path, "ManagementKnownFolderSyncingAllowList")
 		present := len(x.ManagementKnownFolderSyncingAllowList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["FileProvider.ManagementKnownFolderSyncingAllowList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ManagementKnownFolderSyncingAllowList"])
 	}
 	{
-		path := validation.Join(p, "ManagementAllowsExternalVolumeSyncing")
+		fieldPath := validation.Join(path, "ManagementAllowsExternalVolumeSyncing")
 		present := x.ManagementAllowsExternalVolumeSyncing != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FileProvider.ManagementAllowsExternalVolumeSyncing"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ManagementAllowsExternalVolumeSyncing"])
 	}
 	{
-		path := validation.Join(p, "ManagementExternalVolumeSyncingAllowList")
+		fieldPath := validation.Join(path, "ManagementExternalVolumeSyncingAllowList")
 		present := len(x.ManagementExternalVolumeSyncingAllowList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["FileProvider.ManagementExternalVolumeSyncingAllowList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ManagementExternalVolumeSyncingAllowList"])
 	}
 	{
-		path := validation.Join(p, "ManagementDomainAutoEnablementList")
+		fieldPath := validation.Join(path, "ManagementDomainAutoEnablementList")
 		present := len(x.ManagementDomainAutoEnablementList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["FileProvider.ManagementDomainAutoEnablementList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ManagementDomainAutoEnablementList"])
 	}
 }
 
@@ -7295,78 +7295,78 @@ func (x *FileProvider) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *Finder) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Finder")
 	return c.Err()
 }
 
-func (x *Finder) validate(c *validation.Collector, p string) {
+func (x *Finder) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Finder"])
+	c.Support(path, true, supportTable["Finder"])
 	{
-		path := validation.Join(p, "ProhibitBurn")
+		fieldPath := validation.Join(path, "ProhibitBurn")
 		present := x.ProhibitBurn != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Finder.ProhibitBurn"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProhibitBurn"])
 	}
 	{
-		path := validation.Join(p, "InterfaceLevel")
+		fieldPath := validation.Join(path, "InterfaceLevel")
 		present := x.InterfaceLevel != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Finder.InterfaceLevel"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".InterfaceLevel"])
 		if present {
-			c.Enum(path, true, *x.InterfaceLevel, []any{"Simple", "Full"})
+			c.Enum(fieldPath, true, *x.InterfaceLevel, []any{"Simple", "Full"})
 		}
 	}
 	{
-		path := validation.Join(p, "ProhibitConnectTo")
+		fieldPath := validation.Join(path, "ProhibitConnectTo")
 		present := x.ProhibitConnectTo != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Finder.ProhibitConnectTo"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProhibitConnectTo"])
 	}
 	{
-		path := validation.Join(p, "ProhibitEject")
+		fieldPath := validation.Join(path, "ProhibitEject")
 		present := x.ProhibitEject != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Finder.ProhibitEject"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProhibitEject"])
 	}
 	{
-		path := validation.Join(p, "ProhibitGoToFolder")
+		fieldPath := validation.Join(path, "ProhibitGoToFolder")
 		present := x.ProhibitGoToFolder != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Finder.ProhibitGoToFolder"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProhibitGoToFolder"])
 	}
 	{
-		path := validation.Join(p, "ShowExternalHardDrivesOnDesktop")
+		fieldPath := validation.Join(path, "ShowExternalHardDrivesOnDesktop")
 		present := x.ShowExternalHardDrivesOnDesktop != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Finder.ShowExternalHardDrivesOnDesktop"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ShowExternalHardDrivesOnDesktop"])
 	}
 	{
-		path := validation.Join(p, "ShowHardDrivesOnDesktop")
+		fieldPath := validation.Join(path, "ShowHardDrivesOnDesktop")
 		present := x.ShowHardDrivesOnDesktop != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Finder.ShowHardDrivesOnDesktop"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ShowHardDrivesOnDesktop"])
 	}
 	{
-		path := validation.Join(p, "ShowMountedServersOnDesktop")
+		fieldPath := validation.Join(path, "ShowMountedServersOnDesktop")
 		present := x.ShowMountedServersOnDesktop != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Finder.ShowMountedServersOnDesktop"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ShowMountedServersOnDesktop"])
 	}
 	{
-		path := validation.Join(p, "ShowRemovableMediaOnDesktop")
+		fieldPath := validation.Join(path, "ShowRemovableMediaOnDesktop")
 		present := x.ShowRemovableMediaOnDesktop != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Finder.ShowRemovableMediaOnDesktop"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ShowRemovableMediaOnDesktop"])
 	}
 	{
-		path := validation.Join(p, "WarnOnEmptyTrash")
+		fieldPath := validation.Join(path, "WarnOnEmptyTrash")
 		present := x.WarnOnEmptyTrash != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Finder.WarnOnEmptyTrash"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".WarnOnEmptyTrash"])
 	}
 }
 
@@ -7374,21 +7374,21 @@ func (x *Finder) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *X8021XFirstActiveEthernet) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "X8021XFirstActiveEthernet")
 	return c.Err()
 }
 
-func (x *X8021XFirstActiveEthernet) validate(c *validation.Collector, p string) {
+func (x *X8021XFirstActiveEthernet) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["X8021XFirstActiveEthernet"])
+	c.Support(path, true, supportTable["X8021XFirstActiveEthernet"])
 	{
-		path := validation.Join(p, "ANY")
+		fieldPath := validation.Join(path, "ANY")
 		present := x.ANY != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["X8021XFirstActiveEthernet.ANY"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ANY"])
 	}
 }
 
@@ -7396,21 +7396,21 @@ func (x *X8021XFirstActiveEthernet) validate(c *validation.Collector, p string) 
 // that every present key is supported on that OS version and enrollment context.
 func (x *X8021XFirstEthernet) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "X8021XFirstEthernet")
 	return c.Err()
 }
 
-func (x *X8021XFirstEthernet) validate(c *validation.Collector, p string) {
+func (x *X8021XFirstEthernet) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["X8021XFirstEthernet"])
+	c.Support(path, true, supportTable["X8021XFirstEthernet"])
 	{
-		path := validation.Join(p, "ANY")
+		fieldPath := validation.Join(path, "ANY")
 		present := x.ANY != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["X8021XFirstEthernet.ANY"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ANY"])
 	}
 }
 
@@ -7418,28 +7418,28 @@ func (x *X8021XFirstEthernet) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *Font) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Font")
 	return c.Err()
 }
 
-func (x *Font) validate(c *validation.Collector, p string) {
+func (x *Font) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Font"])
+	c.Support(path, true, supportTable["Font"])
 	{
-		path := validation.Join(p, "Name")
+		fieldPath := validation.Join(path, "Name")
 		present := x.Name != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Font.Name"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Name"])
 	}
 	{
-		path := validation.Join(p, "Font")
+		fieldPath := validation.Join(path, "Font")
 		present := len(x.Font) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Font.Font"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Font"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -7447,39 +7447,39 @@ func (x *Font) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ParentalControlsGameCenter) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ParentalControlsGameCenter")
 	return c.Err()
 }
 
-func (x *ParentalControlsGameCenter) validate(c *validation.Collector, p string) {
+func (x *ParentalControlsGameCenter) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ParentalControlsGameCenter"])
+	c.Support(path, true, supportTable["ParentalControlsGameCenter"])
 	{
-		path := validation.Join(p, "GKFeatureGameCenterAllowed")
+		fieldPath := validation.Join(path, "GKFeatureGameCenterAllowed")
 		present := x.GKFeatureGameCenterAllowed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsGameCenter.GKFeatureGameCenterAllowed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".GKFeatureGameCenterAllowed"])
 	}
 	{
-		path := validation.Join(p, "GKFeatureAccountModificationAllowed")
+		fieldPath := validation.Join(path, "GKFeatureAccountModificationAllowed")
 		present := x.GKFeatureAccountModificationAllowed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsGameCenter.GKFeatureAccountModificationAllowed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".GKFeatureAccountModificationAllowed"])
 	}
 	{
-		path := validation.Join(p, "GKFeatureAddingGameCenterFriendsAllowed")
+		fieldPath := validation.Join(path, "GKFeatureAddingGameCenterFriendsAllowed")
 		present := x.GKFeatureAddingGameCenterFriendsAllowed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsGameCenter.GKFeatureAddingGameCenterFriendsAllowed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".GKFeatureAddingGameCenterFriendsAllowed"])
 	}
 	{
-		path := validation.Join(p, "GKFeatureMultiplayerGamingAllowed")
+		fieldPath := validation.Join(path, "GKFeatureMultiplayerGamingAllowed")
 		present := x.GKFeatureMultiplayerGamingAllowed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlsGameCenter.GKFeatureMultiplayerGamingAllowed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".GKFeatureMultiplayerGamingAllowed"])
 	}
 }
 
@@ -7487,21 +7487,21 @@ func (x *ParentalControlsGameCenter) validate(c *validation.Collector, p string)
 // that every present key is supported on that OS version and enrollment context.
 func (x *X8021XGlobalEthernet) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "X8021XGlobalEthernet")
 	return c.Err()
 }
 
-func (x *X8021XGlobalEthernet) validate(c *validation.Collector, p string) {
+func (x *X8021XGlobalEthernet) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["X8021XGlobalEthernet"])
+	c.Support(path, true, supportTable["X8021XGlobalEthernet"])
 	{
-		path := validation.Join(p, "ANY")
+		fieldPath := validation.Join(path, "ANY")
 		present := x.ANY != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["X8021XGlobalEthernet.ANY"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ANY"])
 	}
 }
 
@@ -7509,78 +7509,78 @@ func (x *X8021XGlobalEthernet) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *GoogleAccount) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "GoogleAccount")
 	return c.Err()
 }
 
-func (x *GoogleAccount) validate(c *validation.Collector, p string) {
+func (x *GoogleAccount) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["GoogleAccount"])
+	c.Support(path, true, supportTable["GoogleAccount"])
 	{
-		path := validation.Join(p, "AccountDescription")
+		fieldPath := validation.Join(path, "AccountDescription")
 		present := x.AccountDescription != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GoogleAccount.AccountDescription"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AccountDescription"])
 	}
 	{
-		path := validation.Join(p, "AccountName")
+		fieldPath := validation.Join(path, "AccountName")
 		present := x.AccountName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GoogleAccount.AccountName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AccountName"])
 	}
 	{
-		path := validation.Join(p, "EmailAddress")
+		fieldPath := validation.Join(path, "EmailAddress")
 		present := x.EmailAddress != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["GoogleAccount.EmailAddress"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EmailAddress"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "CommunicationServiceRules")
+		fieldPath := validation.Join(path, "CommunicationServiceRules")
 		present := x.CommunicationServiceRules != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GoogleAccount.CommunicationServiceRules"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CommunicationServiceRules"])
 		if present {
-			x.CommunicationServiceRules.validate(c, path)
+			x.CommunicationServiceRules.validate(c, fieldPath, supportPath+".CommunicationServiceRules")
 		}
 	}
 	{
-		path := validation.Join(p, "VPNUUID")
+		fieldPath := validation.Join(path, "VPNUUID")
 		present := x.VPNUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GoogleAccount.VPNUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VPNUUID"])
 	}
 }
 
-func (x *GoogleAccountCommunicationServiceRules) validate(c *validation.Collector, p string) {
+func (x *GoogleAccountCommunicationServiceRules) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "DefaultServiceHandlers")
+		fieldPath := validation.Join(path, "DefaultServiceHandlers")
 		present := x.DefaultServiceHandlers != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GoogleAccount.CommunicationServiceRules.DefaultServiceHandlers"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DefaultServiceHandlers"])
 		if present {
-			x.DefaultServiceHandlers.validate(c, path)
+			x.DefaultServiceHandlers.validate(c, fieldPath, supportPath+".DefaultServiceHandlers")
 		}
 	}
 }
 
-func (x *GoogleAccountCommunicationServiceRulesDefaultServiceHandlers) validate(c *validation.Collector, p string) {
+func (x *GoogleAccountCommunicationServiceRulesDefaultServiceHandlers) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "AudioCall")
+		fieldPath := validation.Join(path, "AudioCall")
 		present := x.AudioCall != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GoogleAccount.CommunicationServiceRules.DefaultServiceHandlers.AudioCall"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AudioCall"])
 	}
 }
 
@@ -7588,113 +7588,113 @@ func (x *GoogleAccountCommunicationServiceRulesDefaultServiceHandlers) validate(
 // that every present key is supported on that OS version and enrollment context.
 func (x *HomeScreenLayout) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "HomeScreenLayout")
 	return c.Err()
 }
 
-func (x *HomeScreenLayout) validate(c *validation.Collector, p string) {
+func (x *HomeScreenLayout) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["HomeScreenLayout"])
+	c.Support(path, true, supportTable["HomeScreenLayout"])
 	{
-		path := validation.Join(p, "Dock")
+		fieldPath := validation.Join(path, "Dock")
 		present := len(x.Dock) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["HomeScreenLayout.Dock"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Dock"])
 		for i := range x.Dock {
-			x.Dock[i].validate(c, validation.Index(path, i))
+			x.Dock[i].validate(c, validation.Index(fieldPath, i), supportPath+".Dock.IconItem")
 		}
 	}
 	{
-		path := validation.Join(p, "Pages")
+		fieldPath := validation.Join(path, "Pages")
 		present := len(x.Pages) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["HomeScreenLayout.Pages"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Pages"])
+		c.Required(fieldPath, present)
 	}
 }
 
-func (x *HomeScreenLayoutIconItem) validate(c *validation.Collector, p string) {
+func (x *HomeScreenLayoutIconItem) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Type")
+		fieldPath := validation.Join(path, "Type")
 		present := x.Type != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["HomeScreenLayout.Dock.IconItem.Type"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Type"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Type, []any{"Application", "Folder", "WebClip"})
+			c.Enum(fieldPath, true, x.Type, []any{"Application", "Folder", "WebClip"})
 		}
 	}
 	{
-		path := validation.Join(p, "DisplayName")
+		fieldPath := validation.Join(path, "DisplayName")
 		present := x.DisplayName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["HomeScreenLayout.Dock.IconItem.DisplayName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisplayName"])
 	}
 	{
-		path := validation.Join(p, "BundleID")
+		fieldPath := validation.Join(path, "BundleID")
 		present := x.BundleID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["HomeScreenLayout.Dock.IconItem.BundleID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BundleID"])
 	}
 	{
-		path := validation.Join(p, "Pages")
+		fieldPath := validation.Join(path, "Pages")
 		present := len(x.Pages) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["HomeScreenLayout.Dock.IconItem.Pages"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Pages"])
 	}
 	{
-		path := validation.Join(p, "URL")
+		fieldPath := validation.Join(path, "URL")
 		present := x.URL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["HomeScreenLayout.Dock.IconItem.URL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".URL"])
 	}
 }
 
-func (x *HomeScreenLayoutPagesItemIconItem) validate(c *validation.Collector, p string) {
+func (x *HomeScreenLayoutPagesItemIconItem) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Type")
+		fieldPath := validation.Join(path, "Type")
 		present := x.Type != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["HomeScreenLayout.Pages.PagesItem.IconItem.Type"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Type"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Type, []any{"Application", "Folder", "WebClip"})
+			c.Enum(fieldPath, true, x.Type, []any{"Application", "Folder", "WebClip"})
 		}
 	}
 	{
-		path := validation.Join(p, "DisplayName")
+		fieldPath := validation.Join(path, "DisplayName")
 		present := x.DisplayName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["HomeScreenLayout.Pages.PagesItem.IconItem.DisplayName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisplayName"])
 	}
 	{
-		path := validation.Join(p, "BundleID")
+		fieldPath := validation.Join(path, "BundleID")
 		present := x.BundleID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["HomeScreenLayout.Pages.PagesItem.IconItem.BundleID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BundleID"])
 	}
 	{
-		path := validation.Join(p, "Pages")
+		fieldPath := validation.Join(path, "Pages")
 		present := len(x.Pages) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["HomeScreenLayout.Pages.PagesItem.IconItem.Pages"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Pages"])
 	}
 	{
-		path := validation.Join(p, "URL")
+		fieldPath := validation.Join(path, "URL")
 		present := x.URL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["HomeScreenLayout.Pages.PagesItem.IconItem.URL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".URL"])
 	}
 }
 
@@ -7702,27 +7702,27 @@ func (x *HomeScreenLayoutPagesItemIconItem) validate(c *validation.Collector, p 
 // that every present key is supported on that OS version and enrollment context.
 func (x *ParentalControlDictationAndProfanity) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ParentalControlDictationAndProfanity")
 	return c.Err()
 }
 
-func (x *ParentalControlDictationAndProfanity) validate(c *validation.Collector, p string) {
+func (x *ParentalControlDictationAndProfanity) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ParentalControlDictationAndProfanity"])
+	c.Support(path, true, supportTable["ParentalControlDictationAndProfanity"])
 	{
-		path := validation.Join(p, "Profanity Allowed")
+		fieldPath := validation.Join(path, "Profanity Allowed")
 		present := x.ProfanityAllowed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlDictationAndProfanity.Profanity Allowed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Profanity Allowed"])
 	}
 	{
-		path := validation.Join(p, "Ironwood Allowed")
+		fieldPath := validation.Join(path, "Ironwood Allowed")
 		present := x.IronwoodAllowed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ParentalControlDictationAndProfanity.Ironwood Allowed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Ironwood Allowed"])
 	}
 }
 
@@ -7730,64 +7730,64 @@ func (x *ParentalControlDictationAndProfanity) validate(c *validation.Collector,
 // that every present key is supported on that OS version and enrollment context.
 func (x *JabberAccount) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "JabberAccount")
 	return c.Err()
 }
 
-func (x *JabberAccount) validate(c *validation.Collector, p string) {
+func (x *JabberAccount) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["JabberAccount"])
+	c.Support(path, true, supportTable["JabberAccount"])
 	{
-		path := validation.Join(p, "JabberAccountDescription")
+		fieldPath := validation.Join(path, "JabberAccountDescription")
 		present := x.JabberAccountDescription != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["JabberAccount.JabberAccountDescription"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".JabberAccountDescription"])
 	}
 	{
-		path := validation.Join(p, "JabberHostName")
+		fieldPath := validation.Join(path, "JabberHostName")
 		present := x.JabberHostName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["JabberAccount.JabberHostName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".JabberHostName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "JabberUserName")
+		fieldPath := validation.Join(path, "JabberUserName")
 		present := x.JabberUserName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["JabberAccount.JabberUserName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".JabberUserName"])
 	}
 	{
-		path := validation.Join(p, "JabberPassword")
+		fieldPath := validation.Join(path, "JabberPassword")
 		present := x.JabberPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["JabberAccount.JabberPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".JabberPassword"])
 	}
 	{
-		path := validation.Join(p, "JabberUseSSL")
+		fieldPath := validation.Join(path, "JabberUseSSL")
 		present := x.JabberUseSSL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["JabberAccount.JabberUseSSL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".JabberUseSSL"])
 	}
 	{
-		path := validation.Join(p, "JabberPort")
+		fieldPath := validation.Join(path, "JabberPort")
 		present := x.JabberPort != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["JabberAccount.JabberPort"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".JabberPort"])
 		if present {
-			c.Range(path, true, float64(*x.JabberPort), new(0.0), new(65535.0))
+			c.Range(fieldPath, true, float64(*x.JabberPort), new(0.0), new(65535.0))
 		}
 	}
 	{
-		path := validation.Join(p, "JabberAuthentication")
+		fieldPath := validation.Join(path, "JabberAuthentication")
 		present := x.JabberAuthentication != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["JabberAccount.JabberAuthentication"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".JabberAuthentication"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.JabberAuthentication, []any{"JabberAuthPassword"})
+			c.Enum(fieldPath, true, x.JabberAuthentication, []any{"JabberAuthPassword"})
 		}
 	}
 }
@@ -7796,89 +7796,89 @@ func (x *JabberAccount) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *LDAP) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "LDAP")
 	return c.Err()
 }
 
-func (x *LDAP) validate(c *validation.Collector, p string) {
+func (x *LDAP) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["LDAP"])
+	c.Support(path, true, supportTable["LDAP"])
 	{
-		path := validation.Join(p, "LDAPAccountDescription")
+		fieldPath := validation.Join(path, "LDAPAccountDescription")
 		present := x.LDAPAccountDescription != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LDAP.LDAPAccountDescription"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LDAPAccountDescription"])
 	}
 	{
-		path := validation.Join(p, "LDAPAccountHostName")
+		fieldPath := validation.Join(path, "LDAPAccountHostName")
 		present := x.LDAPAccountHostName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["LDAP.LDAPAccountHostName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LDAPAccountHostName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "LDAPAccountUserName")
+		fieldPath := validation.Join(path, "LDAPAccountUserName")
 		present := x.LDAPAccountUserName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LDAP.LDAPAccountUserName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LDAPAccountUserName"])
 	}
 	{
-		path := validation.Join(p, "LDAPAccountPassword")
+		fieldPath := validation.Join(path, "LDAPAccountPassword")
 		present := x.LDAPAccountPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LDAP.LDAPAccountPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LDAPAccountPassword"])
 	}
 	{
-		path := validation.Join(p, "LDAPAccountUseSSL")
+		fieldPath := validation.Join(path, "LDAPAccountUseSSL")
 		present := x.LDAPAccountUseSSL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LDAP.LDAPAccountUseSSL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LDAPAccountUseSSL"])
 	}
 	{
-		path := validation.Join(p, "LDAPSearchSettings")
+		fieldPath := validation.Join(path, "LDAPSearchSettings")
 		present := len(x.LDAPSearchSettings) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["LDAP.LDAPSearchSettings"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LDAPSearchSettings"])
 		for i := range x.LDAPSearchSettings {
-			x.LDAPSearchSettings[i].validate(c, validation.Index(path, i))
+			x.LDAPSearchSettings[i].validate(c, validation.Index(fieldPath, i), supportPath+".LDAPSearchSettings.LDAPSearchSettingsItem")
 		}
 	}
 	{
-		path := validation.Join(p, "VPNUUID")
+		fieldPath := validation.Join(path, "VPNUUID")
 		present := x.VPNUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LDAP.VPNUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VPNUUID"])
 	}
 }
 
-func (x *LDAPLDAPSearchSettings) validate(c *validation.Collector, p string) {
+func (x *LDAPLDAPSearchSettings) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "LDAPSearchSettingDescription")
+		fieldPath := validation.Join(path, "LDAPSearchSettingDescription")
 		present := x.LDAPSearchSettingDescription != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LDAP.LDAPSearchSettings.LDAPSearchSettingsItem.LDAPSearchSettingDescription"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LDAPSearchSettingDescription"])
 	}
 	{
-		path := validation.Join(p, "LDAPSearchSettingSearchBase")
+		fieldPath := validation.Join(path, "LDAPSearchSettingSearchBase")
 		present := x.LDAPSearchSettingSearchBase != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["LDAP.LDAPSearchSettings.LDAPSearchSettingsItem.LDAPSearchSettingSearchBase"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LDAPSearchSettingSearchBase"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "LDAPSearchSettingScope")
+		fieldPath := validation.Join(path, "LDAPSearchSettingScope")
 		present := x.LDAPSearchSettingScope != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LDAP.LDAPSearchSettings.LDAPSearchSettingsItem.LDAPSearchSettingScope"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LDAPSearchSettingScope"])
 		if present {
-			c.Enum(path, true, *x.LDAPSearchSettingScope, []any{"LDAPSearchSettingScopeBase", "LDAPSearchSettingScopeOneLevel", "LDAPSearchSettingScopeSubtree"})
+			c.Enum(fieldPath, true, *x.LDAPSearchSettingScope, []any{"LDAPSearchSettingScopeBase", "LDAPSearchSettingScopeOneLevel", "LDAPSearchSettingScopeSubtree"})
 		}
 	}
 }
@@ -7887,45 +7887,45 @@ func (x *LDAPLDAPSearchSettings) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *LoginItemsManagedItems) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "LoginItemsManagedItems")
 	return c.Err()
 }
 
-func (x *LoginItemsManagedItems) validate(c *validation.Collector, p string) {
+func (x *LoginItemsManagedItems) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["LoginItemsManagedItems"])
+	c.Support(path, true, supportTable["LoginItemsManagedItems"])
 	{
-		path := validation.Join(p, "AutoLaunchedApplicationDictionary-managed")
+		fieldPath := validation.Join(path, "AutoLaunchedApplicationDictionary-managed")
 		present := len(x.AutoLaunchedApplicationDictionaryManaged) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginItemsManagedItems.AutoLaunchedApplicationDictionary-managed"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AutoLaunchedApplicationDictionary-managed"])
+		c.Required(fieldPath, present)
 		for i := range x.AutoLaunchedApplicationDictionaryManaged {
-			x.AutoLaunchedApplicationDictionaryManaged[i].validate(c, validation.Index(path, i))
+			x.AutoLaunchedApplicationDictionaryManaged[i].validate(c, validation.Index(fieldPath, i), supportPath+".AutoLaunchedApplicationDictionary-managed.LoginItem")
 		}
 	}
 }
 
-func (x *LoginItemsManagedItemsAutoLaunchedApplicationDictionaryManaged) validate(c *validation.Collector, p string) {
+func (x *LoginItemsManagedItemsAutoLaunchedApplicationDictionaryManaged) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Path")
+		fieldPath := validation.Join(path, "Path")
 		present := x.Path != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginItemsManagedItems.AutoLaunchedApplicationDictionary-managed.LoginItem.Path"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Path"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Hide")
+		fieldPath := validation.Join(path, "Hide")
 		present := x.Hide != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginItemsManagedItems.AutoLaunchedApplicationDictionary-managed.LoginItem.Hide"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Hide"])
 	}
 }
 
@@ -7933,180 +7933,180 @@ func (x *LoginItemsManagedItemsAutoLaunchedApplicationDictionaryManaged) validat
 // that every present key is supported on that OS version and enrollment context.
 func (x *LoginWindow) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "LoginWindow")
 	return c.Err()
 }
 
-func (x *LoginWindow) validate(c *validation.Collector, p string) {
+func (x *LoginWindow) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["LoginWindow"])
+	c.Support(path, true, supportTable["LoginWindow"])
 	{
-		path := validation.Join(p, "SHOWFULLNAME")
+		fieldPath := validation.Join(path, "SHOWFULLNAME")
 		present := x.SHOWFULLNAME != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.SHOWFULLNAME"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SHOWFULLNAME"])
 	}
 	{
-		path := validation.Join(p, "HideLocalUsers")
+		fieldPath := validation.Join(path, "HideLocalUsers")
 		present := x.HideLocalUsers != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.HideLocalUsers"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HideLocalUsers"])
 	}
 	{
-		path := validation.Join(p, "IncludeNetworkUser")
+		fieldPath := validation.Join(path, "IncludeNetworkUser")
 		present := x.IncludeNetworkUser != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.IncludeNetworkUser"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IncludeNetworkUser"])
 	}
 	{
-		path := validation.Join(p, "HideAdminUsers")
+		fieldPath := validation.Join(path, "HideAdminUsers")
 		present := x.HideAdminUsers != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.HideAdminUsers"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HideAdminUsers"])
 	}
 	{
-		path := validation.Join(p, "SHOWOTHERUSERS_MANAGED")
+		fieldPath := validation.Join(path, "SHOWOTHERUSERS_MANAGED")
 		present := x.SHOWOTHERUSERSMANAGED != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.SHOWOTHERUSERS_MANAGED"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SHOWOTHERUSERS_MANAGED"])
 	}
 	{
-		path := validation.Join(p, "AdminHostInfo")
+		fieldPath := validation.Join(path, "AdminHostInfo")
 		present := x.AdminHostInfo != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.AdminHostInfo"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AdminHostInfo"])
 		if present {
-			c.Enum(path, true, *x.AdminHostInfo, []any{"HostName", "SystemVersion", "IPAddress"})
+			c.Enum(fieldPath, true, *x.AdminHostInfo, []any{"HostName", "SystemVersion", "IPAddress"})
 		}
 	}
 	{
-		path := validation.Join(p, "AllowList")
+		fieldPath := validation.Join(path, "AllowList")
 		present := len(x.AllowList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.AllowList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowList"])
 	}
 	{
-		path := validation.Join(p, "DenyList")
+		fieldPath := validation.Join(path, "DenyList")
 		present := len(x.DenyList) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.DenyList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DenyList"])
 	}
 	{
-		path := validation.Join(p, "HideMobileAccounts")
+		fieldPath := validation.Join(path, "HideMobileAccounts")
 		present := x.HideMobileAccounts != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.HideMobileAccounts"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HideMobileAccounts"])
 	}
 	{
-		path := validation.Join(p, "ShutDownDisabled")
+		fieldPath := validation.Join(path, "ShutDownDisabled")
 		present := x.ShutDownDisabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.ShutDownDisabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ShutDownDisabled"])
 	}
 	{
-		path := validation.Join(p, "RestartDisabled")
+		fieldPath := validation.Join(path, "RestartDisabled")
 		present := x.RestartDisabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.RestartDisabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RestartDisabled"])
 	}
 	{
-		path := validation.Join(p, "SleepDisabled")
+		fieldPath := validation.Join(path, "SleepDisabled")
 		present := x.SleepDisabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.SleepDisabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SleepDisabled"])
 	}
 	{
-		path := validation.Join(p, "DisableConsoleAccess")
+		fieldPath := validation.Join(path, "DisableConsoleAccess")
 		present := x.DisableConsoleAccess != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.DisableConsoleAccess"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisableConsoleAccess"])
 	}
 	{
-		path := validation.Join(p, "LoginwindowText")
+		fieldPath := validation.Join(path, "LoginwindowText")
 		present := x.LoginwindowText != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.LoginwindowText"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LoginwindowText"])
 	}
 	{
-		path := validation.Join(p, "ShutDownDisabledWhileLoggedIn")
+		fieldPath := validation.Join(path, "ShutDownDisabledWhileLoggedIn")
 		present := x.ShutDownDisabledWhileLoggedIn != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.ShutDownDisabledWhileLoggedIn"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ShutDownDisabledWhileLoggedIn"])
 	}
 	{
-		path := validation.Join(p, "RestartDisabledWhileLoggedIn")
+		fieldPath := validation.Join(path, "RestartDisabledWhileLoggedIn")
 		present := x.RestartDisabledWhileLoggedIn != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.RestartDisabledWhileLoggedIn"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RestartDisabledWhileLoggedIn"])
 	}
 	{
-		path := validation.Join(p, "PowerOffDisabledWhileLoggedIn")
+		fieldPath := validation.Join(path, "PowerOffDisabledWhileLoggedIn")
 		present := x.PowerOffDisabledWhileLoggedIn != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.PowerOffDisabledWhileLoggedIn"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PowerOffDisabledWhileLoggedIn"])
 	}
 	{
-		path := validation.Join(p, "LogOutDisabledWhileLoggedIn")
+		fieldPath := validation.Join(path, "LogOutDisabledWhileLoggedIn")
 		present := x.LogOutDisabledWhileLoggedIn != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.LogOutDisabledWhileLoggedIn"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LogOutDisabledWhileLoggedIn"])
 	}
 	{
-		path := validation.Join(p, "DisableScreenLockImmediate")
+		fieldPath := validation.Join(path, "DisableScreenLockImmediate")
 		present := x.DisableScreenLockImmediate != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.DisableScreenLockImmediate"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisableScreenLockImmediate"])
 	}
 	{
-		path := validation.Join(p, "showInputMenu")
+		fieldPath := validation.Join(path, "showInputMenu")
 		present := x.ShowInputMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.showInputMenu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".showInputMenu"])
 	}
 	{
-		path := validation.Join(p, "DisableFDEAutoLogin")
+		fieldPath := validation.Join(path, "DisableFDEAutoLogin")
 		present := x.DisableFDEAutoLogin != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.DisableFDEAutoLogin"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisableFDEAutoLogin"])
 	}
 	{
-		path := validation.Join(p, "AutologinUsername")
+		fieldPath := validation.Join(path, "AutologinUsername")
 		present := x.AutologinUsername != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.AutologinUsername"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AutologinUsername"])
 	}
 	{
-		path := validation.Join(p, "AutologinPassword")
+		fieldPath := validation.Join(path, "AutologinPassword")
 		present := x.AutologinPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.AutologinPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AutologinPassword"])
 	}
 	{
-		path := validation.Join(p, "AdminMayDisableMCX")
+		fieldPath := validation.Join(path, "AdminMayDisableMCX")
 		present := x.AdminMayDisableMCX != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.AdminMayDisableMCX"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AdminMayDisableMCX"])
 	}
 	{
-		path := validation.Join(p, "RetriesUntilHint")
+		fieldPath := validation.Join(path, "RetriesUntilHint")
 		present := x.RetriesUntilHint != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.RetriesUntilHint"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RetriesUntilHint"])
 	}
 	{
-		path := validation.Join(p, "ForceWifiConfigurationOnLockScreen")
+		fieldPath := validation.Join(path, "ForceWifiConfigurationOnLockScreen")
 		present := x.ForceWifiConfigurationOnLockScreen != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.ForceWifiConfigurationOnLockScreen"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ForceWifiConfigurationOnLockScreen"])
 	}
 	{
-		path := validation.Join(p, "ForceCaptivePortalConnectionFromLockScreen")
+		fieldPath := validation.Join(path, "ForceCaptivePortalConnectionFromLockScreen")
 		present := x.ForceCaptivePortalConnectionFromLockScreen != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindow.ForceCaptivePortalConnectionFromLockScreen"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ForceCaptivePortalConnectionFromLockScreen"])
 	}
 }
 
@@ -8114,39 +8114,39 @@ func (x *LoginWindow) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *LightsOutManagementLOM) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "LightsOutManagementLOM")
 	return c.Err()
 }
 
-func (x *LightsOutManagementLOM) validate(c *validation.Collector, p string) {
+func (x *LightsOutManagementLOM) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["LightsOutManagementLOM"])
+	c.Support(path, true, supportTable["LightsOutManagementLOM"])
 	{
-		path := validation.Join(p, "DeviceCertificateUUID")
+		fieldPath := validation.Join(path, "DeviceCertificateUUID")
 		present := x.DeviceCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LightsOutManagementLOM.DeviceCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeviceCertificateUUID"])
 	}
 	{
-		path := validation.Join(p, "ControllerCertificateUUID")
+		fieldPath := validation.Join(path, "ControllerCertificateUUID")
 		present := x.ControllerCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LightsOutManagementLOM.ControllerCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ControllerCertificateUUID"])
 	}
 	{
-		path := validation.Join(p, "DeviceCACertificateUUIDs")
+		fieldPath := validation.Join(path, "DeviceCACertificateUUIDs")
 		present := len(x.DeviceCACertificateUUIDs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["LightsOutManagementLOM.DeviceCACertificateUUIDs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeviceCACertificateUUIDs"])
 	}
 	{
-		path := validation.Join(p, "ControllerCACertificateUUIDs")
+		fieldPath := validation.Join(path, "ControllerCACertificateUUIDs")
 		present := len(x.ControllerCACertificateUUIDs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["LightsOutManagementLOM.ControllerCACertificateUUIDs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ControllerCACertificateUUIDs"])
 	}
 }
 
@@ -8154,245 +8154,245 @@ func (x *LightsOutManagementLOM) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *Mail) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Mail")
 	return c.Err()
 }
 
-func (x *Mail) validate(c *validation.Collector, p string) {
+func (x *Mail) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Mail"])
+	c.Support(path, true, supportTable["Mail"])
 	{
-		path := validation.Join(p, "EmailAccountDescription")
+		fieldPath := validation.Join(path, "EmailAccountDescription")
 		present := x.EmailAccountDescription != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.EmailAccountDescription"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EmailAccountDescription"])
 	}
 	{
-		path := validation.Join(p, "EmailAccountName")
+		fieldPath := validation.Join(path, "EmailAccountName")
 		present := x.EmailAccountName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.EmailAccountName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EmailAccountName"])
 	}
 	{
-		path := validation.Join(p, "EmailAccountType")
+		fieldPath := validation.Join(path, "EmailAccountType")
 		present := x.EmailAccountType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.EmailAccountType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EmailAccountType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.EmailAccountType, []any{"EmailTypeIMAP", "EmailTypePOP"})
+			c.Enum(fieldPath, true, x.EmailAccountType, []any{"EmailTypeIMAP", "EmailTypePOP"})
 		}
 	}
 	{
-		path := validation.Join(p, "EmailAddress")
+		fieldPath := validation.Join(path, "EmailAddress")
 		present := x.EmailAddress != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.EmailAddress"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EmailAddress"])
 	}
 	{
-		path := validation.Join(p, "IncomingMailServerAuthentication")
+		fieldPath := validation.Join(path, "IncomingMailServerAuthentication")
 		present := x.IncomingMailServerAuthentication != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.IncomingMailServerAuthentication"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IncomingMailServerAuthentication"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.IncomingMailServerAuthentication, []any{"EmailAuthNone", "EmailAuthPassword", "EmailAuthCRAMMD5", "EmailAuthNTLM", "EmailAuthHTTPMD5"})
+			c.Enum(fieldPath, true, x.IncomingMailServerAuthentication, []any{"EmailAuthNone", "EmailAuthPassword", "EmailAuthCRAMMD5", "EmailAuthNTLM", "EmailAuthHTTPMD5"})
 		}
 	}
 	{
-		path := validation.Join(p, "IncomingMailServerHostName")
+		fieldPath := validation.Join(path, "IncomingMailServerHostName")
 		present := x.IncomingMailServerHostName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.IncomingMailServerHostName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IncomingMailServerHostName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "IncomingMailServerPortNumber")
+		fieldPath := validation.Join(path, "IncomingMailServerPortNumber")
 		present := x.IncomingMailServerPortNumber != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.IncomingMailServerPortNumber"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IncomingMailServerPortNumber"])
 	}
 	{
-		path := validation.Join(p, "IncomingMailServerUseSSL")
+		fieldPath := validation.Join(path, "IncomingMailServerUseSSL")
 		present := x.IncomingMailServerUseSSL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.IncomingMailServerUseSSL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IncomingMailServerUseSSL"])
 	}
 	{
-		path := validation.Join(p, "IncomingMailServerUsername")
+		fieldPath := validation.Join(path, "IncomingMailServerUsername")
 		present := x.IncomingMailServerUsername != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.IncomingMailServerUsername"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IncomingMailServerUsername"])
 	}
 	{
-		path := validation.Join(p, "IncomingPassword")
+		fieldPath := validation.Join(path, "IncomingPassword")
 		present := x.IncomingPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.IncomingPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IncomingPassword"])
 	}
 	{
-		path := validation.Join(p, "OutgoingPassword")
+		fieldPath := validation.Join(path, "OutgoingPassword")
 		present := x.OutgoingPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.OutgoingPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OutgoingPassword"])
 	}
 	{
-		path := validation.Join(p, "OutgoingPasswordSameAsIncomingPassword")
+		fieldPath := validation.Join(path, "OutgoingPasswordSameAsIncomingPassword")
 		present := x.OutgoingPasswordSameAsIncomingPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.OutgoingPasswordSameAsIncomingPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OutgoingPasswordSameAsIncomingPassword"])
 	}
 	{
-		path := validation.Join(p, "OutgoingMailServerAuthentication")
+		fieldPath := validation.Join(path, "OutgoingMailServerAuthentication")
 		present := x.OutgoingMailServerAuthentication != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.OutgoingMailServerAuthentication"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OutgoingMailServerAuthentication"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.OutgoingMailServerAuthentication, []any{"EmailAuthNone", "EmailAuthPassword", "EmailAuthCRAMMD5", "EmailAuthNTLM", "EmailAuthHTTPMD5"})
+			c.Enum(fieldPath, true, x.OutgoingMailServerAuthentication, []any{"EmailAuthNone", "EmailAuthPassword", "EmailAuthCRAMMD5", "EmailAuthNTLM", "EmailAuthHTTPMD5"})
 		}
 	}
 	{
-		path := validation.Join(p, "OutgoingMailServerHostName")
+		fieldPath := validation.Join(path, "OutgoingMailServerHostName")
 		present := x.OutgoingMailServerHostName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.OutgoingMailServerHostName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OutgoingMailServerHostName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "OutgoingMailServerPortNumber")
+		fieldPath := validation.Join(path, "OutgoingMailServerPortNumber")
 		present := x.OutgoingMailServerPortNumber != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.OutgoingMailServerPortNumber"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OutgoingMailServerPortNumber"])
 	}
 	{
-		path := validation.Join(p, "OutgoingMailServerUseSSL")
+		fieldPath := validation.Join(path, "OutgoingMailServerUseSSL")
 		present := x.OutgoingMailServerUseSSL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.OutgoingMailServerUseSSL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OutgoingMailServerUseSSL"])
 	}
 	{
-		path := validation.Join(p, "OutgoingMailServerUsername")
+		fieldPath := validation.Join(path, "OutgoingMailServerUsername")
 		present := x.OutgoingMailServerUsername != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.OutgoingMailServerUsername"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OutgoingMailServerUsername"])
 	}
 	{
-		path := validation.Join(p, "PreventMove")
+		fieldPath := validation.Join(path, "PreventMove")
 		present := x.PreventMove != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.PreventMove"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PreventMove"])
 	}
 	{
-		path := validation.Join(p, "PreventAppSheet")
+		fieldPath := validation.Join(path, "PreventAppSheet")
 		present := x.PreventAppSheet != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.PreventAppSheet"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PreventAppSheet"])
 	}
 	{
-		path := validation.Join(p, "SMIMEEnabled")
+		fieldPath := validation.Join(path, "SMIMEEnabled")
 		present := x.SMIMEEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.SMIMEEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMEEnabled"])
 	}
 	{
-		path := validation.Join(p, "SMIMESigningEnabled")
+		fieldPath := validation.Join(path, "SMIMESigningEnabled")
 		present := x.SMIMESigningEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.SMIMESigningEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMESigningEnabled"])
 	}
 	{
-		path := validation.Join(p, "SMIMESigningCertificateUUID")
+		fieldPath := validation.Join(path, "SMIMESigningCertificateUUID")
 		present := x.SMIMESigningCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.SMIMESigningCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMESigningCertificateUUID"])
 		if present {
-			c.Pattern(path, true, *x.SMIMESigningCertificateUUID, format1)
+			c.Pattern(fieldPath, true, *x.SMIMESigningCertificateUUID, format1)
 		}
 	}
 	{
-		path := validation.Join(p, "SMIMEEncryptionEnabled")
+		fieldPath := validation.Join(path, "SMIMEEncryptionEnabled")
 		present := x.SMIMEEncryptionEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.SMIMEEncryptionEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMEEncryptionEnabled"])
 	}
 	{
-		path := validation.Join(p, "SMIMEEncryptionCertificateUUID")
+		fieldPath := validation.Join(path, "SMIMEEncryptionCertificateUUID")
 		present := x.SMIMEEncryptionCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.SMIMEEncryptionCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMEEncryptionCertificateUUID"])
 		if present {
-			c.Pattern(path, true, *x.SMIMEEncryptionCertificateUUID, format1)
+			c.Pattern(fieldPath, true, *x.SMIMEEncryptionCertificateUUID, format1)
 		}
 	}
 	{
-		path := validation.Join(p, "SMIMEEnablePerMessageSwitch")
+		fieldPath := validation.Join(path, "SMIMEEnablePerMessageSwitch")
 		present := x.SMIMEEnablePerMessageSwitch != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.SMIMEEnablePerMessageSwitch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMEEnablePerMessageSwitch"])
 	}
 	{
-		path := validation.Join(p, "disableMailRecentsSyncing")
+		fieldPath := validation.Join(path, "disableMailRecentsSyncing")
 		present := x.DisableMailRecentsSyncing != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.disableMailRecentsSyncing"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".disableMailRecentsSyncing"])
 	}
 	{
-		path := validation.Join(p, "allowMailDrop")
+		fieldPath := validation.Join(path, "allowMailDrop")
 		present := x.AllowMailDrop != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.allowMailDrop"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowMailDrop"])
 	}
 	{
-		path := validation.Join(p, "IncomingMailServerIMAPPathPrefix")
+		fieldPath := validation.Join(path, "IncomingMailServerIMAPPathPrefix")
 		present := x.IncomingMailServerIMAPPathPrefix != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.IncomingMailServerIMAPPathPrefix"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IncomingMailServerIMAPPathPrefix"])
 	}
 	{
-		path := validation.Join(p, "SMIMESigningUserOverrideable")
+		fieldPath := validation.Join(path, "SMIMESigningUserOverrideable")
 		present := x.SMIMESigningUserOverrideable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.SMIMESigningUserOverrideable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMESigningUserOverrideable"])
 	}
 	{
-		path := validation.Join(p, "SMIMESigningCertificateUUIDUserOverrideable")
+		fieldPath := validation.Join(path, "SMIMESigningCertificateUUIDUserOverrideable")
 		present := x.SMIMESigningCertificateUUIDUserOverrideable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.SMIMESigningCertificateUUIDUserOverrideable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMESigningCertificateUUIDUserOverrideable"])
 	}
 	{
-		path := validation.Join(p, "SMIMEEncryptByDefault")
+		fieldPath := validation.Join(path, "SMIMEEncryptByDefault")
 		present := x.SMIMEEncryptByDefault != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.SMIMEEncryptByDefault"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMEEncryptByDefault"])
 	}
 	{
-		path := validation.Join(p, "SMIMEEncryptByDefaultUserOverrideable")
+		fieldPath := validation.Join(path, "SMIMEEncryptByDefaultUserOverrideable")
 		present := x.SMIMEEncryptByDefaultUserOverrideable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.SMIMEEncryptByDefaultUserOverrideable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMEEncryptByDefaultUserOverrideable"])
 	}
 	{
-		path := validation.Join(p, "SMIMEEncryptionCertificateUUIDUserOverrideable")
+		fieldPath := validation.Join(path, "SMIMEEncryptionCertificateUUIDUserOverrideable")
 		present := x.SMIMEEncryptionCertificateUUIDUserOverrideable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.SMIMEEncryptionCertificateUUIDUserOverrideable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMEEncryptionCertificateUUIDUserOverrideable"])
 	}
 	{
-		path := validation.Join(p, "SMIMEEnableEncryptionPerMessageSwitch")
+		fieldPath := validation.Join(path, "SMIMEEnableEncryptionPerMessageSwitch")
 		present := x.SMIMEEnableEncryptionPerMessageSwitch != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.SMIMEEnableEncryptionPerMessageSwitch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMIMEEnableEncryptionPerMessageSwitch"])
 	}
 	{
-		path := validation.Join(p, "VPNUUID")
+		fieldPath := validation.Join(path, "VPNUUID")
 		present := x.VPNUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Mail.VPNUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VPNUUID"])
 	}
 }
 
@@ -8400,183 +8400,183 @@ func (x *Mail) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ManagedMenuExtras) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ManagedMenuExtras")
 	return c.Err()
 }
 
-func (x *ManagedMenuExtras) validate(c *validation.Collector, p string) {
+func (x *ManagedMenuExtras) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ManagedMenuExtras"])
+	c.Support(path, true, supportTable["ManagedMenuExtras"])
 	{
-		path := validation.Join(p, "delaySeconds")
+		fieldPath := validation.Join(path, "delaySeconds")
 		present := x.DelaySeconds != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.delaySeconds"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".delaySeconds"])
 	}
 	{
-		path := validation.Join(p, "maxWaitSeconds")
+		fieldPath := validation.Join(path, "maxWaitSeconds")
 		present := x.MaxWaitSeconds != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.maxWaitSeconds"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".maxWaitSeconds"])
 	}
 	{
-		path := validation.Join(p, "AirPort.menu")
+		fieldPath := validation.Join(path, "AirPort.menu")
 		present := x.AirPortMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.AirPort.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AirPort.menu"])
 	}
 	{
-		path := validation.Join(p, "Battery.menu")
+		fieldPath := validation.Join(path, "Battery.menu")
 		present := x.BatteryMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.Battery.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Battery.menu"])
 	}
 	{
-		path := validation.Join(p, "Bluetooth.menu")
+		fieldPath := validation.Join(path, "Bluetooth.menu")
 		present := x.BluetoothMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.Bluetooth.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Bluetooth.menu"])
 	}
 	{
-		path := validation.Join(p, "CPU.menu")
+		fieldPath := validation.Join(path, "CPU.menu")
 		present := x.CPUMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.CPU.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CPU.menu"])
 	}
 	{
-		path := validation.Join(p, "Clock.menu")
+		fieldPath := validation.Join(path, "Clock.menu")
 		present := x.ClockMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.Clock.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Clock.menu"])
 	}
 	{
-		path := validation.Join(p, "Displays.menu")
+		fieldPath := validation.Join(path, "Displays.menu")
 		present := x.DisplaysMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.Displays.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Displays.menu"])
 	}
 	{
-		path := validation.Join(p, "Eject.menu")
+		fieldPath := validation.Join(path, "Eject.menu")
 		present := x.EjectMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.Eject.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Eject.menu"])
 	}
 	{
-		path := validation.Join(p, "Fax.menu")
+		fieldPath := validation.Join(path, "Fax.menu")
 		present := x.FaxMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.Fax.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Fax.menu"])
 	}
 	{
-		path := validation.Join(p, "HomeSync.menu")
+		fieldPath := validation.Join(path, "HomeSync.menu")
 		present := x.HomeSyncMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.HomeSync.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HomeSync.menu"])
 	}
 	{
-		path := validation.Join(p, "iChat.menu")
+		fieldPath := validation.Join(path, "iChat.menu")
 		present := x.IChatMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.iChat.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".iChat.menu"])
 	}
 	{
-		path := validation.Join(p, "Ink.menu")
+		fieldPath := validation.Join(path, "Ink.menu")
 		present := x.InkMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.Ink.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Ink.menu"])
 	}
 	{
-		path := validation.Join(p, "IrDA.menu")
+		fieldPath := validation.Join(path, "IrDA.menu")
 		present := x.IrDAMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.IrDA.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IrDA.menu"])
 	}
 	{
-		path := validation.Join(p, "PCCard.menu")
+		fieldPath := validation.Join(path, "PCCard.menu")
 		present := x.PCCardMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.PCCard.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PCCard.menu"])
 	}
 	{
-		path := validation.Join(p, "PPP.menu")
+		fieldPath := validation.Join(path, "PPP.menu")
 		present := x.PPPMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.PPP.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PPP.menu"])
 	}
 	{
-		path := validation.Join(p, "PPPoE.menu")
+		fieldPath := validation.Join(path, "PPPoE.menu")
 		present := x.PPPoEMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.PPPoE.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PPPoE.menu"])
 	}
 	{
-		path := validation.Join(p, "RemoteDesktop.menu")
+		fieldPath := validation.Join(path, "RemoteDesktop.menu")
 		present := x.RemoteDesktopMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.RemoteDesktop.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RemoteDesktop.menu"])
 	}
 	{
-		path := validation.Join(p, "Script Menu.menu")
+		fieldPath := validation.Join(path, "Script Menu.menu")
 		present := x.ScriptMenuMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.Script Menu.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Script Menu.menu"])
 	}
 	{
-		path := validation.Join(p, "Spaces.menu")
+		fieldPath := validation.Join(path, "Spaces.menu")
 		present := x.SpacesMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.Spaces.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Spaces.menu"])
 	}
 	{
-		path := validation.Join(p, "Sync.menu")
+		fieldPath := validation.Join(path, "Sync.menu")
 		present := x.SyncMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.Sync.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Sync.menu"])
 	}
 	{
-		path := validation.Join(p, "TextInput.menu")
+		fieldPath := validation.Join(path, "TextInput.menu")
 		present := x.TextInputMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.TextInput.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TextInput.menu"])
 	}
 	{
-		path := validation.Join(p, "TimeMachine.menu")
+		fieldPath := validation.Join(path, "TimeMachine.menu")
 		present := x.TimeMachineMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.TimeMachine.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TimeMachine.menu"])
 	}
 	{
-		path := validation.Join(p, "UniversalAccess.menu")
+		fieldPath := validation.Join(path, "UniversalAccess.menu")
 		present := x.UniversalAccessMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.UniversalAccess.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UniversalAccess.menu"])
 	}
 	{
-		path := validation.Join(p, "User.menu")
+		fieldPath := validation.Join(path, "User.menu")
 		present := x.UserMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.User.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".User.menu"])
 	}
 	{
-		path := validation.Join(p, "VPN.menu")
+		fieldPath := validation.Join(path, "VPN.menu")
 		present := x.VPNMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.VPN.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VPN.menu"])
 	}
 	{
-		path := validation.Join(p, "Volume.menu")
+		fieldPath := validation.Join(path, "Volume.menu")
 		present := x.VolumeMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.Volume.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Volume.menu"])
 	}
 	{
-		path := validation.Join(p, "WWAN.menu")
+		fieldPath := validation.Join(path, "WWAN.menu")
 		present := x.WWANMenu != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManagedMenuExtras.WWAN.menu"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".WWAN.menu"])
 	}
 }
 
@@ -8584,66 +8584,66 @@ func (x *ManagedMenuExtras) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *LoginWindowScripts) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "LoginWindowScripts")
 	return c.Err()
 }
 
-func (x *LoginWindowScripts) validate(c *validation.Collector, p string) {
+func (x *LoginWindowScripts) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["LoginWindowScripts"])
+	c.Support(path, true, supportTable["LoginWindowScripts"])
 	{
-		path := validation.Join(p, "loginscripts")
+		fieldPath := validation.Join(path, "loginscripts")
 		present := len(x.Loginscripts) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindowScripts.loginscripts"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".loginscripts"])
 		for i := range x.Loginscripts {
-			x.Loginscripts[i].validate(c, validation.Index(path, i))
+			x.Loginscripts[i].validate(c, validation.Index(fieldPath, i), supportPath+".loginscripts.ScriptsItems")
 		}
 	}
 	{
-		path := validation.Join(p, "logoutscripts")
+		fieldPath := validation.Join(path, "logoutscripts")
 		present := len(x.Logoutscripts) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindowScripts.logoutscripts"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".logoutscripts"])
 		for i := range x.Logoutscripts {
-			x.Logoutscripts[i].validate(c, validation.Index(path, i))
+			x.Logoutscripts[i].validate(c, validation.Index(fieldPath, i), supportPath+".logoutscripts.ScriptsItems")
 		}
 	}
 	{
-		path := validation.Join(p, "skipLoginHook")
+		fieldPath := validation.Join(path, "skipLoginHook")
 		present := x.SkipLoginHook != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindowScripts.skipLoginHook"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".skipLoginHook"])
 	}
 	{
-		path := validation.Join(p, "skipLogoutHook")
+		fieldPath := validation.Join(path, "skipLogoutHook")
 		present := x.SkipLogoutHook != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindowScripts.skipLogoutHook"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".skipLogoutHook"])
 	}
 }
 
-func (x *LoginWindowScriptsScriptsItems) validate(c *validation.Collector, p string) {
+func (x *LoginWindowScriptsScriptsItems) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "filename")
+		fieldPath := validation.Join(path, "filename")
 		present := x.Filename != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindowScripts.loginscripts.ScriptsItems.filename"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".filename"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "filedata")
+		fieldPath := validation.Join(path, "filedata")
 		present := len(x.Filedata) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindowScripts.loginscripts.ScriptsItems.filedata"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".filedata"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -8651,159 +8651,159 @@ func (x *LoginWindowScriptsScriptsItems) validate(c *validation.Collector, p str
 // that every present key is supported on that OS version and enrollment context.
 func (x *Printing) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Printing")
 	return c.Err()
 }
 
-func (x *Printing) validate(c *validation.Collector, p string) {
+func (x *Printing) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Printing"])
+	c.Support(path, true, supportTable["Printing"])
 	{
-		path := validation.Join(p, "RequireAdminToAddPrinters")
+		fieldPath := validation.Join(path, "RequireAdminToAddPrinters")
 		present := x.RequireAdminToAddPrinters != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.RequireAdminToAddPrinters"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RequireAdminToAddPrinters"])
 	}
 	{
-		path := validation.Join(p, "AllowLocalPrinters")
+		fieldPath := validation.Join(path, "AllowLocalPrinters")
 		present := x.AllowLocalPrinters != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.AllowLocalPrinters"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowLocalPrinters"])
 	}
 	{
-		path := validation.Join(p, "RequireAdminToPrintLocally")
+		fieldPath := validation.Join(path, "RequireAdminToPrintLocally")
 		present := x.RequireAdminToPrintLocally != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.RequireAdminToPrintLocally"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RequireAdminToPrintLocally"])
 	}
 	{
-		path := validation.Join(p, "ShowOnlyManagedPrinters")
+		fieldPath := validation.Join(path, "ShowOnlyManagedPrinters")
 		present := x.ShowOnlyManagedPrinters != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.ShowOnlyManagedPrinters"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ShowOnlyManagedPrinters"])
 	}
 	{
-		path := validation.Join(p, "PrintFooter")
+		fieldPath := validation.Join(path, "PrintFooter")
 		present := x.PrintFooter != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.PrintFooter"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PrintFooter"])
 	}
 	{
-		path := validation.Join(p, "PrintMACAddress")
+		fieldPath := validation.Join(path, "PrintMACAddress")
 		present := x.PrintMACAddress != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.PrintMACAddress"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PrintMACAddress"])
 	}
 	{
-		path := validation.Join(p, "FooterFontSize")
+		fieldPath := validation.Join(path, "FooterFontSize")
 		present := x.FooterFontSize != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.FooterFontSize"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FooterFontSize"])
 	}
 	{
-		path := validation.Join(p, "FooterFontName")
+		fieldPath := validation.Join(path, "FooterFontName")
 		present := x.FooterFontName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.FooterFontName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FooterFontName"])
 	}
 	{
-		path := validation.Join(p, "DefaultPrinter")
+		fieldPath := validation.Join(path, "DefaultPrinter")
 		present := x.DefaultPrinter != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.DefaultPrinter"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DefaultPrinter"])
 		if present {
-			x.DefaultPrinter.validate(c, path)
+			x.DefaultPrinter.validate(c, fieldPath, supportPath+".DefaultPrinter")
 		}
 	}
 	{
-		path := validation.Join(p, "UserPrinterList")
+		fieldPath := validation.Join(path, "UserPrinterList")
 		present := x.UserPrinterList != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.UserPrinterList"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserPrinterList"])
 		if present {
-			x.UserPrinterList.validate(c, path)
+			x.UserPrinterList.validate(c, fieldPath, supportPath+".UserPrinterList")
 		}
 	}
 }
 
-func (x *PrintingDefaultPrinter) validate(c *validation.Collector, p string) {
+func (x *PrintingDefaultPrinter) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "DeviceURI")
+		fieldPath := validation.Join(path, "DeviceURI")
 		present := x.DeviceURI != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.DefaultPrinter.DeviceURI"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeviceURI"])
 	}
 	{
-		path := validation.Join(p, "DisplayName")
+		fieldPath := validation.Join(path, "DisplayName")
 		present := x.DisplayName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.DefaultPrinter.DisplayName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisplayName"])
 	}
 }
 
-func (x *PrintingUserPrinterList) validate(c *validation.Collector, p string) {
+func (x *PrintingUserPrinterList) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Printer")
+		fieldPath := validation.Join(path, "Printer")
 		present := x.Printer != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.UserPrinterList.Printer"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Printer"])
 		if present {
-			x.Printer.validate(c, path)
+			x.Printer.validate(c, fieldPath, supportPath+".Printer")
 		}
 	}
 }
 
-func (x *PrintingUserPrinterListPrinter) validate(c *validation.Collector, p string) {
+func (x *PrintingUserPrinterListPrinter) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "DeviceURI")
+		fieldPath := validation.Join(path, "DeviceURI")
 		present := x.DeviceURI != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.UserPrinterList.Printer.DeviceURI"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeviceURI"])
 	}
 	{
-		path := validation.Join(p, "DisplayName")
+		fieldPath := validation.Join(path, "DisplayName")
 		present := x.DisplayName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.UserPrinterList.Printer.DisplayName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisplayName"])
 	}
 	{
-		path := validation.Join(p, "Location")
+		fieldPath := validation.Join(path, "Location")
 		present := x.Location != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.UserPrinterList.Printer.Location"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Location"])
 	}
 	{
-		path := validation.Join(p, "Model")
+		fieldPath := validation.Join(path, "Model")
 		present := x.Model != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.UserPrinterList.Printer.Model"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Model"])
 	}
 	{
-		path := validation.Join(p, "PrinterLocked")
+		fieldPath := validation.Join(path, "PrinterLocked")
 		present := x.PrinterLocked != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.UserPrinterList.Printer.PrinterLocked"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PrinterLocked"])
 	}
 	{
-		path := validation.Join(p, "PPDURL")
+		fieldPath := validation.Join(path, "PPDURL")
 		present := x.PPDURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Printing.UserPrinterList.Printer.PPDURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PPDURL"])
 	}
 }
 
@@ -8811,136 +8811,136 @@ func (x *PrintingUserPrinterListPrinter) validate(c *validation.Collector, p str
 // that every present key is supported on that OS version and enrollment context.
 func (x *MDM) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "MDM")
 	return c.Err()
 }
 
-func (x *MDM) validate(c *validation.Collector, p string) {
+func (x *MDM) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["MDM"])
+	c.Support(path, true, supportTable["MDM"])
 	{
-		path := validation.Join(p, "IdentityCertificateUUID")
+		fieldPath := validation.Join(path, "IdentityCertificateUUID")
 		present := x.IdentityCertificateUUID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDM.IdentityCertificateUUID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IdentityCertificateUUID"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Pattern(path, true, x.IdentityCertificateUUID, format1)
+			c.Pattern(fieldPath, true, x.IdentityCertificateUUID, format1)
 		}
 	}
 	{
-		path := validation.Join(p, "Topic")
+		fieldPath := validation.Join(path, "Topic")
 		present := x.Topic != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDM.Topic"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Topic"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "ServerURL")
+		fieldPath := validation.Join(path, "ServerURL")
 		present := x.ServerURL != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDM.ServerURL"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ServerURL"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Pattern(path, true, x.ServerURL, format2)
+			c.Pattern(fieldPath, true, x.ServerURL, format2)
 		}
 	}
 	{
-		path := validation.Join(p, "CheckInURL")
+		fieldPath := validation.Join(path, "CheckInURL")
 		present := x.CheckInURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDM.CheckInURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CheckInURL"])
 		if present {
-			c.Pattern(path, true, *x.CheckInURL, format2)
+			c.Pattern(fieldPath, true, *x.CheckInURL, format2)
 		}
 	}
 	{
-		path := validation.Join(p, "SignMessage")
+		fieldPath := validation.Join(path, "SignMessage")
 		present := x.SignMessage != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDM.SignMessage"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SignMessage"])
 	}
 	{
-		path := validation.Join(p, "AccessRights")
+		fieldPath := validation.Join(path, "AccessRights")
 		present := x.AccessRights != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDM.AccessRights"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AccessRights"])
 	}
 	{
-		path := validation.Join(p, "UseDevelopmentAPNS")
+		fieldPath := validation.Join(path, "UseDevelopmentAPNS")
 		present := x.UseDevelopmentAPNS != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDM.UseDevelopmentAPNS"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UseDevelopmentAPNS"])
 	}
 	{
-		path := validation.Join(p, "ManagedAppleID")
+		fieldPath := validation.Join(path, "ManagedAppleID")
 		present := x.ManagedAppleID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDM.ManagedAppleID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ManagedAppleID"])
 	}
 	{
-		path := validation.Join(p, "AssignedManagedAppleID")
+		fieldPath := validation.Join(path, "AssignedManagedAppleID")
 		present := x.AssignedManagedAppleID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDM.AssignedManagedAppleID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AssignedManagedAppleID"])
 	}
 	{
-		path := validation.Join(p, "EnrollmentMode")
+		fieldPath := validation.Join(path, "EnrollmentMode")
 		present := x.EnrollmentMode != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDM.EnrollmentMode"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnrollmentMode"])
 		if present {
-			c.Enum(path, true, *x.EnrollmentMode, []any{"BYOD", "ADDE"})
+			c.Enum(fieldPath, true, *x.EnrollmentMode, []any{"BYOD", "ADDE"})
 		}
 	}
 	{
-		path := validation.Join(p, "ServerURLPinningCertificateUUIDs")
+		fieldPath := validation.Join(path, "ServerURLPinningCertificateUUIDs")
 		present := len(x.ServerURLPinningCertificateUUIDs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDM.ServerURLPinningCertificateUUIDs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ServerURLPinningCertificateUUIDs"])
 	}
 	{
-		path := validation.Join(p, "CheckInURLPinningCertificateUUIDs")
+		fieldPath := validation.Join(path, "CheckInURLPinningCertificateUUIDs")
 		present := len(x.CheckInURLPinningCertificateUUIDs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDM.CheckInURLPinningCertificateUUIDs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CheckInURLPinningCertificateUUIDs"])
 	}
 	{
-		path := validation.Join(p, "PinningRevocationCheckRequired")
+		fieldPath := validation.Join(path, "PinningRevocationCheckRequired")
 		present := x.PinningRevocationCheckRequired != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDM.PinningRevocationCheckRequired"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PinningRevocationCheckRequired"])
 	}
 	{
-		path := validation.Join(p, "ServerCapabilities")
+		fieldPath := validation.Join(path, "ServerCapabilities")
 		present := len(x.ServerCapabilities) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDM.ServerCapabilities"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ServerCapabilities"])
 		for i, v := range x.ServerCapabilities {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"com.apple.mdm.per-user-connections", "com.apple.mdm.bootstraptoken", "com.apple.mdm.token"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"com.apple.mdm.per-user-connections", "com.apple.mdm.bootstraptoken", "com.apple.mdm.token"})
 		}
 	}
 	{
-		path := validation.Join(p, "CheckOutWhenRemoved")
+		fieldPath := validation.Join(path, "CheckOutWhenRemoved")
 		present := x.CheckOutWhenRemoved != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDM.CheckOutWhenRemoved"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CheckOutWhenRemoved"])
 	}
 	{
-		path := validation.Join(p, "RequiredAppIDForMDM")
+		fieldPath := validation.Join(path, "RequiredAppIDForMDM")
 		present := x.RequiredAppIDForMDM != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDM.RequiredAppIDForMDM"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RequiredAppIDForMDM"])
 	}
 	{
-		path := validation.Join(p, "PromptUserToAllowBootstrapTokenForAuthentication")
+		fieldPath := validation.Join(path, "PromptUserToAllowBootstrapTokenForAuthentication")
 		present := x.PromptUserToAllowBootstrapTokenForAuthentication != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MDM.PromptUserToAllowBootstrapTokenForAuthentication"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PromptUserToAllowBootstrapTokenForAuthentication"])
 	}
 }
 
@@ -8948,134 +8948,134 @@ func (x *MDM) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *Passcode) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Passcode")
 	return c.Err()
 }
 
-func (x *Passcode) validate(c *validation.Collector, p string) {
+func (x *Passcode) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Passcode"])
+	c.Support(path, true, supportTable["Passcode"])
 	{
-		path := validation.Join(p, "allowSimple")
+		fieldPath := validation.Join(path, "allowSimple")
 		present := x.AllowSimple != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Passcode.allowSimple"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowSimple"])
 	}
 	{
-		path := validation.Join(p, "forcePIN")
+		fieldPath := validation.Join(path, "forcePIN")
 		present := x.ForcePIN != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Passcode.forcePIN"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".forcePIN"])
 	}
 	{
-		path := validation.Join(p, "maxFailedAttempts")
+		fieldPath := validation.Join(path, "maxFailedAttempts")
 		present := x.MaxFailedAttempts != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Passcode.maxFailedAttempts"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".maxFailedAttempts"])
 		if present {
-			c.Range(path, true, float64(*x.MaxFailedAttempts), new(2.0), new(11.0))
+			c.Range(fieldPath, true, float64(*x.MaxFailedAttempts), new(2.0), new(11.0))
 		}
 	}
 	{
-		path := validation.Join(p, "maxInactivity")
+		fieldPath := validation.Join(path, "maxInactivity")
 		present := x.MaxInactivity != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Passcode.maxInactivity"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".maxInactivity"])
 		if present {
-			c.Range(path, true, float64(*x.MaxInactivity), new(0.0), new(15.0))
+			c.Range(fieldPath, true, float64(*x.MaxInactivity), new(0.0), new(15.0))
 		}
 	}
 	{
-		path := validation.Join(p, "maxPINAgeInDays")
+		fieldPath := validation.Join(path, "maxPINAgeInDays")
 		present := x.MaxPINAgeInDays != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Passcode.maxPINAgeInDays"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".maxPINAgeInDays"])
 		if present {
-			c.Range(path, true, float64(*x.MaxPINAgeInDays), new(1.0), new(730.0))
+			c.Range(fieldPath, true, float64(*x.MaxPINAgeInDays), new(1.0), new(730.0))
 		}
 	}
 	{
-		path := validation.Join(p, "minComplexChars")
+		fieldPath := validation.Join(path, "minComplexChars")
 		present := x.MinComplexChars != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Passcode.minComplexChars"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".minComplexChars"])
 		if present {
-			c.Range(path, true, float64(*x.MinComplexChars), new(0.0), new(4.0))
+			c.Range(fieldPath, true, float64(*x.MinComplexChars), new(0.0), new(4.0))
 		}
 	}
 	{
-		path := validation.Join(p, "minLength")
+		fieldPath := validation.Join(path, "minLength")
 		present := x.MinLength != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Passcode.minLength"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".minLength"])
 		if present {
-			c.Range(path, true, float64(*x.MinLength), new(0.0), new(16.0))
+			c.Range(fieldPath, true, float64(*x.MinLength), new(0.0), new(16.0))
 		}
 	}
 	{
-		path := validation.Join(p, "requireAlphanumeric")
+		fieldPath := validation.Join(path, "requireAlphanumeric")
 		present := x.RequireAlphanumeric != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Passcode.requireAlphanumeric"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".requireAlphanumeric"])
 	}
 	{
-		path := validation.Join(p, "pinHistory")
+		fieldPath := validation.Join(path, "pinHistory")
 		present := x.PinHistory != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Passcode.pinHistory"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".pinHistory"])
 		if present {
-			c.Range(path, true, float64(*x.PinHistory), new(1.0), new(50.0))
+			c.Range(fieldPath, true, float64(*x.PinHistory), new(1.0), new(50.0))
 		}
 	}
 	{
-		path := validation.Join(p, "maxGracePeriod")
+		fieldPath := validation.Join(path, "maxGracePeriod")
 		present := x.MaxGracePeriod != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Passcode.maxGracePeriod"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".maxGracePeriod"])
 	}
 	{
-		path := validation.Join(p, "minutesUntilFailedLoginReset")
+		fieldPath := validation.Join(path, "minutesUntilFailedLoginReset")
 		present := x.MinutesUntilFailedLoginReset != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Passcode.minutesUntilFailedLoginReset"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".minutesUntilFailedLoginReset"])
 	}
 	{
-		path := validation.Join(p, "changeAtNextAuth")
+		fieldPath := validation.Join(path, "changeAtNextAuth")
 		present := x.ChangeAtNextAuth != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Passcode.changeAtNextAuth"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".changeAtNextAuth"])
 	}
 	{
-		path := validation.Join(p, "customRegex")
+		fieldPath := validation.Join(path, "customRegex")
 		present := x.CustomRegex != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Passcode.customRegex"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".customRegex"])
 		if present {
-			x.CustomRegex.validate(c, path)
+			x.CustomRegex.validate(c, fieldPath, supportPath+".customRegex")
 		}
 	}
 }
 
-func (x *PasscodeCustomRegex) validate(c *validation.Collector, p string) {
+func (x *PasscodeCustomRegex) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "passwordContentRegex")
+		fieldPath := validation.Join(path, "passwordContentRegex")
 		present := x.PasswordContentRegex != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Passcode.customRegex.passwordContentRegex"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".passwordContentRegex"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "passwordContentDescription")
+		fieldPath := validation.Join(path, "passwordContentDescription")
 		present := len(x.PasswordContentDescription) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Passcode.customRegex.passwordContentDescription"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".passwordContentDescription"])
 	}
 }
 
@@ -9083,81 +9083,81 @@ func (x *PasscodeCustomRegex) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *NetworkUsageRules) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "NetworkUsageRules")
 	return c.Err()
 }
 
-func (x *NetworkUsageRules) validate(c *validation.Collector, p string) {
+func (x *NetworkUsageRules) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["NetworkUsageRules"])
+	c.Support(path, true, supportTable["NetworkUsageRules"])
 	{
-		path := validation.Join(p, "ApplicationRules")
+		fieldPath := validation.Join(path, "ApplicationRules")
 		present := len(x.ApplicationRules) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkUsageRules.ApplicationRules"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ApplicationRules"])
 		for i := range x.ApplicationRules {
-			x.ApplicationRules[i].validate(c, validation.Index(path, i))
+			x.ApplicationRules[i].validate(c, validation.Index(fieldPath, i), supportPath+".ApplicationRules.ApplicationRulesItem")
 		}
 	}
 	{
-		path := validation.Join(p, "SIMRules")
+		fieldPath := validation.Join(path, "SIMRules")
 		present := len(x.SIMRules) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkUsageRules.SIMRules"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SIMRules"])
 		for i := range x.SIMRules {
-			x.SIMRules[i].validate(c, validation.Index(path, i))
+			x.SIMRules[i].validate(c, validation.Index(fieldPath, i), supportPath+".SIMRules.SIMRulesItem")
 		}
 	}
 }
 
-func (x *NetworkUsageRulesApplicationRules) validate(c *validation.Collector, p string) {
+func (x *NetworkUsageRulesApplicationRules) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "AppIdentifierMatches")
+		fieldPath := validation.Join(path, "AppIdentifierMatches")
 		present := len(x.AppIdentifierMatches) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkUsageRules.ApplicationRules.ApplicationRulesItem.AppIdentifierMatches"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AppIdentifierMatches"])
 	}
 	{
-		path := validation.Join(p, "AllowRoamingCellularData")
+		fieldPath := validation.Join(path, "AllowRoamingCellularData")
 		present := x.AllowRoamingCellularData != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkUsageRules.ApplicationRules.ApplicationRulesItem.AllowRoamingCellularData"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowRoamingCellularData"])
 	}
 	{
-		path := validation.Join(p, "AllowCellularData")
+		fieldPath := validation.Join(path, "AllowCellularData")
 		present := x.AllowCellularData != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkUsageRules.ApplicationRules.ApplicationRulesItem.AllowCellularData"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowCellularData"])
 	}
 }
 
-func (x *NetworkUsageRulesSIMRules) validate(c *validation.Collector, p string) {
+func (x *NetworkUsageRulesSIMRules) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "ICCIDs")
+		fieldPath := validation.Join(path, "ICCIDs")
 		present := len(x.ICCIDs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkUsageRules.SIMRules.SIMRulesItem.ICCIDs"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ICCIDs"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "WiFiAssistPolicy")
+		fieldPath := validation.Join(path, "WiFiAssistPolicy")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["NetworkUsageRules.SIMRules.SIMRulesItem.WiFiAssistPolicy"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".WiFiAssistPolicy"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.WiFiAssistPolicy, []any{int64(2), int64(3)})
+			c.Enum(fieldPath, true, x.WiFiAssistPolicy, []any{int64(2), int64(3)})
 		}
 	}
 }
@@ -9166,107 +9166,107 @@ func (x *NetworkUsageRulesSIMRules) validate(c *validation.Collector, p string) 
 // that every present key is supported on that OS version and enrollment context.
 func (x *Notifications) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Notifications")
 	return c.Err()
 }
 
-func (x *Notifications) validate(c *validation.Collector, p string) {
+func (x *Notifications) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Notifications"])
+	c.Support(path, true, supportTable["Notifications"])
 	{
-		path := validation.Join(p, "NotificationSettings")
+		fieldPath := validation.Join(path, "NotificationSettings")
 		present := len(x.NotificationSettings) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Notifications.NotificationSettings"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".NotificationSettings"])
+		c.Required(fieldPath, present)
 		for i := range x.NotificationSettings {
-			x.NotificationSettings[i].validate(c, validation.Index(path, i))
+			x.NotificationSettings[i].validate(c, validation.Index(fieldPath, i), supportPath+".NotificationSettings.NotificationSettingsItem")
 		}
 	}
 }
 
-func (x *NotificationsNotificationSettings) validate(c *validation.Collector, p string) {
+func (x *NotificationsNotificationSettings) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "BundleIdentifier")
+		fieldPath := validation.Join(path, "BundleIdentifier")
 		present := x.BundleIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Notifications.NotificationSettings.NotificationSettingsItem.BundleIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BundleIdentifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "NotificationsEnabled")
+		fieldPath := validation.Join(path, "NotificationsEnabled")
 		present := x.NotificationsEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Notifications.NotificationSettings.NotificationSettingsItem.NotificationsEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".NotificationsEnabled"])
 	}
 	{
-		path := validation.Join(p, "ShowInNotificationCenter")
+		fieldPath := validation.Join(path, "ShowInNotificationCenter")
 		present := x.ShowInNotificationCenter != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Notifications.NotificationSettings.NotificationSettingsItem.ShowInNotificationCenter"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ShowInNotificationCenter"])
 	}
 	{
-		path := validation.Join(p, "ShowInLockScreen")
+		fieldPath := validation.Join(path, "ShowInLockScreen")
 		present := x.ShowInLockScreen != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Notifications.NotificationSettings.NotificationSettingsItem.ShowInLockScreen"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ShowInLockScreen"])
 	}
 	{
-		path := validation.Join(p, "AlertType")
+		fieldPath := validation.Join(path, "AlertType")
 		present := x.AlertType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Notifications.NotificationSettings.NotificationSettingsItem.AlertType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AlertType"])
 		if present {
-			c.Enum(path, true, *x.AlertType, []any{int64(0), int64(1), int64(2)})
+			c.Enum(fieldPath, true, *x.AlertType, []any{int64(0), int64(1), int64(2)})
 		}
 	}
 	{
-		path := validation.Join(p, "BadgesEnabled")
+		fieldPath := validation.Join(path, "BadgesEnabled")
 		present := x.BadgesEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Notifications.NotificationSettings.NotificationSettingsItem.BadgesEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BadgesEnabled"])
 	}
 	{
-		path := validation.Join(p, "SoundsEnabled")
+		fieldPath := validation.Join(path, "SoundsEnabled")
 		present := x.SoundsEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Notifications.NotificationSettings.NotificationSettingsItem.SoundsEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SoundsEnabled"])
 	}
 	{
-		path := validation.Join(p, "ShowInCarPlay")
+		fieldPath := validation.Join(path, "ShowInCarPlay")
 		present := x.ShowInCarPlay != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Notifications.NotificationSettings.NotificationSettingsItem.ShowInCarPlay"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ShowInCarPlay"])
 	}
 	{
-		path := validation.Join(p, "CriticalAlertEnabled")
+		fieldPath := validation.Join(path, "CriticalAlertEnabled")
 		present := x.CriticalAlertEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Notifications.NotificationSettings.NotificationSettingsItem.CriticalAlertEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CriticalAlertEnabled"])
 	}
 	{
-		path := validation.Join(p, "GroupingType")
+		fieldPath := validation.Join(path, "GroupingType")
 		present := x.GroupingType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Notifications.NotificationSettings.NotificationSettingsItem.GroupingType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".GroupingType"])
 		if present {
-			c.Enum(path, true, *x.GroupingType, []any{int64(0), int64(1), int64(2)})
+			c.Enum(fieldPath, true, *x.GroupingType, []any{int64(0), int64(1), int64(2)})
 		}
 	}
 	{
-		path := validation.Join(p, "PreviewType")
+		fieldPath := validation.Join(path, "PreviewType")
 		present := x.PreviewType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Notifications.NotificationSettings.NotificationSettingsItem.PreviewType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PreviewType"])
 		if present {
-			c.Enum(path, true, *x.PreviewType, []any{int64(0), int64(1), int64(2)})
+			c.Enum(fieldPath, true, *x.PreviewType, []any{int64(0), int64(1), int64(2)})
 		}
 	}
 }
@@ -9275,74 +9275,74 @@ func (x *NotificationsNotificationSettings) validate(c *validation.Collector, p 
 // that every present key is supported on that OS version and enrollment context.
 func (x *MacOSServerAccount) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "MacOSServerAccount")
 	return c.Err()
 }
 
-func (x *MacOSServerAccount) validate(c *validation.Collector, p string) {
+func (x *MacOSServerAccount) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["MacOSServerAccount"])
+	c.Support(path, true, supportTable["MacOSServerAccount"])
 	{
-		path := validation.Join(p, "HostName")
+		fieldPath := validation.Join(path, "HostName")
 		present := x.HostName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["MacOSServerAccount.HostName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HostName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "UserName")
+		fieldPath := validation.Join(path, "UserName")
 		present := x.UserName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["MacOSServerAccount.UserName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Password")
+		fieldPath := validation.Join(path, "Password")
 		present := x.Password != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MacOSServerAccount.Password"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Password"])
 	}
 	{
-		path := validation.Join(p, "AccountDescription")
+		fieldPath := validation.Join(path, "AccountDescription")
 		present := x.AccountDescription != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MacOSServerAccount.AccountDescription"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AccountDescription"])
 	}
 	{
-		path := validation.Join(p, "ConfiguredAccounts")
+		fieldPath := validation.Join(path, "ConfiguredAccounts")
 		present := len(x.ConfiguredAccounts) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["MacOSServerAccount.ConfiguredAccounts"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ConfiguredAccounts"])
+		c.Required(fieldPath, present)
 		for i := range x.ConfiguredAccounts {
-			x.ConfiguredAccounts[i].validate(c, validation.Index(path, i))
+			x.ConfiguredAccounts[i].validate(c, validation.Index(fieldPath, i), supportPath+".ConfiguredAccounts.ConfiguredAccountsItem")
 		}
 	}
 }
 
-func (x *MacOSServerAccountConfiguredAccounts) validate(c *validation.Collector, p string) {
+func (x *MacOSServerAccountConfiguredAccounts) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Type")
+		fieldPath := validation.Join(path, "Type")
 		present := x.Type != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["MacOSServerAccount.ConfiguredAccounts.ConfiguredAccountsItem.Type"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Type"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Type, []any{"com.apple.osxserver.documents"})
+			c.Enum(fieldPath, true, x.Type, []any{"com.apple.osxserver.documents"})
 		}
 	}
 	{
-		path := validation.Join(p, "Port")
+		fieldPath := validation.Join(path, "Port")
 		present := x.Port != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MacOSServerAccount.ConfiguredAccounts.ConfiguredAccountsItem.Port"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Port"])
 	}
 }
 
@@ -9350,33 +9350,33 @@ func (x *MacOSServerAccountConfiguredAccounts) validate(c *validation.Collector,
 // that every present key is supported on that OS version and enrollment context.
 func (x *SecurityPreferences) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SecurityPreferences")
 	return c.Err()
 }
 
-func (x *SecurityPreferences) validate(c *validation.Collector, p string) {
+func (x *SecurityPreferences) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SecurityPreferences"])
+	c.Support(path, true, supportTable["SecurityPreferences"])
 	{
-		path := validation.Join(p, "dontAllowPasswordResetUI")
+		fieldPath := validation.Join(path, "dontAllowPasswordResetUI")
 		present := x.DontAllowPasswordResetUI != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SecurityPreferences.dontAllowPasswordResetUI"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".dontAllowPasswordResetUI"])
 	}
 	{
-		path := validation.Join(p, "dontAllowLockMessageUI")
+		fieldPath := validation.Join(path, "dontAllowLockMessageUI")
 		present := x.DontAllowLockMessageUI != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SecurityPreferences.dontAllowLockMessageUI"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".dontAllowLockMessageUI"])
 	}
 	{
-		path := validation.Join(p, "dontAllowFireWallUI")
+		fieldPath := validation.Join(path, "dontAllowFireWallUI")
 		present := x.DontAllowFireWallUI != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SecurityPreferences.dontAllowFireWallUI"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".dontAllowFireWallUI"])
 	}
 }
 
@@ -9384,21 +9384,21 @@ func (x *SecurityPreferences) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *UserPreferences) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "UserPreferences")
 	return c.Err()
 }
 
-func (x *UserPreferences) validate(c *validation.Collector, p string) {
+func (x *UserPreferences) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["UserPreferences"])
+	c.Support(path, true, supportTable["UserPreferences"])
 	{
-		path := validation.Join(p, "DisableUsingiCloudPassword")
+		fieldPath := validation.Join(path, "DisableUsingiCloudPassword")
 		present := x.DisableUsingiCloudPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["UserPreferences.DisableUsingiCloudPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisableUsingiCloudPassword"])
 	}
 }
 
@@ -9406,21 +9406,21 @@ func (x *UserPreferences) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ProfileRemovalPassword) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ProfileRemovalPassword")
 	return c.Err()
 }
 
-func (x *ProfileRemovalPassword) validate(c *validation.Collector, p string) {
+func (x *ProfileRemovalPassword) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ProfileRemovalPassword"])
+	c.Support(path, true, supportTable["ProfileRemovalPassword"])
 	{
-		path := validation.Join(p, "RemovalPassword")
+		fieldPath := validation.Join(path, "RemovalPassword")
 		present := x.RemovalPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ProfileRemovalPassword.RemovalPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RemovalPassword"])
 	}
 }
 
@@ -9428,66 +9428,66 @@ func (x *ProfileRemovalPassword) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *GlobalHTTPProxy) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "GlobalHTTPProxy")
 	return c.Err()
 }
 
-func (x *GlobalHTTPProxy) validate(c *validation.Collector, p string) {
+func (x *GlobalHTTPProxy) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["GlobalHTTPProxy"])
+	c.Support(path, true, supportTable["GlobalHTTPProxy"])
 	{
-		path := validation.Join(p, "ProxyType")
+		fieldPath := validation.Join(path, "ProxyType")
 		present := x.ProxyType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GlobalHTTPProxy.ProxyType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyType"])
 		if present {
-			c.Enum(path, true, *x.ProxyType, []any{"Manual", "Auto"})
+			c.Enum(fieldPath, true, *x.ProxyType, []any{"Manual", "Auto"})
 		}
 	}
 	{
-		path := validation.Join(p, "ProxyServer")
+		fieldPath := validation.Join(path, "ProxyServer")
 		present := x.ProxyServer != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GlobalHTTPProxy.ProxyServer"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyServer"])
 	}
 	{
-		path := validation.Join(p, "ProxyServerPort")
+		fieldPath := validation.Join(path, "ProxyServerPort")
 		present := x.ProxyServerPort != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GlobalHTTPProxy.ProxyServerPort"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyServerPort"])
 	}
 	{
-		path := validation.Join(p, "ProxyUsername")
+		fieldPath := validation.Join(path, "ProxyUsername")
 		present := x.ProxyUsername != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GlobalHTTPProxy.ProxyUsername"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyUsername"])
 	}
 	{
-		path := validation.Join(p, "ProxyPassword")
+		fieldPath := validation.Join(path, "ProxyPassword")
 		present := x.ProxyPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GlobalHTTPProxy.ProxyPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyPassword"])
 	}
 	{
-		path := validation.Join(p, "ProxyPACURL")
+		fieldPath := validation.Join(path, "ProxyPACURL")
 		present := x.ProxyPACURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GlobalHTTPProxy.ProxyPACURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyPACURL"])
 	}
 	{
-		path := validation.Join(p, "ProxyPACFallbackAllowed")
+		fieldPath := validation.Join(path, "ProxyPACFallbackAllowed")
 		present := x.ProxyPACFallbackAllowed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GlobalHTTPProxy.ProxyPACFallbackAllowed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyPACFallbackAllowed"])
 	}
 	{
-		path := validation.Join(p, "ProxyCaptiveLoginAllowed")
+		fieldPath := validation.Join(path, "ProxyCaptiveLoginAllowed")
 		present := x.ProxyCaptiveLoginAllowed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GlobalHTTPProxy.ProxyCaptiveLoginAllowed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyCaptiveLoginAllowed"])
 	}
 }
 
@@ -9495,107 +9495,107 @@ func (x *GlobalHTTPProxy) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *Relay) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Relay")
 	return c.Err()
 }
 
-func (x *Relay) validate(c *validation.Collector, p string) {
+func (x *Relay) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Relay"])
+	c.Support(path, true, supportTable["Relay"])
 	{
-		path := validation.Join(p, "Relays")
+		fieldPath := validation.Join(path, "Relays")
 		present := len(x.Relays) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Relay.Relays"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Relays"])
+		c.Required(fieldPath, present)
 		for i := range x.Relays {
-			x.Relays[i].validate(c, validation.Index(path, i))
+			x.Relays[i].validate(c, validation.Index(fieldPath, i), supportPath+".Relays.Relay")
 		}
 	}
 	{
-		path := validation.Join(p, "MatchDomains")
+		fieldPath := validation.Join(path, "MatchDomains")
 		present := len(x.MatchDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Relay.MatchDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MatchDomains"])
 	}
 	{
-		path := validation.Join(p, "ExcludedDomains")
+		fieldPath := validation.Join(path, "ExcludedDomains")
 		present := len(x.ExcludedDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Relay.ExcludedDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExcludedDomains"])
 	}
 	{
-		path := validation.Join(p, "MatchFQDNs")
+		fieldPath := validation.Join(path, "MatchFQDNs")
 		present := len(x.MatchFQDNs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Relay.MatchFQDNs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MatchFQDNs"])
 	}
 	{
-		path := validation.Join(p, "ExcludedFQDNs")
+		fieldPath := validation.Join(path, "ExcludedFQDNs")
 		present := len(x.ExcludedFQDNs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Relay.ExcludedFQDNs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExcludedFQDNs"])
 	}
 	{
-		path := validation.Join(p, "RelayUUID")
+		fieldPath := validation.Join(path, "RelayUUID")
 		present := x.RelayUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Relay.RelayUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RelayUUID"])
 	}
 	{
-		path := validation.Join(p, "UIToggleEnabled")
+		fieldPath := validation.Join(path, "UIToggleEnabled")
 		present := x.UIToggleEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Relay.UIToggleEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UIToggleEnabled"])
 	}
 	{
-		path := validation.Join(p, "AllowDNSFailover")
+		fieldPath := validation.Join(path, "AllowDNSFailover")
 		present := x.AllowDNSFailover != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Relay.AllowDNSFailover"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowDNSFailover"])
 	}
 }
 
-func (x *RelayRelays) validate(c *validation.Collector, p string) {
+func (x *RelayRelays) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "HTTP3RelayURL")
+		fieldPath := validation.Join(path, "HTTP3RelayURL")
 		present := x.HTTP3RelayURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Relay.Relays.Relay.HTTP3RelayURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HTTP3RelayURL"])
 	}
 	{
-		path := validation.Join(p, "HTTP2RelayURL")
+		fieldPath := validation.Join(path, "HTTP2RelayURL")
 		present := x.HTTP2RelayURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Relay.Relays.Relay.HTTP2RelayURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HTTP2RelayURL"])
 	}
 	{
-		path := validation.Join(p, "AdditionalHTTPHeaderFields")
+		fieldPath := validation.Join(path, "AdditionalHTTPHeaderFields")
 		present := len(x.AdditionalHTTPHeaderFields) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Relay.Relays.Relay.AdditionalHTTPHeaderFields"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AdditionalHTTPHeaderFields"])
 	}
 	{
-		path := validation.Join(p, "PayloadCertificateUUID")
+		fieldPath := validation.Join(path, "PayloadCertificateUUID")
 		present := x.PayloadCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Relay.Relays.Relay.PayloadCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateUUID"])
 		if present {
-			c.Pattern(path, true, *x.PayloadCertificateUUID, format1)
+			c.Pattern(fieldPath, true, *x.PayloadCertificateUUID, format1)
 		}
 	}
 	{
-		path := validation.Join(p, "RawPublicKeys")
+		fieldPath := validation.Join(path, "RawPublicKeys")
 		present := len(x.RawPublicKeys) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Relay.Relays.Relay.RawPublicKeys"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RawPublicKeys"])
 	}
 }
 
@@ -9603,34 +9603,34 @@ func (x *RelayRelays) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ScreensaverUser) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ScreensaverUser")
 	return c.Err()
 }
 
-func (x *ScreensaverUser) validate(c *validation.Collector, p string) {
+func (x *ScreensaverUser) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ScreensaverUser"])
+	c.Support(path, true, supportTable["ScreensaverUser"])
 	{
-		path := validation.Join(p, "moduleName")
+		fieldPath := validation.Join(path, "moduleName")
 		present := x.ModuleName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ScreensaverUser.moduleName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".moduleName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "modulePath")
+		fieldPath := validation.Join(path, "modulePath")
 		present := x.ModulePath != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ScreensaverUser.modulePath"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".modulePath"])
 	}
 	{
-		path := validation.Join(p, "idleTime")
+		fieldPath := validation.Join(path, "idleTime")
 		present := x.IdleTime != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ScreensaverUser.idleTime"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".idleTime"])
 	}
 }
 
@@ -9638,46 +9638,46 @@ func (x *ScreensaverUser) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *Screensaver) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Screensaver")
 	return c.Err()
 }
 
-func (x *Screensaver) validate(c *validation.Collector, p string) {
+func (x *Screensaver) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Screensaver"])
+	c.Support(path, true, supportTable["Screensaver"])
 	{
-		path := validation.Join(p, "askForPassword")
+		fieldPath := validation.Join(path, "askForPassword")
 		present := x.AskForPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Screensaver.askForPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".askForPassword"])
 	}
 	{
-		path := validation.Join(p, "askForPasswordDelay")
+		fieldPath := validation.Join(path, "askForPasswordDelay")
 		present := x.AskForPasswordDelay != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Screensaver.askForPasswordDelay"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".askForPasswordDelay"])
 	}
 	{
-		path := validation.Join(p, "idleTime")
+		fieldPath := validation.Join(path, "idleTime")
 		present := x.IdleTime != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Screensaver.idleTime"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".idleTime"])
 	}
 	{
-		path := validation.Join(p, "loginWindowModulePath")
+		fieldPath := validation.Join(path, "loginWindowModulePath")
 		present := x.LoginWindowModulePath != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Screensaver.loginWindowModulePath"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".loginWindowModulePath"])
 	}
 	{
-		path := validation.Join(p, "moduleName")
+		fieldPath := validation.Join(path, "moduleName")
 		present := x.ModuleName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Screensaver.moduleName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".moduleName"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -9685,21 +9685,21 @@ func (x *Screensaver) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *X8021XSecondActiveEthernet) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "X8021XSecondActiveEthernet")
 	return c.Err()
 }
 
-func (x *X8021XSecondActiveEthernet) validate(c *validation.Collector, p string) {
+func (x *X8021XSecondActiveEthernet) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["X8021XSecondActiveEthernet"])
+	c.Support(path, true, supportTable["X8021XSecondActiveEthernet"])
 	{
-		path := validation.Join(p, "ANY")
+		fieldPath := validation.Join(path, "ANY")
 		present := x.ANY != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["X8021XSecondActiveEthernet.ANY"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ANY"])
 	}
 }
 
@@ -9707,21 +9707,21 @@ func (x *X8021XSecondActiveEthernet) validate(c *validation.Collector, p string)
 // that every present key is supported on that OS version and enrollment context.
 func (x *X8021XSecondEthernet) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "X8021XSecondEthernet")
 	return c.Err()
 }
 
-func (x *X8021XSecondEthernet) validate(c *validation.Collector, p string) {
+func (x *X8021XSecondEthernet) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["X8021XSecondEthernet"])
+	c.Support(path, true, supportTable["X8021XSecondEthernet"])
 	{
-		path := validation.Join(p, "ANY")
+		fieldPath := validation.Join(path, "ANY")
 		present := x.ANY != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["X8021XSecondEthernet.ANY"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ANY"])
 	}
 }
 
@@ -9729,35 +9729,35 @@ func (x *X8021XSecondEthernet) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *FDERecoveryKeyEscrow) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "FDERecoveryKeyEscrow")
 	return c.Err()
 }
 
-func (x *FDERecoveryKeyEscrow) validate(c *validation.Collector, p string) {
+func (x *FDERecoveryKeyEscrow) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["FDERecoveryKeyEscrow"])
+	c.Support(path, true, supportTable["FDERecoveryKeyEscrow"])
 	{
-		path := validation.Join(p, "Location")
+		fieldPath := validation.Join(path, "Location")
 		present := x.Location != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDERecoveryKeyEscrow.Location"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Location"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "EncryptCertPayloadUUID")
+		fieldPath := validation.Join(path, "EncryptCertPayloadUUID")
 		present := x.EncryptCertPayloadUUID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDERecoveryKeyEscrow.EncryptCertPayloadUUID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EncryptCertPayloadUUID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "DeviceKey")
+		fieldPath := validation.Join(path, "DeviceKey")
 		present := x.DeviceKey != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDERecoveryKeyEscrow.DeviceKey"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeviceKey"])
 	}
 }
 
@@ -9765,29 +9765,29 @@ func (x *FDERecoveryKeyEscrow) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *FDERecoveryKeyRedirection) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "FDERecoveryKeyRedirection")
 	return c.Err()
 }
 
-func (x *FDERecoveryKeyRedirection) validate(c *validation.Collector, p string) {
+func (x *FDERecoveryKeyRedirection) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["FDERecoveryKeyRedirection"])
+	c.Support(path, true, supportTable["FDERecoveryKeyRedirection"])
 	{
-		path := validation.Join(p, "RedirectURL")
+		fieldPath := validation.Join(path, "RedirectURL")
 		present := x.RedirectURL != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDERecoveryKeyRedirection.RedirectURL"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RedirectURL"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "EncryptCertPayloadUUID")
+		fieldPath := validation.Join(path, "EncryptCertPayloadUUID")
 		present := x.EncryptCertPayloadUUID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["FDERecoveryKeyRedirection.EncryptCertPayloadUUID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EncryptCertPayloadUUID"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -9795,130 +9795,130 @@ func (x *FDERecoveryKeyRedirection) validate(c *validation.Collector, p string) 
 // that every present key is supported on that OS version and enrollment context.
 func (x *ACMECertificate) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ACMECertificate")
 	return c.Err()
 }
 
-func (x *ACMECertificate) validate(c *validation.Collector, p string) {
+func (x *ACMECertificate) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ACMECertificate"])
+	c.Support(path, true, supportTable["ACMECertificate"])
 	{
-		path := validation.Join(p, "DirectoryURL")
+		fieldPath := validation.Join(path, "DirectoryURL")
 		present := x.DirectoryURL != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ACMECertificate.DirectoryURL"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DirectoryURL"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "ClientIdentifier")
+		fieldPath := validation.Join(path, "ClientIdentifier")
 		present := x.ClientIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ACMECertificate.ClientIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ClientIdentifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "KeySize")
+		fieldPath := validation.Join(path, "KeySize")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ACMECertificate.KeySize"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".KeySize"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "KeyType")
+		fieldPath := validation.Join(path, "KeyType")
 		present := x.KeyType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ACMECertificate.KeyType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".KeyType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.KeyType, []any{"RSA", "ECSECPrimeRandom"})
+			c.Enum(fieldPath, true, x.KeyType, []any{"RSA", "ECSECPrimeRandom"})
 		}
 	}
 	{
-		path := validation.Join(p, "HardwareBound")
+		fieldPath := validation.Join(path, "HardwareBound")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ACMECertificate.HardwareBound"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HardwareBound"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Subject")
+		fieldPath := validation.Join(path, "Subject")
 		present := len(x.Subject) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ACMECertificate.Subject"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Subject"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "SubjectAltName")
+		fieldPath := validation.Join(path, "SubjectAltName")
 		present := x.SubjectAltName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ACMECertificate.SubjectAltName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SubjectAltName"])
 		if present {
-			x.SubjectAltName.validate(c, path)
+			x.SubjectAltName.validate(c, fieldPath, supportPath+".SubjectAltName")
 		}
 	}
 	{
-		path := validation.Join(p, "UsageFlags")
+		fieldPath := validation.Join(path, "UsageFlags")
 		present := x.UsageFlags != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ACMECertificate.UsageFlags"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UsageFlags"])
 	}
 	{
-		path := validation.Join(p, "ExtendedKeyUsage")
+		fieldPath := validation.Join(path, "ExtendedKeyUsage")
 		present := len(x.ExtendedKeyUsage) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ACMECertificate.ExtendedKeyUsage"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExtendedKeyUsage"])
 	}
 	{
-		path := validation.Join(p, "Attest")
+		fieldPath := validation.Join(path, "Attest")
 		present := x.Attest != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ACMECertificate.Attest"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Attest"])
 	}
 	{
-		path := validation.Join(p, "KeyIsExtractable")
+		fieldPath := validation.Join(path, "KeyIsExtractable")
 		present := x.KeyIsExtractable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ACMECertificate.KeyIsExtractable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".KeyIsExtractable"])
 	}
 	{
-		path := validation.Join(p, "AllowAllAppsAccess")
+		fieldPath := validation.Join(path, "AllowAllAppsAccess")
 		present := x.AllowAllAppsAccess != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ACMECertificate.AllowAllAppsAccess"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowAllAppsAccess"])
 	}
 }
 
-func (x *ACMECertificateSubjectAltName) validate(c *validation.Collector, p string) {
+func (x *ACMECertificateSubjectAltName) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "rfc822Name")
+		fieldPath := validation.Join(path, "rfc822Name")
 		present := x.Rfc822Name != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ACMECertificate.SubjectAltName.rfc822Name"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".rfc822Name"])
 	}
 	{
-		path := validation.Join(p, "dNSName")
+		fieldPath := validation.Join(path, "dNSName")
 		present := x.DNSName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ACMECertificate.SubjectAltName.dNSName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".dNSName"])
 	}
 	{
-		path := validation.Join(p, "uniformResourceIdentifier")
+		fieldPath := validation.Join(path, "uniformResourceIdentifier")
 		present := x.UniformResourceIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ACMECertificate.SubjectAltName.uniformResourceIdentifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".uniformResourceIdentifier"])
 	}
 	{
-		path := validation.Join(p, "ntPrincipalName")
+		fieldPath := validation.Join(path, "ntPrincipalName")
 		present := x.NtPrincipalName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ACMECertificate.SubjectAltName.ntPrincipalName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ntPrincipalName"])
 	}
 }
 
@@ -9926,29 +9926,29 @@ func (x *ACMECertificateSubjectAltName) validate(c *validation.Collector, p stri
 // that every present key is supported on that OS version and enrollment context.
 func (x *CertificatePreference) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "CertificatePreference")
 	return c.Err()
 }
 
-func (x *CertificatePreference) validate(c *validation.Collector, p string) {
+func (x *CertificatePreference) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["CertificatePreference"])
+	c.Support(path, true, supportTable["CertificatePreference"])
 	{
-		path := validation.Join(p, "Name")
+		fieldPath := validation.Join(path, "Name")
 		present := x.Name != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificatePreference.Name"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Name"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "PayloadCertificateUUID")
+		fieldPath := validation.Join(path, "PayloadCertificateUUID")
 		present := x.PayloadCertificateUUID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificatePreference.PayloadCertificateUUID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateUUID"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -9956,48 +9956,48 @@ func (x *CertificatePreference) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *CertificateRevocation) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "CertificateRevocation")
 	return c.Err()
 }
 
-func (x *CertificateRevocation) validate(c *validation.Collector, p string) {
+func (x *CertificateRevocation) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["CertificateRevocation"])
+	c.Support(path, true, supportTable["CertificateRevocation"])
 	{
-		path := validation.Join(p, "EnabledForCerts")
+		fieldPath := validation.Join(path, "EnabledForCerts")
 		present := len(x.EnabledForCerts) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificateRevocation.EnabledForCerts"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnabledForCerts"])
 		for i := range x.EnabledForCerts {
-			x.EnabledForCerts[i].validate(c, validation.Index(path, i))
+			x.EnabledForCerts[i].validate(c, validation.Index(fieldPath, i), supportPath+".EnabledForCerts.SubjectPublicKeyInfoHashDict")
 		}
 	}
 }
 
-func (x *CertificateRevocationEnabledForCerts) validate(c *validation.Collector, p string) {
+func (x *CertificateRevocationEnabledForCerts) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Algorithm")
+		fieldPath := validation.Join(path, "Algorithm")
 		present := x.Algorithm != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificateRevocation.EnabledForCerts.SubjectPublicKeyInfoHashDict.Algorithm"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Algorithm"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Algorithm, []any{"sha256"})
+			c.Enum(fieldPath, true, x.Algorithm, []any{"sha256"})
 		}
 	}
 	{
-		path := validation.Join(p, "Hash")
+		fieldPath := validation.Join(path, "Hash")
 		present := len(x.Hash) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificateRevocation.EnabledForCerts.SubjectPublicKeyInfoHashDict.Hash"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Hash"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -10005,54 +10005,54 @@ func (x *CertificateRevocationEnabledForCerts) validate(c *validation.Collector,
 // that every present key is supported on that OS version and enrollment context.
 func (x *CertificateTransparency) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "CertificateTransparency")
 	return c.Err()
 }
 
-func (x *CertificateTransparency) validate(c *validation.Collector, p string) {
+func (x *CertificateTransparency) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["CertificateTransparency"])
+	c.Support(path, true, supportTable["CertificateTransparency"])
 	{
-		path := validation.Join(p, "DisabledForCerts")
+		fieldPath := validation.Join(path, "DisabledForCerts")
 		present := len(x.DisabledForCerts) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificateTransparency.DisabledForCerts"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisabledForCerts"])
 		for i := range x.DisabledForCerts {
-			x.DisabledForCerts[i].validate(c, validation.Index(path, i))
+			x.DisabledForCerts[i].validate(c, validation.Index(fieldPath, i), supportPath+".DisabledForCerts.SubjectPublicKeyInfoHashDict")
 		}
 	}
 	{
-		path := validation.Join(p, "DisabledForDomains")
+		fieldPath := validation.Join(path, "DisabledForDomains")
 		present := len(x.DisabledForDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificateTransparency.DisabledForDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisabledForDomains"])
 	}
 }
 
-func (x *CertificateTransparencyDisabledForCerts) validate(c *validation.Collector, p string) {
+func (x *CertificateTransparencyDisabledForCerts) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Algorithm")
+		fieldPath := validation.Join(path, "Algorithm")
 		present := x.Algorithm != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificateTransparency.DisabledForCerts.SubjectPublicKeyInfoHashDict.Algorithm"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Algorithm"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Algorithm, []any{"sha256"})
+			c.Enum(fieldPath, true, x.Algorithm, []any{"sha256"})
 		}
 	}
 	{
-		path := validation.Join(p, "Hash")
+		fieldPath := validation.Join(path, "Hash")
 		present := len(x.Hash) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificateTransparency.DisabledForCerts.SubjectPublicKeyInfoHashDict.Hash"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Hash"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -10060,91 +10060,91 @@ func (x *CertificateTransparencyDisabledForCerts) validate(c *validation.Collect
 // that every present key is supported on that OS version and enrollment context.
 func (x *Firewall) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Firewall")
 	return c.Err()
 }
 
-func (x *Firewall) validate(c *validation.Collector, p string) {
+func (x *Firewall) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Firewall"])
+	c.Support(path, true, supportTable["Firewall"])
 	{
-		path := validation.Join(p, "EnableFirewall")
+		fieldPath := validation.Join(path, "EnableFirewall")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["Firewall.EnableFirewall"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableFirewall"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "BlockAllIncoming")
+		fieldPath := validation.Join(path, "BlockAllIncoming")
 		present := x.BlockAllIncoming != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Firewall.BlockAllIncoming"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BlockAllIncoming"])
 	}
 	{
-		path := validation.Join(p, "EnableStealthMode")
+		fieldPath := validation.Join(path, "EnableStealthMode")
 		present := x.EnableStealthMode != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Firewall.EnableStealthMode"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableStealthMode"])
 	}
 	{
-		path := validation.Join(p, "Applications")
+		fieldPath := validation.Join(path, "Applications")
 		present := len(x.Applications) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Firewall.Applications"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Applications"])
 		for i := range x.Applications {
-			x.Applications[i].validate(c, validation.Index(path, i))
+			x.Applications[i].validate(c, validation.Index(fieldPath, i), supportPath+".Applications.ApplicationsItem")
 		}
 	}
 	{
-		path := validation.Join(p, "EnableLogging")
+		fieldPath := validation.Join(path, "EnableLogging")
 		present := x.EnableLogging != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Firewall.EnableLogging"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableLogging"])
 	}
 	{
-		path := validation.Join(p, "LoggingOption")
+		fieldPath := validation.Join(path, "LoggingOption")
 		present := x.LoggingOption != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Firewall.LoggingOption"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LoggingOption"])
 		if present {
-			c.Enum(path, true, *x.LoggingOption, []any{"throttled", "brief", "detail"})
+			c.Enum(fieldPath, true, *x.LoggingOption, []any{"throttled", "brief", "detail"})
 		}
 	}
 	{
-		path := validation.Join(p, "AllowSigned")
+		fieldPath := validation.Join(path, "AllowSigned")
 		present := x.AllowSigned != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Firewall.AllowSigned"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowSigned"])
 	}
 	{
-		path := validation.Join(p, "AllowSignedApp")
+		fieldPath := validation.Join(path, "AllowSignedApp")
 		present := x.AllowSignedApp != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Firewall.AllowSignedApp"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowSignedApp"])
 	}
 }
 
-func (x *FirewallApplications) validate(c *validation.Collector, p string) {
+func (x *FirewallApplications) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "BundleID")
+		fieldPath := validation.Join(path, "BundleID")
 		present := x.BundleID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Firewall.Applications.ApplicationsItem.BundleID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BundleID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Allowed")
+		fieldPath := validation.Join(path, "Allowed")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["Firewall.Applications.ApplicationsItem.Allowed"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Allowed"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -10152,29 +10152,29 @@ func (x *FirewallApplications) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *IdentityPreference) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "IdentityPreference")
 	return c.Err()
 }
 
-func (x *IdentityPreference) validate(c *validation.Collector, p string) {
+func (x *IdentityPreference) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["IdentityPreference"])
+	c.Support(path, true, supportTable["IdentityPreference"])
 	{
-		path := validation.Join(p, "Name")
+		fieldPath := validation.Join(path, "Name")
 		present := x.Name != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["IdentityPreference.Name"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Name"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "PayloadCertificateUUID")
+		fieldPath := validation.Join(path, "PayloadCertificateUUID")
 		present := x.PayloadCertificateUUID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["IdentityPreference.PayloadCertificateUUID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateUUID"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -10182,28 +10182,28 @@ func (x *IdentityPreference) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *CertificatePEM) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "CertificatePEM")
 	return c.Err()
 }
 
-func (x *CertificatePEM) validate(c *validation.Collector, p string) {
+func (x *CertificatePEM) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["CertificatePEM"])
+	c.Support(path, true, supportTable["CertificatePEM"])
 	{
-		path := validation.Join(p, "PayloadCertificateFileName")
+		fieldPath := validation.Join(path, "PayloadCertificateFileName")
 		present := x.PayloadCertificateFileName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificatePEM.PayloadCertificateFileName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateFileName"])
 	}
 	{
-		path := validation.Join(p, "PayloadContent")
+		fieldPath := validation.Join(path, "PayloadContent")
 		present := len(x.PayloadContent) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificatePEM.PayloadContent"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadContent"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -10211,28 +10211,28 @@ func (x *CertificatePEM) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *CertificatePKCS1) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "CertificatePKCS1")
 	return c.Err()
 }
 
-func (x *CertificatePKCS1) validate(c *validation.Collector, p string) {
+func (x *CertificatePKCS1) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["CertificatePKCS1"])
+	c.Support(path, true, supportTable["CertificatePKCS1"])
 	{
-		path := validation.Join(p, "PayloadCertificateFileName")
+		fieldPath := validation.Join(path, "PayloadCertificateFileName")
 		present := x.PayloadCertificateFileName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificatePKCS1.PayloadCertificateFileName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateFileName"])
 	}
 	{
-		path := validation.Join(p, "PayloadContent")
+		fieldPath := validation.Join(path, "PayloadContent")
 		present := len(x.PayloadContent) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificatePKCS1.PayloadContent"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadContent"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -10240,46 +10240,46 @@ func (x *CertificatePKCS1) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *CertificatePKCS12) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "CertificatePKCS12")
 	return c.Err()
 }
 
-func (x *CertificatePKCS12) validate(c *validation.Collector, p string) {
+func (x *CertificatePKCS12) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["CertificatePKCS12"])
+	c.Support(path, true, supportTable["CertificatePKCS12"])
 	{
-		path := validation.Join(p, "PayloadCertificateFileName")
+		fieldPath := validation.Join(path, "PayloadCertificateFileName")
 		present := x.PayloadCertificateFileName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificatePKCS12.PayloadCertificateFileName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateFileName"])
 	}
 	{
-		path := validation.Join(p, "PayloadContent")
+		fieldPath := validation.Join(path, "PayloadContent")
 		present := len(x.PayloadContent) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificatePKCS12.PayloadContent"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadContent"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Password")
+		fieldPath := validation.Join(path, "Password")
 		present := x.Password != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificatePKCS12.Password"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Password"])
 	}
 	{
-		path := validation.Join(p, "AllowAllAppsAccess")
+		fieldPath := validation.Join(path, "AllowAllAppsAccess")
 		present := x.AllowAllAppsAccess != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificatePKCS12.AllowAllAppsAccess"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowAllAppsAccess"])
 	}
 	{
-		path := validation.Join(p, "KeyIsExtractable")
+		fieldPath := validation.Join(path, "KeyIsExtractable")
 		present := x.KeyIsExtractable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificatePKCS12.KeyIsExtractable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".KeyIsExtractable"])
 	}
 }
 
@@ -10287,28 +10287,28 @@ func (x *CertificatePKCS12) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *CertificateRoot) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "CertificateRoot")
 	return c.Err()
 }
 
-func (x *CertificateRoot) validate(c *validation.Collector, p string) {
+func (x *CertificateRoot) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["CertificateRoot"])
+	c.Support(path, true, supportTable["CertificateRoot"])
 	{
-		path := validation.Join(p, "PayloadCertificateFileName")
+		fieldPath := validation.Join(path, "PayloadCertificateFileName")
 		present := x.PayloadCertificateFileName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificateRoot.PayloadCertificateFileName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateFileName"])
 	}
 	{
-		path := validation.Join(p, "PayloadContent")
+		fieldPath := validation.Join(path, "PayloadContent")
 		present := len(x.PayloadContent) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["CertificateRoot.PayloadContent"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadContent"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -10316,148 +10316,148 @@ func (x *CertificateRoot) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *SCEP) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SCEP")
 	return c.Err()
 }
 
-func (x *SCEP) validate(c *validation.Collector, p string) {
+func (x *SCEP) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SCEP"])
+	c.Support(path, true, supportTable["SCEP"])
 	{
-		path := validation.Join(p, "PayloadContent")
+		fieldPath := validation.Join(path, "PayloadContent")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadContent"])
+		c.Required(fieldPath, present)
 		if present {
-			x.PayloadContent.validate(c, path)
+			x.PayloadContent.validate(c, fieldPath, supportPath+".PayloadContent")
 		}
 	}
 }
 
-func (x *SCEPPayloadContent) validate(c *validation.Collector, p string) {
+func (x *SCEPPayloadContent) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "URL")
+		fieldPath := validation.Join(path, "URL")
 		present := x.URL != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent.URL"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".URL"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Name")
+		fieldPath := validation.Join(path, "Name")
 		present := x.Name != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent.Name"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Name"])
 	}
 	{
-		path := validation.Join(p, "Subject")
+		fieldPath := validation.Join(path, "Subject")
 		present := len(x.Subject) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent.Subject"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Subject"])
 	}
 	{
-		path := validation.Join(p, "Challenge")
+		fieldPath := validation.Join(path, "Challenge")
 		present := x.Challenge != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent.Challenge"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Challenge"])
 	}
 	{
-		path := validation.Join(p, "Keysize")
+		fieldPath := validation.Join(path, "Keysize")
 		present := x.Keysize != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent.Keysize"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Keysize"])
 		if present {
-			c.Enum(path, true, *x.Keysize, []any{int64(1024), int64(2048), int64(4096)})
+			c.Enum(fieldPath, true, *x.Keysize, []any{int64(1024), int64(2048), int64(4096)})
 		}
 	}
 	{
-		path := validation.Join(p, "Key Type")
+		fieldPath := validation.Join(path, "Key Type")
 		present := x.KeyType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent.Key Type"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Key Type"])
 	}
 	{
-		path := validation.Join(p, "Key Usage")
+		fieldPath := validation.Join(path, "Key Usage")
 		present := x.KeyUsage != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent.Key Usage"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Key Usage"])
 	}
 	{
-		path := validation.Join(p, "CAFingerprint")
+		fieldPath := validation.Join(path, "CAFingerprint")
 		present := len(x.CAFingerprint) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent.CAFingerprint"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CAFingerprint"])
 	}
 	{
-		path := validation.Join(p, "Retries")
+		fieldPath := validation.Join(path, "Retries")
 		present := x.Retries != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent.Retries"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Retries"])
 	}
 	{
-		path := validation.Join(p, "RetryDelay")
+		fieldPath := validation.Join(path, "RetryDelay")
 		present := x.RetryDelay != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent.RetryDelay"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RetryDelay"])
 	}
 	{
-		path := validation.Join(p, "SubjectAltName")
+		fieldPath := validation.Join(path, "SubjectAltName")
 		present := x.SubjectAltName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent.SubjectAltName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SubjectAltName"])
 		if present {
-			x.SubjectAltName.validate(c, path)
+			x.SubjectAltName.validate(c, fieldPath, supportPath+".SubjectAltName")
 		}
 	}
 	{
-		path := validation.Join(p, "KeyIsExtractable")
+		fieldPath := validation.Join(path, "KeyIsExtractable")
 		present := x.KeyIsExtractable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent.KeyIsExtractable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".KeyIsExtractable"])
 	}
 	{
-		path := validation.Join(p, "AllowAllAppsAccess")
+		fieldPath := validation.Join(path, "AllowAllAppsAccess")
 		present := x.AllowAllAppsAccess != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent.AllowAllAppsAccess"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowAllAppsAccess"])
 	}
 }
 
-func (x *SCEPPayloadContentSubjectAltName) validate(c *validation.Collector, p string) {
+func (x *SCEPPayloadContentSubjectAltName) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "rfc822Name")
+		fieldPath := validation.Join(path, "rfc822Name")
 		present := x.Rfc822Name != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent.SubjectAltName.rfc822Name"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".rfc822Name"])
 	}
 	{
-		path := validation.Join(p, "dNSName")
+		fieldPath := validation.Join(path, "dNSName")
 		present := x.DNSName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent.SubjectAltName.dNSName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".dNSName"])
 	}
 	{
-		path := validation.Join(p, "uniformResourceIdentifier")
+		fieldPath := validation.Join(path, "uniformResourceIdentifier")
 		present := x.UniformResourceIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent.SubjectAltName.uniformResourceIdentifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".uniformResourceIdentifier"])
 	}
 	{
-		path := validation.Join(p, "ntPrincipalName")
+		fieldPath := validation.Join(path, "ntPrincipalName")
 		present := x.NtPrincipalName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SCEP.PayloadContent.SubjectAltName.ntPrincipalName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ntPrincipalName"])
 	}
 }
 
@@ -10465,57 +10465,57 @@ func (x *SCEPPayloadContentSubjectAltName) validate(c *validation.Collector, p s
 // that every present key is supported on that OS version and enrollment context.
 func (x *SmartCard) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SmartCard")
 	return c.Err()
 }
 
-func (x *SmartCard) validate(c *validation.Collector, p string) {
+func (x *SmartCard) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SmartCard"])
+	c.Support(path, true, supportTable["SmartCard"])
 	{
-		path := validation.Join(p, "UserPairing")
+		fieldPath := validation.Join(path, "UserPairing")
 		present := x.UserPairing != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SmartCard.UserPairing"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserPairing"])
 	}
 	{
-		path := validation.Join(p, "allowSmartCard")
+		fieldPath := validation.Join(path, "allowSmartCard")
 		present := x.AllowSmartCard != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SmartCard.allowSmartCard"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".allowSmartCard"])
 	}
 	{
-		path := validation.Join(p, "checkCertificateTrust")
+		fieldPath := validation.Join(path, "checkCertificateTrust")
 		present := x.CheckCertificateTrust != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SmartCard.checkCertificateTrust"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".checkCertificateTrust"])
 		if present {
-			c.Enum(path, true, *x.CheckCertificateTrust, []any{int64(0), int64(1), int64(2), int64(3)})
+			c.Enum(fieldPath, true, *x.CheckCertificateTrust, []any{int64(0), int64(1), int64(2), int64(3)})
 		}
 	}
 	{
-		path := validation.Join(p, "oneCardPerUser")
+		fieldPath := validation.Join(path, "oneCardPerUser")
 		present := x.OneCardPerUser != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SmartCard.oneCardPerUser"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".oneCardPerUser"])
 	}
 	{
-		path := validation.Join(p, "tokenRemovalAction")
+		fieldPath := validation.Join(path, "tokenRemovalAction")
 		present := x.TokenRemovalAction != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SmartCard.tokenRemovalAction"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".tokenRemovalAction"])
 		if present {
-			c.Enum(path, true, *x.TokenRemovalAction, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.TokenRemovalAction, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "enforceSmartCard")
+		fieldPath := validation.Join(path, "enforceSmartCard")
 		present := x.EnforceSmartCard != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SmartCard.enforceSmartCard"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".enforceSmartCard"])
 	}
 }
 
@@ -10523,61 +10523,61 @@ func (x *SmartCard) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ServiceManagementManagedLoginItems) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ServiceManagementManagedLoginItems")
 	return c.Err()
 }
 
-func (x *ServiceManagementManagedLoginItems) validate(c *validation.Collector, p string) {
+func (x *ServiceManagementManagedLoginItems) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ServiceManagementManagedLoginItems"])
+	c.Support(path, true, supportTable["ServiceManagementManagedLoginItems"])
 	{
-		path := validation.Join(p, "Rules")
+		fieldPath := validation.Join(path, "Rules")
 		present := len(x.Rules) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServiceManagementManagedLoginItems.Rules"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Rules"])
+		c.Required(fieldPath, present)
 		for i := range x.Rules {
-			x.Rules[i].validate(c, validation.Index(path, i))
+			x.Rules[i].validate(c, validation.Index(fieldPath, i), supportPath+".Rules.Rule")
 		}
 	}
 }
 
-func (x *ServiceManagementManagedLoginItemsRules) validate(c *validation.Collector, p string) {
+func (x *ServiceManagementManagedLoginItemsRules) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "RuleType")
+		fieldPath := validation.Join(path, "RuleType")
 		present := x.RuleType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServiceManagementManagedLoginItems.Rules.Rule.RuleType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RuleType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.RuleType, []any{"BundleIdentifier", "BundleIdentifierPrefix", "Label", "LabelPrefix", "TeamIdentifier"})
+			c.Enum(fieldPath, true, x.RuleType, []any{"BundleIdentifier", "BundleIdentifierPrefix", "Label", "LabelPrefix", "TeamIdentifier"})
 		}
 	}
 	{
-		path := validation.Join(p, "RuleValue")
+		fieldPath := validation.Join(path, "RuleValue")
 		present := x.RuleValue != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServiceManagementManagedLoginItems.Rules.Rule.RuleValue"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RuleValue"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Comment")
+		fieldPath := validation.Join(path, "Comment")
 		present := x.Comment != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServiceManagementManagedLoginItems.Rules.Rule.Comment"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Comment"])
 	}
 	{
-		path := validation.Join(p, "TeamIdentifier")
+		fieldPath := validation.Join(path, "TeamIdentifier")
 		present := x.TeamIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ServiceManagementManagedLoginItems.Rules.Rule.TeamIdentifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TeamIdentifier"])
 	}
 }
 
@@ -10585,33 +10585,33 @@ func (x *ServiceManagementManagedLoginItemsRules) validate(c *validation.Collect
 // that every present key is supported on that OS version and enrollment context.
 func (x *LockScreenMessage) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "LockScreenMessage")
 	return c.Err()
 }
 
-func (x *LockScreenMessage) validate(c *validation.Collector, p string) {
+func (x *LockScreenMessage) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["LockScreenMessage"])
+	c.Support(path, true, supportTable["LockScreenMessage"])
 	{
-		path := validation.Join(p, "AssetTagInformation")
+		fieldPath := validation.Join(path, "AssetTagInformation")
 		present := x.AssetTagInformation != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LockScreenMessage.AssetTagInformation"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AssetTagInformation"])
 	}
 	{
-		path := validation.Join(p, "IfLostReturnToMessage")
+		fieldPath := validation.Join(path, "IfLostReturnToMessage")
 		present := x.IfLostReturnToMessage != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LockScreenMessage.IfLostReturnToMessage"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IfLostReturnToMessage"])
 	}
 	{
-		path := validation.Join(p, "LockScreenFootnote")
+		fieldPath := validation.Join(path, "LockScreenFootnote")
 		present := x.LockScreenFootnote != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LockScreenMessage.LockScreenFootnote"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LockScreenFootnote"])
 	}
 }
 
@@ -10619,69 +10619,69 @@ func (x *LockScreenMessage) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *SingleSignOn) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SingleSignOn")
 	return c.Err()
 }
 
-func (x *SingleSignOn) validate(c *validation.Collector, p string) {
+func (x *SingleSignOn) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SingleSignOn"])
+	c.Support(path, true, supportTable["SingleSignOn"])
 	{
-		path := validation.Join(p, "Name")
+		fieldPath := validation.Join(path, "Name")
 		present := x.Name != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["SingleSignOn.Name"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Name"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Kerberos")
+		fieldPath := validation.Join(path, "Kerberos")
 		present := x.Kerberos != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SingleSignOn.Kerberos"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Kerberos"])
 		if present {
-			x.Kerberos.validate(c, path)
+			x.Kerberos.validate(c, fieldPath, supportPath+".Kerberos")
 		}
 	}
 }
 
-func (x *SingleSignOnKerberos) validate(c *validation.Collector, p string) {
+func (x *SingleSignOnKerberos) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "PrincipalName")
+		fieldPath := validation.Join(path, "PrincipalName")
 		present := x.PrincipalName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SingleSignOn.Kerberos.PrincipalName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PrincipalName"])
 	}
 	{
-		path := validation.Join(p, "PayloadCertificateUUID")
+		fieldPath := validation.Join(path, "PayloadCertificateUUID")
 		present := x.PayloadCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SingleSignOn.Kerberos.PayloadCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateUUID"])
 	}
 	{
-		path := validation.Join(p, "Realm")
+		fieldPath := validation.Join(path, "Realm")
 		present := x.Realm != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["SingleSignOn.Kerberos.Realm"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Realm"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "URLPrefixMatches")
+		fieldPath := validation.Join(path, "URLPrefixMatches")
 		present := len(x.URLPrefixMatches) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SingleSignOn.Kerberos.URLPrefixMatches"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".URLPrefixMatches"])
 	}
 	{
-		path := validation.Join(p, "AppIdentifierMatches")
+		fieldPath := validation.Join(path, "AppIdentifierMatches")
 		present := len(x.AppIdentifierMatches) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SingleSignOn.Kerberos.AppIdentifierMatches"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AppIdentifierMatches"])
 	}
 }
 
@@ -10689,52 +10689,52 @@ func (x *SingleSignOnKerberos) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *SubscribedCalendars) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SubscribedCalendars")
 	return c.Err()
 }
 
-func (x *SubscribedCalendars) validate(c *validation.Collector, p string) {
+func (x *SubscribedCalendars) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SubscribedCalendars"])
+	c.Support(path, true, supportTable["SubscribedCalendars"])
 	{
-		path := validation.Join(p, "SubCalAccountDescription")
+		fieldPath := validation.Join(path, "SubCalAccountDescription")
 		present := x.SubCalAccountDescription != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SubscribedCalendars.SubCalAccountDescription"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SubCalAccountDescription"])
 	}
 	{
-		path := validation.Join(p, "SubCalAccountHostName")
+		fieldPath := validation.Join(path, "SubCalAccountHostName")
 		present := x.SubCalAccountHostName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["SubscribedCalendars.SubCalAccountHostName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SubCalAccountHostName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "SubCalAccountUsername")
+		fieldPath := validation.Join(path, "SubCalAccountUsername")
 		present := x.SubCalAccountUsername != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SubscribedCalendars.SubCalAccountUsername"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SubCalAccountUsername"])
 	}
 	{
-		path := validation.Join(p, "SubCalAccountPassword")
+		fieldPath := validation.Join(path, "SubCalAccountPassword")
 		present := x.SubCalAccountPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SubscribedCalendars.SubCalAccountPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SubCalAccountPassword"])
 	}
 	{
-		path := validation.Join(p, "SubCalAccountUseSSL")
+		fieldPath := validation.Join(path, "SubCalAccountUseSSL")
 		present := x.SubCalAccountUseSSL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SubscribedCalendars.SubCalAccountUseSSL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SubCalAccountUseSSL"])
 	}
 	{
-		path := validation.Join(p, "VPNUUID")
+		fieldPath := validation.Join(path, "VPNUUID")
 		present := x.VPNUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SubscribedCalendars.VPNUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VPNUUID"])
 	}
 }
 
@@ -10742,39 +10742,39 @@ func (x *SubscribedCalendars) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *SystemPolicyKernelExtensions) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SystemPolicyKernelExtensions")
 	return c.Err()
 }
 
-func (x *SystemPolicyKernelExtensions) validate(c *validation.Collector, p string) {
+func (x *SystemPolicyKernelExtensions) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SystemPolicyKernelExtensions"])
+	c.Support(path, true, supportTable["SystemPolicyKernelExtensions"])
 	{
-		path := validation.Join(p, "AllowNonAdminUserApprovals")
+		fieldPath := validation.Join(path, "AllowNonAdminUserApprovals")
 		present := x.AllowNonAdminUserApprovals != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemPolicyKernelExtensions.AllowNonAdminUserApprovals"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowNonAdminUserApprovals"])
 	}
 	{
-		path := validation.Join(p, "AllowUserOverrides")
+		fieldPath := validation.Join(path, "AllowUserOverrides")
 		present := x.AllowUserOverrides != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemPolicyKernelExtensions.AllowUserOverrides"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowUserOverrides"])
 	}
 	{
-		path := validation.Join(p, "AllowedTeamIdentifiers")
+		fieldPath := validation.Join(path, "AllowedTeamIdentifiers")
 		present := len(x.AllowedTeamIdentifiers) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemPolicyKernelExtensions.AllowedTeamIdentifiers"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowedTeamIdentifiers"])
 	}
 	{
-		path := validation.Join(p, "AllowedKernelExtensions")
+		fieldPath := validation.Join(path, "AllowedKernelExtensions")
 		present := len(x.AllowedKernelExtensions) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemPolicyKernelExtensions.AllowedKernelExtensions"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowedKernelExtensions"])
 	}
 }
 
@@ -10782,57 +10782,57 @@ func (x *SystemPolicyKernelExtensions) validate(c *validation.Collector, p strin
 // that every present key is supported on that OS version and enrollment context.
 func (x *SystemExtensions) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SystemExtensions")
 	return c.Err()
 }
 
-func (x *SystemExtensions) validate(c *validation.Collector, p string) {
+func (x *SystemExtensions) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SystemExtensions"])
+	c.Support(path, true, supportTable["SystemExtensions"])
 	{
-		path := validation.Join(p, "AllowUserOverrides")
+		fieldPath := validation.Join(path, "AllowUserOverrides")
 		present := x.AllowUserOverrides != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemExtensions.AllowUserOverrides"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowUserOverrides"])
 	}
 	{
-		path := validation.Join(p, "AllowedTeamIdentifiers")
+		fieldPath := validation.Join(path, "AllowedTeamIdentifiers")
 		present := len(x.AllowedTeamIdentifiers) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemExtensions.AllowedTeamIdentifiers"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowedTeamIdentifiers"])
 	}
 	{
-		path := validation.Join(p, "AllowedSystemExtensionTypes")
+		fieldPath := validation.Join(path, "AllowedSystemExtensionTypes")
 		present := len(x.AllowedSystemExtensionTypes) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemExtensions.AllowedSystemExtensionTypes"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowedSystemExtensionTypes"])
 	}
 	{
-		path := validation.Join(p, "AllowedSystemExtensions")
+		fieldPath := validation.Join(path, "AllowedSystemExtensions")
 		present := len(x.AllowedSystemExtensions) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemExtensions.AllowedSystemExtensions"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowedSystemExtensions"])
 	}
 	{
-		path := validation.Join(p, "RemovableSystemExtensions")
+		fieldPath := validation.Join(path, "RemovableSystemExtensions")
 		present := len(x.RemovableSystemExtensions) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemExtensions.RemovableSystemExtensions"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RemovableSystemExtensions"])
 	}
 	{
-		path := validation.Join(p, "NonRemovableSystemExtensions")
+		fieldPath := validation.Join(path, "NonRemovableSystemExtensions")
 		present := len(x.NonRemovableSystemExtensions) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemExtensions.NonRemovableSystemExtensions"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".NonRemovableSystemExtensions"])
 	}
 	{
-		path := validation.Join(p, "NonRemovableFromUISystemExtensions")
+		fieldPath := validation.Join(path, "NonRemovableFromUISystemExtensions")
 		present := len(x.NonRemovableFromUISystemExtensions) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemExtensions.NonRemovableFromUISystemExtensions"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".NonRemovableFromUISystemExtensions"])
 	}
 }
 
@@ -10840,33 +10840,33 @@ func (x *SystemExtensions) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *SystemLogging) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SystemLogging")
 	return c.Err()
 }
 
-func (x *SystemLogging) validate(c *validation.Collector, p string) {
+func (x *SystemLogging) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SystemLogging"])
+	c.Support(path, true, supportTable["SystemLogging"])
 	{
-		path := validation.Join(p, "Processes")
+		fieldPath := validation.Join(path, "Processes")
 		present := len(x.Processes) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemLogging.Processes"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Processes"])
 	}
 	{
-		path := validation.Join(p, "Subsystems")
+		fieldPath := validation.Join(path, "Subsystems")
 		present := len(x.Subsystems) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemLogging.Subsystems"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Subsystems"])
 	}
 	{
-		path := validation.Join(p, "System")
+		fieldPath := validation.Join(path, "System")
 		present := len(x.System) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemLogging.System"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".System"])
 	}
 }
 
@@ -10874,83 +10874,83 @@ func (x *SystemLogging) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *SystemMigration) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SystemMigration")
 	return c.Err()
 }
 
-func (x *SystemMigration) validate(c *validation.Collector, p string) {
+func (x *SystemMigration) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SystemMigration"])
+	c.Support(path, true, supportTable["SystemMigration"])
 	{
-		path := validation.Join(p, "CustomBehavior")
+		fieldPath := validation.Join(path, "CustomBehavior")
 		present := len(x.CustomBehavior) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemMigration.CustomBehavior"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CustomBehavior"])
 		for i := range x.CustomBehavior {
-			x.CustomBehavior[i].validate(c, validation.Index(path, i))
+			x.CustomBehavior[i].validate(c, validation.Index(fieldPath, i), supportPath+".CustomBehavior.CustomBehaviorItem")
 		}
 	}
 }
 
-func (x *SystemMigrationCustomBehavior) validate(c *validation.Collector, p string) {
+func (x *SystemMigrationCustomBehavior) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Context")
+		fieldPath := validation.Join(path, "Context")
 		present := x.Context != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemMigration.CustomBehavior.CustomBehaviorItem.Context"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Context"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Paths")
+		fieldPath := validation.Join(path, "Paths")
 		present := len(x.Paths) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemMigration.CustomBehavior.CustomBehaviorItem.Paths"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Paths"])
+		c.Required(fieldPath, present)
 		for i := range x.Paths {
-			x.Paths[i].validate(c, validation.Index(path, i))
+			x.Paths[i].validate(c, validation.Index(fieldPath, i), supportPath+".Paths.PathsItem")
 		}
 	}
 }
 
-func (x *SystemMigrationCustomBehaviorPaths) validate(c *validation.Collector, p string) {
+func (x *SystemMigrationCustomBehaviorPaths) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "SourcePath")
+		fieldPath := validation.Join(path, "SourcePath")
 		present := x.SourcePath != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemMigration.CustomBehavior.CustomBehaviorItem.Paths.PathsItem.SourcePath"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SourcePath"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "SourcePathInUserHome")
+		fieldPath := validation.Join(path, "SourcePathInUserHome")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemMigration.CustomBehavior.CustomBehaviorItem.Paths.PathsItem.SourcePathInUserHome"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SourcePathInUserHome"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "TargetPath")
+		fieldPath := validation.Join(path, "TargetPath")
 		present := x.TargetPath != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemMigration.CustomBehavior.CustomBehaviorItem.Paths.PathsItem.TargetPath"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TargetPath"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "TargetPathInUserHome")
+		fieldPath := validation.Join(path, "TargetPathInUserHome")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemMigration.CustomBehavior.CustomBehaviorItem.Paths.PathsItem.TargetPathInUserHome"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TargetPathInUserHome"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -10958,33 +10958,33 @@ func (x *SystemMigrationCustomBehaviorPaths) validate(c *validation.Collector, p
 // that every present key is supported on that OS version and enrollment context.
 func (x *SystemPolicyControl) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SystemPolicyControl")
 	return c.Err()
 }
 
-func (x *SystemPolicyControl) validate(c *validation.Collector, p string) {
+func (x *SystemPolicyControl) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SystemPolicyControl"])
+	c.Support(path, true, supportTable["SystemPolicyControl"])
 	{
-		path := validation.Join(p, "EnableAssessment")
+		fieldPath := validation.Join(path, "EnableAssessment")
 		present := x.EnableAssessment != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemPolicyControl.EnableAssessment"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableAssessment"])
 	}
 	{
-		path := validation.Join(p, "AllowIdentifiedDevelopers")
+		fieldPath := validation.Join(path, "AllowIdentifiedDevelopers")
 		present := x.AllowIdentifiedDevelopers != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemPolicyControl.AllowIdentifiedDevelopers"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowIdentifiedDevelopers"])
 	}
 	{
-		path := validation.Join(p, "EnableXProtectMalwareUpload")
+		fieldPath := validation.Join(path, "EnableXProtectMalwareUpload")
 		present := x.EnableXProtectMalwareUpload != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemPolicyControl.EnableXProtectMalwareUpload"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableXProtectMalwareUpload"])
 	}
 }
 
@@ -10992,21 +10992,21 @@ func (x *SystemPolicyControl) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *SystemPolicyManaged) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SystemPolicyManaged")
 	return c.Err()
 }
 
-func (x *SystemPolicyManaged) validate(c *validation.Collector, p string) {
+func (x *SystemPolicyManaged) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SystemPolicyManaged"])
+	c.Support(path, true, supportTable["SystemPolicyManaged"])
 	{
-		path := validation.Join(p, "DisableOverride")
+		fieldPath := validation.Join(path, "DisableOverride")
 		present := x.DisableOverride != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemPolicyManaged.DisableOverride"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisableOverride"])
 	}
 }
 
@@ -11014,54 +11014,54 @@ func (x *SystemPolicyManaged) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *SystemPolicyRule) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SystemPolicyRule")
 	return c.Err()
 }
 
-func (x *SystemPolicyRule) validate(c *validation.Collector, p string) {
+func (x *SystemPolicyRule) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SystemPolicyRule"])
+	c.Support(path, true, supportTable["SystemPolicyRule"])
 	{
-		path := validation.Join(p, "Requirement")
+		fieldPath := validation.Join(path, "Requirement")
 		present := x.Requirement != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemPolicyRule.Requirement"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Requirement"])
 	}
 	{
-		path := validation.Join(p, "Comment")
+		fieldPath := validation.Join(path, "Comment")
 		present := x.Comment != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemPolicyRule.Comment"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Comment"])
 	}
 	{
-		path := validation.Join(p, "Priority")
+		fieldPath := validation.Join(path, "Priority")
 		present := x.Priority != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemPolicyRule.Priority"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Priority"])
 	}
 	{
-		path := validation.Join(p, "Expiration")
+		fieldPath := validation.Join(path, "Expiration")
 		present := x.Expiration != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemPolicyRule.Expiration"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Expiration"])
 	}
 	{
-		path := validation.Join(p, "OperationType")
+		fieldPath := validation.Join(path, "OperationType")
 		present := x.OperationType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemPolicyRule.OperationType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OperationType"])
 		if present {
-			c.Enum(path, true, *x.OperationType, []any{"operation:execute", "operation:install", "operation:lsopen"})
+			c.Enum(fieldPath, true, *x.OperationType, []any{"operation:execute", "operation:install", "operation:lsopen"})
 		}
 	}
 	{
-		path := validation.Join(p, "LeafCertificate")
+		fieldPath := validation.Join(path, "LeafCertificate")
 		present := len(x.LeafCertificate) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemPolicyRule.LeafCertificate"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LeafCertificate"])
 	}
 }
 
@@ -11069,44 +11069,44 @@ func (x *SystemPolicyRule) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *SystemPreferences) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SystemPreferences")
 	return c.Err()
 }
 
-func (x *SystemPreferences) validate(c *validation.Collector, p string) {
+func (x *SystemPreferences) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SystemPreferences"])
+	c.Support(path, true, supportTable["SystemPreferences"])
 	{
-		path := validation.Join(p, "EnabledPreferencePanes")
+		fieldPath := validation.Join(path, "EnabledPreferencePanes")
 		present := len(x.EnabledPreferencePanes) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemPreferences.EnabledPreferencePanes"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnabledPreferencePanes"])
 		for i, v := range x.EnabledPreferencePanes {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"com.apple.ClassroomSettings", "com.apple.Localization", "com.apple.preference.datetime", "com.apple.preference.desktopscreeneffect", "com.apple.preference.digihub.discs", "com.apple.preference.displays", "com.apple.preference.dock", "com.apple.preference.energysaver", "com.apple.preference.expose", "com.apple.preference.general", "com.apple.preference.ink", "com.apple.preference.keyboard", "com.apple.preference.mouse", "com.apple.preference.network", "com.apple.preference.notifications", "com.apple.preference.printfax", "com.apple.preference.screentime", "com.apple.preference.security", "com.apple.preference.sidecar", "com.apple.preference.sound", "com.apple.preference.speech", "com.apple.preference.spotlight", "com.apple.preference.startupdisk", "com.apple.preference.trackpad", "com.apple.preference.universalaccess", "com.apple.preferences.AppleIDPrefPane", "com.apple.preferences.appstore", "com.apple.preferences.Bluetooth", "com.apple.preferences.configurationprofiles", "com.apple.preferences.extensions", "com.apple.preferences.FamilySharingPrefPane", "com.apple.preferences.icloud", "com.apple.preferences.internetaccounts", "com.apple.preferences.parentalcontrols", "com.apple.preferences.password", "com.apple.preferences.sharing", "com.apple.preferences.softwareupdate", "com.apple.preferences.users", "com.apple.preferences.wallet", "com.apple.prefpanel.fibrechannel", "com.apple.prefs.backup", "com.apple.Xsan"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"com.apple.ClassroomSettings", "com.apple.Localization", "com.apple.preference.datetime", "com.apple.preference.desktopscreeneffect", "com.apple.preference.digihub.discs", "com.apple.preference.displays", "com.apple.preference.dock", "com.apple.preference.energysaver", "com.apple.preference.expose", "com.apple.preference.general", "com.apple.preference.ink", "com.apple.preference.keyboard", "com.apple.preference.mouse", "com.apple.preference.network", "com.apple.preference.notifications", "com.apple.preference.printfax", "com.apple.preference.screentime", "com.apple.preference.security", "com.apple.preference.sidecar", "com.apple.preference.sound", "com.apple.preference.speech", "com.apple.preference.spotlight", "com.apple.preference.startupdisk", "com.apple.preference.trackpad", "com.apple.preference.universalaccess", "com.apple.preferences.AppleIDPrefPane", "com.apple.preferences.appstore", "com.apple.preferences.Bluetooth", "com.apple.preferences.configurationprofiles", "com.apple.preferences.extensions", "com.apple.preferences.FamilySharingPrefPane", "com.apple.preferences.icloud", "com.apple.preferences.internetaccounts", "com.apple.preferences.parentalcontrols", "com.apple.preferences.password", "com.apple.preferences.sharing", "com.apple.preferences.softwareupdate", "com.apple.preferences.users", "com.apple.preferences.wallet", "com.apple.prefpanel.fibrechannel", "com.apple.prefs.backup", "com.apple.Xsan"})
 		}
 	}
 	{
-		path := validation.Join(p, "DisabledPreferencePanes")
+		fieldPath := validation.Join(path, "DisabledPreferencePanes")
 		present := len(x.DisabledPreferencePanes) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemPreferences.DisabledPreferencePanes"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisabledPreferencePanes"])
 		for i, v := range x.DisabledPreferencePanes {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"com.apple.ClassroomSettings", "com.apple.Localization", "com.apple.preference.datetime", "com.apple.preference.desktopscreeneffect", "com.apple.preference.digihub.discs", "com.apple.preference.displays", "com.apple.preference.dock", "com.apple.preference.energysaver", "com.apple.preference.expose", "com.apple.preference.general", "com.apple.preference.ink", "com.apple.preference.keyboard", "com.apple.preference.mouse", "com.apple.preference.network", "com.apple.preference.notifications", "com.apple.preference.printfax", "com.apple.preference.screentime", "com.apple.preference.security", "com.apple.preference.sidecar", "com.apple.preference.sound", "com.apple.preference.speech", "com.apple.preference.spotlight", "com.apple.preference.startupdisk", "com.apple.preference.trackpad", "com.apple.preference.universalaccess", "com.apple.preferences.AppleIDPrefPane", "com.apple.preferences.appstore", "com.apple.preferences.Bluetooth", "com.apple.preferences.configurationprofiles", "com.apple.preferences.extensions", "com.apple.preferences.FamilySharingPrefPane", "com.apple.preferences.icloud", "com.apple.preferences.internetaccounts", "com.apple.preferences.parentalcontrols", "com.apple.preferences.password", "com.apple.preferences.sharing", "com.apple.preferences.softwareupdate", "com.apple.preferences.users", "com.apple.preferences.wallet", "com.apple.prefpanel.fibrechannel", "com.apple.prefs.backup", "com.apple.Xsan"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"com.apple.ClassroomSettings", "com.apple.Localization", "com.apple.preference.datetime", "com.apple.preference.desktopscreeneffect", "com.apple.preference.digihub.discs", "com.apple.preference.displays", "com.apple.preference.dock", "com.apple.preference.energysaver", "com.apple.preference.expose", "com.apple.preference.general", "com.apple.preference.ink", "com.apple.preference.keyboard", "com.apple.preference.mouse", "com.apple.preference.network", "com.apple.preference.notifications", "com.apple.preference.printfax", "com.apple.preference.screentime", "com.apple.preference.security", "com.apple.preference.sidecar", "com.apple.preference.sound", "com.apple.preference.speech", "com.apple.preference.spotlight", "com.apple.preference.startupdisk", "com.apple.preference.trackpad", "com.apple.preference.universalaccess", "com.apple.preferences.AppleIDPrefPane", "com.apple.preferences.appstore", "com.apple.preferences.Bluetooth", "com.apple.preferences.configurationprofiles", "com.apple.preferences.extensions", "com.apple.preferences.FamilySharingPrefPane", "com.apple.preferences.icloud", "com.apple.preferences.internetaccounts", "com.apple.preferences.parentalcontrols", "com.apple.preferences.password", "com.apple.preferences.sharing", "com.apple.preferences.softwareupdate", "com.apple.preferences.users", "com.apple.preferences.wallet", "com.apple.prefpanel.fibrechannel", "com.apple.prefs.backup", "com.apple.Xsan"})
 		}
 	}
 	{
-		path := validation.Join(p, "DisabledSystemSettings")
+		fieldPath := validation.Join(path, "DisabledSystemSettings")
 		present := len(x.DisabledSystemSettings) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SystemPreferences.DisabledSystemSettings"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisabledSystemSettings"])
 		for i, v := range x.DisabledSystemSettings {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"com.apple.Accessibility-Settings.extension", "com.apple.AirDrop-Handoff-Settings.extension", "com.apple.Battery-Settings.extension", "com.apple.BluetoothSettings", "com.apple.CD-DVD-Settings.extension", "com.apple.ClassKit-Settings.extension", "com.apple.Classroom-Settings.extension", "com.apple.ControlCenter-Settings.extension", "com.apple.Date-Time-Settings.extension", "com.apple.Desktop-Settings.extension", "com.apple.Displays-Settings.extension", "com.apple.ExtensionsPreferences", "com.apple.Family-Settings.extension", "com.apple.Focus-Settings.extension", "com.apple.Game-Center-Settings.extension", "com.apple.Game-Controller-Settings.extension", "com.apple.HeadphoneSettings", "com.apple.Internet-Accounts-Settings.extension", "com.apple.Keyboard-Settings.extension", "com.apple.Localization-Settings.extension", "com.apple.Lock-Screen-Settings.extension", "com.apple.LoginItems-Settings.extension", "com.apple.Mouse-Settings.extension", "com.apple.Network-Settings.extension", "com.apple.NetworkExtensionSettingsUI.NESettingsUIExtension", "com.apple.Notifications-Settings.extension", "com.apple.Passwords-Settings.extension", "com.apple.Print-Scan-Settings.extension", "com.apple.Screen-Time-Settings.extension", "com.apple.ScreenSaver-Settings.extension", "com.apple.Sharing-Settings.extension", "com.apple.Siri-Settings.extension", "com.apple.Software-Update-Settings.extension", "com.apple.Sound-Settings.extension", "com.apple.Startup-Disk-Settings.extension", "com.apple.Time-Machine-Settings.extension", "com.apple.Touch-ID-Settings.extension", "com.apple.Trackpad-Settings.extension", "com.apple.Transfer-Reset-Settings.extension", "com.apple.Users-Groups-Settings.extension", "com.apple.WalletSettingsExtension", "com.apple.Wallpaper-Settings.extension", "com.apple.settings.Storage", "com.apple.systempreferences.AppleIDSettings", "com.apple.wifi-settings-extension"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"com.apple.Accessibility-Settings.extension", "com.apple.AirDrop-Handoff-Settings.extension", "com.apple.Battery-Settings.extension", "com.apple.BluetoothSettings", "com.apple.CD-DVD-Settings.extension", "com.apple.ClassKit-Settings.extension", "com.apple.Classroom-Settings.extension", "com.apple.ControlCenter-Settings.extension", "com.apple.Date-Time-Settings.extension", "com.apple.Desktop-Settings.extension", "com.apple.Displays-Settings.extension", "com.apple.ExtensionsPreferences", "com.apple.Family-Settings.extension", "com.apple.Focus-Settings.extension", "com.apple.Game-Center-Settings.extension", "com.apple.Game-Controller-Settings.extension", "com.apple.HeadphoneSettings", "com.apple.Internet-Accounts-Settings.extension", "com.apple.Keyboard-Settings.extension", "com.apple.Localization-Settings.extension", "com.apple.Lock-Screen-Settings.extension", "com.apple.LoginItems-Settings.extension", "com.apple.Mouse-Settings.extension", "com.apple.Network-Settings.extension", "com.apple.NetworkExtensionSettingsUI.NESettingsUIExtension", "com.apple.Notifications-Settings.extension", "com.apple.Passwords-Settings.extension", "com.apple.Print-Scan-Settings.extension", "com.apple.Screen-Time-Settings.extension", "com.apple.ScreenSaver-Settings.extension", "com.apple.Sharing-Settings.extension", "com.apple.Siri-Settings.extension", "com.apple.Software-Update-Settings.extension", "com.apple.Sound-Settings.extension", "com.apple.Startup-Disk-Settings.extension", "com.apple.Time-Machine-Settings.extension", "com.apple.Touch-ID-Settings.extension", "com.apple.Trackpad-Settings.extension", "com.apple.Transfer-Reset-Settings.extension", "com.apple.Users-Groups-Settings.extension", "com.apple.WalletSettingsExtension", "com.apple.Wallpaper-Settings.extension", "com.apple.settings.Storage", "com.apple.systempreferences.AppleIDSettings", "com.apple.wifi-settings-extension"})
 		}
 	}
 }
@@ -11115,164 +11115,164 @@ func (x *SystemPreferences) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *MediaManagementAllowedMedia) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "MediaManagementAllowedMedia")
 	return c.Err()
 }
 
-func (x *MediaManagementAllowedMedia) validate(c *validation.Collector, p string) {
+func (x *MediaManagementAllowedMedia) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["MediaManagementAllowedMedia"])
+	c.Support(path, true, supportTable["MediaManagementAllowedMedia"])
 	{
-		path := validation.Join(p, "logout-eject")
+		fieldPath := validation.Join(path, "logout-eject")
 		present := x.LogoutEject != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MediaManagementAllowedMedia.logout-eject"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".logout-eject"])
 		if present {
-			x.LogoutEject.validate(c, path)
+			x.LogoutEject.validate(c, fieldPath, supportPath+".logout-eject")
 		}
 	}
 	{
-		path := validation.Join(p, "mount-controls")
+		fieldPath := validation.Join(path, "mount-controls")
 		present := x.MountControls != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MediaManagementAllowedMedia.mount-controls"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".mount-controls"])
 		if present {
-			x.MountControls.validate(c, path)
+			x.MountControls.validate(c, fieldPath, supportPath+".mount-controls")
 		}
 	}
 	{
-		path := validation.Join(p, "unmount-controls")
+		fieldPath := validation.Join(path, "unmount-controls")
 		present := x.UnmountControls != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MediaManagementAllowedMedia.unmount-controls"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".unmount-controls"])
 		if present {
-			x.UnmountControls.validate(c, path)
+			x.UnmountControls.validate(c, fieldPath, supportPath+".unmount-controls")
 		}
 	}
 }
 
-func (x *MediaManagementAllowedMediaMediaItems) validate(c *validation.Collector, p string) {
+func (x *MediaManagementAllowedMediaMediaItems) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "all-media")
+		fieldPath := validation.Join(path, "all-media")
 		present := x.AllMedia != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MediaManagementAllowedMedia.logout-eject.all-media"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".all-media"])
 	}
 	{
-		path := validation.Join(p, "cd")
+		fieldPath := validation.Join(path, "cd")
 		present := len(x.Cd) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["MediaManagementAllowedMedia.logout-eject.cd"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".cd"])
 		for i, v := range x.Cd {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"authenticate", "read-only", "deny", "eject"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"authenticate", "read-only", "deny", "eject"})
 		}
 	}
 	{
-		path := validation.Join(p, "dvd")
+		fieldPath := validation.Join(path, "dvd")
 		present := len(x.Dvd) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["MediaManagementAllowedMedia.logout-eject.dvd"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".dvd"])
 		for i, v := range x.Dvd {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"authenticate", "read-only", "deny", "eject"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"authenticate", "read-only", "deny", "eject"})
 		}
 	}
 	{
-		path := validation.Join(p, "bd")
+		fieldPath := validation.Join(path, "bd")
 		present := len(x.Bd) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["MediaManagementAllowedMedia.logout-eject.bd"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".bd"])
 		for i, v := range x.Bd {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"authenticate", "read-only", "deny", "eject"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"authenticate", "read-only", "deny", "eject"})
 		}
 	}
 	{
-		path := validation.Join(p, "blankcd")
+		fieldPath := validation.Join(path, "blankcd")
 		present := len(x.Blankcd) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["MediaManagementAllowedMedia.logout-eject.blankcd"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".blankcd"])
 		for i, v := range x.Blankcd {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"authenticate", "read-only", "deny", "eject"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"authenticate", "read-only", "deny", "eject"})
 		}
 	}
 	{
-		path := validation.Join(p, "blankdvd")
+		fieldPath := validation.Join(path, "blankdvd")
 		present := len(x.Blankdvd) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["MediaManagementAllowedMedia.logout-eject.blankdvd"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".blankdvd"])
 		for i, v := range x.Blankdvd {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"authenticate", "read-only", "deny", "eject"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"authenticate", "read-only", "deny", "eject"})
 		}
 	}
 	{
-		path := validation.Join(p, "blankbd")
+		fieldPath := validation.Join(path, "blankbd")
 		present := len(x.Blankbd) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["MediaManagementAllowedMedia.logout-eject.blankbd"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".blankbd"])
 		for i, v := range x.Blankbd {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"authenticate", "read-only", "deny", "eject"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"authenticate", "read-only", "deny", "eject"})
 		}
 	}
 	{
-		path := validation.Join(p, "dvdram")
+		fieldPath := validation.Join(path, "dvdram")
 		present := len(x.Dvdram) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["MediaManagementAllowedMedia.logout-eject.dvdram"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".dvdram"])
 		for i, v := range x.Dvdram {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"authenticate", "read-only", "deny", "eject"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"authenticate", "read-only", "deny", "eject"})
 		}
 	}
 	{
-		path := validation.Join(p, "disk-image")
+		fieldPath := validation.Join(path, "disk-image")
 		present := len(x.DiskImage) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["MediaManagementAllowedMedia.logout-eject.disk-image"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".disk-image"])
 		for i, v := range x.DiskImage {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"authenticate", "read-only", "deny", "eject"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"authenticate", "read-only", "deny", "eject"})
 		}
 	}
 	{
-		path := validation.Join(p, "harddisk-internal")
+		fieldPath := validation.Join(path, "harddisk-internal")
 		present := len(x.HarddiskInternal) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["MediaManagementAllowedMedia.logout-eject.harddisk-internal"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".harddisk-internal"])
 		for i, v := range x.HarddiskInternal {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"authenticate", "read-only", "deny", "eject"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"authenticate", "read-only", "deny", "eject"})
 		}
 	}
 	{
-		path := validation.Join(p, "harddisk-external")
+		fieldPath := validation.Join(path, "harddisk-external")
 		present := len(x.HarddiskExternal) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["MediaManagementAllowedMedia.logout-eject.harddisk-external"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".harddisk-external"])
 		for i, v := range x.HarddiskExternal {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"authenticate", "read-only", "deny", "eject"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"authenticate", "read-only", "deny", "eject"})
 		}
 	}
 	{
-		path := validation.Join(p, "networkdisk")
+		fieldPath := validation.Join(path, "networkdisk")
 		present := len(x.Networkdisk) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["MediaManagementAllowedMedia.logout-eject.networkdisk"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".networkdisk"])
 		for i, v := range x.Networkdisk {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"authenticate", "read-only", "deny", "eject"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"authenticate", "read-only", "deny", "eject"})
 		}
 	}
 }
@@ -11281,21 +11281,21 @@ func (x *MediaManagementAllowedMediaMediaItems) validate(c *validation.Collector
 // that every present key is supported on that OS version and enrollment context.
 func (x *X8021XThirdActiveEthernet) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "X8021XThirdActiveEthernet")
 	return c.Err()
 }
 
-func (x *X8021XThirdActiveEthernet) validate(c *validation.Collector, p string) {
+func (x *X8021XThirdActiveEthernet) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["X8021XThirdActiveEthernet"])
+	c.Support(path, true, supportTable["X8021XThirdActiveEthernet"])
 	{
-		path := validation.Join(p, "ANY")
+		fieldPath := validation.Join(path, "ANY")
 		present := x.ANY != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["X8021XThirdActiveEthernet.ANY"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ANY"])
 	}
 }
 
@@ -11303,21 +11303,21 @@ func (x *X8021XThirdActiveEthernet) validate(c *validation.Collector, p string) 
 // that every present key is supported on that OS version and enrollment context.
 func (x *X8021XThirdEthernet) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "X8021XThirdEthernet")
 	return c.Err()
 }
 
-func (x *X8021XThirdEthernet) validate(c *validation.Collector, p string) {
+func (x *X8021XThirdEthernet) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["X8021XThirdEthernet"])
+	c.Support(path, true, supportTable["X8021XThirdEthernet"])
 	{
-		path := validation.Join(p, "ANY")
+		fieldPath := validation.Join(path, "ANY")
 		present := x.ANY != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["X8021XThirdEthernet.ANY"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ANY"])
 	}
 }
 
@@ -11325,67 +11325,67 @@ func (x *X8021XThirdEthernet) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *TVRemote) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "TVRemote")
 	return c.Err()
 }
 
-func (x *TVRemote) validate(c *validation.Collector, p string) {
+func (x *TVRemote) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["TVRemote"])
+	c.Support(path, true, supportTable["TVRemote"])
 	{
-		path := validation.Join(p, "AllowedRemotes")
+		fieldPath := validation.Join(path, "AllowedRemotes")
 		present := len(x.AllowedRemotes) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["TVRemote.AllowedRemotes"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowedRemotes"])
 		for i := range x.AllowedRemotes {
-			x.AllowedRemotes[i].validate(c, validation.Index(path, i))
+			x.AllowedRemotes[i].validate(c, validation.Index(fieldPath, i), supportPath+".AllowedRemotes.AllowedRemotesItem")
 		}
 	}
 	{
-		path := validation.Join(p, "AllowedTVs")
+		fieldPath := validation.Join(path, "AllowedTVs")
 		present := len(x.AllowedTVs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["TVRemote.AllowedTVs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowedTVs"])
 		for i := range x.AllowedTVs {
-			x.AllowedTVs[i].validate(c, validation.Index(path, i))
+			x.AllowedTVs[i].validate(c, validation.Index(fieldPath, i), supportPath+".AllowedTVs.AllowedTVsItem")
 		}
 	}
 }
 
-func (x *TVRemoteAllowedRemotes) validate(c *validation.Collector, p string) {
+func (x *TVRemoteAllowedRemotes) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "RemoteDeviceID")
+		fieldPath := validation.Join(path, "RemoteDeviceID")
 		present := x.RemoteDeviceID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["TVRemote.AllowedRemotes.AllowedRemotesItem.RemoteDeviceID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RemoteDeviceID"])
+		c.Required(fieldPath, present)
 	}
 }
 
-func (x *TVRemoteAllowedTVs) validate(c *validation.Collector, p string) {
+func (x *TVRemoteAllowedTVs) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "TVDeviceID")
+		fieldPath := validation.Join(path, "TVDeviceID")
 		present := x.TVDeviceID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["TVRemote.AllowedTVs.AllowedTVsItem.TVDeviceID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TVDeviceID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "TVDeviceName")
+		fieldPath := validation.Join(path, "TVDeviceName")
 		present := x.TVDeviceName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TVRemote.AllowedTVs.AllowedTVsItem.TVDeviceName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TVDeviceName"])
 	}
 }
 
@@ -11393,156 +11393,156 @@ func (x *TVRemoteAllowedTVs) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *Accessibility) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Accessibility")
 	return c.Err()
 }
 
-func (x *Accessibility) validate(c *validation.Collector, p string) {
+func (x *Accessibility) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Accessibility"])
+	c.Support(path, true, supportTable["Accessibility"])
 	{
-		path := validation.Join(p, "closeViewFarPoint")
+		fieldPath := validation.Join(path, "closeViewFarPoint")
 		present := x.CloseViewFarPoint != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.closeViewFarPoint"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".closeViewFarPoint"])
 	}
 	{
-		path := validation.Join(p, "closeViewHotkeysEnabled")
+		fieldPath := validation.Join(path, "closeViewHotkeysEnabled")
 		present := x.CloseViewHotkeysEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.closeViewHotkeysEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".closeViewHotkeysEnabled"])
 	}
 	{
-		path := validation.Join(p, "closeViewNearPoint")
+		fieldPath := validation.Join(path, "closeViewNearPoint")
 		present := x.CloseViewNearPoint != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.closeViewNearPoint"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".closeViewNearPoint"])
 	}
 	{
-		path := validation.Join(p, "closeViewScrollWheelToggle")
+		fieldPath := validation.Join(path, "closeViewScrollWheelToggle")
 		present := x.CloseViewScrollWheelToggle != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.closeViewScrollWheelToggle"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".closeViewScrollWheelToggle"])
 	}
 	{
-		path := validation.Join(p, "closeViewShowPreview")
+		fieldPath := validation.Join(path, "closeViewShowPreview")
 		present := x.CloseViewShowPreview != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.closeViewShowPreview"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".closeViewShowPreview"])
 	}
 	{
-		path := validation.Join(p, "closeViewSmoothImages")
+		fieldPath := validation.Join(path, "closeViewSmoothImages")
 		present := x.CloseViewSmoothImages != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.closeViewSmoothImages"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".closeViewSmoothImages"])
 	}
 	{
-		path := validation.Join(p, "contrast")
+		fieldPath := validation.Join(path, "contrast")
 		present := x.Contrast != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.contrast"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".contrast"])
 		if present {
-			c.Range(path, true, float64(*x.Contrast), new(0.0), new(1.0))
+			c.Range(fieldPath, true, float64(*x.Contrast), new(0.0), new(1.0))
 		}
 	}
 	{
-		path := validation.Join(p, "flashScreen")
+		fieldPath := validation.Join(path, "flashScreen")
 		present := x.FlashScreen != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.flashScreen"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".flashScreen"])
 	}
 	{
-		path := validation.Join(p, "grayscale")
+		fieldPath := validation.Join(path, "grayscale")
 		present := x.Grayscale != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.grayscale"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".grayscale"])
 	}
 	{
-		path := validation.Join(p, "mouseDriver")
+		fieldPath := validation.Join(path, "mouseDriver")
 		present := x.MouseDriver != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.mouseDriver"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".mouseDriver"])
 	}
 	{
-		path := validation.Join(p, "mouseDriverCursorSize")
+		fieldPath := validation.Join(path, "mouseDriverCursorSize")
 		present := x.MouseDriverCursorSize != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.mouseDriverCursorSize"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".mouseDriverCursorSize"])
 	}
 	{
-		path := validation.Join(p, "mouseDriverIgnoreTrackpad")
+		fieldPath := validation.Join(path, "mouseDriverIgnoreTrackpad")
 		present := x.MouseDriverIgnoreTrackpad != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.mouseDriverIgnoreTrackpad"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".mouseDriverIgnoreTrackpad"])
 	}
 	{
-		path := validation.Join(p, "mouseDriverInitialDelay")
+		fieldPath := validation.Join(path, "mouseDriverInitialDelay")
 		present := x.MouseDriverInitialDelay != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.mouseDriverInitialDelay"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".mouseDriverInitialDelay"])
 	}
 	{
-		path := validation.Join(p, "mouseDriverMaxSpeed")
+		fieldPath := validation.Join(path, "mouseDriverMaxSpeed")
 		present := x.MouseDriverMaxSpeed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.mouseDriverMaxSpeed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".mouseDriverMaxSpeed"])
 	}
 	{
-		path := validation.Join(p, "slowKey")
+		fieldPath := validation.Join(path, "slowKey")
 		present := x.SlowKey != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.slowKey"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".slowKey"])
 	}
 	{
-		path := validation.Join(p, "slowKeyBeepOn")
+		fieldPath := validation.Join(path, "slowKeyBeepOn")
 		present := x.SlowKeyBeepOn != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.slowKeyBeepOn"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".slowKeyBeepOn"])
 	}
 	{
-		path := validation.Join(p, "slowKeyDelay")
+		fieldPath := validation.Join(path, "slowKeyDelay")
 		present := x.SlowKeyDelay != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.slowKeyDelay"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".slowKeyDelay"])
 	}
 	{
-		path := validation.Join(p, "stereoAsMono")
+		fieldPath := validation.Join(path, "stereoAsMono")
 		present := x.StereoAsMono != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.stereoAsMono"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".stereoAsMono"])
 	}
 	{
-		path := validation.Join(p, "stickyKey")
+		fieldPath := validation.Join(path, "stickyKey")
 		present := x.StickyKey != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.stickyKey"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".stickyKey"])
 	}
 	{
-		path := validation.Join(p, "stickyKeyBeepOnModifier")
+		fieldPath := validation.Join(path, "stickyKeyBeepOnModifier")
 		present := x.StickyKeyBeepOnModifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.stickyKeyBeepOnModifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".stickyKeyBeepOnModifier"])
 	}
 	{
-		path := validation.Join(p, "stickyKeyShowWindow")
+		fieldPath := validation.Join(path, "stickyKeyShowWindow")
 		present := x.StickyKeyShowWindow != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.stickyKeyShowWindow"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".stickyKeyShowWindow"])
 	}
 	{
-		path := validation.Join(p, "voiceOverOnOffKey")
+		fieldPath := validation.Join(path, "voiceOverOnOffKey")
 		present := x.VoiceOverOnOffKey != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.voiceOverOnOffKey"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".voiceOverOnOffKey"])
 	}
 	{
-		path := validation.Join(p, "whiteOnBlack")
+		fieldPath := validation.Join(path, "whiteOnBlack")
 		present := x.WhiteOnBlack != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Accessibility.whiteOnBlack"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".whiteOnBlack"])
 	}
 }
 
@@ -11550,76 +11550,76 @@ func (x *Accessibility) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *AppLayerVPN) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AppLayerVPN")
 	return c.Err()
 }
 
-func (x *AppLayerVPN) validate(c *validation.Collector, p string) {
+func (x *AppLayerVPN) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AppLayerVPN"])
+	c.Support(path, true, supportTable["AppLayerVPN"])
 	{
-		path := validation.Join(p, "VPNUUID")
+		fieldPath := validation.Join(path, "VPNUUID")
 		present := x.VPNUUID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLayerVPN.VPNUUID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VPNUUID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "CellularSliceUUID")
+		fieldPath := validation.Join(path, "CellularSliceUUID")
 		present := x.CellularSliceUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLayerVPN.CellularSliceUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CellularSliceUUID"])
 	}
 	{
-		path := validation.Join(p, "SafariDomains")
+		fieldPath := validation.Join(path, "SafariDomains")
 		present := len(x.SafariDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLayerVPN.SafariDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SafariDomains"])
 	}
 	{
-		path := validation.Join(p, "MailDomains")
+		fieldPath := validation.Join(path, "MailDomains")
 		present := len(x.MailDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLayerVPN.MailDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MailDomains"])
 	}
 	{
-		path := validation.Join(p, "CalendarDomains")
+		fieldPath := validation.Join(path, "CalendarDomains")
 		present := len(x.CalendarDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLayerVPN.CalendarDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CalendarDomains"])
 	}
 	{
-		path := validation.Join(p, "ContactsDomains")
+		fieldPath := validation.Join(path, "ContactsDomains")
 		present := len(x.ContactsDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLayerVPN.ContactsDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ContactsDomains"])
 	}
 	{
-		path := validation.Join(p, "AssociatedDomains")
+		fieldPath := validation.Join(path, "AssociatedDomains")
 		present := len(x.AssociatedDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLayerVPN.AssociatedDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AssociatedDomains"])
 	}
 	{
-		path := validation.Join(p, "ExcludedDomains")
+		fieldPath := validation.Join(path, "ExcludedDomains")
 		present := len(x.ExcludedDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLayerVPN.ExcludedDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExcludedDomains"])
 	}
 	{
-		path := validation.Join(p, "OnDemandMatchAppEnabled")
+		fieldPath := validation.Join(path, "OnDemandMatchAppEnabled")
 		present := x.OnDemandMatchAppEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLayerVPN.OnDemandMatchAppEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandMatchAppEnabled"])
 	}
 	{
-		path := validation.Join(p, "SMBDomains")
+		fieldPath := validation.Join(path, "SMBDomains")
 		present := len(x.SMBDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppLayerVPN.SMBDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SMBDomains"])
 	}
 }
 
@@ -11627,102 +11627,102 @@ func (x *AppLayerVPN) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *AppToAppLayerVPNMapping) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "AppToAppLayerVPNMapping")
 	return c.Err()
 }
 
-func (x *AppToAppLayerVPNMapping) validate(c *validation.Collector, p string) {
+func (x *AppToAppLayerVPNMapping) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["AppToAppLayerVPNMapping"])
+	c.Support(path, true, supportTable["AppToAppLayerVPNMapping"])
 	{
-		path := validation.Join(p, "AppLayerVPNMapping")
+		fieldPath := validation.Join(path, "AppLayerVPNMapping")
 		present := len(x.AppLayerVPNMapping) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppToAppLayerVPNMapping.AppLayerVPNMapping"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AppLayerVPNMapping"])
+		c.Required(fieldPath, present)
 		for i := range x.AppLayerVPNMapping {
-			x.AppLayerVPNMapping[i].validate(c, validation.Index(path, i))
+			x.AppLayerVPNMapping[i].validate(c, validation.Index(fieldPath, i), supportPath+".AppLayerVPNMapping.AppLayerVPNMappingItem")
 		}
 	}
 }
 
-func (x *AppToAppLayerVPNMappingAppLayerVPNMapping) validate(c *validation.Collector, p string) {
+func (x *AppToAppLayerVPNMappingAppLayerVPNMapping) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Identifier")
+		fieldPath := validation.Join(path, "Identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppToAppLayerVPNMapping.AppLayerVPNMapping.AppLayerVPNMappingItem.Identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "VPNUUID")
+		fieldPath := validation.Join(path, "VPNUUID")
 		present := x.VPNUUID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppToAppLayerVPNMapping.AppLayerVPNMapping.AppLayerVPNMappingItem.VPNUUID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VPNUUID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "DesignatedRequirement")
+		fieldPath := validation.Join(path, "DesignatedRequirement")
 		present := x.DesignatedRequirement != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppToAppLayerVPNMapping.AppLayerVPNMapping.AppLayerVPNMappingItem.DesignatedRequirement"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DesignatedRequirement"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "SigningIdentifier")
+		fieldPath := validation.Join(path, "SigningIdentifier")
 		present := x.SigningIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppToAppLayerVPNMapping.AppLayerVPNMapping.AppLayerVPNMappingItem.SigningIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SigningIdentifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Path")
+		fieldPath := validation.Join(path, "Path")
 		present := x.Path != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppToAppLayerVPNMapping.AppLayerVPNMapping.AppLayerVPNMappingItem.Path"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Path"])
 	}
 	{
-		path := validation.Join(p, "MatchTools")
+		fieldPath := validation.Join(path, "MatchTools")
 		present := len(x.MatchTools) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppToAppLayerVPNMapping.AppLayerVPNMapping.AppLayerVPNMappingItem.MatchTools"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MatchTools"])
 		for i := range x.MatchTools {
-			x.MatchTools[i].validate(c, validation.Index(path, i))
+			x.MatchTools[i].validate(c, validation.Index(fieldPath, i), supportPath+".MatchTools.MatchToolsItem")
 		}
 	}
 }
 
-func (x *AppToAppLayerVPNMappingAppLayerVPNMappingMatchTools) validate(c *validation.Collector, p string) {
+func (x *AppToAppLayerVPNMappingAppLayerVPNMappingMatchTools) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "DesignatedRequirement")
+		fieldPath := validation.Join(path, "DesignatedRequirement")
 		present := x.DesignatedRequirement != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppToAppLayerVPNMapping.AppLayerVPNMapping.AppLayerVPNMappingItem.MatchTools.MatchToolsItem.DesignatedRequirement"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DesignatedRequirement"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "SigningIdentifier")
+		fieldPath := validation.Join(path, "SigningIdentifier")
 		present := x.SigningIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppToAppLayerVPNMapping.AppLayerVPNMapping.AppLayerVPNMappingItem.MatchTools.MatchToolsItem.SigningIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SigningIdentifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Path")
+		fieldPath := validation.Join(path, "Path")
 		present := x.Path != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["AppToAppLayerVPNMapping.AppLayerVPNMapping.AppLayerVPNMappingItem.MatchTools.MatchToolsItem.Path"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Path"])
 	}
 }
 
@@ -11730,1537 +11730,1537 @@ func (x *AppToAppLayerVPNMappingAppLayerVPNMappingMatchTools) validate(c *valida
 // that every present key is supported on that OS version and enrollment context.
 func (x *VPN) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "VPN")
 	return c.Err()
 }
 
-func (x *VPN) validate(c *validation.Collector, p string) {
+func (x *VPN) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["VPN"])
+	c.Support(path, true, supportTable["VPN"])
 	{
-		path := validation.Join(p, "VPNType")
+		fieldPath := validation.Join(path, "VPNType")
 		present := x.VPNType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPNType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VPNType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.VPNType, []any{"VPN", "L2TP", "IPSec", "IKEv2", "AlwaysOn", "TransparentProxy"})
+			c.Enum(fieldPath, true, x.VPNType, []any{"VPN", "L2TP", "IPSec", "IKEv2", "AlwaysOn", "TransparentProxy"})
 		}
 	}
 	{
-		path := validation.Join(p, "VPNSubType")
+		fieldPath := validation.Join(path, "VPNSubType")
 		present := x.VPNSubType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPNSubType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VPNSubType"])
 	}
 	{
-		path := validation.Join(p, "UserDefinedName")
+		fieldPath := validation.Join(path, "UserDefinedName")
 		present := x.UserDefinedName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.UserDefinedName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserDefinedName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "VendorConfig")
+		fieldPath := validation.Join(path, "VendorConfig")
 		present := x.VendorConfig != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VendorConfig"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VendorConfig"])
 		if present {
-			x.VendorConfig.validate(c, path)
+			x.VendorConfig.validate(c, fieldPath, supportPath+".VendorConfig")
 		}
 	}
 	{
-		path := validation.Join(p, "VPN")
+		fieldPath := validation.Join(path, "VPN")
 		present := x.VPN != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VPN"])
 		if present {
-			x.VPN.validate(c, path)
+			x.VPN.validate(c, fieldPath, supportPath+".VPN")
 		}
 	}
 	{
-		path := validation.Join(p, "IPv4")
+		fieldPath := validation.Join(path, "IPv4")
 		present := x.IPv4 != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPv4"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IPv4"])
 		if present {
-			x.IPv4.validate(c, path)
+			x.IPv4.validate(c, fieldPath, supportPath+".IPv4")
 		}
 	}
 	{
-		path := validation.Join(p, "PPP")
+		fieldPath := validation.Join(path, "PPP")
 		present := x.PPP != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.PPP"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PPP"])
 		if present {
-			x.PPP.validate(c, path)
+			x.PPP.validate(c, fieldPath, supportPath+".PPP")
 		}
 	}
 	{
-		path := validation.Join(p, "IPSec")
+		fieldPath := validation.Join(path, "IPSec")
 		present := x.IPSec != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IPSec"])
 		if present {
-			x.IPSec.validate(c, path)
+			x.IPSec.validate(c, fieldPath, supportPath+".IPSec")
 		}
 	}
 	{
-		path := validation.Join(p, "IKEv2")
+		fieldPath := validation.Join(path, "IKEv2")
 		present := x.IKEv2 != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IKEv2"])
 		if present {
-			x.IKEv2.validate(c, path)
+			x.IKEv2.validate(c, fieldPath, supportPath+".IKEv2")
 		}
 	}
 	{
-		path := validation.Join(p, "DNS")
+		fieldPath := validation.Join(path, "DNS")
 		present := x.DNS != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.DNS"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DNS"])
 		if present {
-			x.DNS.validate(c, path)
+			x.DNS.validate(c, fieldPath, supportPath+".DNS")
 		}
 	}
 	{
-		path := validation.Join(p, "Proxies")
+		fieldPath := validation.Join(path, "Proxies")
 		present := x.Proxies != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.Proxies"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Proxies"])
 		if present {
-			x.Proxies.validate(c, path)
+			x.Proxies.validate(c, fieldPath, supportPath+".Proxies")
 		}
 	}
 	{
-		path := validation.Join(p, "AlwaysOn")
+		fieldPath := validation.Join(path, "AlwaysOn")
 		present := x.AlwaysOn != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.AlwaysOn"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AlwaysOn"])
 		if present {
-			x.AlwaysOn.validate(c, path)
+			x.AlwaysOn.validate(c, fieldPath, supportPath+".AlwaysOn")
 		}
 	}
 	{
-		path := validation.Join(p, "TransparentProxy")
+		fieldPath := validation.Join(path, "TransparentProxy")
 		present := x.TransparentProxy != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.TransparentProxy"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TransparentProxy"])
 		if present {
-			x.TransparentProxy.validate(c, path)
+			x.TransparentProxy.validate(c, fieldPath, supportPath+".TransparentProxy")
 		}
 	}
 }
 
-func (x *VPNVendorConfig) validate(c *validation.Collector, p string) {
+func (x *VPNVendorConfig) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Realm")
+		fieldPath := validation.Join(path, "Realm")
 		present := x.Realm != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VendorConfig.Realm"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Realm"])
 	}
 	{
-		path := validation.Join(p, "Role")
+		fieldPath := validation.Join(path, "Role")
 		present := x.Role != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VendorConfig.Role"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Role"])
 	}
 	{
-		path := validation.Join(p, "Group")
+		fieldPath := validation.Join(path, "Group")
 		present := x.Group != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VendorConfig.Group"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Group"])
 	}
 	{
-		path := validation.Join(p, "LoginGroupOrDomain")
+		fieldPath := validation.Join(path, "LoginGroupOrDomain")
 		present := x.LoginGroupOrDomain != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VendorConfig.LoginGroupOrDomain"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LoginGroupOrDomain"])
 	}
 }
 
-func (x *VPNVPN) validate(c *validation.Collector, p string) {
+func (x *VPNVPN) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "AuthName")
+		fieldPath := validation.Join(path, "AuthName")
 		present := x.AuthName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.AuthName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthName"])
 	}
 	{
-		path := validation.Join(p, "AuthPassword")
+		fieldPath := validation.Join(path, "AuthPassword")
 		present := x.AuthPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.AuthPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthPassword"])
 	}
 	{
-		path := validation.Join(p, "RemoteAddress")
+		fieldPath := validation.Join(path, "RemoteAddress")
 		present := x.RemoteAddress != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.RemoteAddress"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RemoteAddress"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "AuthenticationMethod")
+		fieldPath := validation.Join(path, "AuthenticationMethod")
 		present := x.AuthenticationMethod != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.AuthenticationMethod"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthenticationMethod"])
 		if present {
-			c.Enum(path, true, *x.AuthenticationMethod, []any{"Password", "Certificate", "Password+Certificate"})
+			c.Enum(fieldPath, true, *x.AuthenticationMethod, []any{"Password", "Certificate", "Password+Certificate"})
 		}
 	}
 	{
-		path := validation.Join(p, "PayloadCertificateUUID")
+		fieldPath := validation.Join(path, "PayloadCertificateUUID")
 		present := x.PayloadCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.PayloadCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateUUID"])
 	}
 	{
-		path := validation.Join(p, "ProviderBundleIdentifier")
+		fieldPath := validation.Join(path, "ProviderBundleIdentifier")
 		present := x.ProviderBundleIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.ProviderBundleIdentifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProviderBundleIdentifier"])
 	}
 	{
-		path := validation.Join(p, "ProviderDesignatedRequirement")
+		fieldPath := validation.Join(path, "ProviderDesignatedRequirement")
 		present := x.ProviderDesignatedRequirement != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.ProviderDesignatedRequirement"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProviderDesignatedRequirement"])
 	}
 	{
-		path := validation.Join(p, "DisconnectOnIdle")
+		fieldPath := validation.Join(path, "DisconnectOnIdle")
 		present := x.DisconnectOnIdle != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.DisconnectOnIdle"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisconnectOnIdle"])
 		if present {
-			c.Enum(path, true, *x.DisconnectOnIdle, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.DisconnectOnIdle, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "DisconnectOnIdleTimer")
+		fieldPath := validation.Join(path, "DisconnectOnIdleTimer")
 		present := x.DisconnectOnIdleTimer != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.DisconnectOnIdleTimer"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisconnectOnIdleTimer"])
 	}
 	{
-		path := validation.Join(p, "ProviderType")
+		fieldPath := validation.Join(path, "ProviderType")
 		present := x.ProviderType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.ProviderType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProviderType"])
 		if present {
-			c.Enum(path, true, *x.ProviderType, []any{"packet-tunnel", "app-proxy"})
+			c.Enum(fieldPath, true, *x.ProviderType, []any{"packet-tunnel", "app-proxy"})
 		}
 	}
 	{
-		path := validation.Join(p, "IncludeAllNetworks")
+		fieldPath := validation.Join(path, "IncludeAllNetworks")
 		present := x.IncludeAllNetworks != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.IncludeAllNetworks"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IncludeAllNetworks"])
 		if present {
-			c.Enum(path, true, *x.IncludeAllNetworks, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.IncludeAllNetworks, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "EnforceRoutes")
+		fieldPath := validation.Join(path, "EnforceRoutes")
 		present := x.EnforceRoutes != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.EnforceRoutes"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnforceRoutes"])
 		if present {
-			c.Enum(path, true, *x.EnforceRoutes, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.EnforceRoutes, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "ExcludeLocalNetworks")
+		fieldPath := validation.Join(path, "ExcludeLocalNetworks")
 		present := x.ExcludeLocalNetworks != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.ExcludeLocalNetworks"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExcludeLocalNetworks"])
 		if present {
-			c.Enum(path, true, *x.ExcludeLocalNetworks, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.ExcludeLocalNetworks, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "ExcludeCellularServices")
+		fieldPath := validation.Join(path, "ExcludeCellularServices")
 		present := x.ExcludeCellularServices != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.ExcludeCellularServices"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExcludeCellularServices"])
 		if present {
-			c.Enum(path, true, *x.ExcludeCellularServices, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.ExcludeCellularServices, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "ExcludeAPNs")
+		fieldPath := validation.Join(path, "ExcludeAPNs")
 		present := x.ExcludeAPNs != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.ExcludeAPNs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExcludeAPNs"])
 		if present {
-			c.Enum(path, true, *x.ExcludeAPNs, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.ExcludeAPNs, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "ExcludeDeviceCommunication")
+		fieldPath := validation.Join(path, "ExcludeDeviceCommunication")
 		present := x.ExcludeDeviceCommunication != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.ExcludeDeviceCommunication"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExcludeDeviceCommunication"])
 		if present {
-			c.Enum(path, true, *x.ExcludeDeviceCommunication, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.ExcludeDeviceCommunication, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "OnDemandEnabled")
+		fieldPath := validation.Join(path, "OnDemandEnabled")
 		present := x.OnDemandEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.OnDemandEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandEnabled"])
 		if present {
-			c.Enum(path, true, *x.OnDemandEnabled, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.OnDemandEnabled, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "OnDemandUserOverrideDisabled")
+		fieldPath := validation.Join(path, "OnDemandUserOverrideDisabled")
 		present := x.OnDemandUserOverrideDisabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.OnDemandUserOverrideDisabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandUserOverrideDisabled"])
 		if present {
-			c.Enum(path, true, *x.OnDemandUserOverrideDisabled, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.OnDemandUserOverrideDisabled, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "OnDemandMatchDomainsAlways")
+		fieldPath := validation.Join(path, "OnDemandMatchDomainsAlways")
 		present := len(x.OnDemandMatchDomainsAlways) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.OnDemandMatchDomainsAlways"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandMatchDomainsAlways"])
 	}
 	{
-		path := validation.Join(p, "OnDemandMatchDomainsNever")
+		fieldPath := validation.Join(path, "OnDemandMatchDomainsNever")
 		present := len(x.OnDemandMatchDomainsNever) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.OnDemandMatchDomainsNever"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandMatchDomainsNever"])
 	}
 	{
-		path := validation.Join(p, "OnDemandMatchDomainsOnRetry")
+		fieldPath := validation.Join(path, "OnDemandMatchDomainsOnRetry")
 		present := len(x.OnDemandMatchDomainsOnRetry) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.OnDemandMatchDomainsOnRetry"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandMatchDomainsOnRetry"])
 	}
 	{
-		path := validation.Join(p, "OnDemandRules")
+		fieldPath := validation.Join(path, "OnDemandRules")
 		present := len(x.OnDemandRules) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.OnDemandRules"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandRules"])
 		for i := range x.OnDemandRules {
-			x.OnDemandRules[i].validate(c, validation.Index(path, i))
+			x.OnDemandRules[i].validate(c, validation.Index(fieldPath, i), supportPath+".OnDemandRules.OnDemandRulesElement")
 		}
 	}
 }
 
-func (x *VPNOnDemandRulesElement) validate(c *validation.Collector, p string) {
+func (x *VPNOnDemandRulesElement) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Action")
+		fieldPath := validation.Join(path, "Action")
 		present := x.Action != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.OnDemandRules.OnDemandRulesElement.Action"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Action"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Action, []any{"Allow", "Connect", "Disconnect", "EvaluateConnection", "Ignore"})
+			c.Enum(fieldPath, true, x.Action, []any{"Allow", "Connect", "Disconnect", "EvaluateConnection", "Ignore"})
 		}
 	}
 	{
-		path := validation.Join(p, "ActionParameters")
+		fieldPath := validation.Join(path, "ActionParameters")
 		present := len(x.ActionParameters) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.OnDemandRules.OnDemandRulesElement.ActionParameters"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ActionParameters"])
 		for i := range x.ActionParameters {
-			x.ActionParameters[i].validate(c, validation.Index(path, i))
+			x.ActionParameters[i].validate(c, validation.Index(fieldPath, i), supportPath+".ActionParameters.ActionParameter")
 		}
 	}
 	{
-		path := validation.Join(p, "DNSDomainMatch")
+		fieldPath := validation.Join(path, "DNSDomainMatch")
 		present := len(x.DNSDomainMatch) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.OnDemandRules.OnDemandRulesElement.DNSDomainMatch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DNSDomainMatch"])
 	}
 	{
-		path := validation.Join(p, "DNSServerAddressMatch")
+		fieldPath := validation.Join(path, "DNSServerAddressMatch")
 		present := len(x.DNSServerAddressMatch) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.OnDemandRules.OnDemandRulesElement.DNSServerAddressMatch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DNSServerAddressMatch"])
 	}
 	{
-		path := validation.Join(p, "InterfaceTypeMatch")
+		fieldPath := validation.Join(path, "InterfaceTypeMatch")
 		present := x.InterfaceTypeMatch != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.OnDemandRules.OnDemandRulesElement.InterfaceTypeMatch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".InterfaceTypeMatch"])
 		if present {
-			c.Enum(path, true, *x.InterfaceTypeMatch, []any{"Ethernet", "WiFi", "Cellular"})
+			c.Enum(fieldPath, true, *x.InterfaceTypeMatch, []any{"Ethernet", "WiFi", "Cellular"})
 		}
 	}
 	{
-		path := validation.Join(p, "SSIDMatch")
+		fieldPath := validation.Join(path, "SSIDMatch")
 		present := len(x.SSIDMatch) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.OnDemandRules.OnDemandRulesElement.SSIDMatch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SSIDMatch"])
 	}
 	{
-		path := validation.Join(p, "URLStringProbe")
+		fieldPath := validation.Join(path, "URLStringProbe")
 		present := x.URLStringProbe != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.OnDemandRules.OnDemandRulesElement.URLStringProbe"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".URLStringProbe"])
 	}
 }
 
-func (x *VPNOnDemandRulesElementActionParameters) validate(c *validation.Collector, p string) {
+func (x *VPNOnDemandRulesElementActionParameters) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Domains")
+		fieldPath := validation.Join(path, "Domains")
 		present := len(x.Domains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.OnDemandRules.OnDemandRulesElement.ActionParameters.ActionParameter.Domains"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Domains"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "DomainAction")
+		fieldPath := validation.Join(path, "DomainAction")
 		present := x.DomainAction != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.OnDemandRules.OnDemandRulesElement.ActionParameters.ActionParameter.DomainAction"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DomainAction"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.DomainAction, []any{"ConnectIfNeeded", "NeverConnect"})
+			c.Enum(fieldPath, true, x.DomainAction, []any{"ConnectIfNeeded", "NeverConnect"})
 		}
 	}
 	{
-		path := validation.Join(p, "RequiredDNSServers")
+		fieldPath := validation.Join(path, "RequiredDNSServers")
 		present := len(x.RequiredDNSServers) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.OnDemandRules.OnDemandRulesElement.ActionParameters.ActionParameter.RequiredDNSServers"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RequiredDNSServers"])
 	}
 	{
-		path := validation.Join(p, "RequiredURLStringProbe")
+		fieldPath := validation.Join(path, "RequiredURLStringProbe")
 		present := x.RequiredURLStringProbe != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.VPN.OnDemandRules.OnDemandRulesElement.ActionParameters.ActionParameter.RequiredURLStringProbe"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RequiredURLStringProbe"])
 	}
 }
 
-func (x *VPNIPv4) validate(c *validation.Collector, p string) {
+func (x *VPNIPv4) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "OverridePrimary")
+		fieldPath := validation.Join(path, "OverridePrimary")
 		present := x.OverridePrimary != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPv4.OverridePrimary"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OverridePrimary"])
 		if present {
-			c.Enum(path, true, *x.OverridePrimary, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.OverridePrimary, []any{int64(0), int64(1)})
 		}
 	}
 }
 
-func (x *VPNPPP) validate(c *validation.Collector, p string) {
+func (x *VPNPPP) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "AuthName")
+		fieldPath := validation.Join(path, "AuthName")
 		present := x.AuthName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.PPP.AuthName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthName"])
 	}
 	{
-		path := validation.Join(p, "AuthPassword")
+		fieldPath := validation.Join(path, "AuthPassword")
 		present := x.AuthPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.PPP.AuthPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthPassword"])
 	}
 	{
-		path := validation.Join(p, "TokenCard")
+		fieldPath := validation.Join(path, "TokenCard")
 		present := x.TokenCard != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.PPP.TokenCard"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TokenCard"])
 		if present {
-			c.Enum(path, true, *x.TokenCard, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.TokenCard, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "CommRemoteAddress")
+		fieldPath := validation.Join(path, "CommRemoteAddress")
 		present := x.CommRemoteAddress != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.PPP.CommRemoteAddress"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CommRemoteAddress"])
 	}
 	{
-		path := validation.Join(p, "AuthEAPPlugins")
+		fieldPath := validation.Join(path, "AuthEAPPlugins")
 		present := len(x.AuthEAPPlugins) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.PPP.AuthEAPPlugins"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthEAPPlugins"])
 		for i, v := range x.AuthEAPPlugins {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"EAP-RSA", "EAP-TLS", "EAP-KRB"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"EAP-RSA", "EAP-TLS", "EAP-KRB"})
 		}
 	}
 	{
-		path := validation.Join(p, "AuthProtocol")
+		fieldPath := validation.Join(path, "AuthProtocol")
 		present := len(x.AuthProtocol) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.PPP.AuthProtocol"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthProtocol"])
 		for i, v := range x.AuthProtocol {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"EAP"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"EAP"})
 		}
 	}
 	{
-		path := validation.Join(p, "CCPMPPE40Enabled")
+		fieldPath := validation.Join(path, "CCPMPPE40Enabled")
 		present := x.CCPMPPE40Enabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.PPP.CCPMPPE40Enabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CCPMPPE40Enabled"])
 		if present {
-			c.Enum(path, true, *x.CCPMPPE40Enabled, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.CCPMPPE40Enabled, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "CCPMPPE128Enabled")
+		fieldPath := validation.Join(path, "CCPMPPE128Enabled")
 		present := x.CCPMPPE128Enabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.PPP.CCPMPPE128Enabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CCPMPPE128Enabled"])
 		if present {
-			c.Enum(path, true, *x.CCPMPPE128Enabled, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.CCPMPPE128Enabled, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "CCPEnabled")
+		fieldPath := validation.Join(path, "CCPEnabled")
 		present := x.CCPEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.PPP.CCPEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CCPEnabled"])
 		if present {
-			c.Enum(path, true, *x.CCPEnabled, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.CCPEnabled, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "DisconnectOnIdle")
+		fieldPath := validation.Join(path, "DisconnectOnIdle")
 		present := x.DisconnectOnIdle != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.PPP.DisconnectOnIdle"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisconnectOnIdle"])
 		if present {
-			c.Enum(path, true, *x.DisconnectOnIdle, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.DisconnectOnIdle, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "DisconnectOnIdleTimer")
+		fieldPath := validation.Join(path, "DisconnectOnIdleTimer")
 		present := x.DisconnectOnIdleTimer != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.PPP.DisconnectOnIdleTimer"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisconnectOnIdleTimer"])
 	}
 }
 
-func (x *VPNIPSec) validate(c *validation.Collector, p string) {
+func (x *VPNIPSec) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "RemoteAddress")
+		fieldPath := validation.Join(path, "RemoteAddress")
 		present := x.RemoteAddress != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.RemoteAddress"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RemoteAddress"])
 	}
 	{
-		path := validation.Join(p, "AuthenticationMethod")
+		fieldPath := validation.Join(path, "AuthenticationMethod")
 		present := x.AuthenticationMethod != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.AuthenticationMethod"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthenticationMethod"])
 		if present {
-			c.Enum(path, true, *x.AuthenticationMethod, []any{"SharedSecret", "Certificate"})
+			c.Enum(fieldPath, true, *x.AuthenticationMethod, []any{"SharedSecret", "Certificate"})
 		}
 	}
 	{
-		path := validation.Join(p, "XAuthName")
+		fieldPath := validation.Join(path, "XAuthName")
 		present := x.XAuthName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.XAuthName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".XAuthName"])
 	}
 	{
-		path := validation.Join(p, "XAuthPassword")
+		fieldPath := validation.Join(path, "XAuthPassword")
 		present := x.XAuthPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.XAuthPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".XAuthPassword"])
 	}
 	{
-		path := validation.Join(p, "XAuthEnabled")
+		fieldPath := validation.Join(path, "XAuthEnabled")
 		present := x.XAuthEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.XAuthEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".XAuthEnabled"])
 		if present {
-			c.Enum(path, true, *x.XAuthEnabled, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.XAuthEnabled, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "XAuthPasswordEncryption")
+		fieldPath := validation.Join(path, "XAuthPasswordEncryption")
 		present := x.XAuthPasswordEncryption != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.XAuthPasswordEncryption"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".XAuthPasswordEncryption"])
 		if present {
-			c.Enum(path, true, *x.XAuthPasswordEncryption, []any{"Prompt"})
+			c.Enum(fieldPath, true, *x.XAuthPasswordEncryption, []any{"Prompt"})
 		}
 	}
 	{
-		path := validation.Join(p, "LocalIdentifier")
+		fieldPath := validation.Join(path, "LocalIdentifier")
 		present := x.LocalIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.LocalIdentifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LocalIdentifier"])
 	}
 	{
-		path := validation.Join(p, "LocalIdentifierType")
+		fieldPath := validation.Join(path, "LocalIdentifierType")
 		present := x.LocalIdentifierType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.LocalIdentifierType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LocalIdentifierType"])
 		if present {
-			c.Enum(path, true, *x.LocalIdentifierType, []any{"KeyID"})
+			c.Enum(fieldPath, true, *x.LocalIdentifierType, []any{"KeyID"})
 		}
 	}
 	{
-		path := validation.Join(p, "SharedSecret")
+		fieldPath := validation.Join(path, "SharedSecret")
 		present := len(x.SharedSecret) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.SharedSecret"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SharedSecret"])
 	}
 	{
-		path := validation.Join(p, "PayloadCertificateUUID")
+		fieldPath := validation.Join(path, "PayloadCertificateUUID")
 		present := x.PayloadCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.PayloadCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateUUID"])
 	}
 	{
-		path := validation.Join(p, "PromptForVPNPIN")
+		fieldPath := validation.Join(path, "PromptForVPNPIN")
 		present := x.PromptForVPNPIN != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.PromptForVPNPIN"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PromptForVPNPIN"])
 	}
 	{
-		path := validation.Join(p, "DisconnectOnIdle")
+		fieldPath := validation.Join(path, "DisconnectOnIdle")
 		present := x.DisconnectOnIdle != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.DisconnectOnIdle"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisconnectOnIdle"])
 		if present {
-			c.Enum(path, true, *x.DisconnectOnIdle, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.DisconnectOnIdle, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "DisconnectOnIdleTimer")
+		fieldPath := validation.Join(path, "DisconnectOnIdleTimer")
 		present := x.DisconnectOnIdleTimer != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.DisconnectOnIdleTimer"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisconnectOnIdleTimer"])
 	}
 	{
-		path := validation.Join(p, "OnDemandEnabled")
+		fieldPath := validation.Join(path, "OnDemandEnabled")
 		present := x.OnDemandEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.OnDemandEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandEnabled"])
 		if present {
-			c.Enum(path, true, *x.OnDemandEnabled, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.OnDemandEnabled, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "OnDemandMatchDomainsAlways")
+		fieldPath := validation.Join(path, "OnDemandMatchDomainsAlways")
 		present := len(x.OnDemandMatchDomainsAlways) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.OnDemandMatchDomainsAlways"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandMatchDomainsAlways"])
 	}
 	{
-		path := validation.Join(p, "OnDemandMatchDomainsNever")
+		fieldPath := validation.Join(path, "OnDemandMatchDomainsNever")
 		present := len(x.OnDemandMatchDomainsNever) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.OnDemandMatchDomainsNever"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandMatchDomainsNever"])
 	}
 	{
-		path := validation.Join(p, "OnDemandMatchDomainsOnRetry")
+		fieldPath := validation.Join(path, "OnDemandMatchDomainsOnRetry")
 		present := len(x.OnDemandMatchDomainsOnRetry) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.OnDemandMatchDomainsOnRetry"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandMatchDomainsOnRetry"])
 	}
 	{
-		path := validation.Join(p, "OnDemandRules")
+		fieldPath := validation.Join(path, "OnDemandRules")
 		present := len(x.OnDemandRules) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IPSec.OnDemandRules"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandRules"])
 		for i := range x.OnDemandRules {
-			x.OnDemandRules[i].validate(c, validation.Index(path, i))
+			x.OnDemandRules[i].validate(c, validation.Index(fieldPath, i), supportPath+".OnDemandRules.OnDemandRulesElement")
 		}
 	}
 }
 
-func (x *VPNIKEv2) validate(c *validation.Collector, p string) {
+func (x *VPNIKEv2) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "RemoteAddress")
+		fieldPath := validation.Join(path, "RemoteAddress")
 		present := x.RemoteAddress != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.RemoteAddress"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RemoteAddress"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "LocalIdentifier")
+		fieldPath := validation.Join(path, "LocalIdentifier")
 		present := x.LocalIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.LocalIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LocalIdentifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "RemoteIdentifier")
+		fieldPath := validation.Join(path, "RemoteIdentifier")
 		present := x.RemoteIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.RemoteIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RemoteIdentifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "AuthenticationMethod")
+		fieldPath := validation.Join(path, "AuthenticationMethod")
 		present := x.AuthenticationMethod != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.AuthenticationMethod"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthenticationMethod"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.AuthenticationMethod, []any{"None", "SharedSecret", "Certificate"})
+			c.Enum(fieldPath, true, x.AuthenticationMethod, []any{"None", "SharedSecret", "Certificate"})
 		}
 	}
 	{
-		path := validation.Join(p, "CertificateType")
+		fieldPath := validation.Join(path, "CertificateType")
 		present := x.CertificateType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.CertificateType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CertificateType"])
 		if present {
-			c.Enum(path, true, *x.CertificateType, []any{"RSA", "ECDSA256", "ECDSA384", "ECDSA521", "RSA-PSS"})
+			c.Enum(fieldPath, true, *x.CertificateType, []any{"RSA", "ECDSA256", "ECDSA384", "ECDSA521", "RSA-PSS"})
 		}
 	}
 	{
-		path := validation.Join(p, "PayloadCertificateUUID")
+		fieldPath := validation.Join(path, "PayloadCertificateUUID")
 		present := x.PayloadCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.PayloadCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateUUID"])
 	}
 	{
-		path := validation.Join(p, "Password")
+		fieldPath := validation.Join(path, "Password")
 		present := x.Password != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.Password"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Password"])
 	}
 	{
-		path := validation.Join(p, "ProviderBundleIdentifier")
+		fieldPath := validation.Join(path, "ProviderBundleIdentifier")
 		present := x.ProviderBundleIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.ProviderBundleIdentifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProviderBundleIdentifier"])
 	}
 	{
-		path := validation.Join(p, "ProviderDesignatedRequirement")
+		fieldPath := validation.Join(path, "ProviderDesignatedRequirement")
 		present := x.ProviderDesignatedRequirement != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.ProviderDesignatedRequirement"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProviderDesignatedRequirement"])
 	}
 	{
-		path := validation.Join(p, "SharedSecret")
+		fieldPath := validation.Join(path, "SharedSecret")
 		present := x.SharedSecret != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.SharedSecret"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SharedSecret"])
 	}
 	{
-		path := validation.Join(p, "ExtendedAuthEnabled")
+		fieldPath := validation.Join(path, "ExtendedAuthEnabled")
 		present := x.ExtendedAuthEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.ExtendedAuthEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExtendedAuthEnabled"])
 		if present {
-			c.Enum(path, true, *x.ExtendedAuthEnabled, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.ExtendedAuthEnabled, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "AuthName")
+		fieldPath := validation.Join(path, "AuthName")
 		present := x.AuthName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.AuthName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthName"])
 	}
 	{
-		path := validation.Join(p, "AuthPassword")
+		fieldPath := validation.Join(path, "AuthPassword")
 		present := x.AuthPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.AuthPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthPassword"])
 	}
 	{
-		path := validation.Join(p, "OnDemandEnabled")
+		fieldPath := validation.Join(path, "OnDemandEnabled")
 		present := x.OnDemandEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.OnDemandEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandEnabled"])
 		if present {
-			c.Enum(path, true, *x.OnDemandEnabled, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.OnDemandEnabled, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "OnDemandUserOverrideDisabled")
+		fieldPath := validation.Join(path, "OnDemandUserOverrideDisabled")
 		present := x.OnDemandUserOverrideDisabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.OnDemandUserOverrideDisabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandUserOverrideDisabled"])
 		if present {
-			c.Enum(path, true, *x.OnDemandUserOverrideDisabled, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.OnDemandUserOverrideDisabled, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "OnDemandRules")
+		fieldPath := validation.Join(path, "OnDemandRules")
 		present := len(x.OnDemandRules) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.OnDemandRules"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandRules"])
 		for i := range x.OnDemandRules {
-			x.OnDemandRules[i].validate(c, validation.Index(path, i))
+			x.OnDemandRules[i].validate(c, validation.Index(fieldPath, i), supportPath+".OnDemandRules.OnDemandRulesElement")
 		}
 	}
 	{
-		path := validation.Join(p, "DeadPeerDetectionRate")
+		fieldPath := validation.Join(path, "DeadPeerDetectionRate")
 		present := x.DeadPeerDetectionRate != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.DeadPeerDetectionRate"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeadPeerDetectionRate"])
 		if present {
-			c.Enum(path, true, *x.DeadPeerDetectionRate, []any{"None", "Low", "Medium", "High"})
+			c.Enum(fieldPath, true, *x.DeadPeerDetectionRate, []any{"None", "Low", "Medium", "High"})
 		}
 	}
 	{
-		path := validation.Join(p, "ServerCertificateIssuerCommonName")
+		fieldPath := validation.Join(path, "ServerCertificateIssuerCommonName")
 		present := x.ServerCertificateIssuerCommonName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.ServerCertificateIssuerCommonName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ServerCertificateIssuerCommonName"])
 	}
 	{
-		path := validation.Join(p, "ServerCertificateCommonName")
+		fieldPath := validation.Join(path, "ServerCertificateCommonName")
 		present := x.ServerCertificateCommonName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.ServerCertificateCommonName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ServerCertificateCommonName"])
 	}
 	{
-		path := validation.Join(p, "TLSMinimumVersion")
+		fieldPath := validation.Join(path, "TLSMinimumVersion")
 		present := x.TLSMinimumVersion != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.TLSMinimumVersion"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TLSMinimumVersion"])
 		if present {
-			c.Enum(path, true, *x.TLSMinimumVersion, []any{"1.0", "1.1", "1.2", "1.3"})
+			c.Enum(fieldPath, true, *x.TLSMinimumVersion, []any{"1.0", "1.1", "1.2", "1.3"})
 		}
 	}
 	{
-		path := validation.Join(p, "TLSMaximumVersion")
+		fieldPath := validation.Join(path, "TLSMaximumVersion")
 		present := x.TLSMaximumVersion != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.TLSMaximumVersion"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TLSMaximumVersion"])
 		if present {
-			c.Enum(path, true, *x.TLSMaximumVersion, []any{"1.0", "1.1", "1.2", "1.3"})
+			c.Enum(fieldPath, true, *x.TLSMaximumVersion, []any{"1.0", "1.1", "1.2", "1.3"})
 		}
 	}
 	{
-		path := validation.Join(p, "UseConfigurationAttributeInternalIPSubnet")
+		fieldPath := validation.Join(path, "UseConfigurationAttributeInternalIPSubnet")
 		present := x.UseConfigurationAttributeInternalIPSubnet != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.UseConfigurationAttributeInternalIPSubnet"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UseConfigurationAttributeInternalIPSubnet"])
 		if present {
-			c.Enum(path, true, *x.UseConfigurationAttributeInternalIPSubnet, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.UseConfigurationAttributeInternalIPSubnet, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "DisableMOBIKE")
+		fieldPath := validation.Join(path, "DisableMOBIKE")
 		present := x.DisableMOBIKE != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.DisableMOBIKE"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisableMOBIKE"])
 		if present {
-			c.Enum(path, true, *x.DisableMOBIKE, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.DisableMOBIKE, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "DisableRedirect")
+		fieldPath := validation.Join(path, "DisableRedirect")
 		present := x.DisableRedirect != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.DisableRedirect"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisableRedirect"])
 		if present {
-			c.Enum(path, true, *x.DisableRedirect, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.DisableRedirect, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "DisconnectOnIdle")
+		fieldPath := validation.Join(path, "DisconnectOnIdle")
 		present := x.DisconnectOnIdle != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.DisconnectOnIdle"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisconnectOnIdle"])
 		if present {
-			c.Enum(path, true, *x.DisconnectOnIdle, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.DisconnectOnIdle, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "DisconnectOnIdleTimer")
+		fieldPath := validation.Join(path, "DisconnectOnIdleTimer")
 		present := x.DisconnectOnIdleTimer != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.DisconnectOnIdleTimer"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisconnectOnIdleTimer"])
 	}
 	{
-		path := validation.Join(p, "NATKeepAliveOffloadEnable")
+		fieldPath := validation.Join(path, "NATKeepAliveOffloadEnable")
 		present := x.NATKeepAliveOffloadEnable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.NATKeepAliveOffloadEnable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".NATKeepAliveOffloadEnable"])
 		if present {
-			c.Enum(path, true, *x.NATKeepAliveOffloadEnable, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.NATKeepAliveOffloadEnable, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "NATKeepAliveInterval")
+		fieldPath := validation.Join(path, "NATKeepAliveInterval")
 		present := x.NATKeepAliveInterval != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.NATKeepAliveInterval"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".NATKeepAliveInterval"])
 	}
 	{
-		path := validation.Join(p, "EnablePFS")
+		fieldPath := validation.Join(path, "EnablePFS")
 		present := x.EnablePFS != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.EnablePFS"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnablePFS"])
 		if present {
-			c.Enum(path, true, *x.EnablePFS, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.EnablePFS, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "EnableCertificateRevocationCheck")
+		fieldPath := validation.Join(path, "EnableCertificateRevocationCheck")
 		present := x.EnableCertificateRevocationCheck != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.EnableCertificateRevocationCheck"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableCertificateRevocationCheck"])
 		if present {
-			c.Enum(path, true, *x.EnableCertificateRevocationCheck, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.EnableCertificateRevocationCheck, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "EnableFallback")
+		fieldPath := validation.Join(path, "EnableFallback")
 		present := x.EnableFallback != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.EnableFallback"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableFallback"])
 		if present {
-			c.Enum(path, true, *x.EnableFallback, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.EnableFallback, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "MTU")
+		fieldPath := validation.Join(path, "MTU")
 		present := x.MTU != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.MTU"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MTU"])
 		if present {
-			c.Range(path, true, float64(*x.MTU), new(1280.0), new(1400.0))
+			c.Range(fieldPath, true, float64(*x.MTU), new(1280.0), new(1400.0))
 		}
 	}
 	{
-		path := validation.Join(p, "ProviderType")
+		fieldPath := validation.Join(path, "ProviderType")
 		present := x.ProviderType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.ProviderType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProviderType"])
 		if present {
-			c.Enum(path, true, *x.ProviderType, []any{"packet-tunnel", "app-proxy"})
+			c.Enum(fieldPath, true, *x.ProviderType, []any{"packet-tunnel", "app-proxy"})
 		}
 	}
 	{
-		path := validation.Join(p, "IncludeAllNetworks")
+		fieldPath := validation.Join(path, "IncludeAllNetworks")
 		present := x.IncludeAllNetworks != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.IncludeAllNetworks"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IncludeAllNetworks"])
 		if present {
-			c.Enum(path, true, *x.IncludeAllNetworks, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.IncludeAllNetworks, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "EnforceRoutes")
+		fieldPath := validation.Join(path, "EnforceRoutes")
 		present := x.EnforceRoutes != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.EnforceRoutes"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnforceRoutes"])
 		if present {
-			c.Enum(path, true, *x.EnforceRoutes, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.EnforceRoutes, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "ExcludeLocalNetworks")
+		fieldPath := validation.Join(path, "ExcludeLocalNetworks")
 		present := x.ExcludeLocalNetworks != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.ExcludeLocalNetworks"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExcludeLocalNetworks"])
 		if present {
-			c.Enum(path, true, *x.ExcludeLocalNetworks, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.ExcludeLocalNetworks, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "ExcludeCellularServices")
+		fieldPath := validation.Join(path, "ExcludeCellularServices")
 		present := x.ExcludeCellularServices != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.ExcludeCellularServices"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExcludeCellularServices"])
 		if present {
-			c.Enum(path, true, *x.ExcludeCellularServices, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.ExcludeCellularServices, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "ExcludeAPNs")
+		fieldPath := validation.Join(path, "ExcludeAPNs")
 		present := x.ExcludeAPNs != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.ExcludeAPNs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExcludeAPNs"])
 		if present {
-			c.Enum(path, true, *x.ExcludeAPNs, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.ExcludeAPNs, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "ExcludeDeviceCommunication")
+		fieldPath := validation.Join(path, "ExcludeDeviceCommunication")
 		present := x.ExcludeDeviceCommunication != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.ExcludeDeviceCommunication"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ExcludeDeviceCommunication"])
 		if present {
-			c.Enum(path, true, *x.ExcludeDeviceCommunication, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.ExcludeDeviceCommunication, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "PPK")
+		fieldPath := validation.Join(path, "PPK")
 		present := len(x.PPK) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.PPK"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PPK"])
 	}
 	{
-		path := validation.Join(p, "PPKIdentifier")
+		fieldPath := validation.Join(path, "PPKIdentifier")
 		present := x.PPKIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.PPKIdentifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PPKIdentifier"])
 	}
 	{
-		path := validation.Join(p, "PPKMandatory")
+		fieldPath := validation.Join(path, "PPKMandatory")
 		present := x.PPKMandatory != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.PPKMandatory"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PPKMandatory"])
 		if present {
-			c.Enum(path, true, *x.PPKMandatory, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.PPKMandatory, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "AllowPostQuantumKeyExchangeFallback")
+		fieldPath := validation.Join(path, "AllowPostQuantumKeyExchangeFallback")
 		present := x.AllowPostQuantumKeyExchangeFallback != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.AllowPostQuantumKeyExchangeFallback"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowPostQuantumKeyExchangeFallback"])
 		if present {
-			c.Enum(path, true, *x.AllowPostQuantumKeyExchangeFallback, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.AllowPostQuantumKeyExchangeFallback, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "EnforceStrictAlgorithmSelection")
+		fieldPath := validation.Join(path, "EnforceStrictAlgorithmSelection")
 		present := x.EnforceStrictAlgorithmSelection != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.EnforceStrictAlgorithmSelection"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnforceStrictAlgorithmSelection"])
 		if present {
-			c.Enum(path, true, *x.EnforceStrictAlgorithmSelection, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.EnforceStrictAlgorithmSelection, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "IKESecurityAssociationParameters")
+		fieldPath := validation.Join(path, "IKESecurityAssociationParameters")
 		present := x.IKESecurityAssociationParameters != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.IKESecurityAssociationParameters"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IKESecurityAssociationParameters"])
 		if present {
-			x.IKESecurityAssociationParameters.validate(c, path)
+			x.IKESecurityAssociationParameters.validate(c, fieldPath, supportPath+".IKESecurityAssociationParameters")
 		}
 	}
 	{
-		path := validation.Join(p, "ChildSecurityAssociationParameters")
+		fieldPath := validation.Join(path, "ChildSecurityAssociationParameters")
 		present := x.ChildSecurityAssociationParameters != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.ChildSecurityAssociationParameters"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ChildSecurityAssociationParameters"])
 		if present {
-			x.ChildSecurityAssociationParameters.validate(c, path)
+			x.ChildSecurityAssociationParameters.validate(c, fieldPath, supportPath+".ChildSecurityAssociationParameters")
 		}
 	}
 }
 
-func (x *VPNSecurityAssociationParameters) validate(c *validation.Collector, p string) {
+func (x *VPNSecurityAssociationParameters) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "EncryptionAlgorithm")
+		fieldPath := validation.Join(path, "EncryptionAlgorithm")
 		present := x.EncryptionAlgorithm != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.IKESecurityAssociationParameters.EncryptionAlgorithm"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EncryptionAlgorithm"])
 		if present {
-			c.Enum(path, true, *x.EncryptionAlgorithm, []any{"DES", "3DES", "AES-128", "AES-256", "AES-128-GCM", "AES-256-GCM", "ChaCha20Poly1305"})
+			c.Enum(fieldPath, true, *x.EncryptionAlgorithm, []any{"DES", "3DES", "AES-128", "AES-256", "AES-128-GCM", "AES-256-GCM", "ChaCha20Poly1305"})
 		}
 	}
 	{
-		path := validation.Join(p, "IntegrityAlgorithm")
+		fieldPath := validation.Join(path, "IntegrityAlgorithm")
 		present := x.IntegrityAlgorithm != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.IKESecurityAssociationParameters.IntegrityAlgorithm"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IntegrityAlgorithm"])
 		if present {
-			c.Enum(path, true, *x.IntegrityAlgorithm, []any{"SHA1-96", "SHA1-160", "SHA2-256", "SHA2-384", "SHA2-512"})
+			c.Enum(fieldPath, true, *x.IntegrityAlgorithm, []any{"SHA1-96", "SHA1-160", "SHA2-256", "SHA2-384", "SHA2-512"})
 		}
 	}
 	{
-		path := validation.Join(p, "DiffieHellmanGroup")
+		fieldPath := validation.Join(path, "DiffieHellmanGroup")
 		present := x.DiffieHellmanGroup != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.IKESecurityAssociationParameters.DiffieHellmanGroup"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DiffieHellmanGroup"])
 		if present {
-			c.Enum(path, true, *x.DiffieHellmanGroup, []any{int64(1), int64(2), int64(5), int64(14), int64(15), int64(16), int64(17), int64(18), int64(19), int64(20), int64(21), int64(31), int64(32)})
+			c.Enum(fieldPath, true, *x.DiffieHellmanGroup, []any{int64(1), int64(2), int64(5), int64(14), int64(15), int64(16), int64(17), int64(18), int64(19), int64(20), int64(21), int64(31), int64(32)})
 		}
 	}
 	{
-		path := validation.Join(p, "PostQuantumKeyExchangeMethods")
+		fieldPath := validation.Join(path, "PostQuantumKeyExchangeMethods")
 		present := len(x.PostQuantumKeyExchangeMethods) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.IKESecurityAssociationParameters.PostQuantumKeyExchangeMethods"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PostQuantumKeyExchangeMethods"])
 		for i, v := range x.PostQuantumKeyExchangeMethods {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{int64(0), int64(36), int64(37)})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{int64(0), int64(36), int64(37)})
 		}
 	}
 	{
-		path := validation.Join(p, "LifeTimeInMinutes")
+		fieldPath := validation.Join(path, "LifeTimeInMinutes")
 		present := x.LifeTimeInMinutes != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.IKEv2.IKESecurityAssociationParameters.LifeTimeInMinutes"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LifeTimeInMinutes"])
 		if present {
-			c.Range(path, true, float64(*x.LifeTimeInMinutes), new(10.0), new(1440.0))
+			c.Range(fieldPath, true, float64(*x.LifeTimeInMinutes), new(10.0), new(1440.0))
 		}
 	}
 }
 
-func (x *VPNDNS) validate(c *validation.Collector, p string) {
+func (x *VPNDNS) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "DNSProtocol")
+		fieldPath := validation.Join(path, "DNSProtocol")
 		present := x.DNSProtocol != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.DNS.DNSProtocol"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DNSProtocol"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.DNSProtocol, []any{"Cleartext", "HTTPS", "TLS"})
+			c.Enum(fieldPath, true, x.DNSProtocol, []any{"Cleartext", "HTTPS", "TLS"})
 		}
 	}
 	{
-		path := validation.Join(p, "ServerURL")
+		fieldPath := validation.Join(path, "ServerURL")
 		present := x.ServerURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.DNS.ServerURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ServerURL"])
 	}
 	{
-		path := validation.Join(p, "ServerName")
+		fieldPath := validation.Join(path, "ServerName")
 		present := x.ServerName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.DNS.ServerName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ServerName"])
 	}
 	{
-		path := validation.Join(p, "ServerAddresses")
+		fieldPath := validation.Join(path, "ServerAddresses")
 		present := len(x.ServerAddresses) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.DNS.ServerAddresses"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ServerAddresses"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "SearchDomains")
+		fieldPath := validation.Join(path, "SearchDomains")
 		present := len(x.SearchDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.DNS.SearchDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SearchDomains"])
 	}
 	{
-		path := validation.Join(p, "DomainName")
+		fieldPath := validation.Join(path, "DomainName")
 		present := x.DomainName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.DNS.DomainName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DomainName"])
 	}
 	{
-		path := validation.Join(p, "SupplementalMatchDomains")
+		fieldPath := validation.Join(path, "SupplementalMatchDomains")
 		present := len(x.SupplementalMatchDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.DNS.SupplementalMatchDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SupplementalMatchDomains"])
 	}
 	{
-		path := validation.Join(p, "SupplementalMatchDomainsNoSearch")
+		fieldPath := validation.Join(path, "SupplementalMatchDomainsNoSearch")
 		present := x.SupplementalMatchDomainsNoSearch != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.DNS.SupplementalMatchDomainsNoSearch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SupplementalMatchDomainsNoSearch"])
 		if present {
-			c.Enum(path, true, *x.SupplementalMatchDomainsNoSearch, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.SupplementalMatchDomainsNoSearch, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "PayloadCertificateUUID")
+		fieldPath := validation.Join(path, "PayloadCertificateUUID")
 		present := x.PayloadCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.DNS.PayloadCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateUUID"])
 		if present {
-			c.Pattern(path, true, *x.PayloadCertificateUUID, format1)
+			c.Pattern(fieldPath, true, *x.PayloadCertificateUUID, format1)
 		}
 	}
 }
 
-func (x *VPNProxies) validate(c *validation.Collector, p string) {
+func (x *VPNProxies) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "ProxyAutoConfigEnable")
+		fieldPath := validation.Join(path, "ProxyAutoConfigEnable")
 		present := x.ProxyAutoConfigEnable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.Proxies.ProxyAutoConfigEnable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyAutoConfigEnable"])
 		if present {
-			c.Enum(path, true, *x.ProxyAutoConfigEnable, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.ProxyAutoConfigEnable, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "ProxyAutoDiscoveryEnable")
+		fieldPath := validation.Join(path, "ProxyAutoDiscoveryEnable")
 		present := x.ProxyAutoDiscoveryEnable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.Proxies.ProxyAutoDiscoveryEnable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyAutoDiscoveryEnable"])
 		if present {
-			c.Enum(path, true, *x.ProxyAutoDiscoveryEnable, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.ProxyAutoDiscoveryEnable, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "ProxyAutoConfigURLString")
+		fieldPath := validation.Join(path, "ProxyAutoConfigURLString")
 		present := x.ProxyAutoConfigURLString != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.Proxies.ProxyAutoConfigURLString"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyAutoConfigURLString"])
 	}
 	{
-		path := validation.Join(p, "SupplementalMatchDomains")
+		fieldPath := validation.Join(path, "SupplementalMatchDomains")
 		present := len(x.SupplementalMatchDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.Proxies.SupplementalMatchDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SupplementalMatchDomains"])
 	}
 	{
-		path := validation.Join(p, "HTTPEnable")
+		fieldPath := validation.Join(path, "HTTPEnable")
 		present := x.HTTPEnable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.Proxies.HTTPEnable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HTTPEnable"])
 		if present {
-			c.Enum(path, true, *x.HTTPEnable, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.HTTPEnable, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "HTTPProxy")
+		fieldPath := validation.Join(path, "HTTPProxy")
 		present := x.HTTPProxy != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.Proxies.HTTPProxy"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HTTPProxy"])
 	}
 	{
-		path := validation.Join(p, "HTTPPort")
+		fieldPath := validation.Join(path, "HTTPPort")
 		present := x.HTTPPort != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.Proxies.HTTPPort"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HTTPPort"])
 		if present {
-			c.Range(path, true, float64(*x.HTTPPort), new(0.0), new(65535.0))
+			c.Range(fieldPath, true, float64(*x.HTTPPort), new(0.0), new(65535.0))
 		}
 	}
 	{
-		path := validation.Join(p, "HTTPProxyUsername")
+		fieldPath := validation.Join(path, "HTTPProxyUsername")
 		present := x.HTTPProxyUsername != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.Proxies.HTTPProxyUsername"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HTTPProxyUsername"])
 	}
 	{
-		path := validation.Join(p, "HTTPProxyPassword")
+		fieldPath := validation.Join(path, "HTTPProxyPassword")
 		present := x.HTTPProxyPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.Proxies.HTTPProxyPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HTTPProxyPassword"])
 	}
 	{
-		path := validation.Join(p, "HTTPSEnable")
+		fieldPath := validation.Join(path, "HTTPSEnable")
 		present := x.HTTPSEnable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.Proxies.HTTPSEnable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HTTPSEnable"])
 		if present {
-			c.Enum(path, true, *x.HTTPSEnable, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.HTTPSEnable, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "HTTPSProxy")
+		fieldPath := validation.Join(path, "HTTPSProxy")
 		present := x.HTTPSProxy != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.Proxies.HTTPSProxy"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HTTPSProxy"])
 	}
 	{
-		path := validation.Join(p, "HTTPSPort")
+		fieldPath := validation.Join(path, "HTTPSPort")
 		present := x.HTTPSPort != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.Proxies.HTTPSPort"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HTTPSPort"])
 		if present {
-			c.Range(path, true, float64(*x.HTTPSPort), new(0.0), new(65535.0))
+			c.Range(fieldPath, true, float64(*x.HTTPSPort), new(0.0), new(65535.0))
 		}
 	}
 }
 
-func (x *VPNAlwaysOn) validate(c *validation.Collector, p string) {
+func (x *VPNAlwaysOn) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "UIToggleEnabled")
+		fieldPath := validation.Join(path, "UIToggleEnabled")
 		present := x.UIToggleEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.AlwaysOn.UIToggleEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UIToggleEnabled"])
 		if present {
-			c.Enum(path, true, *x.UIToggleEnabled, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.UIToggleEnabled, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "TunnelConfigurations")
+		fieldPath := validation.Join(path, "TunnelConfigurations")
 		present := len(x.TunnelConfigurations) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.AlwaysOn.TunnelConfigurations"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TunnelConfigurations"])
+		c.Required(fieldPath, present)
 		for i := range x.TunnelConfigurations {
-			x.TunnelConfigurations[i].validate(c, validation.Index(path, i))
+			x.TunnelConfigurations[i].validate(c, validation.Index(fieldPath, i), supportPath+".TunnelConfigurations.TunnelConfigurationElement")
 		}
 	}
 	{
-		path := validation.Join(p, "ServiceExceptions")
+		fieldPath := validation.Join(path, "ServiceExceptions")
 		present := len(x.ServiceExceptions) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.AlwaysOn.ServiceExceptions"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ServiceExceptions"])
 		for i := range x.ServiceExceptions {
-			x.ServiceExceptions[i].validate(c, validation.Index(path, i))
+			x.ServiceExceptions[i].validate(c, validation.Index(fieldPath, i), supportPath+".ServiceExceptions.ServiceExceptionElement")
 		}
 	}
 	{
-		path := validation.Join(p, "ApplicationExceptions")
+		fieldPath := validation.Join(path, "ApplicationExceptions")
 		present := len(x.ApplicationExceptions) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.AlwaysOn.ApplicationExceptions"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ApplicationExceptions"])
 		for i := range x.ApplicationExceptions {
-			x.ApplicationExceptions[i].validate(c, validation.Index(path, i))
+			x.ApplicationExceptions[i].validate(c, validation.Index(fieldPath, i), supportPath+".ApplicationExceptions.ApplicationExceptionElement")
 		}
 	}
 	{
-		path := validation.Join(p, "AllowCaptiveWebSheet")
+		fieldPath := validation.Join(path, "AllowCaptiveWebSheet")
 		present := x.AllowCaptiveWebSheet != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.AlwaysOn.AllowCaptiveWebSheet"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowCaptiveWebSheet"])
 		if present {
-			c.Enum(path, true, *x.AllowCaptiveWebSheet, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.AllowCaptiveWebSheet, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "AllowAllCaptiveNetworkPlugins")
+		fieldPath := validation.Join(path, "AllowAllCaptiveNetworkPlugins")
 		present := x.AllowAllCaptiveNetworkPlugins != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.AlwaysOn.AllowAllCaptiveNetworkPlugins"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowAllCaptiveNetworkPlugins"])
 		if present {
-			c.Enum(path, true, *x.AllowAllCaptiveNetworkPlugins, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.AllowAllCaptiveNetworkPlugins, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "AllowedCaptiveNetworkPlugins")
+		fieldPath := validation.Join(path, "AllowedCaptiveNetworkPlugins")
 		present := len(x.AllowedCaptiveNetworkPlugins) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.AlwaysOn.AllowedCaptiveNetworkPlugins"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowedCaptiveNetworkPlugins"])
 		for i := range x.AllowedCaptiveNetworkPlugins {
-			x.AllowedCaptiveNetworkPlugins[i].validate(c, validation.Index(path, i))
+			x.AllowedCaptiveNetworkPlugins[i].validate(c, validation.Index(fieldPath, i), supportPath+".AllowedCaptiveNetworkPlugins.AllowedCaptiveNetworkPluginElement")
 		}
 	}
 }
 
-func (x *VPNAlwaysOnTunnelConfigurations) validate(c *validation.Collector, p string) {
+func (x *VPNAlwaysOnTunnelConfigurations) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "ProtocolType")
+		fieldPath := validation.Join(path, "ProtocolType")
 		present := x.ProtocolType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.AlwaysOn.TunnelConfigurations.TunnelConfigurationElement.ProtocolType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProtocolType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.ProtocolType, []any{"IKEv2"})
+			c.Enum(fieldPath, true, x.ProtocolType, []any{"IKEv2"})
 		}
 	}
 	{
-		path := validation.Join(p, "Interfaces")
+		fieldPath := validation.Join(path, "Interfaces")
 		present := len(x.Interfaces) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.AlwaysOn.TunnelConfigurations.TunnelConfigurationElement.Interfaces"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Interfaces"])
 		for i, v := range x.Interfaces {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"Cellular", "WiFi"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"Cellular", "WiFi"})
 		}
 	}
 }
 
-func (x *VPNAlwaysOnServiceExceptions) validate(c *validation.Collector, p string) {
+func (x *VPNAlwaysOnServiceExceptions) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "ServiceName")
+		fieldPath := validation.Join(path, "ServiceName")
 		present := x.ServiceName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.AlwaysOn.ServiceExceptions.ServiceExceptionElement.ServiceName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ServiceName"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.ServiceName, []any{"VoiceMail", "AirPrint", "CellularServices", "DeviceCommunication"})
+			c.Enum(fieldPath, true, x.ServiceName, []any{"VoiceMail", "AirPrint", "CellularServices", "DeviceCommunication"})
 		}
 	}
 	{
-		path := validation.Join(p, "Action")
+		fieldPath := validation.Join(path, "Action")
 		present := x.Action != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.AlwaysOn.ServiceExceptions.ServiceExceptionElement.Action"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Action"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Action, []any{"Allow", "Drop"})
+			c.Enum(fieldPath, true, x.Action, []any{"Allow", "Drop"})
 		}
 	}
 }
 
-func (x *VPNAlwaysOnApplicationExceptions) validate(c *validation.Collector, p string) {
+func (x *VPNAlwaysOnApplicationExceptions) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "BundleIdentifier")
+		fieldPath := validation.Join(path, "BundleIdentifier")
 		present := x.BundleIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.AlwaysOn.ApplicationExceptions.ApplicationExceptionElement.BundleIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BundleIdentifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "LimitToProtocols")
+		fieldPath := validation.Join(path, "LimitToProtocols")
 		present := len(x.LimitToProtocols) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.AlwaysOn.ApplicationExceptions.ApplicationExceptionElement.LimitToProtocols"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LimitToProtocols"])
 		for i, v := range x.LimitToProtocols {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"UDP"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"UDP"})
 		}
 	}
 }
 
-func (x *VPNAlwaysOnAllowedCaptiveNetworkPlugins) validate(c *validation.Collector, p string) {
+func (x *VPNAlwaysOnAllowedCaptiveNetworkPlugins) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "BundleIdentifier")
+		fieldPath := validation.Join(path, "BundleIdentifier")
 		present := x.BundleIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.AlwaysOn.AllowedCaptiveNetworkPlugins.AllowedCaptiveNetworkPluginElement.BundleIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BundleIdentifier"])
+		c.Required(fieldPath, present)
 	}
 }
 
-func (x *VPNTransparentProxy) validate(c *validation.Collector, p string) {
+func (x *VPNTransparentProxy) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "AuthenticationMethod")
+		fieldPath := validation.Join(path, "AuthenticationMethod")
 		present := x.AuthenticationMethod != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.TransparentProxy.AuthenticationMethod"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthenticationMethod"])
 		if present {
-			c.Enum(path, true, *x.AuthenticationMethod, []any{"Password", "Certificate", "Password+Certificate"})
+			c.Enum(fieldPath, true, *x.AuthenticationMethod, []any{"Password", "Certificate", "Password+Certificate"})
 		}
 	}
 	{
-		path := validation.Join(p, "DisconnectOnIdle")
+		fieldPath := validation.Join(path, "DisconnectOnIdle")
 		present := x.DisconnectOnIdle != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.TransparentProxy.DisconnectOnIdle"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisconnectOnIdle"])
 		if present {
-			c.Enum(path, true, *x.DisconnectOnIdle, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.DisconnectOnIdle, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "DisconnectOnIdleTimer")
+		fieldPath := validation.Join(path, "DisconnectOnIdleTimer")
 		present := x.DisconnectOnIdleTimer != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.TransparentProxy.DisconnectOnIdleTimer"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisconnectOnIdleTimer"])
 	}
 	{
-		path := validation.Join(p, "EnforceRoutes")
+		fieldPath := validation.Join(path, "EnforceRoutes")
 		present := x.EnforceRoutes != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.TransparentProxy.EnforceRoutes"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnforceRoutes"])
 		if present {
-			c.Enum(path, true, *x.EnforceRoutes, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.EnforceRoutes, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "OnDemandEnabled")
+		fieldPath := validation.Join(path, "OnDemandEnabled")
 		present := x.OnDemandEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.TransparentProxy.OnDemandEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandEnabled"])
 		if present {
-			c.Enum(path, true, *x.OnDemandEnabled, []any{int64(0), int64(1)})
+			c.Enum(fieldPath, true, *x.OnDemandEnabled, []any{int64(0), int64(1)})
 		}
 	}
 	{
-		path := validation.Join(p, "OnDemandRules")
+		fieldPath := validation.Join(path, "OnDemandRules")
 		present := len(x.OnDemandRules) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.TransparentProxy.OnDemandRules"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnDemandRules"])
 		for i := range x.OnDemandRules {
-			x.OnDemandRules[i].validate(c, validation.Index(path, i))
+			x.OnDemandRules[i].validate(c, validation.Index(fieldPath, i), supportPath+".OnDemandRules.OnDemandRulesElement")
 		}
 	}
 	{
-		path := validation.Join(p, "PayloadCertificateUUID")
+		fieldPath := validation.Join(path, "PayloadCertificateUUID")
 		present := x.PayloadCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.TransparentProxy.PayloadCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateUUID"])
 	}
 	{
-		path := validation.Join(p, "Password")
+		fieldPath := validation.Join(path, "Password")
 		present := x.Password != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.TransparentProxy.Password"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Password"])
 	}
 	{
-		path := validation.Join(p, "ProviderBundleIdentifier")
+		fieldPath := validation.Join(path, "ProviderBundleIdentifier")
 		present := x.ProviderBundleIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.TransparentProxy.ProviderBundleIdentifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProviderBundleIdentifier"])
 	}
 	{
-		path := validation.Join(p, "ProviderDesignatedRequirement")
+		fieldPath := validation.Join(path, "ProviderDesignatedRequirement")
 		present := x.ProviderDesignatedRequirement != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.TransparentProxy.ProviderDesignatedRequirement"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProviderDesignatedRequirement"])
 	}
 	{
-		path := validation.Join(p, "ProviderType")
+		fieldPath := validation.Join(path, "ProviderType")
 		present := x.ProviderType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.TransparentProxy.ProviderType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProviderType"])
 		if present {
-			c.Enum(path, true, *x.ProviderType, []any{"packet-tunnel", "app-proxy"})
+			c.Enum(fieldPath, true, *x.ProviderType, []any{"packet-tunnel", "app-proxy"})
 		}
 	}
 	{
-		path := validation.Join(p, "Order")
+		fieldPath := validation.Join(path, "Order")
 		present := x.Order != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["VPN.TransparentProxy.Order"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Order"])
 	}
 }
 
@@ -13268,65 +13268,65 @@ func (x *VPNTransparentProxy) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *WebClip) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "WebClip")
 	return c.Err()
 }
 
-func (x *WebClip) validate(c *validation.Collector, p string) {
+func (x *WebClip) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["WebClip"])
+	c.Support(path, true, supportTable["WebClip"])
 	{
-		path := validation.Join(p, "Precomposed")
+		fieldPath := validation.Join(path, "Precomposed")
 		present := x.Precomposed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebClip.Precomposed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Precomposed"])
 	}
 	{
-		path := validation.Join(p, "FullScreen")
+		fieldPath := validation.Join(path, "FullScreen")
 		present := x.FullScreen != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebClip.FullScreen"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FullScreen"])
 	}
 	{
-		path := validation.Join(p, "URL")
+		fieldPath := validation.Join(path, "URL")
 		present := x.URL != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebClip.URL"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".URL"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Icon")
+		fieldPath := validation.Join(path, "Icon")
 		present := len(x.Icon) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebClip.Icon"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Icon"])
 	}
 	{
-		path := validation.Join(p, "IsRemovable")
+		fieldPath := validation.Join(path, "IsRemovable")
 		present := x.IsRemovable != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebClip.IsRemovable"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IsRemovable"])
 	}
 	{
-		path := validation.Join(p, "Label")
+		fieldPath := validation.Join(path, "Label")
 		present := x.Label != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebClip.Label"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Label"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "IgnoreManifestScope")
+		fieldPath := validation.Join(path, "IgnoreManifestScope")
 		present := x.IgnoreManifestScope != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebClip.IgnoreManifestScope"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IgnoreManifestScope"])
 	}
 	{
-		path := validation.Join(p, "TargetApplicationBundleIdentifier")
+		fieldPath := validation.Join(path, "TargetApplicationBundleIdentifier")
 		present := x.TargetApplicationBundleIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebClip.TargetApplicationBundleIdentifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TargetApplicationBundleIdentifier"])
 	}
 }
 
@@ -13334,298 +13334,298 @@ func (x *WebClip) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *WebContentFilter) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "WebContentFilter")
 	return c.Err()
 }
 
-func (x *WebContentFilter) validate(c *validation.Collector, p string) {
+func (x *WebContentFilter) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["WebContentFilter"])
+	c.Support(path, true, supportTable["WebContentFilter"])
 	{
-		path := validation.Join(p, "FilterType")
+		fieldPath := validation.Join(path, "FilterType")
 		present := x.FilterType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.FilterType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FilterType"])
 		if present {
-			c.Enum(path, true, *x.FilterType, []any{"BuiltIn", "Plugin"})
+			c.Enum(fieldPath, true, *x.FilterType, []any{"BuiltIn", "Plugin"})
 		}
 	}
 	{
-		path := validation.Join(p, "SafariHistoryRetentionEnabled")
+		fieldPath := validation.Join(path, "SafariHistoryRetentionEnabled")
 		present := x.SafariHistoryRetentionEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.SafariHistoryRetentionEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SafariHistoryRetentionEnabled"])
 	}
 	{
-		path := validation.Join(p, "AutoFilterEnabled")
+		fieldPath := validation.Join(path, "AutoFilterEnabled")
 		present := x.AutoFilterEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.AutoFilterEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AutoFilterEnabled"])
 	}
 	{
-		path := validation.Join(p, "PermittedURLs")
+		fieldPath := validation.Join(path, "PermittedURLs")
 		present := len(x.PermittedURLs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.PermittedURLs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PermittedURLs"])
 	}
 	{
-		path := validation.Join(p, "BlacklistedURLs")
+		fieldPath := validation.Join(path, "BlacklistedURLs")
 		present := len(x.BlacklistedURLs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.BlacklistedURLs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BlacklistedURLs"])
 	}
 	{
-		path := validation.Join(p, "DenyListURLs")
+		fieldPath := validation.Join(path, "DenyListURLs")
 		present := len(x.DenyListURLs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.DenyListURLs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DenyListURLs"])
 	}
 	{
-		path := validation.Join(p, "HideDenyListURLs")
+		fieldPath := validation.Join(path, "HideDenyListURLs")
 		present := x.HideDenyListURLs != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.HideDenyListURLs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HideDenyListURLs"])
 	}
 	{
-		path := validation.Join(p, "WhitelistedBookmarks")
+		fieldPath := validation.Join(path, "WhitelistedBookmarks")
 		present := len(x.WhitelistedBookmarks) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.WhitelistedBookmarks"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".WhitelistedBookmarks"])
 		for i := range x.WhitelistedBookmarks {
-			x.WhitelistedBookmarks[i].validate(c, validation.Index(path, i))
+			x.WhitelistedBookmarks[i].validate(c, validation.Index(fieldPath, i), supportPath+".WhitelistedBookmarks.WhitelistedBookmarksItem")
 		}
 	}
 	{
-		path := validation.Join(p, "AllowListBookmarks")
+		fieldPath := validation.Join(path, "AllowListBookmarks")
 		present := len(x.AllowListBookmarks) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.AllowListBookmarks"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowListBookmarks"])
 		for i := range x.AllowListBookmarks {
-			x.AllowListBookmarks[i].validate(c, validation.Index(path, i))
+			x.AllowListBookmarks[i].validate(c, validation.Index(fieldPath, i), supportPath+".AllowListBookmarks.AllowListBookmarksItem")
 		}
 	}
 	{
-		path := validation.Join(p, "UserDefinedName")
+		fieldPath := validation.Join(path, "UserDefinedName")
 		present := x.UserDefinedName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.UserDefinedName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserDefinedName"])
 	}
 	{
-		path := validation.Join(p, "PluginBundleID")
+		fieldPath := validation.Join(path, "PluginBundleID")
 		present := x.PluginBundleID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.PluginBundleID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PluginBundleID"])
 	}
 	{
-		path := validation.Join(p, "ServerAddress")
+		fieldPath := validation.Join(path, "ServerAddress")
 		present := x.ServerAddress != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.ServerAddress"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ServerAddress"])
 	}
 	{
-		path := validation.Join(p, "UserName")
+		fieldPath := validation.Join(path, "UserName")
 		present := x.UserName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.UserName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserName"])
 	}
 	{
-		path := validation.Join(p, "Password")
+		fieldPath := validation.Join(path, "Password")
 		present := x.Password != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.Password"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Password"])
 	}
 	{
-		path := validation.Join(p, "PayloadCertificateUUID")
+		fieldPath := validation.Join(path, "PayloadCertificateUUID")
 		present := x.PayloadCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.PayloadCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateUUID"])
 		if present {
-			c.Pattern(path, true, *x.PayloadCertificateUUID, format1)
+			c.Pattern(fieldPath, true, *x.PayloadCertificateUUID, format1)
 		}
 	}
 	{
-		path := validation.Join(p, "Organization")
+		fieldPath := validation.Join(path, "Organization")
 		present := x.Organization != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.Organization"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Organization"])
 	}
 	{
-		path := validation.Join(p, "VendorConfig")
+		fieldPath := validation.Join(path, "VendorConfig")
 		present := len(x.VendorConfig) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.VendorConfig"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VendorConfig"])
 	}
 	{
-		path := validation.Join(p, "FilterBrowsers")
+		fieldPath := validation.Join(path, "FilterBrowsers")
 		present := x.FilterBrowsers != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.FilterBrowsers"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FilterBrowsers"])
 	}
 	{
-		path := validation.Join(p, "FilterSockets")
+		fieldPath := validation.Join(path, "FilterSockets")
 		present := x.FilterSockets != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.FilterSockets"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FilterSockets"])
 	}
 	{
-		path := validation.Join(p, "FilterDataProviderDesignatedRequirement")
+		fieldPath := validation.Join(path, "FilterDataProviderDesignatedRequirement")
 		present := x.FilterDataProviderDesignatedRequirement != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.FilterDataProviderDesignatedRequirement"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FilterDataProviderDesignatedRequirement"])
 	}
 	{
-		path := validation.Join(p, "FilterDataProviderBundleIdentifier")
+		fieldPath := validation.Join(path, "FilterDataProviderBundleIdentifier")
 		present := x.FilterDataProviderBundleIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.FilterDataProviderBundleIdentifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FilterDataProviderBundleIdentifier"])
 	}
 	{
-		path := validation.Join(p, "FilterPackets")
+		fieldPath := validation.Join(path, "FilterPackets")
 		present := x.FilterPackets != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.FilterPackets"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FilterPackets"])
 	}
 	{
-		path := validation.Join(p, "FilterPacketProviderDesignatedRequirement")
+		fieldPath := validation.Join(path, "FilterPacketProviderDesignatedRequirement")
 		present := x.FilterPacketProviderDesignatedRequirement != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.FilterPacketProviderDesignatedRequirement"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FilterPacketProviderDesignatedRequirement"])
 	}
 	{
-		path := validation.Join(p, "FilterPacketProviderBundleIdentifier")
+		fieldPath := validation.Join(path, "FilterPacketProviderBundleIdentifier")
 		present := x.FilterPacketProviderBundleIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.FilterPacketProviderBundleIdentifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FilterPacketProviderBundleIdentifier"])
 	}
 	{
-		path := validation.Join(p, "FilterGrade")
+		fieldPath := validation.Join(path, "FilterGrade")
 		present := x.FilterGrade != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.FilterGrade"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FilterGrade"])
 		if present {
-			c.Enum(path, true, *x.FilterGrade, []any{"firewall", "inspector"})
+			c.Enum(fieldPath, true, *x.FilterGrade, []any{"firewall", "inspector"})
 		}
 	}
 	{
-		path := validation.Join(p, "ContentFilterUUID")
+		fieldPath := validation.Join(path, "ContentFilterUUID")
 		present := x.ContentFilterUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.ContentFilterUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ContentFilterUUID"])
 	}
 	{
-		path := validation.Join(p, "FilterURLs")
+		fieldPath := validation.Join(path, "FilterURLs")
 		present := x.FilterURLs != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.FilterURLs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FilterURLs"])
 	}
 	{
-		path := validation.Join(p, "URLFilterParameters")
+		fieldPath := validation.Join(path, "URLFilterParameters")
 		present := x.URLFilterParameters != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.URLFilterParameters"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".URLFilterParameters"])
 		if present {
-			x.URLFilterParameters.validate(c, path)
+			x.URLFilterParameters.validate(c, fieldPath, supportPath+".URLFilterParameters")
 		}
 	}
 }
 
-func (x *WebContentFilterWhitelistedBookmarks) validate(c *validation.Collector, p string) {
+func (x *WebContentFilterWhitelistedBookmarks) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "URL")
+		fieldPath := validation.Join(path, "URL")
 		present := x.URL != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.WhitelistedBookmarks.WhitelistedBookmarksItem.URL"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".URL"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Title")
+		fieldPath := validation.Join(path, "Title")
 		present := x.Title != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.WhitelistedBookmarks.WhitelistedBookmarksItem.Title"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Title"])
+		c.Required(fieldPath, present)
 	}
 }
 
-func (x *WebContentFilterAllowListBookmarks) validate(c *validation.Collector, p string) {
+func (x *WebContentFilterAllowListBookmarks) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "URL")
+		fieldPath := validation.Join(path, "URL")
 		present := x.URL != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.AllowListBookmarks.AllowListBookmarksItem.URL"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".URL"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Title")
+		fieldPath := validation.Join(path, "Title")
 		present := x.Title != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.AllowListBookmarks.AllowListBookmarksItem.Title"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Title"])
+		c.Required(fieldPath, present)
 	}
 }
 
-func (x *WebContentFilterURLFilterParameters) validate(c *validation.Collector, p string) {
+func (x *WebContentFilterURLFilterParameters) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "URLFilterControlProviderDesignatedRequirement")
+		fieldPath := validation.Join(path, "URLFilterControlProviderDesignatedRequirement")
 		present := x.URLFilterControlProviderDesignatedRequirement != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.URLFilterParameters.URLFilterControlProviderDesignatedRequirement"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".URLFilterControlProviderDesignatedRequirement"])
 	}
 	{
-		path := validation.Join(p, "URLFilterControlProviderBundleIdentifier")
+		fieldPath := validation.Join(path, "URLFilterControlProviderBundleIdentifier")
 		present := x.URLFilterControlProviderBundleIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.URLFilterParameters.URLFilterControlProviderBundleIdentifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".URLFilterControlProviderBundleIdentifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "PIRServerURL")
+		fieldPath := validation.Join(path, "PIRServerURL")
 		present := x.PIRServerURL != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.URLFilterParameters.PIRServerURL"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PIRServerURL"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "PIRPrivacyPassIssuerURL")
+		fieldPath := validation.Join(path, "PIRPrivacyPassIssuerURL")
 		present := x.PIRPrivacyPassIssuerURL != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.URLFilterParameters.PIRPrivacyPassIssuerURL"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PIRPrivacyPassIssuerURL"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "PIRAuthenticationToken")
+		fieldPath := validation.Join(path, "PIRAuthenticationToken")
 		present := x.PIRAuthenticationToken != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.URLFilterParameters.PIRAuthenticationToken"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PIRAuthenticationToken"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "URLFilterFailClosed")
+		fieldPath := validation.Join(path, "URLFilterFailClosed")
 		present := x.URLFilterFailClosed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.URLFilterParameters.URLFilterFailClosed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".URLFilterFailClosed"])
 	}
 	{
-		path := validation.Join(p, "URLPrefilterFetchFrequency")
+		fieldPath := validation.Join(path, "URLPrefilterFetchFrequency")
 		present := x.URLPrefilterFetchFrequency != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WebContentFilter.URLFilterParameters.URLPrefilterFetchFrequency"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".URLPrefilterFetchFrequency"])
 		if present {
-			c.Range(path, true, float64(*x.URLPrefilterFetchFrequency), new(2700.0), nil)
+			c.Range(fieldPath, true, float64(*x.URLPrefilterFetchFrequency), new(2700.0), nil)
 		}
 	}
 }
@@ -13634,392 +13634,392 @@ func (x *WebContentFilterURLFilterParameters) validate(c *validation.Collector, 
 // that every present key is supported on that OS version and enrollment context.
 func (x *WiFi) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "WiFi")
 	return c.Err()
 }
 
-func (x *WiFi) validate(c *validation.Collector, p string) {
+func (x *WiFi) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["WiFi"])
+	c.Support(path, true, supportTable["WiFi"])
 	{
-		path := validation.Join(p, "AutoJoin")
+		fieldPath := validation.Join(path, "AutoJoin")
 		present := x.AutoJoin != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.AutoJoin"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AutoJoin"])
 	}
 	{
-		path := validation.Join(p, "SSID_STR")
+		fieldPath := validation.Join(path, "SSID_STR")
 		present := x.SSIDSTR != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.SSID_STR"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SSID_STR"])
 	}
 	{
-		path := validation.Join(p, "HIDDEN_NETWORK")
+		fieldPath := validation.Join(path, "HIDDEN_NETWORK")
 		present := x.HIDDENNETWORK != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.HIDDEN_NETWORK"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HIDDEN_NETWORK"])
 	}
 	{
-		path := validation.Join(p, "ProxyType")
+		fieldPath := validation.Join(path, "ProxyType")
 		present := x.ProxyType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.ProxyType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyType"])
 		if present {
-			c.Enum(path, true, *x.ProxyType, []any{"None", "Manual", "Auto"})
+			c.Enum(fieldPath, true, *x.ProxyType, []any{"None", "Manual", "Auto"})
 		}
 	}
 	{
-		path := validation.Join(p, "EncryptionType")
+		fieldPath := validation.Join(path, "EncryptionType")
 		present := x.EncryptionType != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EncryptionType"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EncryptionType"])
 		if present {
-			c.Enum(path, true, *x.EncryptionType, []any{"WEP", "WPA", "WPA2", "WPA3", "Any", "None"})
+			c.Enum(fieldPath, true, *x.EncryptionType, []any{"WEP", "WPA", "WPA2", "WPA3", "Any", "None"})
 		}
 	}
 	{
-		path := validation.Join(p, "Password")
+		fieldPath := validation.Join(path, "Password")
 		present := x.Password != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.Password"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Password"])
 	}
 	{
-		path := validation.Join(p, "PayloadCertificateUUID")
+		fieldPath := validation.Join(path, "PayloadCertificateUUID")
 		present := x.PayloadCertificateUUID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.PayloadCertificateUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateUUID"])
 		if present {
-			c.Pattern(path, true, *x.PayloadCertificateUUID, format1)
+			c.Pattern(fieldPath, true, *x.PayloadCertificateUUID, format1)
 		}
 	}
 	{
-		path := validation.Join(p, "EAPClientConfiguration")
+		fieldPath := validation.Join(path, "EAPClientConfiguration")
 		present := x.EAPClientConfiguration != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EAPClientConfiguration"])
 		if present {
-			x.EAPClientConfiguration.validate(c, path)
+			x.EAPClientConfiguration.validate(c, fieldPath, supportPath+".EAPClientConfiguration")
 		}
 	}
 	{
-		path := validation.Join(p, "DisplayedOperatorName")
+		fieldPath := validation.Join(path, "DisplayedOperatorName")
 		present := x.DisplayedOperatorName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.DisplayedOperatorName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisplayedOperatorName"])
 	}
 	{
-		path := validation.Join(p, "DomainName")
+		fieldPath := validation.Join(path, "DomainName")
 		present := x.DomainName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.DomainName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DomainName"])
 	}
 	{
-		path := validation.Join(p, "RoamingConsortiumOIs")
+		fieldPath := validation.Join(path, "RoamingConsortiumOIs")
 		present := len(x.RoamingConsortiumOIs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.RoamingConsortiumOIs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RoamingConsortiumOIs"])
 		for i, v := range x.RoamingConsortiumOIs {
-			ip := validation.Index(path, i)
-			c.Pattern(ip, true, v, format3)
+			itemPath := validation.Index(fieldPath, i)
+			c.Pattern(itemPath, true, v, format3)
 		}
 	}
 	{
-		path := validation.Join(p, "ServiceProviderRoamingEnabled")
+		fieldPath := validation.Join(path, "ServiceProviderRoamingEnabled")
 		present := x.ServiceProviderRoamingEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.ServiceProviderRoamingEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ServiceProviderRoamingEnabled"])
 	}
 	{
-		path := validation.Join(p, "IsHotspot")
+		fieldPath := validation.Join(path, "IsHotspot")
 		present := x.IsHotspot != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.IsHotspot"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IsHotspot"])
 	}
 	{
-		path := validation.Join(p, "HESSID")
+		fieldPath := validation.Join(path, "HESSID")
 		present := x.HESSID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.HESSID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HESSID"])
 	}
 	{
-		path := validation.Join(p, "NAIRealmNames")
+		fieldPath := validation.Join(path, "NAIRealmNames")
 		present := len(x.NAIRealmNames) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.NAIRealmNames"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".NAIRealmNames"])
 	}
 	{
-		path := validation.Join(p, "MCCAndMNCs")
+		fieldPath := validation.Join(path, "MCCAndMNCs")
 		present := len(x.MCCAndMNCs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.MCCAndMNCs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MCCAndMNCs"])
 		for i, v := range x.MCCAndMNCs {
-			ip := validation.Index(path, i)
-			c.Pattern(ip, true, v, format4)
+			itemPath := validation.Index(fieldPath, i)
+			c.Pattern(itemPath, true, v, format4)
 		}
 	}
 	{
-		path := validation.Join(p, "CaptiveBypass")
+		fieldPath := validation.Join(path, "CaptiveBypass")
 		present := x.CaptiveBypass != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.CaptiveBypass"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CaptiveBypass"])
 	}
 	{
-		path := validation.Join(p, "QoSMarkingPolicy")
+		fieldPath := validation.Join(path, "QoSMarkingPolicy")
 		present := x.QoSMarkingPolicy != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.QoSMarkingPolicy"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".QoSMarkingPolicy"])
 		if present {
-			x.QoSMarkingPolicy.validate(c, path)
+			x.QoSMarkingPolicy.validate(c, fieldPath, supportPath+".QoSMarkingPolicy")
 		}
 	}
 	{
-		path := validation.Join(p, "SetupModes")
+		fieldPath := validation.Join(path, "SetupModes")
 		present := len(x.SetupModes) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.SetupModes"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SetupModes"])
 		for i, v := range x.SetupModes {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{"System", "Loginwindow"})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{"System", "Loginwindow"})
 		}
 	}
 	{
-		path := validation.Join(p, "EnableIPv6")
+		fieldPath := validation.Join(path, "EnableIPv6")
 		present := x.EnableIPv6 != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EnableIPv6"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableIPv6"])
 	}
 	{
-		path := validation.Join(p, "TLSCertificateRequired")
+		fieldPath := validation.Join(path, "TLSCertificateRequired")
 		present := x.TLSCertificateRequired != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.TLSCertificateRequired"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TLSCertificateRequired"])
 	}
 	{
-		path := validation.Join(p, "ProxyServer")
+		fieldPath := validation.Join(path, "ProxyServer")
 		present := x.ProxyServer != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.ProxyServer"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyServer"])
 	}
 	{
-		path := validation.Join(p, "ProxyServerPort")
+		fieldPath := validation.Join(path, "ProxyServerPort")
 		present := x.ProxyServerPort != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.ProxyServerPort"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyServerPort"])
 		if present {
-			c.Range(path, true, float64(*x.ProxyServerPort), new(0.0), new(65535.0))
+			c.Range(fieldPath, true, float64(*x.ProxyServerPort), new(0.0), new(65535.0))
 		}
 	}
 	{
-		path := validation.Join(p, "ProxyUsername")
+		fieldPath := validation.Join(path, "ProxyUsername")
 		present := x.ProxyUsername != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.ProxyUsername"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyUsername"])
 	}
 	{
-		path := validation.Join(p, "ProxyPassword")
+		fieldPath := validation.Join(path, "ProxyPassword")
 		present := x.ProxyPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.ProxyPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyPassword"])
 	}
 	{
-		path := validation.Join(p, "ProxyPACURL")
+		fieldPath := validation.Join(path, "ProxyPACURL")
 		present := x.ProxyPACURL != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.ProxyPACURL"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyPACURL"])
 	}
 	{
-		path := validation.Join(p, "ProxyPACFallbackAllowed")
+		fieldPath := validation.Join(path, "ProxyPACFallbackAllowed")
 		present := x.ProxyPACFallbackAllowed != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.ProxyPACFallbackAllowed"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProxyPACFallbackAllowed"])
 	}
 	{
-		path := validation.Join(p, "DisableAssociationMACRandomization")
+		fieldPath := validation.Join(path, "DisableAssociationMACRandomization")
 		present := x.DisableAssociationMACRandomization != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.DisableAssociationMACRandomization"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisableAssociationMACRandomization"])
 	}
 	{
-		path := validation.Join(p, "AllowJoinBeforeFirstUnlock")
+		fieldPath := validation.Join(path, "AllowJoinBeforeFirstUnlock")
 		present := x.AllowJoinBeforeFirstUnlock != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.AllowJoinBeforeFirstUnlock"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AllowJoinBeforeFirstUnlock"])
 	}
 }
 
-func (x *WiFiEAPClientConfiguration) validate(c *validation.Collector, p string) {
+func (x *WiFiEAPClientConfiguration) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "AcceptEAPTypes")
+		fieldPath := validation.Join(path, "AcceptEAPTypes")
 		present := len(x.AcceptEAPTypes) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.AcceptEAPTypes"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AcceptEAPTypes"])
+		c.Required(fieldPath, present)
 		for i, v := range x.AcceptEAPTypes {
-			ip := validation.Index(path, i)
-			c.Enum(ip, true, v, []any{int64(13), int64(17), int64(18), int64(21), int64(23), int64(25), int64(43)})
+			itemPath := validation.Index(fieldPath, i)
+			c.Enum(itemPath, true, v, []any{int64(13), int64(17), int64(18), int64(21), int64(23), int64(25), int64(43)})
 		}
 	}
 	{
-		path := validation.Join(p, "UserName")
+		fieldPath := validation.Join(path, "UserName")
 		present := x.UserName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.UserName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserName"])
 	}
 	{
-		path := validation.Join(p, "UserPassword")
+		fieldPath := validation.Join(path, "UserPassword")
 		present := x.UserPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.UserPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserPassword"])
 	}
 	{
-		path := validation.Join(p, "PayloadCertificateAnchorUUID")
+		fieldPath := validation.Join(path, "PayloadCertificateAnchorUUID")
 		present := len(x.PayloadCertificateAnchorUUID) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.PayloadCertificateAnchorUUID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PayloadCertificateAnchorUUID"])
 		for i, v := range x.PayloadCertificateAnchorUUID {
-			ip := validation.Index(path, i)
-			c.Pattern(ip, true, v, format1)
+			itemPath := validation.Index(fieldPath, i)
+			c.Pattern(itemPath, true, v, format1)
 		}
 	}
 	{
-		path := validation.Join(p, "TLSTrustedCertificates")
+		fieldPath := validation.Join(path, "TLSTrustedCertificates")
 		present := len(x.TLSTrustedCertificates) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.TLSTrustedCertificates"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TLSTrustedCertificates"])
 	}
 	{
-		path := validation.Join(p, "TLSTrustedServerNames")
+		fieldPath := validation.Join(path, "TLSTrustedServerNames")
 		present := len(x.TLSTrustedServerNames) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.TLSTrustedServerNames"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TLSTrustedServerNames"])
 	}
 	{
-		path := validation.Join(p, "TLSAllowTrustExceptions")
+		fieldPath := validation.Join(path, "TLSAllowTrustExceptions")
 		present := x.TLSAllowTrustExceptions != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.TLSAllowTrustExceptions"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TLSAllowTrustExceptions"])
 	}
 	{
-		path := validation.Join(p, "TLSCertificateIsRequired")
+		fieldPath := validation.Join(path, "TLSCertificateIsRequired")
 		present := x.TLSCertificateIsRequired != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.TLSCertificateIsRequired"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TLSCertificateIsRequired"])
 	}
 	{
-		path := validation.Join(p, "TTLSInnerAuthentication")
+		fieldPath := validation.Join(path, "TTLSInnerAuthentication")
 		present := x.TTLSInnerAuthentication != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.TTLSInnerAuthentication"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TTLSInnerAuthentication"])
 		if present {
-			c.Enum(path, true, *x.TTLSInnerAuthentication, []any{"PAP", "EAP", "CHAP", "MSCHAP", "MSCHAPv2"})
+			c.Enum(fieldPath, true, *x.TTLSInnerAuthentication, []any{"PAP", "EAP", "CHAP", "MSCHAP", "MSCHAPv2"})
 		}
 	}
 	{
-		path := validation.Join(p, "TLSMinimumVersion")
+		fieldPath := validation.Join(path, "TLSMinimumVersion")
 		present := x.TLSMinimumVersion != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.TLSMinimumVersion"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TLSMinimumVersion"])
 		if present {
-			c.Enum(path, true, *x.TLSMinimumVersion, []any{"1.0", "1.1", "1.2", "1.3"})
+			c.Enum(fieldPath, true, *x.TLSMinimumVersion, []any{"1.0", "1.1", "1.2", "1.3"})
 		}
 	}
 	{
-		path := validation.Join(p, "TLSMaximumVersion")
+		fieldPath := validation.Join(path, "TLSMaximumVersion")
 		present := x.TLSMaximumVersion != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.TLSMaximumVersion"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TLSMaximumVersion"])
 		if present {
-			c.Enum(path, true, *x.TLSMaximumVersion, []any{"1.0", "1.1", "1.2", "1.3"})
+			c.Enum(fieldPath, true, *x.TLSMaximumVersion, []any{"1.0", "1.1", "1.2", "1.3"})
 		}
 	}
 	{
-		path := validation.Join(p, "OuterIdentity")
+		fieldPath := validation.Join(path, "OuterIdentity")
 		present := x.OuterIdentity != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.OuterIdentity"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OuterIdentity"])
 	}
 	{
-		path := validation.Join(p, "EAPFASTUsePAC")
+		fieldPath := validation.Join(path, "EAPFASTUsePAC")
 		present := x.EAPFASTUsePAC != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.EAPFASTUsePAC"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EAPFASTUsePAC"])
 	}
 	{
-		path := validation.Join(p, "EAPFASTProvisionPAC")
+		fieldPath := validation.Join(path, "EAPFASTProvisionPAC")
 		present := x.EAPFASTProvisionPAC != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.EAPFASTProvisionPAC"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EAPFASTProvisionPAC"])
 	}
 	{
-		path := validation.Join(p, "EAPFASTProvisionPACAnonymously")
+		fieldPath := validation.Join(path, "EAPFASTProvisionPACAnonymously")
 		present := x.EAPFASTProvisionPACAnonymously != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.EAPFASTProvisionPACAnonymously"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EAPFASTProvisionPACAnonymously"])
 	}
 	{
-		path := validation.Join(p, "EAPSIMNumberOfRANDs")
+		fieldPath := validation.Join(path, "EAPSIMNumberOfRANDs")
 		present := x.EAPSIMNumberOfRANDs != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.EAPSIMNumberOfRANDs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EAPSIMNumberOfRANDs"])
 		if present {
-			c.Enum(path, true, *x.EAPSIMNumberOfRANDs, []any{int64(2), int64(3)})
+			c.Enum(fieldPath, true, *x.EAPSIMNumberOfRANDs, []any{int64(2), int64(3)})
 		}
 	}
 	{
-		path := validation.Join(p, "SystemModeCredentialsSource")
+		fieldPath := validation.Join(path, "SystemModeCredentialsSource")
 		present := x.SystemModeCredentialsSource != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.SystemModeCredentialsSource"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SystemModeCredentialsSource"])
 	}
 	{
-		path := validation.Join(p, "SystemModeUseOpenDirectoryCredentials")
+		fieldPath := validation.Join(path, "SystemModeUseOpenDirectoryCredentials")
 		present := x.SystemModeUseOpenDirectoryCredentials != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.SystemModeUseOpenDirectoryCredentials"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SystemModeUseOpenDirectoryCredentials"])
 	}
 	{
-		path := validation.Join(p, "OneTimeUserPassword")
+		fieldPath := validation.Join(path, "OneTimeUserPassword")
 		present := x.OneTimeUserPassword != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.EAPClientConfiguration.OneTimeUserPassword"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OneTimeUserPassword"])
 	}
 }
 
-func (x *WiFiQoSMarkingPolicy) validate(c *validation.Collector, p string) {
+func (x *WiFiQoSMarkingPolicy) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "QoSMarkingAllowListAppIdentifiers")
+		fieldPath := validation.Join(path, "QoSMarkingAllowListAppIdentifiers")
 		present := len(x.QoSMarkingAllowListAppIdentifiers) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.QoSMarkingPolicy.QoSMarkingAllowListAppIdentifiers"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".QoSMarkingAllowListAppIdentifiers"])
 	}
 	{
-		path := validation.Join(p, "QoSMarkingWhitelistedAppIdentifiers")
+		fieldPath := validation.Join(path, "QoSMarkingWhitelistedAppIdentifiers")
 		present := len(x.QoSMarkingWhitelistedAppIdentifiers) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.QoSMarkingPolicy.QoSMarkingWhitelistedAppIdentifiers"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".QoSMarkingWhitelistedAppIdentifiers"])
 	}
 	{
-		path := validation.Join(p, "QoSMarkingAppleAudioVideoCalls")
+		fieldPath := validation.Join(path, "QoSMarkingAppleAudioVideoCalls")
 		present := x.QoSMarkingAppleAudioVideoCalls != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.QoSMarkingPolicy.QoSMarkingAppleAudioVideoCalls"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".QoSMarkingAppleAudioVideoCalls"])
 	}
 	{
-		path := validation.Join(p, "QoSMarkingEnabled")
+		fieldPath := validation.Join(path, "QoSMarkingEnabled")
 		present := x.QoSMarkingEnabled != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WiFi.QoSMarkingPolicy.QoSMarkingEnabled"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".QoSMarkingEnabled"])
 	}
 }
 
@@ -14027,45 +14027,45 @@ func (x *WiFiQoSMarkingPolicy) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *XsanPreferences) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "XsanPreferences")
 	return c.Err()
 }
 
-func (x *XsanPreferences) validate(c *validation.Collector, p string) {
+func (x *XsanPreferences) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["XsanPreferences"])
+	c.Support(path, true, supportTable["XsanPreferences"])
 	{
-		path := validation.Join(p, "onlyMount")
+		fieldPath := validation.Join(path, "onlyMount")
 		present := len(x.OnlyMount) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["XsanPreferences.onlyMount"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".onlyMount"])
 	}
 	{
-		path := validation.Join(p, "denyMount")
+		fieldPath := validation.Join(path, "denyMount")
 		present := len(x.DenyMount) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["XsanPreferences.denyMount"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".denyMount"])
 	}
 	{
-		path := validation.Join(p, "denyDLC")
+		fieldPath := validation.Join(path, "denyDLC")
 		present := len(x.DenyDLC) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["XsanPreferences.denyDLC"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".denyDLC"])
 	}
 	{
-		path := validation.Join(p, "preferDLC")
+		fieldPath := validation.Join(path, "preferDLC")
 		present := len(x.PreferDLC) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["XsanPreferences.preferDLC"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".preferDLC"])
 	}
 	{
-		path := validation.Join(p, "useDLC")
+		fieldPath := validation.Join(path, "useDLC")
 		present := x.UseDLC != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["XsanPreferences.useDLC"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".useDLC"])
 	}
 }
 
@@ -14073,50 +14073,50 @@ func (x *XsanPreferences) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *Xsan) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Xsan")
 	return c.Err()
 }
 
-func (x *Xsan) validate(c *validation.Collector, p string) {
+func (x *Xsan) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Xsan"])
+	c.Support(path, true, supportTable["Xsan"])
 	{
-		path := validation.Join(p, "sanName")
+		fieldPath := validation.Join(path, "sanName")
 		present := x.SanName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Xsan.sanName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".sanName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "sanConfigURLs")
+		fieldPath := validation.Join(path, "sanConfigURLs")
 		present := len(x.SanConfigURLs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Xsan.sanConfigURLs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".sanConfigURLs"])
 	}
 	{
-		path := validation.Join(p, "fsnameservers")
+		fieldPath := validation.Join(path, "fsnameservers")
 		present := len(x.Fsnameservers) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["Xsan.fsnameservers"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".fsnameservers"])
 	}
 	{
-		path := validation.Join(p, "sanAuthMethod")
+		fieldPath := validation.Join(path, "sanAuthMethod")
 		present := x.SanAuthMethod != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Xsan.sanAuthMethod"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".sanAuthMethod"])
 		if present {
-			c.Enum(path, true, *x.SanAuthMethod, []any{"auth_secret"})
+			c.Enum(fieldPath, true, *x.SanAuthMethod, []any{"auth_secret"})
 		}
 	}
 	{
-		path := validation.Join(p, "sharedSecret")
+		fieldPath := validation.Join(path, "sharedSecret")
 		present := x.SharedSecret != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Xsan.sharedSecret"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".sharedSecret"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -14124,20 +14124,20 @@ func (x *Xsan) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *LoginWindowLoginItems) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "LoginWindowLoginItems")
 	return c.Err()
 }
 
-func (x *LoginWindowLoginItems) validate(c *validation.Collector, p string) {
+func (x *LoginWindowLoginItems) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["LoginWindowLoginItems"])
+	c.Support(path, true, supportTable["LoginWindowLoginItems"])
 	{
-		path := validation.Join(p, "DisableLoginItemsSuppression")
+		fieldPath := validation.Join(path, "DisableLoginItemsSuppression")
 		present := x.DisableLoginItemsSuppression != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["LoginWindowLoginItems.DisableLoginItemsSuppression"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisableLoginItemsSuppression"])
 	}
 }

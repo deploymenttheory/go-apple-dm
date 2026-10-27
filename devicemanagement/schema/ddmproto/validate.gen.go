@@ -12,100 +12,100 @@ import (
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeclarationItemsResponse) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DeclarationItemsResponse")
 	return c.Err()
 }
 
-func (x *DeclarationItemsResponse) validate(c *validation.Collector, p string) {
+func (x *DeclarationItemsResponse) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DeclarationItemsResponse"])
+	c.Support(path, true, supportTable["DeclarationItemsResponse"])
 	{
-		path := validation.Join(p, "Declarations")
+		fieldPath := validation.Join(path, "Declarations")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeclarationItemsResponse.Declarations"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Declarations"])
+		c.Required(fieldPath, present)
 		if present {
-			x.Declarations.validate(c, path)
+			x.Declarations.validate(c, fieldPath, supportPath+".Declarations")
 		}
 	}
 	{
-		path := validation.Join(p, "DeclarationsToken")
+		fieldPath := validation.Join(path, "DeclarationsToken")
 		present := x.DeclarationsToken != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeclarationItemsResponse.DeclarationsToken"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeclarationsToken"])
+		c.Required(fieldPath, present)
 	}
 }
 
-func (x *DeclarationItemsResponseDeclarations) validate(c *validation.Collector, p string) {
+func (x *DeclarationItemsResponseDeclarations) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Activations")
+		fieldPath := validation.Join(path, "Activations")
 		present := len(x.Activations) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeclarationItemsResponse.Declarations.Activations"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Activations"])
+		c.Required(fieldPath, present)
 		for i := range x.Activations {
-			x.Activations[i].validate(c, validation.Index(path, i))
+			x.Activations[i].validate(c, validation.Index(fieldPath, i), supportPath+".Activations._Activations")
 		}
 	}
 	{
-		path := validation.Join(p, "Configurations")
+		fieldPath := validation.Join(path, "Configurations")
 		present := len(x.Configurations) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeclarationItemsResponse.Declarations.Configurations"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Configurations"])
+		c.Required(fieldPath, present)
 		for i := range x.Configurations {
-			x.Configurations[i].validate(c, validation.Index(path, i))
+			x.Configurations[i].validate(c, validation.Index(fieldPath, i), supportPath+".Configurations._Configurations")
 		}
 	}
 	{
-		path := validation.Join(p, "Assets")
+		fieldPath := validation.Join(path, "Assets")
 		present := len(x.Assets) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeclarationItemsResponse.Declarations.Assets"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Assets"])
+		c.Required(fieldPath, present)
 		for i := range x.Assets {
-			x.Assets[i].validate(c, validation.Index(path, i))
+			x.Assets[i].validate(c, validation.Index(fieldPath, i), supportPath+".Assets._Assets")
 		}
 	}
 	{
-		path := validation.Join(p, "Management")
+		fieldPath := validation.Join(path, "Management")
 		present := len(x.Management) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeclarationItemsResponse.Declarations.Management"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Management"])
+		c.Required(fieldPath, present)
 		for i := range x.Management {
-			x.Management[i].validate(c, validation.Index(path, i))
+			x.Management[i].validate(c, validation.Index(fieldPath, i), supportPath+".Management._Management")
 		}
 	}
 }
 
-func (x *DeclarationItemsResponseDeclarationItem) validate(c *validation.Collector, p string) {
+func (x *DeclarationItemsResponseDeclarationItem) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Identifier")
+		fieldPath := validation.Join(path, "Identifier")
 		present := x.Identifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeclarationItemsResponse.Declarations.Activations._Activations.Identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "ServerToken")
+		fieldPath := validation.Join(path, "ServerToken")
 		present := x.ServerToken != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeclarationItemsResponse.Declarations.Activations._Activations.ServerToken"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ServerToken"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -113,87 +113,87 @@ func (x *DeclarationItemsResponseDeclarationItem) validate(c *validation.Collect
 // that every present key is supported on that OS version and enrollment context.
 func (x *StatusReport) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "StatusReport")
 	return c.Err()
 }
 
-func (x *StatusReport) validate(c *validation.Collector, p string) {
+func (x *StatusReport) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["StatusReport"])
+	c.Support(path, true, supportTable["StatusReport"])
 	{
-		path := validation.Join(p, "StatusItems")
+		fieldPath := validation.Join(path, "StatusItems")
 		present := len(x.StatusItems) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["StatusReport.StatusItems"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".StatusItems"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Errors")
+		fieldPath := validation.Join(path, "Errors")
 		present := len(x.Errors) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["StatusReport.Errors"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Errors"])
+		c.Required(fieldPath, present)
 		for i := range x.Errors {
-			x.Errors[i].validate(c, validation.Index(path, i))
+			x.Errors[i].validate(c, validation.Index(fieldPath, i), supportPath+".Errors._Errors")
 		}
 	}
 	{
-		path := validation.Join(p, "FullReport")
+		fieldPath := validation.Join(path, "FullReport")
 		present := x.FullReport != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["StatusReport.FullReport"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FullReport"])
 	}
 }
 
-func (x *StatusReportErrors) validate(c *validation.Collector, p string) {
+func (x *StatusReportErrors) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "StatusItem")
+		fieldPath := validation.Join(path, "StatusItem")
 		present := x.StatusItem != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["StatusReport.Errors._Errors.StatusItem"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".StatusItem"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Reasons")
+		fieldPath := validation.Join(path, "Reasons")
 		present := len(x.Reasons) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["StatusReport.Errors._Errors.Reasons"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Reasons"])
 		for i := range x.Reasons {
-			x.Reasons[i].validate(c, validation.Index(path, i))
+			x.Reasons[i].validate(c, validation.Index(fieldPath, i), supportPath+".Reasons._Reasons")
 		}
 	}
 }
 
-func (x *StatusReportStatusReason) validate(c *validation.Collector, p string) {
+func (x *StatusReportStatusReason) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Code")
+		fieldPath := validation.Join(path, "Code")
 		present := x.Code != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["StatusReport.Errors._Errors.Reasons._Reasons.Code"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Code"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Description")
+		fieldPath := validation.Join(path, "Description")
 		present := x.Description != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["StatusReport.Errors._Errors.Reasons._Reasons.Description"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Description"])
 	}
 	{
-		path := validation.Join(p, "Details")
+		fieldPath := validation.Join(path, "Details")
 		present := len(x.Details) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["StatusReport.Errors._Errors.Reasons._Reasons.Details"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Details"])
 	}
 }
 
@@ -201,21 +201,21 @@ func (x *StatusReportStatusReason) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *TokensResponse) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "TokensResponse")
 	return c.Err()
 }
 
-func (x *TokensResponse) validate(c *validation.Collector, p string) {
+func (x *TokensResponse) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["TokensResponse"])
+	c.Support(path, true, supportTable["TokensResponse"])
 	{
-		path := validation.Join(p, "SyncTokens")
+		fieldPath := validation.Join(path, "SyncTokens")
 		present := len(x.SyncTokens) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["TokensResponse.SyncTokens"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SyncTokens"])
+		c.Required(fieldPath, present)
 	}
 }

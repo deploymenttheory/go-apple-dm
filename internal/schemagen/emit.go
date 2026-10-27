@@ -223,12 +223,14 @@ func goLiteral(v any) string {
 }
 
 // supportPath is the key used in support tables.
-func supportPath(top string, f *Field) string {
-	p := f.Path
-	if after, ok := strings.CutPrefix(p, "response:"); ok {
-		p = "response." + after
+func supportPath(top string, f *Field) string { return tablePath(top, f.Path) }
+
+// tablePath returns the support table key for a key path in schema top.
+func tablePath(top, path string) string {
+	if after, ok := strings.CutPrefix(path, responsePrefix); ok {
+		path = "response." + after
 	}
-	return top + "." + p
+	return top + "." + path
 }
 
 // topName returns the top-level type name a TypeDef belongs to.

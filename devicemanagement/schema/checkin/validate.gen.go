@@ -12,101 +12,101 @@ import (
 // that every present key is supported on that OS version and enrollment context.
 func (x *Authenticate) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "Authenticate")
 	return c.Err()
 }
 
-func (x *Authenticate) validate(c *validation.Collector, p string) {
+func (x *Authenticate) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["Authenticate"])
+	c.Support(path, true, supportTable["Authenticate"])
 	{
-		path := validation.Join(p, "DeviceName")
+		fieldPath := validation.Join(path, "DeviceName")
 		present := x.DeviceName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Authenticate.DeviceName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeviceName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "ModelName")
+		fieldPath := validation.Join(path, "ModelName")
 		present := x.ModelName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Authenticate.ModelName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ModelName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Model")
+		fieldPath := validation.Join(path, "Model")
 		present := x.Model != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Authenticate.Model"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Model"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "MessageType")
+		fieldPath := validation.Join(path, "MessageType")
 		present := x.MessageType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Authenticate.MessageType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MessageType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.MessageType, []any{"Authenticate"})
+			c.Enum(fieldPath, true, x.MessageType, []any{"Authenticate"})
 		}
 	}
 	{
-		path := validation.Join(p, "Topic")
+		fieldPath := validation.Join(path, "Topic")
 		present := x.Topic != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["Authenticate.Topic"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Topic"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "UDID")
+		fieldPath := validation.Join(path, "UDID")
 		present := x.UDID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Authenticate.UDID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UDID"])
 	}
 	{
-		path := validation.Join(p, "EnrollmentID")
+		fieldPath := validation.Join(path, "EnrollmentID")
 		present := x.EnrollmentID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Authenticate.EnrollmentID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnrollmentID"])
 	}
 	{
-		path := validation.Join(p, "OSVersion")
+		fieldPath := validation.Join(path, "OSVersion")
 		present := x.OSVersion != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Authenticate.OSVersion"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OSVersion"])
 	}
 	{
-		path := validation.Join(p, "BuildVersion")
+		fieldPath := validation.Join(path, "BuildVersion")
 		present := x.BuildVersion != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Authenticate.BuildVersion"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BuildVersion"])
 	}
 	{
-		path := validation.Join(p, "ProductName")
+		fieldPath := validation.Join(path, "ProductName")
 		present := x.ProductName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Authenticate.ProductName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProductName"])
 	}
 	{
-		path := validation.Join(p, "SerialNumber")
+		fieldPath := validation.Join(path, "SerialNumber")
 		present := x.SerialNumber != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Authenticate.SerialNumber"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SerialNumber"])
 	}
 	{
-		path := validation.Join(p, "IMEI")
+		fieldPath := validation.Join(path, "IMEI")
 		present := x.IMEI != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Authenticate.IMEI"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IMEI"])
 	}
 	{
-		path := validation.Join(p, "MEID")
+		fieldPath := validation.Join(path, "MEID")
 		present := x.MEID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["Authenticate.MEID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MEID"])
 	}
 }
 
@@ -114,46 +114,46 @@ func (x *Authenticate) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *CheckOut) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "CheckOut")
 	return c.Err()
 }
 
-func (x *CheckOut) validate(c *validation.Collector, p string) {
+func (x *CheckOut) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["CheckOut"])
+	c.Support(path, true, supportTable["CheckOut"])
 	{
-		path := validation.Join(p, "MessageType")
+		fieldPath := validation.Join(path, "MessageType")
 		present := x.MessageType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CheckOut.MessageType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MessageType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.MessageType, []any{"CheckOut"})
+			c.Enum(fieldPath, true, x.MessageType, []any{"CheckOut"})
 		}
 	}
 	{
-		path := validation.Join(p, "Topic")
+		fieldPath := validation.Join(path, "Topic")
 		present := x.Topic != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CheckOut.Topic"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Topic"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "UDID")
+		fieldPath := validation.Join(path, "UDID")
 		present := x.UDID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CheckOut.UDID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UDID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "EnrollmentID")
+		fieldPath := validation.Join(path, "EnrollmentID")
 		present := x.EnrollmentID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CheckOut.EnrollmentID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnrollmentID"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -161,78 +161,78 @@ func (x *CheckOut) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *DeclarativeManagement) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "DeclarativeManagement")
 	return c.Err()
 }
 
-func (x *DeclarativeManagement) validate(c *validation.Collector, p string) {
+func (x *DeclarativeManagement) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["DeclarativeManagement"])
+	c.Support(path, true, supportTable["DeclarativeManagement"])
 	{
-		path := validation.Join(p, "MessageType")
+		fieldPath := validation.Join(path, "MessageType")
 		present := x.MessageType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeclarativeManagement.MessageType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MessageType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.MessageType, []any{"DeclarativeManagement"})
+			c.Enum(fieldPath, true, x.MessageType, []any{"DeclarativeManagement"})
 		}
 	}
 	{
-		path := validation.Join(p, "Endpoint")
+		fieldPath := validation.Join(path, "Endpoint")
 		present := x.Endpoint != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeclarativeManagement.Endpoint"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Endpoint"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Data")
+		fieldPath := validation.Join(path, "Data")
 		present := len(x.Data) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeclarativeManagement.Data"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Data"])
 	}
 	{
-		path := validation.Join(p, "UDID")
+		fieldPath := validation.Join(path, "UDID")
 		present := x.UDID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeclarativeManagement.UDID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UDID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "EnrollmentID")
+		fieldPath := validation.Join(path, "EnrollmentID")
 		present := x.EnrollmentID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeclarativeManagement.EnrollmentID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnrollmentID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "EnrollmentUserID")
+		fieldPath := validation.Join(path, "EnrollmentUserID")
 		present := x.EnrollmentUserID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeclarativeManagement.EnrollmentUserID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnrollmentUserID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "UserShortName")
+		fieldPath := validation.Join(path, "UserShortName")
 		present := x.UserShortName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeclarativeManagement.UserShortName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserShortName"])
 	}
 	{
-		path := validation.Join(p, "UserID")
+		fieldPath := validation.Join(path, "UserID")
 		present := x.UserID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeclarativeManagement.UserID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserID"])
 	}
 	{
-		path := validation.Join(p, "UserLongName")
+		fieldPath := validation.Join(path, "UserLongName")
 		present := x.UserLongName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["DeclarativeManagement.UserLongName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserLongName"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -240,31 +240,31 @@ func (x *DeclarativeManagement) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *GetBootstrapToken) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "GetBootstrapToken")
 	return c.Err()
 }
 
-func (x *GetBootstrapToken) validate(c *validation.Collector, p string) {
+func (x *GetBootstrapToken) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["GetBootstrapToken"])
+	c.Support(path, true, supportTable["GetBootstrapToken"])
 	{
-		path := validation.Join(p, "MessageType")
+		fieldPath := validation.Join(path, "MessageType")
 		present := x.MessageType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["GetBootstrapToken.MessageType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MessageType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.MessageType, []any{"GetBootstrapToken"})
+			c.Enum(fieldPath, true, x.MessageType, []any{"GetBootstrapToken"})
 		}
 	}
 	{
-		path := validation.Join(p, "AwaitingConfiguration")
+		fieldPath := validation.Join(path, "AwaitingConfiguration")
 		present := x.AwaitingConfiguration != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GetBootstrapToken.AwaitingConfiguration"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AwaitingConfiguration"])
 	}
 }
 
@@ -272,21 +272,21 @@ func (x *GetBootstrapToken) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *GetBootstrapTokenResponse) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "GetBootstrapToken.response")
 	return c.Err()
 }
 
-func (x *GetBootstrapTokenResponse) validate(c *validation.Collector, p string) {
+func (x *GetBootstrapTokenResponse) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["GetBootstrapTokenResponse"])
+	c.Support(path, true, supportTable["GetBootstrapTokenResponse"])
 	{
-		path := validation.Join(p, "BootstrapToken")
+		fieldPath := validation.Join(path, "BootstrapToken")
 		present := len(x.BootstrapToken) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["GetBootstrapToken.response.BootstrapToken"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BootstrapToken"])
 	}
 }
 
@@ -294,109 +294,109 @@ func (x *GetBootstrapTokenResponse) validate(c *validation.Collector, p string) 
 // that every present key is supported on that OS version and enrollment context.
 func (x *GetToken) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "GetToken")
 	return c.Err()
 }
 
-func (x *GetToken) validate(c *validation.Collector, p string) {
+func (x *GetToken) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["GetToken"])
+	c.Support(path, true, supportTable["GetToken"])
 	{
-		path := validation.Join(p, "MessageType")
+		fieldPath := validation.Join(path, "MessageType")
 		present := x.MessageType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["GetToken.MessageType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MessageType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.MessageType, []any{"GetToken"})
+			c.Enum(fieldPath, true, x.MessageType, []any{"GetToken"})
 		}
 	}
 	{
-		path := validation.Join(p, "TokenServiceType")
+		fieldPath := validation.Join(path, "TokenServiceType")
 		present := x.TokenServiceType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["GetToken.TokenServiceType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TokenServiceType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.TokenServiceType, []any{"com.apple.maid", "com.apple.watch.pairing"})
+			c.Enum(fieldPath, true, x.TokenServiceType, []any{"com.apple.maid", "com.apple.watch.pairing"})
 		}
 	}
 	{
-		path := validation.Join(p, "TokenParameters")
+		fieldPath := validation.Join(path, "TokenParameters")
 		present := x.TokenParameters != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GetToken.TokenParameters"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TokenParameters"])
 		if present {
-			x.TokenParameters.validate(c, path)
+			x.TokenParameters.validate(c, fieldPath, supportPath+".TokenParameters")
 		}
 	}
 	{
-		path := validation.Join(p, "UDID")
+		fieldPath := validation.Join(path, "UDID")
 		present := x.UDID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["GetToken.UDID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UDID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "EnrollmentID")
+		fieldPath := validation.Join(path, "EnrollmentID")
 		present := x.EnrollmentID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["GetToken.EnrollmentID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnrollmentID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "EnrollmentUserID")
+		fieldPath := validation.Join(path, "EnrollmentUserID")
 		present := x.EnrollmentUserID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["GetToken.EnrollmentUserID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnrollmentUserID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "UserShortName")
+		fieldPath := validation.Join(path, "UserShortName")
 		present := x.UserShortName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GetToken.UserShortName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserShortName"])
 	}
 	{
-		path := validation.Join(p, "UserID")
+		fieldPath := validation.Join(path, "UserID")
 		present := x.UserID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GetToken.UserID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserID"])
 	}
 	{
-		path := validation.Join(p, "UserLongName")
+		fieldPath := validation.Join(path, "UserLongName")
 		present := x.UserLongName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["GetToken.UserLongName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserLongName"])
+		c.Required(fieldPath, present)
 	}
 }
 
-func (x *GetTokenTokenParameters) validate(c *validation.Collector, p string) {
+func (x *GetTokenTokenParameters) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "SecurityToken")
+		fieldPath := validation.Join(path, "SecurityToken")
 		present := x.SecurityToken != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GetToken.TokenParameters.SecurityToken"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SecurityToken"])
 	}
 	{
-		path := validation.Join(p, "PhoneUDID")
+		fieldPath := validation.Join(path, "PhoneUDID")
 		present := x.PhoneUDID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GetToken.TokenParameters.PhoneUDID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PhoneUDID"])
 	}
 	{
-		path := validation.Join(p, "WatchUDID")
+		fieldPath := validation.Join(path, "WatchUDID")
 		present := x.WatchUDID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["GetToken.TokenParameters.WatchUDID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".WatchUDID"])
 	}
 }
 
@@ -404,22 +404,22 @@ func (x *GetTokenTokenParameters) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *GetTokenResponse) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "GetToken.response")
 	return c.Err()
 }
 
-func (x *GetTokenResponse) validate(c *validation.Collector, p string) {
+func (x *GetTokenResponse) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["GetTokenResponse"])
+	c.Support(path, true, supportTable["GetTokenResponse"])
 	{
-		path := validation.Join(p, "TokenData")
+		fieldPath := validation.Join(path, "TokenData")
 		present := len(x.TokenData) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["GetToken.response.TokenData"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TokenData"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -427,32 +427,32 @@ func (x *GetTokenResponse) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ReturnToService) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ReturnToService")
 	return c.Err()
 }
 
-func (x *ReturnToService) validate(c *validation.Collector, p string) {
+func (x *ReturnToService) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ReturnToService"])
+	c.Support(path, true, supportTable["ReturnToService"])
 	{
-		path := validation.Join(p, "MessageType")
+		fieldPath := validation.Join(path, "MessageType")
 		present := x.MessageType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ReturnToService.MessageType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MessageType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.MessageType, []any{"ReturnToService"})
+			c.Enum(fieldPath, true, x.MessageType, []any{"ReturnToService"})
 		}
 	}
 	{
-		path := validation.Join(p, "UDID")
+		fieldPath := validation.Join(path, "UDID")
 		present := x.UDID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ReturnToService.UDID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UDID"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -460,69 +460,69 @@ func (x *ReturnToService) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ReturnToServiceResponse) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ReturnToService.response")
 	return c.Err()
 }
 
-func (x *ReturnToServiceResponse) validate(c *validation.Collector, p string) {
+func (x *ReturnToServiceResponse) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ReturnToServiceResponse"])
+	c.Support(path, true, supportTable["ReturnToServiceResponse"])
 	{
-		path := validation.Join(p, "PreserveDataPlan")
+		fieldPath := validation.Join(path, "PreserveDataPlan")
 		present := x.PreserveDataPlan != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ReturnToService.response.PreserveDataPlan"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PreserveDataPlan"])
 	}
 	{
-		path := validation.Join(p, "ReturnToService")
+		fieldPath := validation.Join(path, "ReturnToService")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ReturnToService.response.ReturnToService"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ReturnToService"])
+		c.Required(fieldPath, present)
 		if present {
-			x.ReturnToService.validate(c, path)
+			x.ReturnToService.validate(c, fieldPath, supportPath+".ReturnToService")
 		}
 	}
 }
 
-func (x *ReturnToServiceResponseReturnToService) validate(c *validation.Collector, p string) {
+func (x *ReturnToServiceResponseReturnToService) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Enabled")
+		fieldPath := validation.Join(path, "Enabled")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ReturnToService.response.ReturnToService.Enabled"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Enabled"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "WiFiProfileData")
+		fieldPath := validation.Join(path, "WiFiProfileData")
 		present := len(x.WiFiProfileData) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ReturnToService.response.ReturnToService.WiFiProfileData"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".WiFiProfileData"])
 	}
 	{
-		path := validation.Join(p, "MDMProfileData")
+		fieldPath := validation.Join(path, "MDMProfileData")
 		present := len(x.MDMProfileData) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ReturnToService.response.ReturnToService.MDMProfileData"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MDMProfileData"])
 	}
 	{
-		path := validation.Join(p, "BootstrapToken")
+		fieldPath := validation.Join(path, "BootstrapToken")
 		present := len(x.BootstrapToken) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ReturnToService.response.ReturnToService.BootstrapToken"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BootstrapToken"])
 	}
 	{
-		path := validation.Join(p, "ShouldRetryEnrollment")
+		fieldPath := validation.Join(path, "ShouldRetryEnrollment")
 		present := x.ShouldRetryEnrollment != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ReturnToService.response.ReturnToService.ShouldRetryEnrollment"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ShouldRetryEnrollment"])
 	}
 }
 
@@ -530,37 +530,37 @@ func (x *ReturnToServiceResponseReturnToService) validate(c *validation.Collecto
 // that every present key is supported on that OS version and enrollment context.
 func (x *SetBootstrapToken) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SetBootstrapToken")
 	return c.Err()
 }
 
-func (x *SetBootstrapToken) validate(c *validation.Collector, p string) {
+func (x *SetBootstrapToken) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SetBootstrapToken"])
+	c.Support(path, true, supportTable["SetBootstrapToken"])
 	{
-		path := validation.Join(p, "MessageType")
+		fieldPath := validation.Join(path, "MessageType")
 		present := x.MessageType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["SetBootstrapToken.MessageType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MessageType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.MessageType, []any{"SetBootstrapToken"})
+			c.Enum(fieldPath, true, x.MessageType, []any{"SetBootstrapToken"})
 		}
 	}
 	{
-		path := validation.Join(p, "BootstrapToken")
+		fieldPath := validation.Join(path, "BootstrapToken")
 		present := len(x.BootstrapToken) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["SetBootstrapToken.BootstrapToken"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BootstrapToken"])
 	}
 	{
-		path := validation.Join(p, "AwaitingConfiguration")
+		fieldPath := validation.Join(path, "AwaitingConfiguration")
 		present := x.AwaitingConfiguration != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SetBootstrapToken.AwaitingConfiguration"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AwaitingConfiguration"])
 	}
 }
 
@@ -568,105 +568,105 @@ func (x *SetBootstrapToken) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *TokenUpdate) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "TokenUpdate")
 	return c.Err()
 }
 
-func (x *TokenUpdate) validate(c *validation.Collector, p string) {
+func (x *TokenUpdate) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["TokenUpdate"])
+	c.Support(path, true, supportTable["TokenUpdate"])
 	{
-		path := validation.Join(p, "NotOnConsole")
+		fieldPath := validation.Join(path, "NotOnConsole")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["TokenUpdate.NotOnConsole"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".NotOnConsole"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "MessageType")
+		fieldPath := validation.Join(path, "MessageType")
 		present := x.MessageType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["TokenUpdate.MessageType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MessageType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.MessageType, []any{"TokenUpdate"})
+			c.Enum(fieldPath, true, x.MessageType, []any{"TokenUpdate"})
 		}
 	}
 	{
-		path := validation.Join(p, "Topic")
+		fieldPath := validation.Join(path, "Topic")
 		present := x.Topic != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["TokenUpdate.Topic"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Topic"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "UDID")
+		fieldPath := validation.Join(path, "UDID")
 		present := x.UDID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["TokenUpdate.UDID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UDID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "EnrollmentID")
+		fieldPath := validation.Join(path, "EnrollmentID")
 		present := x.EnrollmentID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["TokenUpdate.EnrollmentID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnrollmentID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "EnrollmentUserID")
+		fieldPath := validation.Join(path, "EnrollmentUserID")
 		present := x.EnrollmentUserID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["TokenUpdate.EnrollmentUserID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnrollmentUserID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "UserShortName")
+		fieldPath := validation.Join(path, "UserShortName")
 		present := x.UserShortName != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TokenUpdate.UserShortName"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserShortName"])
 	}
 	{
-		path := validation.Join(p, "UserID")
+		fieldPath := validation.Join(path, "UserID")
 		present := x.UserID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TokenUpdate.UserID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserID"])
 	}
 	{
-		path := validation.Join(p, "UserLongName")
+		fieldPath := validation.Join(path, "UserLongName")
 		present := x.UserLongName != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["TokenUpdate.UserLongName"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserLongName"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Token")
+		fieldPath := validation.Join(path, "Token")
 		present := len(x.Token) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["TokenUpdate.Token"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Token"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "PushMagic")
+		fieldPath := validation.Join(path, "PushMagic")
 		present := x.PushMagic != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["TokenUpdate.PushMagic"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PushMagic"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "UnlockToken")
+		fieldPath := validation.Join(path, "UnlockToken")
 		present := len(x.UnlockToken) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["TokenUpdate.UnlockToken"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UnlockToken"])
 	}
 	{
-		path := validation.Join(p, "AwaitingConfiguration")
+		fieldPath := validation.Join(path, "AwaitingConfiguration")
 		present := x.AwaitingConfiguration != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["TokenUpdate.AwaitingConfiguration"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AwaitingConfiguration"])
 	}
 }
 
@@ -674,45 +674,45 @@ func (x *TokenUpdate) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *UserAuthenticate) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "UserAuthenticate")
 	return c.Err()
 }
 
-func (x *UserAuthenticate) validate(c *validation.Collector, p string) {
+func (x *UserAuthenticate) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["UserAuthenticate"])
+	c.Support(path, true, supportTable["UserAuthenticate"])
 	{
-		path := validation.Join(p, "MessageType")
+		fieldPath := validation.Join(path, "MessageType")
 		present := x.MessageType != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["UserAuthenticate.MessageType"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MessageType"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.MessageType, []any{"UserAuthenticate"})
+			c.Enum(fieldPath, true, x.MessageType, []any{"UserAuthenticate"})
 		}
 	}
 	{
-		path := validation.Join(p, "UDID")
+		fieldPath := validation.Join(path, "UDID")
 		present := x.UDID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["UserAuthenticate.UDID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UDID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "UserID")
+		fieldPath := validation.Join(path, "UserID")
 		present := x.UserID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["UserAuthenticate.UserID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UserID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "DigestResponse")
+		fieldPath := validation.Join(path, "DigestResponse")
 		present := x.DigestResponse != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["UserAuthenticate.DigestResponse"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DigestResponse"])
+		c.Required(fieldPath, present)
 	}
 }

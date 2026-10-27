@@ -12,51 +12,51 @@ import (
 // that every present key is supported on that OS version and enrollment context.
 func (x *EnrollmentSSODocument) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "EnrollmentSSODocument")
 	return c.Err()
 }
 
-func (x *EnrollmentSSODocument) validate(c *validation.Collector, p string) {
+func (x *EnrollmentSSODocument) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["EnrollmentSSODocument"])
+	c.Support(path, true, supportTable["EnrollmentSSODocument"])
 	{
-		path := validation.Join(p, "iTunesStoreID")
+		fieldPath := validation.Join(path, "iTunesStoreID")
 		present := x.ITunesStoreID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnrollmentSSODocument.iTunesStoreID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".iTunesStoreID"])
 	}
 	{
-		path := validation.Join(p, "AppIDs")
+		fieldPath := validation.Join(path, "AppIDs")
 		present := len(x.AppIDs) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnrollmentSSODocument.AppIDs"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AppIDs"])
 	}
 	{
-		path := validation.Join(p, "AssociatedDomains")
+		fieldPath := validation.Join(path, "AssociatedDomains")
 		present := len(x.AssociatedDomains) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnrollmentSSODocument.AssociatedDomains"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AssociatedDomains"])
 	}
 	{
-		path := validation.Join(p, "AssociatedDomainsEnableDirectDownloads")
+		fieldPath := validation.Join(path, "AssociatedDomainsEnableDirectDownloads")
 		present := x.AssociatedDomainsEnableDirectDownloads != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnrollmentSSODocument.AssociatedDomainsEnableDirectDownloads"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AssociatedDomainsEnableDirectDownloads"])
 	}
 	{
-		path := validation.Join(p, "ConfigurationProfile")
+		fieldPath := validation.Join(path, "ConfigurationProfile")
 		present := len(x.ConfigurationProfile) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnrollmentSSODocument.ConfigurationProfile"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ConfigurationProfile"])
 	}
 	{
-		path := validation.Join(p, "Declarations")
+		fieldPath := validation.Join(path, "Declarations")
 		present := len(x.Declarations) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["EnrollmentSSODocument.Declarations"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Declarations"])
 	}
 }
 
@@ -64,110 +64,110 @@ func (x *EnrollmentSSODocument) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *MachineInfo) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "MachineInfo")
 	return c.Err()
 }
 
-func (x *MachineInfo) validate(c *validation.Collector, p string) {
+func (x *MachineInfo) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["MachineInfo"])
+	c.Support(path, true, supportTable["MachineInfo"])
 	{
-		path := validation.Join(p, "UDID")
+		fieldPath := validation.Join(path, "UDID")
 		present := x.UDID != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["MachineInfo.UDID"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UDID"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "SERIAL")
+		fieldPath := validation.Join(path, "SERIAL")
 		present := x.SERIAL != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["MachineInfo.SERIAL"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SERIAL"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "PRODUCT")
+		fieldPath := validation.Join(path, "PRODUCT")
 		present := x.PRODUCT != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["MachineInfo.PRODUCT"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PRODUCT"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "VERSION")
+		fieldPath := validation.Join(path, "VERSION")
 		present := x.VERSION != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["MachineInfo.VERSION"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".VERSION"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "OS_VERSION")
+		fieldPath := validation.Join(path, "OS_VERSION")
 		present := x.OSVERSION != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["MachineInfo.OS_VERSION"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OS_VERSION"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "SUPPLEMENTAL_BUILD_VERSION")
+		fieldPath := validation.Join(path, "SUPPLEMENTAL_BUILD_VERSION")
 		present := x.SUPPLEMENTALBUILDVERSION != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MachineInfo.SUPPLEMENTAL_BUILD_VERSION"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SUPPLEMENTAL_BUILD_VERSION"])
 	}
 	{
-		path := validation.Join(p, "SUPPLEMENTAL_OS_VERSION_EXTRA")
+		fieldPath := validation.Join(path, "SUPPLEMENTAL_OS_VERSION_EXTRA")
 		present := x.SUPPLEMENTALOSVERSIONEXTRA != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MachineInfo.SUPPLEMENTAL_OS_VERSION_EXTRA"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SUPPLEMENTAL_OS_VERSION_EXTRA"])
 	}
 	{
-		path := validation.Join(p, "IMEI")
+		fieldPath := validation.Join(path, "IMEI")
 		present := x.IMEI != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MachineInfo.IMEI"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".IMEI"])
 	}
 	{
-		path := validation.Join(p, "MEID")
+		fieldPath := validation.Join(path, "MEID")
 		present := x.MEID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MachineInfo.MEID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MEID"])
 	}
 	{
-		path := validation.Join(p, "LANGUAGE")
+		fieldPath := validation.Join(path, "LANGUAGE")
 		present := x.LANGUAGE != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MachineInfo.LANGUAGE"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LANGUAGE"])
 	}
 	{
-		path := validation.Join(p, "MDM_CAN_REQUEST_SOFTWARE_UPDATE")
+		fieldPath := validation.Join(path, "MDM_CAN_REQUEST_SOFTWARE_UPDATE")
 		present := x.MDMCANREQUESTSOFTWAREUPDATE != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MachineInfo.MDM_CAN_REQUEST_SOFTWARE_UPDATE"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MDM_CAN_REQUEST_SOFTWARE_UPDATE"])
 	}
 	{
-		path := validation.Join(p, "PAIRING_TOKEN")
+		fieldPath := validation.Join(path, "PAIRING_TOKEN")
 		present := len(x.PAIRINGTOKEN) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["MachineInfo.PAIRING_TOKEN"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PAIRING_TOKEN"])
 	}
 	{
-		path := validation.Join(p, "SOFTWARE_UPDATE_DEVICE_ID")
+		fieldPath := validation.Join(path, "SOFTWARE_UPDATE_DEVICE_ID")
 		present := x.SOFTWAREUPDATEDEVICEID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MachineInfo.SOFTWARE_UPDATE_DEVICE_ID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SOFTWARE_UPDATE_DEVICE_ID"])
 	}
 	{
-		path := validation.Join(p, "MDM_CAN_REQUEST_PSSO_CONFIG")
+		fieldPath := validation.Join(path, "MDM_CAN_REQUEST_PSSO_CONFIG")
 		present := x.MDMCANREQUESTPSSOCONFIG != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MachineInfo.MDM_CAN_REQUEST_PSSO_CONFIG"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MDM_CAN_REQUEST_PSSO_CONFIG"])
 	}
 	{
-		path := validation.Join(p, "MANDATORY_SOFTWARE_UPDATE_REQUIRED")
+		fieldPath := validation.Join(path, "MANDATORY_SOFTWARE_UPDATE_REQUIRED")
 		present := x.MANDATORYSOFTWAREUPDATEREQUIRED != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["MachineInfo.MANDATORY_SOFTWARE_UPDATE_REQUIRED"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MANDATORY_SOFTWARE_UPDATE_REQUIRED"])
 	}
 }
 
@@ -175,195 +175,195 @@ func (x *MachineInfo) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *ManifestURL) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "ManifestURL")
 	return c.Err()
 }
 
-func (x *ManifestURL) validate(c *validation.Collector, p string) {
+func (x *ManifestURL) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["ManifestURL"])
+	c.Support(path, true, supportTable["ManifestURL"])
 	{
-		path := validation.Join(p, "items")
+		fieldPath := validation.Join(path, "items")
 		present := len(x.Items) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".items"])
+		c.Required(fieldPath, present)
 		for i := range x.Items {
-			x.Items[i].validate(c, validation.Index(path, i))
+			x.Items[i].validate(c, validation.Index(fieldPath, i), supportPath+".items.items-item")
 		}
 	}
 }
 
-func (x *ManifestURLItems) validate(c *validation.Collector, p string) {
+func (x *ManifestURLItems) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "assets")
+		fieldPath := validation.Join(path, "assets")
 		present := len(x.Assets) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.assets"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".assets"])
+		c.Required(fieldPath, present)
 		for i := range x.Assets {
-			x.Assets[i].validate(c, validation.Index(path, i))
+			x.Assets[i].validate(c, validation.Index(fieldPath, i), supportPath+".assets.assets-item")
 		}
 	}
 	{
-		path := validation.Join(p, "metadata")
+		fieldPath := validation.Join(path, "metadata")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.metadata"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".metadata"])
+		c.Required(fieldPath, present)
 		if present {
-			x.Metadata.validate(c, path)
+			x.Metadata.validate(c, fieldPath, supportPath+".metadata")
 		}
 	}
 }
 
-func (x *ManifestURLItemsAssets) validate(c *validation.Collector, p string) {
+func (x *ManifestURLItemsAssets) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "kind")
+		fieldPath := validation.Join(path, "kind")
 		present := x.Kind != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.assets.assets-item.kind"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".kind"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Kind, []any{"asset-pack-manifest", "display-image", "full-size-image", "software-package"})
+			c.Enum(fieldPath, true, x.Kind, []any{"asset-pack-manifest", "display-image", "full-size-image", "software-package"})
 		}
 	}
 	{
-		path := validation.Join(p, "md5")
+		fieldPath := validation.Join(path, "md5")
 		present := x.Md5 != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.assets.assets-item.md5"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".md5"])
 	}
 	{
-		path := validation.Join(p, "md5-size")
+		fieldPath := validation.Join(path, "md5-size")
 		present := x.Md5Size != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.assets.assets-item.md5-size"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".md5-size"])
 	}
 	{
-		path := validation.Join(p, "md5s")
+		fieldPath := validation.Join(path, "md5s")
 		present := len(x.Md5s) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.assets.assets-item.md5s"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".md5s"])
 	}
 	{
-		path := validation.Join(p, "sha256")
+		fieldPath := validation.Join(path, "sha256")
 		present := x.Sha256 != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.assets.assets-item.sha256"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".sha256"])
 	}
 	{
-		path := validation.Join(p, "sha256-size")
+		fieldPath := validation.Join(path, "sha256-size")
 		present := x.Sha256Size != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.assets.assets-item.sha256-size"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".sha256-size"])
 	}
 	{
-		path := validation.Join(p, "sha256s")
+		fieldPath := validation.Join(path, "sha256s")
 		present := len(x.Sha256s) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.assets.assets-item.sha256s"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".sha256s"])
 	}
 	{
-		path := validation.Join(p, "url")
+		fieldPath := validation.Join(path, "url")
 		present := x.Url != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.assets.assets-item.url"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".url"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "needs-shine")
+		fieldPath := validation.Join(path, "needs-shine")
 		present := x.NeedsShine != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.assets.assets-item.needs-shine"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".needs-shine"])
 	}
 }
 
-func (x *ManifestURLItemsMetadata) validate(c *validation.Collector, p string) {
+func (x *ManifestURLItemsMetadata) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "bundle-identifier")
+		fieldPath := validation.Join(path, "bundle-identifier")
 		present := x.BundleIdentifier != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.metadata.bundle-identifier"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".bundle-identifier"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "bundle-version")
+		fieldPath := validation.Join(path, "bundle-version")
 		present := x.BundleVersion != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.metadata.bundle-version"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".bundle-version"])
 	}
 	{
-		path := validation.Join(p, "kind")
+		fieldPath := validation.Join(path, "kind")
 		present := x.Kind != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.metadata.kind"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".kind"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Kind, []any{"software"})
+			c.Enum(fieldPath, true, x.Kind, []any{"software"})
 		}
 	}
 	{
-		path := validation.Join(p, "sizeInBytes")
+		fieldPath := validation.Join(path, "sizeInBytes")
 		present := x.SizeInBytes != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.metadata.sizeInBytes"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".sizeInBytes"])
 	}
 	{
-		path := validation.Join(p, "subtitle")
+		fieldPath := validation.Join(path, "subtitle")
 		present := x.Subtitle != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.metadata.subtitle"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".subtitle"])
 	}
 	{
-		path := validation.Join(p, "title")
+		fieldPath := validation.Join(path, "title")
 		present := x.Title != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.metadata.title"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".title"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "items")
+		fieldPath := validation.Join(path, "items")
 		present := len(x.Items) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.metadata.items"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".items"])
 		for i := range x.Items {
-			x.Items[i].validate(c, validation.Index(path, i))
+			x.Items[i].validate(c, validation.Index(fieldPath, i), supportPath+".items.metadata-items-item")
 		}
 	}
 }
 
-func (x *ManifestURLItemsMetadataItems) validate(c *validation.Collector, p string) {
+func (x *ManifestURLItemsMetadataItems) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "bundle-identifier")
+		fieldPath := validation.Join(path, "bundle-identifier")
 		present := x.BundleIdentifier != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.metadata.items.metadata-items-item.bundle-identifier"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".bundle-identifier"])
 	}
 	{
-		path := validation.Join(p, "bundle-version")
+		fieldPath := validation.Join(path, "bundle-version")
 		present := x.BundleVersion != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["ManifestURL.items.items-item.metadata.items.metadata-items-item.bundle-version"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".bundle-version"])
 	}
 }
 
@@ -371,53 +371,53 @@ func (x *ManifestURLItemsMetadataItems) validate(c *validation.Collector, p stri
 // that every present key is supported on that OS version and enrollment context.
 func (x *PasswordHash) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "PasswordHash")
 	return c.Err()
 }
 
-func (x *PasswordHash) validate(c *validation.Collector, p string) {
+func (x *PasswordHash) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["PasswordHash"])
+	c.Support(path, true, supportTable["PasswordHash"])
 	{
-		path := validation.Join(p, "SALTED-SHA512-PBKDF2")
+		fieldPath := validation.Join(path, "SALTED-SHA512-PBKDF2")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["PasswordHash.SALTED-SHA512-PBKDF2"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SALTED-SHA512-PBKDF2"])
+		c.Required(fieldPath, present)
 		if present {
-			x.SALTEDSHA512PBKDF2.validate(c, path)
+			x.SALTEDSHA512PBKDF2.validate(c, fieldPath, supportPath+".SALTED-SHA512-PBKDF2")
 		}
 	}
 }
 
-func (x *PasswordHashSALTEDSHA512PBKDF2) validate(c *validation.Collector, p string) {
+func (x *PasswordHashSALTEDSHA512PBKDF2) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "entropy")
+		fieldPath := validation.Join(path, "entropy")
 		present := len(x.Entropy) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PasswordHash.SALTED-SHA512-PBKDF2.entropy"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".entropy"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "iterations")
+		fieldPath := validation.Join(path, "iterations")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["PasswordHash.SALTED-SHA512-PBKDF2.iterations"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".iterations"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "salt")
+		fieldPath := validation.Join(path, "salt")
 		present := len(x.Salt) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["PasswordHash.SALTED-SHA512-PBKDF2.salt"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".salt"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -425,338 +425,338 @@ func (x *PasswordHashSALTEDSHA512PBKDF2) validate(c *validation.Collector, p str
 // that every present key is supported on that OS version and enrollment context.
 func (x *SkipKeys) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "SkipKeys")
 	return c.Err()
 }
 
-func (x *SkipKeys) validate(c *validation.Collector, p string) {
+func (x *SkipKeys) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["SkipKeys"])
+	c.Support(path, true, supportTable["SkipKeys"])
 	{
-		path := validation.Join(p, "Accessibility")
+		fieldPath := validation.Join(path, "Accessibility")
 		present := x.Accessibility != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Accessibility"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Accessibility"])
 	}
 	{
-		path := validation.Join(p, "ActionButton")
+		fieldPath := validation.Join(path, "ActionButton")
 		present := x.ActionButton != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.ActionButton"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ActionButton"])
 	}
 	{
-		path := validation.Join(p, "Android")
+		fieldPath := validation.Join(path, "Android")
 		present := x.Android != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Android"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Android"])
 	}
 	{
-		path := validation.Join(p, "Appearance")
+		fieldPath := validation.Join(path, "Appearance")
 		present := x.Appearance != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Appearance"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Appearance"])
 	}
 	{
-		path := validation.Join(p, "AppleID")
+		fieldPath := validation.Join(path, "AppleID")
 		present := x.AppleID != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.AppleID"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AppleID"])
 	}
 	{
-		path := validation.Join(p, "AppStore")
+		fieldPath := validation.Join(path, "AppStore")
 		present := x.AppStore != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.AppStore"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AppStore"])
 	}
 	{
-		path := validation.Join(p, "Biometric")
+		fieldPath := validation.Join(path, "Biometric")
 		present := x.Biometric != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Biometric"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Biometric"])
 	}
 	{
-		path := validation.Join(p, "CameraButton")
+		fieldPath := validation.Join(path, "CameraButton")
 		present := x.CameraButton != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.CameraButton"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".CameraButton"])
 	}
 	{
-		path := validation.Join(p, "DeviceToDeviceMigration")
+		fieldPath := validation.Join(path, "DeviceToDeviceMigration")
 		present := x.DeviceToDeviceMigration != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.DeviceToDeviceMigration"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeviceToDeviceMigration"])
 	}
 	{
-		path := validation.Join(p, "Diagnostics")
+		fieldPath := validation.Join(path, "Diagnostics")
 		present := x.Diagnostics != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Diagnostics"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Diagnostics"])
 	}
 	{
-		path := validation.Join(p, "DisplayTone")
+		fieldPath := validation.Join(path, "DisplayTone")
 		present := x.DisplayTone != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.DisplayTone"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DisplayTone"])
 	}
 	{
-		path := validation.Join(p, "EnableLockdownMode")
+		fieldPath := validation.Join(path, "EnableLockdownMode")
 		present := x.EnableLockdownMode != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.EnableLockdownMode"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".EnableLockdownMode"])
 	}
 	{
-		path := validation.Join(p, "FileVault")
+		fieldPath := validation.Join(path, "FileVault")
 		present := x.FileVault != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.FileVault"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".FileVault"])
 	}
 	{
-		path := validation.Join(p, "HomeButtonSensitivity")
+		fieldPath := validation.Join(path, "HomeButtonSensitivity")
 		present := x.HomeButtonSensitivity != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.HomeButtonSensitivity"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".HomeButtonSensitivity"])
 	}
 	{
-		path := validation.Join(p, "iCloudDiagnostics")
+		fieldPath := validation.Join(path, "iCloudDiagnostics")
 		present := x.ICloudDiagnostics != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.iCloudDiagnostics"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".iCloudDiagnostics"])
 	}
 	{
-		path := validation.Join(p, "iCloudStorage")
+		fieldPath := validation.Join(path, "iCloudStorage")
 		present := x.ICloudStorage != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.iCloudStorage"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".iCloudStorage"])
 	}
 	{
-		path := validation.Join(p, "iMessageAndFaceTime")
+		fieldPath := validation.Join(path, "iMessageAndFaceTime")
 		present := x.IMessageAndFaceTime != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.iMessageAndFaceTime"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".iMessageAndFaceTime"])
 	}
 	{
-		path := validation.Join(p, "Intelligence")
+		fieldPath := validation.Join(path, "Intelligence")
 		present := x.Intelligence != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Intelligence"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Intelligence"])
 	}
 	{
-		path := validation.Join(p, "Keyboard")
+		fieldPath := validation.Join(path, "Keyboard")
 		present := x.Keyboard != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Keyboard"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Keyboard"])
 	}
 	{
-		path := validation.Join(p, "Location")
+		fieldPath := validation.Join(path, "Location")
 		present := x.Location != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Location"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Location"])
 	}
 	{
-		path := validation.Join(p, "MessagingActivationUsingPhoneNumber")
+		fieldPath := validation.Join(path, "MessagingActivationUsingPhoneNumber")
 		present := x.MessagingActivationUsingPhoneNumber != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.MessagingActivationUsingPhoneNumber"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".MessagingActivationUsingPhoneNumber"])
 	}
 	{
-		path := validation.Join(p, "Multitasking")
+		fieldPath := validation.Join(path, "Multitasking")
 		present := x.Multitasking != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Multitasking"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Multitasking"])
 	}
 	{
-		path := validation.Join(p, "OnBoarding")
+		fieldPath := validation.Join(path, "OnBoarding")
 		present := x.OnBoarding != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.OnBoarding"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OnBoarding"])
 	}
 	{
-		path := validation.Join(p, "OSShowcase")
+		fieldPath := validation.Join(path, "OSShowcase")
 		present := x.OSShowcase != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.OSShowcase"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OSShowcase"])
 	}
 	{
-		path := validation.Join(p, "Passcode")
+		fieldPath := validation.Join(path, "Passcode")
 		present := x.Passcode != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Passcode"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Passcode"])
 	}
 	{
-		path := validation.Join(p, "Payment")
+		fieldPath := validation.Join(path, "Payment")
 		present := x.Payment != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Payment"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Payment"])
 	}
 	{
-		path := validation.Join(p, "Privacy")
+		fieldPath := validation.Join(path, "Privacy")
 		present := x.Privacy != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Privacy"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Privacy"])
 	}
 	{
-		path := validation.Join(p, "Restore")
+		fieldPath := validation.Join(path, "Restore")
 		present := x.Restore != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Restore"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Restore"])
 	}
 	{
-		path := validation.Join(p, "RestoreCompleted")
+		fieldPath := validation.Join(path, "RestoreCompleted")
 		present := x.RestoreCompleted != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.RestoreCompleted"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RestoreCompleted"])
 	}
 	{
-		path := validation.Join(p, "ScreenSaver")
+		fieldPath := validation.Join(path, "ScreenSaver")
 		present := x.ScreenSaver != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.ScreenSaver"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ScreenSaver"])
 	}
 	{
-		path := validation.Join(p, "Safety")
+		fieldPath := validation.Join(path, "Safety")
 		present := x.Safety != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Safety"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Safety"])
 	}
 	{
-		path := validation.Join(p, "SafetyAndHandling")
+		fieldPath := validation.Join(path, "SafetyAndHandling")
 		present := x.SafetyAndHandling != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.SafetyAndHandling"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SafetyAndHandling"])
 	}
 	{
-		path := validation.Join(p, "ScreenTime")
+		fieldPath := validation.Join(path, "ScreenTime")
 		present := x.ScreenTime != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.ScreenTime"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ScreenTime"])
 	}
 	{
-		path := validation.Join(p, "SIMSetup")
+		fieldPath := validation.Join(path, "SIMSetup")
 		present := x.SIMSetup != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.SIMSetup"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SIMSetup"])
 	}
 	{
-		path := validation.Join(p, "Siri")
+		fieldPath := validation.Join(path, "Siri")
 		present := x.Siri != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Siri"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Siri"])
 	}
 	{
-		path := validation.Join(p, "SoftwareUpdate")
+		fieldPath := validation.Join(path, "SoftwareUpdate")
 		present := x.SoftwareUpdate != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.SoftwareUpdate"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SoftwareUpdate"])
 	}
 	{
-		path := validation.Join(p, "SpokenLanguage")
+		fieldPath := validation.Join(path, "SpokenLanguage")
 		present := x.SpokenLanguage != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.SpokenLanguage"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".SpokenLanguage"])
 	}
 	{
-		path := validation.Join(p, "TapToSetup")
+		fieldPath := validation.Join(path, "TapToSetup")
 		present := x.TapToSetup != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.TapToSetup"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TapToSetup"])
 	}
 	{
-		path := validation.Join(p, "TermsOfAddress")
+		fieldPath := validation.Join(path, "TermsOfAddress")
 		present := x.TermsOfAddress != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.TermsOfAddress"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TermsOfAddress"])
 	}
 	{
-		path := validation.Join(p, "Tips")
+		fieldPath := validation.Join(path, "Tips")
 		present := x.Tips != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Tips"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Tips"])
 	}
 	{
-		path := validation.Join(p, "TOS")
+		fieldPath := validation.Join(path, "TOS")
 		present := x.TOS != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.TOS"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TOS"])
 	}
 	{
-		path := validation.Join(p, "TVHomeScreenSync")
+		fieldPath := validation.Join(path, "TVHomeScreenSync")
 		present := x.TVHomeScreenSync != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.TVHomeScreenSync"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TVHomeScreenSync"])
 	}
 	{
-		path := validation.Join(p, "TVProviderSignIn")
+		fieldPath := validation.Join(path, "TVProviderSignIn")
 		present := x.TVProviderSignIn != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.TVProviderSignIn"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TVProviderSignIn"])
 	}
 	{
-		path := validation.Join(p, "TVRoom")
+		fieldPath := validation.Join(path, "TVRoom")
 		present := x.TVRoom != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.TVRoom"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".TVRoom"])
 	}
 	{
-		path := validation.Join(p, "UnlockWithWatch")
+		fieldPath := validation.Join(path, "UnlockWithWatch")
 		present := x.UnlockWithWatch != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.UnlockWithWatch"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UnlockWithWatch"])
 	}
 	{
-		path := validation.Join(p, "UpdateCompleted")
+		fieldPath := validation.Join(path, "UpdateCompleted")
 		present := x.UpdateCompleted != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.UpdateCompleted"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".UpdateCompleted"])
 	}
 	{
-		path := validation.Join(p, "Wallpaper")
+		fieldPath := validation.Join(path, "Wallpaper")
 		present := x.Wallpaper != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Wallpaper"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Wallpaper"])
 	}
 	{
-		path := validation.Join(p, "WatchMigration")
+		fieldPath := validation.Join(path, "WatchMigration")
 		present := x.WatchMigration != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.WatchMigration"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".WatchMigration"])
 	}
 	{
-		path := validation.Join(p, "WebContentFiltering")
+		fieldPath := validation.Join(path, "WebContentFiltering")
 		present := x.WebContentFiltering != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.WebContentFiltering"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".WebContentFiltering"])
 	}
 	{
-		path := validation.Join(p, "Welcome")
+		fieldPath := validation.Join(path, "Welcome")
 		present := x.Welcome != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Welcome"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Welcome"])
 	}
 	{
-		path := validation.Join(p, "Zoom")
+		fieldPath := validation.Join(path, "Zoom")
 		present := x.Zoom != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.Zoom"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Zoom"])
 	}
 	{
-		path := validation.Join(p, "AccessibilityAppearance")
+		fieldPath := validation.Join(path, "AccessibilityAppearance")
 		present := x.AccessibilityAppearance != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.AccessibilityAppearance"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AccessibilityAppearance"])
 	}
 	{
-		path := validation.Join(p, "DeviceFeaturesTour")
+		fieldPath := validation.Join(path, "DeviceFeaturesTour")
 		present := x.DeviceFeaturesTour != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.DeviceFeaturesTour"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".DeviceFeaturesTour"])
 	}
 	{
-		path := validation.Join(p, "LiquidGlass")
+		fieldPath := validation.Join(path, "LiquidGlass")
 		present := x.LiquidGlass != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["SkipKeys.LiquidGlass"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".LiquidGlass"])
 	}
 }

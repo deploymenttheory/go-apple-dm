@@ -12,104 +12,104 @@ import (
 // that every present key is supported on that OS version and enrollment context.
 func (x *CodePlatformSSORequired) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "CodePlatformSSORequired")
 	return c.Err()
 }
 
-func (x *CodePlatformSSORequired) validate(c *validation.Collector, p string) {
+func (x *CodePlatformSSORequired) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["CodePlatformSSORequired"])
+	c.Support(path, true, supportTable["CodePlatformSSORequired"])
 	{
-		path := validation.Join(p, "code")
+		fieldPath := validation.Join(path, "code")
 		present := x.Code != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodePlatformSSORequired.code"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".code"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Code, []any{"com.apple.psso.required"})
+			c.Enum(fieldPath, true, x.Code, []any{"com.apple.psso.required"})
 		}
 	}
 	{
-		path := validation.Join(p, "description")
+		fieldPath := validation.Join(path, "description")
 		present := x.Description != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodePlatformSSORequired.description"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".description"])
 	}
 	{
-		path := validation.Join(p, "message")
+		fieldPath := validation.Join(path, "message")
 		present := x.Message != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodePlatformSSORequired.message"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".message"])
 	}
 	{
-		path := validation.Join(p, "details")
+		fieldPath := validation.Join(path, "details")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodePlatformSSORequired.details"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".details"])
+		c.Required(fieldPath, present)
 		if present {
-			x.Details.validate(c, path)
+			x.Details.validate(c, fieldPath, supportPath+".details")
 		}
 	}
 }
 
-func (x *CodePlatformSSORequiredDetails) validate(c *validation.Collector, p string) {
+func (x *CodePlatformSSORequiredDetails) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "ProfileURL")
+		fieldPath := validation.Join(path, "ProfileURL")
 		present := x.ProfileURL != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodePlatformSSORequired.details.ProfileURL"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ProfileURL"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Package")
+		fieldPath := validation.Join(path, "Package")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodePlatformSSORequired.details.Package"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Package"])
+		c.Required(fieldPath, present)
 		if present {
-			x.Package.validate(c, path)
+			x.Package.validate(c, fieldPath, supportPath+".Package")
 		}
 	}
 	{
-		path := validation.Join(p, "AuthURL")
+		fieldPath := validation.Join(path, "AuthURL")
 		present := x.AuthURL != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodePlatformSSORequired.details.AuthURL"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".AuthURL"])
+		c.Required(fieldPath, present)
 	}
 }
 
-func (x *CodePlatformSSORequiredDetailsPackage) validate(c *validation.Collector, p string) {
+func (x *CodePlatformSSORequiredDetailsPackage) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "ManifestURL")
+		fieldPath := validation.Join(path, "ManifestURL")
 		present := x.ManifestURL != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodePlatformSSORequired.details.Package.ManifestURL"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".ManifestURL"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "PinningCerts")
+		fieldPath := validation.Join(path, "PinningCerts")
 		present := len(x.PinningCerts) > 0
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodePlatformSSORequired.details.Package.PinningCerts"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PinningCerts"])
 	}
 	{
-		path := validation.Join(p, "PinningRevocationCheckRequired")
+		fieldPath := validation.Join(path, "PinningRevocationCheckRequired")
 		present := x.PinningRevocationCheckRequired != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodePlatformSSORequired.details.Package.PinningRevocationCheckRequired"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".PinningRevocationCheckRequired"])
 	}
 }
 
@@ -117,97 +117,97 @@ func (x *CodePlatformSSORequiredDetailsPackage) validate(c *validation.Collector
 // that every present key is supported on that OS version and enrollment context.
 func (x *CodeSoftwareUpdateRequired) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "CodeSoftwareUpdateRequired")
 	return c.Err()
 }
 
-func (x *CodeSoftwareUpdateRequired) validate(c *validation.Collector, p string) {
+func (x *CodeSoftwareUpdateRequired) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["CodeSoftwareUpdateRequired"])
+	c.Support(path, true, supportTable["CodeSoftwareUpdateRequired"])
 	{
-		path := validation.Join(p, "code")
+		fieldPath := validation.Join(path, "code")
 		present := x.Code != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodeSoftwareUpdateRequired.code"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".code"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Code, []any{"com.apple.softwareupdate.required"})
+			c.Enum(fieldPath, true, x.Code, []any{"com.apple.softwareupdate.required"})
 		}
 	}
 	{
-		path := validation.Join(p, "description")
+		fieldPath := validation.Join(path, "description")
 		present := x.Description != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodeSoftwareUpdateRequired.description"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".description"])
 	}
 	{
-		path := validation.Join(p, "message")
+		fieldPath := validation.Join(path, "message")
 		present := x.Message != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodeSoftwareUpdateRequired.message"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".message"])
 	}
 	{
-		path := validation.Join(p, "details")
+		fieldPath := validation.Join(path, "details")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodeSoftwareUpdateRequired.details"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".details"])
+		c.Required(fieldPath, present)
 		if present {
-			x.Details.validate(c, path)
+			x.Details.validate(c, fieldPath, supportPath+".details")
 		}
 	}
 }
 
-func (x *CodeSoftwareUpdateRequiredDetails) validate(c *validation.Collector, p string) {
+func (x *CodeSoftwareUpdateRequiredDetails) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "OSVersion")
+		fieldPath := validation.Join(path, "OSVersion")
 		present := x.OSVersion != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodeSoftwareUpdateRequired.details.OSVersion"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".OSVersion"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "BuildVersion")
+		fieldPath := validation.Join(path, "BuildVersion")
 		present := x.BuildVersion != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodeSoftwareUpdateRequired.details.BuildVersion"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".BuildVersion"])
 	}
 	{
-		path := validation.Join(p, "RequireBetaProgram")
+		fieldPath := validation.Join(path, "RequireBetaProgram")
 		present := x.RequireBetaProgram != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodeSoftwareUpdateRequired.details.RequireBetaProgram"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".RequireBetaProgram"])
 		if present {
-			x.RequireBetaProgram.validate(c, path)
+			x.RequireBetaProgram.validate(c, fieldPath, supportPath+".RequireBetaProgram")
 		}
 	}
 }
 
-func (x *CodeSoftwareUpdateRequiredDetailsRequireBetaProgram) validate(c *validation.Collector, p string) {
+func (x *CodeSoftwareUpdateRequiredDetailsRequireBetaProgram) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "Description")
+		fieldPath := validation.Join(path, "Description")
 		present := x.Description != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodeSoftwareUpdateRequired.details.RequireBetaProgram.Description"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Description"])
+		c.Required(fieldPath, present)
 	}
 	{
-		path := validation.Join(p, "Token")
+		fieldPath := validation.Join(path, "Token")
 		present := x.Token != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodeSoftwareUpdateRequired.details.RequireBetaProgram.Token"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".Token"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -215,37 +215,37 @@ func (x *CodeSoftwareUpdateRequiredDetailsRequireBetaProgram) validate(c *valida
 // that every present key is supported on that OS version and enrollment context.
 func (x *UnrecognizedDevice) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "UnrecognizedDevice")
 	return c.Err()
 }
 
-func (x *UnrecognizedDevice) validate(c *validation.Collector, p string) {
+func (x *UnrecognizedDevice) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["UnrecognizedDevice"])
+	c.Support(path, true, supportTable["UnrecognizedDevice"])
 	{
-		path := validation.Join(p, "code")
+		fieldPath := validation.Join(path, "code")
 		present := x.Code != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["UnrecognizedDevice.code"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".code"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Code, []any{"com.apple.unrecognized.device"})
+			c.Enum(fieldPath, true, x.Code, []any{"com.apple.unrecognized.device"})
 		}
 	}
 	{
-		path := validation.Join(p, "description")
+		fieldPath := validation.Join(path, "description")
 		present := x.Description != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["UnrecognizedDevice.description"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".description"])
 	}
 	{
-		path := validation.Join(p, "message")
+		fieldPath := validation.Join(path, "message")
 		present := x.Message != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["UnrecognizedDevice.message"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".message"])
 	}
 }
 
@@ -253,61 +253,61 @@ func (x *UnrecognizedDevice) validate(c *validation.Collector, p string) {
 // that every present key is supported on that OS version and enrollment context.
 func (x *CodePairingTokenMissing) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "CodePairingTokenMissing")
 	return c.Err()
 }
 
-func (x *CodePairingTokenMissing) validate(c *validation.Collector, p string) {
+func (x *CodePairingTokenMissing) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["CodePairingTokenMissing"])
+	c.Support(path, true, supportTable["CodePairingTokenMissing"])
 	{
-		path := validation.Join(p, "code")
+		fieldPath := validation.Join(path, "code")
 		present := x.Code != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodePairingTokenMissing.code"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".code"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Code, []any{"com.apple.watch.pairing.token.missing"})
+			c.Enum(fieldPath, true, x.Code, []any{"com.apple.watch.pairing.token.missing"})
 		}
 	}
 	{
-		path := validation.Join(p, "description")
+		fieldPath := validation.Join(path, "description")
 		present := x.Description != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodePairingTokenMissing.description"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".description"])
 	}
 	{
-		path := validation.Join(p, "message")
+		fieldPath := validation.Join(path, "message")
 		present := x.Message != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodePairingTokenMissing.message"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".message"])
 	}
 	{
-		path := validation.Join(p, "details")
+		fieldPath := validation.Join(path, "details")
 		present := true
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodePairingTokenMissing.details"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".details"])
+		c.Required(fieldPath, present)
 		if present {
-			x.Details.validate(c, path)
+			x.Details.validate(c, fieldPath, supportPath+".details")
 		}
 	}
 }
 
-func (x *CodePairingTokenMissingDetails) validate(c *validation.Collector, p string) {
+func (x *CodePairingTokenMissingDetails) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
 	{
-		path := validation.Join(p, "security-token")
+		fieldPath := validation.Join(path, "security-token")
 		present := x.SecurityToken != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["CodePairingTokenMissing.details.security-token"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".security-token"])
+		c.Required(fieldPath, present)
 	}
 }
 
@@ -315,36 +315,36 @@ func (x *CodePairingTokenMissingDetails) validate(c *validation.Collector, p str
 // that every present key is supported on that OS version and enrollment context.
 func (x *WellKnownFailed) Validate(t support.Target) error {
 	c := validation.New(t)
-	x.validate(c, "")
+	x.validate(c, "", "WellKnownFailed")
 	return c.Err()
 }
 
-func (x *WellKnownFailed) validate(c *validation.Collector, p string) {
+func (x *WellKnownFailed) validate(c *validation.Collector, path, supportPath string) {
 	if x == nil {
-		c.Required(p, false)
+		c.Required(path, false)
 		return
 	}
-	c.Support(p, true, supportTable["WellKnownFailed"])
+	c.Support(path, true, supportTable["WellKnownFailed"])
 	{
-		path := validation.Join(p, "code")
+		fieldPath := validation.Join(path, "code")
 		present := x.Code != ""
-		_, _ = path, present
-		c.Support(path, present, supportTable["WellKnownFailed.code"])
-		c.Required(path, present)
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".code"])
+		c.Required(fieldPath, present)
 		if present {
-			c.Enum(path, true, x.Code, []any{"com.apple.well-known.failed"})
+			c.Enum(fieldPath, true, x.Code, []any{"com.apple.well-known.failed"})
 		}
 	}
 	{
-		path := validation.Join(p, "description")
+		fieldPath := validation.Join(path, "description")
 		present := x.Description != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WellKnownFailed.description"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".description"])
 	}
 	{
-		path := validation.Join(p, "message")
+		fieldPath := validation.Join(path, "message")
 		present := x.Message != nil
-		_, _ = path, present
-		c.Support(path, present, supportTable["WellKnownFailed.message"])
+		_, _ = fieldPath, present
+		c.Support(fieldPath, present, supportTable[supportPath+".message"])
 	}
 }

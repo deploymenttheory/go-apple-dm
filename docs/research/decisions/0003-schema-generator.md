@@ -8,6 +8,14 @@ Apple's pinned YAML schema describes multiple protocol families, nested dictiona
 
 The in-repository generator uses `gopkg.in/yaml.v3` nodes to emit commands and responses, check-in messages, errors, profiles, declarations, declarative protocol messages, status items and other types. Nested dictionaries receive named types. Support metadata remains data in `devicemanagement/schema/support`; callers use `Check`, `Lookup`, `Families` and `Paths`.
 
+Dictionaries that repeat a subkeytype with the same shape share one Go type within a
+schema; availability is not part of a type. The support table has an entry for every
+key use, resolved from Apple's `supportedOS` blocks along that use's own key path,
+including the block of each heterogeneous-array variant. Generated validation passes
+the support path of the use being checked to nested values, so a shared type is
+checked against each use's entries. A value reached through a recursive reference is
+checked against the use of the key it recurses to.
+
 Version parsing and comparison live in `devicemanagement/osversion`, with named
 macOS major constants used by generated availability boundaries. Generator input
 parsing and boundary comparisons call this package directly, and support metadata
@@ -43,6 +51,11 @@ Apple's descriptions are preserved verbatim. Project-authored generated document
 ## Verification
 
 Generator tests cover complete-tree generation, schema coverage, nested types, reason vocabularies and identifier removal. `make verify` compares deterministic regeneration with the committed output.
+
+An availability audit walks every key use of the current schema merged with the
+retained releases. It requires the entry that generated validation consults for each
+use to equal the support resolved from that use's source keys, and each recursive key
+to be available as the key it recurses to.
 
 ## References
 
