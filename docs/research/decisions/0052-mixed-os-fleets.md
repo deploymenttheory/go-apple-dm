@@ -136,8 +136,10 @@ behind a skipped target, and the deprecated and unvalidated keys of a queued
 target, which the service records in `EnqueueResult.Warnings`. The admin API
 renders versions as dotted strings, an absent deprecation or removal bound as
 `"latest"`, and no window for a key that is not available on the OS or that is
-unvalidated. If no verdict can be produced after an assignment, the assignment
-stands and the response omits it.
+unvalidated. Assignment verdicts, the compatibility preview and enqueue
+responses include the target's support tier when its OS and version are known.
+If no verdict can be produced after an assignment, the assignment stands and the
+response omits it.
 
 An acknowledged, tracked device-channel inventory result refreshes product, OS
 and build versions. Missing and malformed observations preserve previous values;

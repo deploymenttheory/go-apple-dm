@@ -14,6 +14,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/validation"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 	"github.com/deploymenttheory/go-apple-dm/server/replycerts"
+	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
 
 // mdmAdminRoutes are the classic-MDM admin routes: the enrollments the
@@ -218,8 +219,12 @@ func (a *App) enqueueCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Include each target's validation reason from Core.Enqueue in the response,
-	// with the keys whose availability skipped the target or warns about it.
+	// with the keys whose availability skipped the target or warns about it, and
+	// the support tier of a target whose OS and version are known.
 	out := map[string]any{"CommandUUID": cmd.UUID, "Queued": len(res.Queued)}
+	if target, err := service.EnrollmentTarget(r.Context(), a.Store, id); err == nil && target.Tier() != "" {
+		out["Tier"] = target.Tier()
+	}
 	if reason, ok := res.Skipped[id]; ok {
 		out["Skipped"] = reason.Error()
 		if issues := availabilityViews(validation.AvailabilityIssues(reason)); issues != nil {

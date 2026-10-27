@@ -22,8 +22,10 @@ type scopeResponse struct {
 	CommandUUID  string
 	Queued       *int
 	Skipped      string
+	Tier         string
 	Availability []keyAvailability
 	Verdict      *struct {
+		Tier     string
 		Eligible []struct{ Identifier string }
 		Issues   []struct {
 			Identifier, Reason string
@@ -34,9 +36,9 @@ type scopeResponse struct {
 }
 
 // emitVerdict writes an assignment or enqueue response. Human output lists
-// eligible declarations, each withheld or deprecated declaration and each
-// affected key with its rule and version window; json modes print the server's
-// bytes unchanged.
+// the target's support tier, eligible declarations, each declaration issue and
+// each affected key with its rule and version window; json modes print the
+// server's bytes unchanged.
 func (e *env) emitVerdict(resp *adminclient.Response) error {
 	var body scopeResponse
 	if json.Unmarshal(resp.Body, &body) != nil {
@@ -55,10 +57,12 @@ func (e *env) emitVerdict(resp *adminclient.Response) error {
 		if body.Skipped != "" {
 			_, _ = fmt.Fprintf(w, "skipped\t%s\n", body.Skipped)
 		}
+		writeTier(w, body.Tier)
 		writeKeys(w, body.Availability)
 		if body.Verdict == nil {
 			return
 		}
+		writeTier(w, body.Verdict.Tier)
 		for _, ref := range body.Verdict.Eligible {
 			_, _ = fmt.Fprintf(w, "eligible\t%s\n", ref.Identifier)
 		}
@@ -71,6 +75,13 @@ func (e *env) emitVerdict(resp *adminclient.Response) error {
 			writeKeys(w, issue.Availability)
 		}
 	})
+}
+
+// writeTier writes the target's support tier when the server reports one.
+func writeTier(w *tabwriter.Writer, tier string) {
+	if tier != "" {
+		_, _ = fmt.Fprintf(w, "tier\t%s\n", tier)
+	}
 }
 
 // writeKeys writes one line for each key's availability issue, indented under

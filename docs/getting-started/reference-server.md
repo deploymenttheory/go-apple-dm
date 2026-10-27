@@ -453,7 +453,8 @@ new commands need new UUIDs, while a retry of this command retains its UUID:
 </dict></plist>
 ```
 
-Queue it, inspect `Queued`/`Skipped` and any `Availability` keys, then wake the
+Queue it, inspect `Queued`/`Skipped`, the target's support `Tier` and any
+`Availability` keys, then wake the
 device explicitly:
 
 ```sh
