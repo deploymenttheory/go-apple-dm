@@ -63,11 +63,14 @@ func member(list []any, i int, name string) any {
 // TestAssignmentReturnsAvailabilityVerdict checks that assigning a set returns
 // each enrollment's verdict for the set's declarations: a macOS 27.0 key is
 // withheld from macOS 26.4 with its window and eligible on 27.2, unbounded
-// limits render as "latest", and no configuration value is disclosed.
+// limits render as "latest", and no configuration value is disclosed. macOS
+// 26.4 and 27.2 are guaranteed, macOS 15.7 is best effort, and an enrollment
+// without inventory has no tier.
 func TestAssignmentReturnsAvailabilityVerdict(t *testing.T) {
 	a, srv, _ := mdmAdminApp(t)
 	verdictMac(t, a, "MAC-26", "26.4")
 	verdictMac(t, a, "MAC-27", "27.2")
+	verdictMac(t, a, "MAC-15", "15.7")
 	verdictCall(t, srv, http.MethodPut, "/admin/v1/declarations", `{"Type":"com.apple.configuration.app.managed","Identifier":"extensions","Payload":{"AppStoreID":"`+verdictAppStoreID+`","ExtensionConfigs":{"`+verdictExtension+`":{}}}}`)
 	verdictCall(t, srv, http.MethodPut, "/admin/v1/sets/apps/declarations/extensions", "")
 
@@ -76,6 +79,7 @@ func TestAssignmentReturnsAvailabilityVerdict(t *testing.T) {
 		"Changed": true,
 		"Verdict": map[string]any{
 			"Enforced": true,
+			"Tier":     "guaranteed",
 			"Eligible": []any{},
 			"Issues": []any{map[string]any{
 				"Identifier": "extensions", "Reason": "unsupported-target", "Withheld": true,
@@ -105,8 +109,14 @@ func TestAssignmentReturnsAvailabilityVerdict(t *testing.T) {
 	verdict, _ = body["Verdict"].(map[string]any)
 	eligible, _ := verdict["Eligible"].([]any)
 	issues, _ := verdict["Issues"].([]any)
-	if len(eligible) != 1 || member(eligible, 0, "Identifier") != "extensions" || len(issues) != 0 {
+	if len(eligible) != 1 || member(eligible, 0, "Identifier") != "extensions" || len(issues) != 0 || verdict["Tier"] != "guaranteed" {
 		t.Fatalf("macOS 27.2 verdict = %v", verdict)
+	}
+	_, body = verdictCall(t, srv, http.MethodPut, "/admin/v1/enrollments/device/MAC-15/sets/apps", "")
+	verdict, _ = body["Verdict"].(map[string]any)
+	issues, _ = verdict["Issues"].([]any)
+	if verdict["Tier"] != "best-effort" || len(issues) != 1 || member(issues, 0, "Reason") != "unsupported-target" {
+		t.Fatalf("macOS 15.7 verdict = %v", verdict)
 	}
 
 	_, body = verdictCall(t, srv, http.MethodDelete, "/admin/v1/enrollments/device/MAC-27/sets/apps", "")
@@ -117,7 +127,7 @@ func TestAssignmentReturnsAvailabilityVerdict(t *testing.T) {
 	_, body = verdictCall(t, srv, http.MethodPut, "/admin/v1/enrollments/device/UNKNOWN/sets/apps", "")
 	verdict, _ = body["Verdict"].(map[string]any)
 	issues, _ = verdict["Issues"].([]any)
-	if body["Changed"] != true || len(issues) != 1 || member(issues, 0, "Reason") != "inventory-required" {
+	if _, ok := verdict["Tier"]; ok || body["Changed"] != true || len(issues) != 1 || member(issues, 0, "Reason") != "inventory-required" {
 		t.Fatalf("assignment without inventory = %v", body)
 	}
 }
@@ -126,7 +136,8 @@ func TestAssignmentReturnsAvailabilityVerdict(t *testing.T) {
 // key the target has deprecated as a delivered warning, and a key the target
 // has removed as the reason the target was skipped, each with its window. A
 // query without availability data is delivered and reported as unvalidated,
-// without a window or the query name.
+// without a window or the query name. Each response carries the target's
+// support tier.
 func TestEnqueueReturnsAvailability(t *testing.T) {
 	a, srv, _ := mdmAdminApp(t)
 	verdictMac(t, a, "MAC-26", "26.4")
@@ -147,11 +158,11 @@ func TestEnqueueReturnsAvailability(t *testing.T) {
 		}}
 	}
 	_, body := verdictCall(t, srv, http.MethodPost, "/admin/v1/enrollments/device/MAC-26/commands", command("DEPRECATED", "OSUpdateSettings"))
-	if body["Queued"] != float64(1) || body["Skipped"] != nil || !reflect.DeepEqual(body["Availability"], issue("deprecated", "warning")) {
+	if body["Queued"] != float64(1) || body["Skipped"] != nil || body["Tier"] != "guaranteed" || !reflect.DeepEqual(body["Availability"], issue("deprecated", "warning")) {
 		t.Fatalf("deprecated query = %v", body)
 	}
 	_, body = verdictCall(t, srv, http.MethodPost, "/admin/v1/enrollments/device/MAC-27/commands", command("REMOVED", "OSUpdateSettings"))
-	if body["Queued"] != float64(0) || body["Skipped"] == nil || !reflect.DeepEqual(body["Availability"], issue("removed", "error")) {
+	if body["Queued"] != float64(0) || body["Skipped"] == nil || body["Tier"] != "guaranteed" || !reflect.DeepEqual(body["Availability"], issue("removed", "error")) {
 		t.Fatalf("removed query = %v", body)
 	}
 	raw, body := verdictCall(t, srv, http.MethodPost, "/admin/v1/enrollments/device/MAC-27/commands", command("UNVALIDATED", "PrivateFutureQuery"))

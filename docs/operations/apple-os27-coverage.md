@@ -65,12 +65,15 @@ issue.
 
 Scoping returns the same verdict. Assigning a set (`PUT
 /enrollments/{channel}/{id}/sets/{set}`) or a Blueprint returns `Changed` and a
-`Verdict` covering that set's declarations: `Eligible` references and `Issues`
-with their `Availability` keys. The assignment is accepted whatever the verdict,
-and delivery stays gated. Enqueuing a command (`POST
-/enrollments/{channel}/{id}/commands`) returns `Availability` keys with the
-`Skipped` reason, or, when the command is queued, the keys the target has
-deprecated and the unvalidated query values. Each key has `Path`, `OS`, `Rule`,
+`Verdict` covering that set's declarations: the target's `Tier`, `Eligible`
+references and `Issues` with their `Availability` keys. The assignment is
+accepted whatever the verdict, and delivery stays gated. Enqueuing a command
+(`POST /enrollments/{channel}/{id}/commands`) returns the target's `Tier` and
+`Availability` keys with the `Skipped` reason, or, when the command is queued,
+the keys the target has deprecated and the unvalidated query values. `Tier` is
+`guaranteed` from release 26 of the target's OS onwards and `best-effort` for an
+earlier release; it is omitted when the OS or version is unknown and never
+changes eligibility. Each key has `Path`, `OS`, `Rule`,
 `Severity` and its `Introduced`, `Deprecated` and `Removed` versions; an absent
 deprecation or removal bound is `"latest"`, and a key that is not available on
 the OS or is unvalidated has no versions. `dmctl sets assign`, `dmctl blueprints

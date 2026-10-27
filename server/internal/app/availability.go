@@ -57,9 +57,12 @@ func versionView(v osversion.Version, absent string) string {
 }
 
 // compatibilityView is the admin API projection of a DDM compatibility report.
+// Tier marks the target's release as guaranteed or best effort and is omitted
+// for an unknown OS or version.
 type compatibilityView struct {
 	Enforced bool
 	Target   support.Target
+	Tier     support.Tier `json:",omitempty"`
 	Eligible []ddm.DeclarationRef
 	Issues   []compatibilityIssueView
 }
@@ -78,6 +81,7 @@ func viewCompatibility(report ddm.CompatibilityReport, keep func(identifier stri
 	view := compatibilityView{
 		Enforced: report.Enforced,
 		Target:   report.Target,
+		Tier:     report.Tier,
 		Eligible: []ddm.DeclarationRef{},
 		Issues:   []compatibilityIssueView{},
 	}
