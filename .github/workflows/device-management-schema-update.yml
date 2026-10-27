@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       report_only:
-        description: 'Check code generation and retain proposed issues without publishing'
+        description: 'Check code generation and retain proposed issues and adoption without publishing'
         type: boolean
         default: true
 
@@ -183,4 +183,73 @@ jobs:
             ${{ runner.temp }}/schema-assessments/summary.md
             ${{ runner.temp }}/schema-assessments/proposed-issues.json
             ${{ runner.temp }}/schema-assessments/publication.json
+          retention-days: 30
+
+  adopt:
+    name: Propose Device Management Client Schema release adoption
+    needs: [discover, assess]
+    # A failing seed assessment must not block adopting a passing release.
+    if: always() && github.event_name != 'pull_request' && needs.discover.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
+      # Pull requests opened with the workflow token do not trigger CI; the app token does.
+      - name: Create adoption token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
+        with:
+          app-id: ${{ vars.RP_APP_ID }}
+          private-key: ${{ secrets.RP_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: device-management-client-schema-discovery
+          path: ${{ runner.temp }}
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        continue-on-error: true
+        with:
+          pattern: device-management-client-schema-assessment-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/schema-assessments/
+      - name: Propose release adoption
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SCHEMA_REPORT_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.report_only }}
+          SCHEMA_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          args=()
+          if [ "$SCHEMA_REPORT_ONLY" = "true" ]; then args+=(--report-only); fi
+          python3 .github/scripts/device_management_client_schema_monitor.py adopt \
+            --manifest "${RUNNER_TEMP}/schema-discovery/discovery.json" \
+            --output "${RUNNER_TEMP}/schema-assessments" \
+            --run-url "$SCHEMA_RUN_URL" "${args[@]}"
+      - name: Show adoption outcome
+        if: always()
+        run: |
+          if [ -f "${RUNNER_TEMP}/schema-assessments/adoption.md" ]; then
+            cat "${RUNNER_TEMP}/schema-assessments/adoption.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Retain adoption evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: device-management-client-schema-adoption
+          path: |
+            ${{ runner.temp }}/schema-assessments/adoption.json
+            ${{ runner.temp }}/schema-assessments/adoption.md
+            ${{ runner.temp }}/schema-assessments/adoption/
           retention-days: 30

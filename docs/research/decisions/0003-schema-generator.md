@@ -26,8 +26,10 @@ promoted release. It verifies strict parsing, generation, regeneration consisten
 and compilation in isolated workspaces, with the published schema as a control.
 Incidents group unsupported constructs across files and snapshots and identify the
 relevant generator code and required regression tests. The candidate output uses a
-fresh identifier lock; the published API guard remains in ordinary CI. Source
-adoption and server compatibility are outside the monitor's responsibility.
+fresh identifier lock; the published API guard remains in ordinary CI. When Apple's
+release passes, the monitor proposes it as one reviewed adoption pull request that
+moves the pin and regenerates with the production identifier lock. Server
+compatibility remains the responsibility of ordinary CI.
 See the [monitor guide](../../schema-monitor.md).
 
 ## Rationale

@@ -45,6 +45,90 @@ def stored(action):
     return dict(action[2], number=42, state='open')
 
 
+REGENERATE = (('generate', ['sh', '-c', 'printf \'{"os_versions": "27.2"}\' > ' + m.SCHEMA + '/GENERATED_FROM.json']),)
+LOCK_FAILURE = (('generate', ['sh', '-c', 'echo "EXPORTED_IDENTIFIERS.lock: OldType is no longer generated"; exit 1']),)
+OFFLINE = (('generate', ['sh', '-c', 'echo "dial tcp: lookup proxy.golang.org: no such host"; exit 1']),)
+
+
+def proposal(commit, state='open', head='e' * 40, merged=None, sha=None):
+    body = '<!-- schema-adoption ' + json.dumps({'commit': commit, 'head': head}) + ' -->\nProposal'
+    return {'number': 9, 'state': state, 'merged_at': merged, 'body': body, 'head': {'sha': sha or head}}
+
+
+class PullAPI:
+    repository = 'owner/repo'
+
+    def __init__(self, pulls=()):
+        self.existing, self.calls = list(pulls), []
+
+    def pulls(self, head):
+        return self.existing
+
+    def request(self, method, endpoint, body=None):
+        self.calls.append((method, endpoint, body))
+        return {'number': 7}
+
+
+def git_repo(path, branch):
+    path.mkdir(parents=True)
+    m.run(['git', 'init', '-q', '-b', branch], path)
+    m.run(['git', 'config', 'user.name', 'Test'], path)
+    m.run(['git', 'config', 'user.email', 'test@example.com'], path)
+    return path
+
+
+def commit_all(path, message):
+    m.run(['git', 'add', '--all'], path)
+    m.run(['git', 'commit', '-qm', message], path)
+    return m.run(['git', 'rev-parse', 'HEAD'], path).strip()
+
+
+def apple_release(apple, version):
+    # Apple prepends each release section to CHANGES.md.
+    notes = '# Changes in ' + version + '\n- Adds ' + version + '\n\n# Changes in 27.0\n'
+    (apple / 'CHANGES.md').write_text(notes + (apple / 'CHANGES.md').read_text())
+    commit = commit_all(apple, 'Release-v' + version)
+    m.run(['git', 'branch', 'schema-source/release/' + commit], apple)
+    return commit
+
+
+def passing_results(value, directory):
+    for branch in [value['control'], *value['branches']]:
+        m.write_json(directory / branch['key'] / 'result.json', {
+            'schemaVersion': 4, 'projectCommit': value['projectCommit'], 'branch': branch,
+            'controlCommit': value['control']['commit'], 'complete': True, 'automationErrors': [], 'findings': [],
+            'stages': {s: {'state': 'passed'} for s in m.STAGES}})
+
+
+def adoption_workspace(root):
+    """Build Apple, project and push-target repositories with a pinned control and a newer release."""
+    apple = git_repo(root / 'apple', 'release')
+    (apple / 'CHANGES.md').write_text('- Initial schema\n')
+    pin = commit_all(apple, 'Release-v27.0')
+    candidate = apple_release(apple, '27.2')
+    project = git_repo(root / 'project', 'main')
+    (project / '.gitmodules').write_text('[submodule "apple-device-management-current"]\n\tpath = ' + m.CURRENT +
+                                         '\n\turl = ' + str(apple) + '\n\tbranch = release\n')
+    (project / m.SCHEMA).mkdir(parents=True)
+    m.write_json(project / m.SCHEMA / 'GENERATED_FROM.json', {'commit': pin, 'os_versions': '27.0'})
+    m.run(['git', 'add', '.'], project)
+    m.run(['git', 'update-index', '--add', '--cacheinfo', '160000,' + pin + ',' + m.CURRENT], project)
+    m.run(['git', 'commit', '-qm', 'project'], project)
+    remote = root / 'remote.git'
+    m.run(['git', 'init', '-q', '--bare', remote])
+    value = {'schemaVersion': 4, 'complete': True, 'projectCommit': m.run(['git', 'rev-parse', 'HEAD'], project).strip(),
+             'upstream': str(apple), 'canaryMirror': str(apple), 'control': m.entry('control', 'control', pin),
+             'branches': [m.entry('release', 'release', candidate)]}
+    passing_results(value, root / 'results')
+    return value, apple, project, remote, root / 'results'
+
+
+def local_git():
+    # Submodule clones of local fixture paths need the file transport.
+    env = {'GIT_CONFIG_COUNT': '1', 'GIT_CONFIG_KEY_0': 'protocol.file.allow', 'GIT_CONFIG_VALUE_0': 'always'}
+    return patch.dict(m.os.environ, env)
+
+
 class DiscoveryTests(unittest.TestCase):
     def test_real_git_discovery_ignores_archived_and_promoted_seeds(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -377,6 +461,117 @@ class PublicationTests(unittest.TestCase):
             state = json.loads((root / 'publication.json').read_text())
             self.assertEqual([0], state['deferred'])
             self.assertEqual('rate limited', state['error'])
+
+    def test_pull_listing_filters_the_adoption_branch(self):
+        listing = subprocess.CompletedProcess([], 0, 'HTTP/2.0 200 OK\n\n[]', '')
+        with patch.object(m.subprocess, 'run', return_value=listing) as run:
+            self.assertEqual([], m.GitHub('owner/repo').pulls(m.ADOPT_BRANCH))
+        self.assertIn('head=owner%3Aschema%2Fadopt-release', run.call_args[0][0][-1])
+
+
+class AdoptionTests(unittest.TestCase):
+    def test_only_a_passing_release_with_a_passing_control_is_adopted(self):
+        release = report('release', NEXT, 'release')
+        value = manifest(release)
+        self.assertEqual(release['branch'], m.adoption_candidate(value, [control(), release]))
+        self.assertIsNone(m.adoption_candidate(manifest(report()), [control(), report()]))
+        self.assertIsNone(m.adoption_candidate(value, [failure(control()), release]))
+        self.assertIsNone(m.adoption_candidate(value, [control(), failure(report('release', NEXT, 'release'))]))
+        self.assertIsNone(m.adoption_candidate(dict(value, complete=False), [control(), release]))
+
+    def test_plan_preserves_open_declined_and_reviewed_proposals(self):
+        release = m.entry('release', 'release', NEXT)
+        value = manifest(report('release', NEXT, 'release'))
+        def plan(*pulls):
+            return m.adoption_plan(list(pulls), value, release)
+        self.assertEqual('create', plan()[0])
+        self.assertEqual('create', plan({'number': 1, 'state': 'open', 'body': 'Unrelated', 'head': {'sha': PIN}})[0])
+        self.assertEqual('create', plan(proposal(PIN, 'closed', merged='2026-10-27T00:00:00Z'))[0])
+        self.assertEqual(('skip', '#9 already proposes this commit (open).'), plan(proposal(NEXT))[::2])
+        self.assertIn('(declined)', plan(proposal(NEXT, 'closed'))[2])
+        self.assertEqual('replace', plan(proposal(PIN))[0])
+        self.assertIn('reviewer commits', plan(proposal(PIN, sha='f' * 40))[2])
+        self.assertEqual('retire', m.adoption_plan([proposal(PIN)], manifest(), None)[0])
+        # A failing release is still Apple's newest release: keep the earlier proposal open.
+        self.assertEqual('skip', m.adoption_plan([proposal(PIN)], value, None)[0])
+
+    def test_contained_release_retires_open_proposal(self):
+        api = PullAPI([proposal(PIN)])
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            m.write_json(root / control()['branch']['key'] / 'result.json', control())
+            self.assertTrue(m.adopt(root, manifest(), root, api, False, 'run'))
+        self.assertEqual(('PATCH', 'pulls/9'), api.calls[0][:2])
+        self.assertEqual('closed', api.calls[0][2]['state'])
+        self.assertTrue(api.calls[0][2]['body'].startswith(proposal(PIN)['body']))
+
+    def test_real_git_adoption_moves_pin_regenerates_and_reruns_silently(self):
+        with tempfile.TemporaryDirectory() as temp, local_git():
+            value, apple, project, remote, results = adoption_workspace(Path(temp))
+            candidate, api = value['branches'][0]['commit'], PullAPI()
+            with patch.object(m, 'ADOPTION_STAGES', REGENERATE):
+                self.assertTrue(m.adopt(project, value, results, api, False, 'run', remote=str(remote)))
+            method, endpoint, body = api.calls[0]
+            self.assertEqual(('POST', 'pulls', m.ADOPT_BRANCH, 'main'), (method, endpoint, body['head'], body['base']))
+            self.assertFalse(body['draft'])
+            self.assertEqual('feat(schema): adopt Apple device management release 27.2', body['title'])
+            self.assertIn('> # Changes in 27.2\n> - Adds 27.2', body['body'])
+            self.assertNotIn('27.0', body['body'].split('## Apple release notes')[1].split('## Changed Apple files')[0])
+            self.assertIn(candidate, m.run(['git', 'ls-tree', m.ADOPT_BRANCH, m.CURRENT], remote))
+            self.assertIn('27.2', m.run(['git', 'show', m.ADOPT_BRANCH + ':' + m.SCHEMA + '/GENERATED_FROM.json'], remote))
+            head = m.run(['git', 'rev-parse', m.ADOPT_BRANCH], remote).strip()
+            self.assertEqual({'commit': candidate, 'control': value['control']['commit'],
+                              'project': value['projectCommit'], 'head': head}, m.adoption_metadata(body['body']))
+            api.existing = [dict(body, number=7, state='open', head={'sha': head})]
+            self.assertTrue(m.adopt(project, value, results, api, False, 'run', remote=str(remote)))
+            self.assertEqual(1, len(api.calls))
+
+            # Apple moves release: an untouched proposal is rebuilt and updated in place.
+            moved = apple_release(apple, '27.3')
+            value['branches'] = [m.entry('release', 'release', moved)]
+            passing_results(value, results)
+            with patch.object(m, 'ADOPTION_STAGES', REGENERATE):
+                self.assertTrue(m.adopt(project, value, results, api, False, 'run', remote=str(remote)))
+            self.assertEqual(('PATCH', 'pulls/7'), api.calls[1][:2])
+            self.assertIn(moved, m.run(['git', 'ls-tree', m.ADOPT_BRANCH, m.CURRENT], remote))
+
+            # A reviewer commit pushed after the bot's commit is never replaced.
+            reviewed = m.run(['git', 'rev-parse', m.ADOPT_BRANCH], remote).strip()
+            api.existing = [dict(api.existing[0], body=api.calls[1][2]['body'], head={'sha': 'f' * 40})]
+            value['branches'] = [m.entry('release', 'release', apple_release(apple, '27.4'))]
+            passing_results(value, results)
+            self.assertTrue(m.adopt(project, value, results, api, False, 'run', remote=str(remote)))
+            self.assertEqual(2, len(api.calls))
+            self.assertEqual(reviewed, m.run(['git', 'rev-parse', m.ADOPT_BRANCH], remote).strip())
+
+    def test_regeneration_failure_opens_a_pin_only_draft(self):
+        with tempfile.TemporaryDirectory() as temp, local_git():
+            value, _, project, remote, results = adoption_workspace(Path(temp))
+            candidate, api = value['branches'][0]['commit'], PullAPI()
+            with patch.object(m, 'ADOPTION_STAGES', LOCK_FAILURE):
+                self.assertFalse(m.adopt(project, value, results, api, False, 'run', remote=str(remote)))
+            body = api.calls[0][2]
+            self.assertTrue(body['draft'])
+            self.assertTrue(body['title'].endswith(candidate[:12]))
+            self.assertIn('OldType is no longer generated', body['body'])
+            self.assertIn(candidate, m.run(['git', 'ls-tree', m.ADOPT_BRANCH, m.CURRENT], remote))
+            self.assertIn('27.0', m.run(['git', 'show', m.ADOPT_BRANCH + ':' + m.SCHEMA + '/GENERATED_FROM.json'], remote))
+
+    def test_report_only_and_infrastructure_failures_never_push_or_write(self):
+        with tempfile.TemporaryDirectory() as temp, local_git():
+            value, _, project, remote, results = adoption_workspace(Path(temp))
+            api = PullAPI()
+            with patch.object(m, 'ADOPTION_STAGES', REGENERATE):
+                self.assertTrue(m.adopt(project, value, results, api, True, 'run', remote=str(remote)))
+            state = json.loads((results / 'adoption.json').read_text())
+            self.assertEqual(('create', 'feat(schema): adopt Apple device management release 27.2'),
+                             (state['action'], state['proposal']['title']))
+            self.assertIn('Report only: True.', (results / 'adoption.md').read_text())
+            with patch.object(m, 'ADOPTION_STAGES', OFFLINE):
+                self.assertFalse(m.adopt(project, value, results, api, False, 'run', remote=str(remote)))
+            self.assertIn('no such host', json.loads((results / 'adoption.json').read_text())['error'])
+            self.assertEqual([], api.calls)
+            self.assertEqual('', m.run(['git', 'ls-remote', remote]).strip())
 
 
 if __name__ == '__main__':

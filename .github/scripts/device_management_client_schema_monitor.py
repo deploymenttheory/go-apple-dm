@@ -25,6 +25,12 @@ STAGES = ("snapshot", "generate", "verify", "compile")
 MARKER = re.compile(r"<!-- schema-monitor (\{.*?\}) -->")
 START, END = "<!-- schema-monitor:evidence:start -->", "<!-- schema-monitor:evidence:end -->"
 SCRIPT = ".github/scripts/device_management_client_schema_monitor.py"
+ADOPT_BRANCH = "schema/adopt-release"
+ADOPTION = re.compile(r"<!-- schema-adoption (\{.*?\}) -->")
+# The generator steps of make generate and make verify, run with the production identifier lock.
+ADOPTION_STAGES = (("go-generate", ["go", "generate", "./..."]),
+                   ("generate", ["go", "run", "./cmd/schemagen", "generate"]),
+                   ("verify", ["go", "run", "./cmd/schemagen", "verify"]))
 
 
 def run(args, cwd=None, env=None, timeout=1800):
@@ -403,6 +409,16 @@ class GitHub:
                 return result
             page += 1
 
+    def pulls(self, head):
+        result, page, owner = [], 1, self.repository.split("/")[0]
+        while True:
+            batch = self.request("GET", "pulls?state=all&head=" + quote(owner + ":" + head, safe="") +
+                                 "&per_page=100&page=" + str(page))
+            result.extend(batch)
+            if len(batch) < 100:
+                return result
+            page += 1
+
 
 def render_report(manifest, reports):
     lines = ["# Device Management Client Schema Code Generation Monitor", "",
@@ -451,6 +467,173 @@ def publish(manifest, directory, github, report_only, run_url, max_new=10, max_w
             and not state["error"] and not state["deferred"])
 
 
+def adoption_candidate(manifest, reports):
+    """Return Apple's release head only when it and the control passed every generator stage."""
+    if not manifest.get("complete") or not reports or not passed(reports[0]):
+        return None
+    return next((r["branch"] for r in reports[1:] if r["branch"]["kind"] == "release" and passed(r)), None)
+
+
+def adoption_metadata(body):
+    match = ADOPTION.search(body or "")
+    return json.loads(match.group(1)) if match else None
+
+
+def adoption_plan(pulls, manifest, candidate):
+    """Choose create, replace, retire or skip for the single adoption branch."""
+    proposals = [(p, meta) for p, meta in ((p, adoption_metadata(p.get("body"))) for p in pulls) if meta]
+    current = next(((p, meta) for p, meta in proposals if p["state"] == "open"), None)
+    if candidate is None:
+        # A complete discovery without a release entry means the pin already contains Apple's release.
+        contained = manifest.get("complete") and not any(b["kind"] == "release" for b in manifest.get("branches", []))
+        if contained and current:
+            return "retire", current[0], "The published pin already contains Apple's release."
+        return "skip", None, "No passing release candidate."
+    for pull, meta in proposals:
+        if meta["commit"] == candidate["commit"]:
+            state = "open" if pull["state"] == "open" else "merged" if pull.get("merged_at") else "declined"
+            return "skip", pull, f"#{pull['number']} already proposes this commit ({state})."
+    if current is None:
+        return "create", None, ""
+    pull, meta = current
+    if pull["head"]["sha"] != meta.get("head"):
+        # Never replace reviewer work. The newer release is proposed after this pull request closes.
+        return "skip", pull, f"#{pull['number']} has reviewer commits; the newer release waits for it to close."
+    return "replace", pull, ""
+
+
+def prepare_adoption(repo, manifest, candidate, workspace, logs):
+    """Move the current pin in an isolated clone, regenerate and commit the result.
+
+    A regeneration failure is recorded and leaves a commit containing only the pin change.
+    Dependency and network failures raise, because they say nothing about the schema.
+    """
+    logs.mkdir(parents=True, exist_ok=True)
+    env = dict(os.environ)
+    for role in ("AUTHOR", "COMMITTER"):
+        env.setdefault("GIT_" + role + "_NAME", "github-actions[bot]")
+        env.setdefault("GIT_" + role + "_EMAIL", "41898282+github-actions[bot]@users.noreply.github.com")
+    project = workspace / "project"
+    apple, control, commit = project / CURRENT, manifest["control"]["commit"], candidate["commit"]
+    checkout(repo, manifest["projectCommit"], project)
+    run(["git", "submodule", "update", "--init", "--quiet"], project)
+    run(["git", "fetch", "--quiet", manifest.get("canaryMirror", manifest["upstream"]), candidate["snapshotRef"]], apple)
+    run(["git", "checkout", "--quiet", "--detach", commit], apple)
+    if run(["git", "rev-parse", "HEAD"], apple).strip() != commit:
+        raise ValueError("Adoption checkout does not match recorded commit")
+    run(["git", "add", CURRENT], project)
+    diff = run(["git", "diff", "--unified=0", control, commit, "--", "CHANGES.md"], apple).splitlines()
+    notes = [line[1:] for line in diff if line.startswith("+") and not line.startswith("+++")]
+    # Apple prepends each release; the diff can also re-add the previous release heading.
+    end = next((i for i, line in enumerate(notes) if i and line.startswith("# ")), len(notes))
+    built = {"stages": {name: {"state": "blocked"} for name, _ in ADOPTION_STAGES}, "regenerated": False,
+             "appleChanges": run(["git", "diff", "--stat", control, commit], apple),
+             "releaseNotes": notes[:end]}
+    for name, command in ADOPTION_STAGES:
+        ok, text = stage(built, name, command, project, logs, env)
+        if not ok:
+            if infrastructure_failure(text):
+                raise RuntimeError(text[-6000:])
+            built["error"] = text[-3000:]
+            break
+    else:
+        built["regenerated"] = True
+        run(["git", "add", "--all"], project)
+    version = commit[:12]
+    if built["regenerated"]:
+        version = json.loads((project / SCHEMA / "GENERATED_FROM.json").read_text())["os_versions"]
+    built["title"] = "feat(schema): adopt Apple device management release " + version
+    run(["git", "commit", "--quiet", "-m", built["title"], "-m",
+         "Pin apple/device-management@" + commit + " and regenerate " + SCHEMA + "."], project, env)
+    built["head"] = run(["git", "rev-parse", "HEAD"], project).strip()
+    built["files"] = run(["git", "show", "--stat", "--format=", "HEAD"], project)
+    return built, project
+
+
+def adoption_body(manifest, candidate, built, run_url):
+    control, commit = manifest["control"]["commit"], candidate["commit"]
+    meta = {"commit": commit, "control": control, "project": manifest["projectCommit"], "head": built["head"]}
+    lines = ["<!-- schema-adoption " + json.dumps(meta, sort_keys=True) + " -->",
+             "Moves `" + CURRENT + "` to Apple's `" + candidate["ref"] + "` commit [`" + commit[:12] +
+             "`](https://github.com/apple/device-management/commit/" + commit + ") and regenerates `" + SCHEMA +
+             "`. The compatibility history pin is unchanged.", "",
+             "Apple changes: https://github.com/apple/device-management/compare/" + control + "..." + commit, "",
+             "| Step | Result |", "|---|---|"]
+    lines += ["| " + name + " | " + built["stages"][name]["state"] + " |" for name, _ in ADOPTION_STAGES]
+    if built.get("error"):
+        lines += ["", "Regeneration failed, so this pull request contains only the pin change. Run `make generate` on this "
+                  "branch to reproduce. Record intended exported-name removals in "
+                  "`devicemanagement/schema/ALLOWED_REMOVALS.md`.", "", "```text", built["error"], "```"]
+    if built["releaseNotes"]:
+        lines += ["", "## Apple release notes", ""] + ["> " + line for line in built["releaseNotes"][:80]]
+        if len(built["releaseNotes"]) > 80:
+            lines += ["", "Truncated; see Apple's `CHANGES.md`."]
+    stat = built["appleChanges"].rstrip().splitlines()
+    if len(stat) > 60:
+        stat = stat[:59] + ["...", stat[-1]]
+    lines += ["", "## Changed Apple files", "", "```text", *stat, "```", "", "## Review", "",
+              "- [ ] Review the new availability boundaries, then update `schemaCommit` and `historyCommit` in "
+              "`test-lab/apple-features/macos27-coverage.json`. `TestSeedOS27CoverageInventory` fails until then.",
+              "- [ ] Confirm that `EXPORTED_IDENTIFIERS.lock` only adds names.",
+              "- [ ] Confirm that the compatibility history pin should remain unchanged.", "",
+              "Monitor run: " + run_url]
+    return "\n".join(lines) + "\n"
+
+
+def render_adoption(state):
+    lines = ["", "## Release adoption", "", "Action: `" + state["action"] + "`. " + state["detail"]]
+    if state.get("commit"):
+        lines.append("Apple commit: `" + state["commit"] + "`.")
+    if state.get("pull"):
+        lines.append("Pull request: #" + str(state["pull"]) + ".")
+    if state.get("stages"):
+        lines += ["", "| Step | Result |", "|---|---|"]
+        lines += ["| " + name + " | " + value["state"] + " |" for name, value in state["stages"].items()]
+    lines += ["", "Report only: " + str(state["reportOnly"]) + "."]
+    if state["error"]:
+        lines.append("Adoption failure: " + state["error"][-1000:])
+    return "\n".join(lines) + "\n"
+
+
+def adopt(repo, manifest, directory, github, report_only, run_url, base="main", remote=None):
+    """Propose Apple's passing release head as one reviewed pull request on ADOPT_BRANCH.
+
+    Returns False when adoption could not be evaluated or regeneration failed.
+    """
+    directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
+    remote = remote or "https://github.com/" + github.repository + ".git"
+    state = {"reportOnly": report_only, "action": "skip", "detail": "", "error": None}
+    regenerated = True
+    try:
+        reports = collect_reports(manifest, directory) if manifest.get("control") else []
+        candidate = adoption_candidate(manifest, reports)
+        action, pull, detail = adoption_plan(github.pulls(ADOPT_BRANCH), manifest, candidate)
+        state.update(action=action, detail=detail, pull=pull and pull["number"], commit=candidate and candidate["commit"])
+        if action == "retire" and not report_only:
+            github.request("PATCH", "pulls/" + str(pull["number"]), {
+                "state": "closed", "body": (pull.get("body") or "") + "\n" + detail + " " + run_url + "\n"})
+        elif action in ("create", "replace"):
+            with tempfile.TemporaryDirectory(prefix="dm-schema-adopt-") as temp:
+                built, project = prepare_adoption(repo, manifest, candidate, Path(temp).resolve(), directory / "adoption")
+                regenerated = built["regenerated"]
+                payload = {"title": built["title"], "body": adoption_body(manifest, candidate, built, run_url)}
+                state.update(stages=built["stages"], files=built["files"], proposal=payload)
+                if not report_only:
+                    lease = "--force-with-lease=refs/heads/" + ADOPT_BRANCH + ":" + pull["head"]["sha"] if pull else "--force"
+                    run(["git", "push", "--quiet", lease, remote, "HEAD:refs/heads/" + ADOPT_BRANCH], project, env=git_auth_env())
+                    if pull:
+                        github.request("PATCH", "pulls/" + str(pull["number"]), payload)
+                    else:
+                        created = github.request("POST", "pulls", dict(payload, head=ADOPT_BRANCH, base=base, draft=not regenerated))
+                        state["pull"] = created["number"]
+    except (subprocess.SubprocessError, OSError, ValueError, KeyError, RuntimeError) as exc:
+        state["error"] = failure_text(exc)
+    write_json(directory / "adoption.json", state)
+    (directory / "adoption.md").write_text(render_adoption(state))
+    return not state["error"] and regenerated
+
+
 def consolidation_actions(existing, historical_commit):
     """Only retire the known historical examples incident family, preserving notes."""
     issues = []
@@ -485,7 +668,7 @@ def consolidation_actions(existing, historical_commit):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("discover", "capture", "assess", "publish", "consolidate"))
+    parser.add_argument("action", choices=("discover", "capture", "assess", "publish", "adopt", "consolidate"))
     parser.add_argument("--repo", type=Path, default=ROOT)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--manifest", type=Path)
@@ -495,6 +678,7 @@ def main():
     parser.add_argument("--repository", default=os.environ.get("GITHUB_REPOSITORY", "deploymenttheory/go-apple-dm"))
     parser.add_argument("--report-only", action="store_true")
     parser.add_argument("--run-url", default="")
+    parser.add_argument("--base", default="main", help="Branch that release adoption pull requests target")
     parser.add_argument("--historical-commit", help="Reviewed historical commit whose legacy incidents may be consolidated")
     args = parser.parse_args()
     if args.action == "discover":
@@ -522,6 +706,9 @@ def main():
     if args.action == "assess":
         branch = next(b for b in [manifest["control"], *manifest["branches"]] if b["key"] == args.key)
         return 0 if passed(assess(args.repo, manifest, branch, args.output)) else 1
+    if args.action == "adopt":
+        api = GitHub(args.repository)
+        return 0 if adopt(args.repo, manifest, args.output, api, args.report_only, args.run_url, args.base) else 1
     return 0 if publish(manifest, args.output, GitHub(args.repository), args.report_only, args.run_url) else 1
 
 

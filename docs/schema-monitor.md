@@ -3,7 +3,8 @@
 The monitor checks whether the generator on main can process upcoming Apple Device
 Management Client Schemas and produce valid Go packages. A confirmed failure opens
 an incident explaining the schema change, generator limitation, relevant code and
-required regression test.
+required regression test. A passing Apple release is proposed as one adoption pull
+request that moves the production pin and regenerates the library.
 
 ## Inputs and checks
 
@@ -30,9 +31,9 @@ an identifier from a candidate is not itself a generator failure. Normal `make v
 continues to enforce the published API lock in ordinary CI.
 
 This workflow does not test server behaviour, device support, feature inventories or
-application installation. It does not create schema-adoption PRs or alter production
-pins. Published feature contracts run separately through
-`scripts/device-management-schema-contracts.py` in ordinary CI.
+application installation. It changes the production pin only through a reviewed
+[adoption pull request](#release-adoption). Published feature contracts run separately
+through `scripts/device-management-schema-contracts.py` in ordinary CI.
 
 ## Diagnosis and incidents
 
@@ -68,10 +69,46 @@ and 50 issue writes. Rate-limit responses honour retry headers with bounded back
 against GitHub again before resuming. No repeated creation is attempted after an
 ambiguous transport failure within the same run.
 
+## Release adoption
+
+The adoption job proposes Apple's release head on the `schema/adopt-release` branch when
+discovery is complete, the control passes and that release passes every assessment stage.
+Seeds are never adopted. In an isolated clone of the project commit, the job checks out the
+retained candidate snapshot in `third_party/apple-device-management/current`, then runs
+`go generate ./...`, `schemagen generate` and `schemagen verify` with the production
+exported-identifier lock. The compatibility history pin is unchanged. The title,
+`feat(schema): adopt Apple device management release <version>`, takes its version from
+the regenerated `os_versions` provenance.
+
+The pull request records the Apple, control, project and pushed head commits in a
+`schema-adoption` marker. It includes Apple's release notes, changed files, stage results
+and a review checklist. Merging requires review: the published OS 27 feature contracts fail
+until `test-lab/apple-features/macos27-coverage.json` records the reviewed schema and
+history commits.
+
+Each run selects one action:
+
+- Skip a commit that an adoption pull request already proposes, whether it is open, merged
+  or closed. Closing an unmerged proposal declines that commit.
+- Rebuild and update an open proposal when Apple's release moves, using a lease on the
+  recorded head. A proposal carrying reviewer commits is not replaced; the newer release is
+  proposed after it closes.
+- Create a pull request when no proposal is open.
+- Close an open proposal when the published pin already contains Apple's release.
+
+A regeneration failure, such as the removal of a locked exported identifier, opens a draft
+containing only the pin change and the `schemagen` error. Draft state is set when the pull
+request is created. Dependency and network failures are monitoring failures and push nothing.
+
+The job authenticates with the release-please GitHub App (`RP_APP_ID`,
+`RP_APP_PRIVATE_KEY`), scoped to contents and pull-request writes. Pull requests opened with
+the workflow token do not trigger CI.
+
 ## Running and reproducing
 
 The workflow runs daily and supports manual dispatch. Dispatch defaults to report-only:
-source snapshots and assessment artifacts are retained, but issue publication is disabled.
+source snapshots, assessment artifacts and the proposed adoption are retained, but issue
+publication and adoption pushes are disabled.
 Monitor unit and integration checks also run on pull requests changing its scripts or workflow.
 
 ```sh
@@ -86,18 +123,23 @@ python3 .github/scripts/device_management_client_schema_monitor.py assess \
 python3 .github/scripts/device_management_client_schema_monitor.py publish \
   --manifest /tmp/device-management-discovery.json \
   --output /tmp/device-management-assessments --report-only
+python3 .github/scripts/device_management_client_schema_monitor.py adopt \
+  --manifest /tmp/device-management-discovery.json \
+  --output /tmp/device-management-assessments --report-only
 ```
 
 `capture` writes immutable Git refs and requires repository contents permission.
-`assess` writes only temporary checkouts and local reports. To reproduce an existing
+`assess` writes only temporary checkouts and local reports. `adopt` builds in a temporary
+clone; without `--report-only` it pushes `schema/adopt-release` and writes pull requests. To reproduce an existing
 assessment, download the `device-management-client-schema-discovery` artifact and use
 its manifest and the assessment key recorded in the incident. Existing captured refs
 make another capture unnecessary.
 
 Artifacts are named `device-management-client-schema-discovery`,
-`device-management-client-schema-assessment-<key>` and
-`device-management-client-schema-summary`. They retain complete file inventories,
-diagnostics, per-stage logs, planned issue actions and publication status for 30 days.
+`device-management-client-schema-assessment-<key>`,
+`device-management-client-schema-summary` and `device-management-client-schema-adoption`.
+They retain complete file inventories, diagnostics, per-stage logs, planned issue actions,
+publication status and the adoption proposal for 30 days.
 
 ## Incident consolidation
 

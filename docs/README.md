@@ -15,7 +15,7 @@
 - [Application package library](../devicemanagement/applications/README.md): metadata, verified installer content, manifests and filesystem/AWS/Azure/GCP storage.
 - [Application packages](operations/application-packages.md): verified installer storage, metadata and native MDM/DDM delivery.
 - [Application identities](operations/application-identities.md): artifact inspection, app discovery, authoring and native verification.
-- [Schema monitor](schema-monitor.md): upcoming vendor-schema generation checks and diagnosis.
+- [Schema monitor](schema-monitor.md): upcoming vendor-schema generation checks, diagnosis and release adoption.
 - [Native webhooks](operations/webhooks.md): managed subscriptions, tested JSON examples, sensitive payloads and replay.
 - [Event delivery](operations/event-delivery.md): SQL event capture, audit/webhook delivery, inspection and retry.
 - [Status and profile inspection](operations/status-and-profile-inspection.md): paginated DDM diagnostics and offline profile lint.

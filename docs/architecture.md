@@ -190,8 +190,9 @@ release and seed schemas, retains immutable source commits and runs the generato
 on main in isolated workspaces. The published schema pin is a control. Generation,
 regeneration consistency and generated-package compilation determine compatibility.
 Grouped incidents describe the failing construct, generator code and required tests.
-Server behaviour and published feature contracts remain the responsibility of ordinary
-CI; source adoption and production pin changes require separate review.
+A passing Apple release is proposed as one adoption pull request that moves the
+production pin and regenerates the library; merging it requires review. Server
+behaviour and published feature contracts remain the responsibility of ordinary CI.
 
 ## Enrollment and command service
 
