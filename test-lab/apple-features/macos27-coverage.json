@@ -1,6 +1,6 @@
 {
   "description": "Reviewed macOS 27 structured schema boundaries. Inherited descendants and reviewed SSO enum floors are checked separately by TestSeedOS27CoverageInventory. This inventory is a coverage plan, not native pass evidence.",
-  "schemaCommit": "09f249a06e7e3289930bf6d05f38fb562f748ebf",
+  "schemaCommit": "9e7fdbe23990b2551c4b29b39bc8b0de956805eb",
   "historyCommit": "67045e2fa06f528b196c01edee6a8bf88b844beb",
   "fixtures": [
     "accessibility",
@@ -50,6 +50,18 @@
         "accessibility"
       ],
       "nativePlan": "Apply and remove AllowLiveRecognition on eligible hardware; verify actual Accessibility behavior."
+    },
+    {
+      "source": "declarative/declarations/configurations/account.settings.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.2"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Requires an organization-installed Exchange account on a supervised Mac; apply Exchange.AllowEWSRetirementAlerts false on the system and user channels and verify the Exchange Web Services retirement alert is suppressed."
     },
     {
       "source": "declarative/declarations/configurations/app.managed.yaml",
@@ -114,6 +126,16 @@
           "version": "27.0"
         },
         {
+          "path": "payload.PlatformSSO.AdditionalHTTPHeaders",
+          "kind": "introduced",
+          "version": "27.2"
+        },
+        {
+          "path": "payload.PlatformSSO.Policies.AlwaysUseLoginUI",
+          "kind": "introduced",
+          "version": "27.2"
+        },
+        {
           "path": "payload.PlatformSSO.WebAuthentication",
           "kind": "introduced",
           "version": "27.0"
@@ -123,7 +145,7 @@
         "platform-sso",
         "extensible-sso"
       ],
-      "nativePlan": "Reviewed provider and IdP required. Exercise OpenID, web allow list/password sync, login, unlock and FileVault policy variants."
+      "nativePlan": "Reviewed provider and IdP required. Exercise OpenID, web allow list/password sync, additional HTTP headers, AlwaysUseLoginUI, login, unlock and FileVault policy variants."
     },
     {
       "source": "declarative/declarations/configurations/intelligence.settings.yaml",
@@ -390,6 +412,18 @@
       ],
       "fixtures": [],
       "nativePlan": "Requires an AppleCare token on the supervised Mac user channel; observe trigger, native statuses, cancellation and completion."
+    },
+    {
+      "source": "declarative/status/enhanced-logging.noninteractive-eligibility.yaml",
+      "boundaries": [
+        {
+          "path": "$",
+          "kind": "introduced",
+          "version": "27.2"
+        }
+      ],
+      "fixtures": [],
+      "nativePlan": "Subscribe on the supervised Mac user channel; compare the reported eligibility with whether a non-interactive enhanced log collection session can run."
     },
     {
       "source": "declarative/status/enhanced-logging.status.yaml",
@@ -722,9 +756,19 @@
       "source": "mdm/profiles/com.apple.extensiblesso.yaml",
       "boundaries": [
         {
+          "path": "payload.PlatformSSO.AdditionalHTTPHeaders",
+          "kind": "introduced",
+          "version": "27.2"
+        },
+        {
           "path": "payload.PlatformSSO.AllowWebLoginPasswordSync",
           "kind": "introduced",
           "version": "27.0"
+        },
+        {
+          "path": "payload.PlatformSSO.AlwaysUseLoginUI",
+          "kind": "introduced",
+          "version": "27.2"
         },
         {
           "path": "payload.PlatformSSO.WebLoginURLAllowList",
@@ -733,7 +777,7 @@
         }
       ],
       "fixtures": [],
-      "nativePlan": "Confirm deprecation does not become removal; compare the retained profile behavior with its declarative replacement on an isolated test target."
+      "nativePlan": "Confirm deprecation does not become removal; compare the retained profile behavior, including AdditionalHTTPHeaders and AlwaysUseLoginUI, with its declarative replacement on an isolated test target."
     },
     {
       "source": "mdm/profiles/com.apple.loginwindow.yaml",
