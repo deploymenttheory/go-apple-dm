@@ -1,0 +1,47 @@
+# Temporary verification for #384; removed before merge.
+name: Apps and Books runtime repeat
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  repeat:
+    if: github.head_ref == 'fix/lab-appsbooks-runtime-stall'
+    name: 'Apps and Books runtime repeat (${{ matrix.os }})'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - name: Repeat runtime scenarios in four contending single-CPU processes
+        shell: bash
+        working-directory: server/lab
+        env:
+          CGO_ENABLED: '1'
+        run: |
+          go test -c -race -o "$RUNNER_TEMP/lab.test.exe" .
+          pids=()
+          for i in 1 2 3 4; do
+            GOMAXPROCS=1 "$RUNNER_TEMP/lab.test.exe" \
+              -test.run 'TestAppsBooks(NativeInspectionFailures|DeclarativeProofWaitsForContendingWorker|DeclarativeInstallationThroughReferenceRuntime|NativeInstallationThroughReferenceRuntime)$' \
+              -test.count=5 -test.v -test.timeout=70m > "$RUNNER_TEMP/repeat-$i.log" 2>&1 &
+            pids+=($!)
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          grep -h -E -- '^--- (FAIL|PASS)|native fixture flow|device processed|server queue|operation:|live_appsbooks.*(failed|required|exceeded)' "$RUNNER_TEMP"/repeat-*.log | sed -E 's/ \([0-9.]+s\)//; s/elapsed=[0-9hms.]+//' | sort | uniq -c
+          exit $status
