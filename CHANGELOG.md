@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.8.8](https://github.com/deploymenttheory/go-apple-dm/compare/v0.8.7...v0.8.8) (2026-10-28)
+
+
+### Features
+
+* **ddm:** report declaration keys without availability data as unvalidated ([#380](https://github.com/deploymenttheory/go-apple-dm/issues/380)) ([a80085a](https://github.com/deploymenttheory/go-apple-dm/commit/a80085a575fddb63fe38d2bc97c40db6e29ffed8)), closes [#369](https://github.com/deploymenttheory/go-apple-dm/issues/369)
+* **ddm:** report key-level availability issues and deprecation in compatibility reports ([#378](https://github.com/deploymenttheory/go-apple-dm/issues/378)) ([dbaff08](https://github.com/deploymenttheory/go-apple-dm/commit/dbaff0831e1415661cfdabba59c22c1efc4992f3)), closes [#367](https://github.com/deploymenttheory/go-apple-dm/issues/367)
+* **schema:** adopt Apple device management release 27.2 ([#358](https://github.com/deploymenttheory/go-apple-dm/issues/358)) ([bf0230d](https://github.com/deploymenttheory/go-apple-dm/commit/bf0230d0c240c70e2bdcfce2b5e0c08473292c90))
+* **server:** report the target's support tier in availability verdicts ([#382](https://github.com/deploymenttheory/go-apple-dm/issues/382)) ([e2258a3](https://github.com/deploymenttheory/go-apple-dm/commit/e2258a33d7ff9438a46b958153ce7ebdf74e4605)), closes [#370](https://github.com/deploymenttheory/go-apple-dm/issues/370)
+* **server:** return availability verdicts when assigning configuration and enqueuing commands ([#379](https://github.com/deploymenttheory/go-apple-dm/issues/379)) ([6fc1646](https://github.com/deploymenttheory/go-apple-dm/commit/6fc1646e9e9e3d7b9f3e56b0b47beea814345346)), closes [#368](https://github.com/deploymenttheory/go-apple-dm/issues/368)
+* **support:** mark targets below each OS's supported version floor as best effort ([#381](https://github.com/deploymenttheory/go-apple-dm/issues/381)) ([34bc3ba](https://github.com/deploymenttheory/go-apple-dm/commit/34bc3ba4b372795148a63bdeaf7aeca359fb4279)), closes [#370](https://github.com/deploymenttheory/go-apple-dm/issues/370)
+
+
+### Bug Fixes
+
+* **schemagen:** validate each use of a shared subkey type against its own availability ([#374](https://github.com/deploymenttheory/go-apple-dm/issues/374)) ([e7251ec](https://github.com/deploymenttheory/go-apple-dm/commit/e7251ec4392104b22a09804eea7363206ff86339)), closes [#365](https://github.com/deploymenttheory/go-apple-dm/issues/365)
+* **schemagen:** validate values nested in recursive arrays ([#386](https://github.com/deploymenttheory/go-apple-dm/issues/386)) ([c53d37c](https://github.com/deploymenttheory/go-apple-dm/commit/c53d37ceff72bc635adb88364a492582390b2453)), closes [#373](https://github.com/deploymenttheory/go-apple-dm/issues/373)
+* **server:** return cleanly when the managed content worker is cancelled mid-tick ([#376](https://github.com/deploymenttheory/go-apple-dm/issues/376)) ([dd4c665](https://github.com/deploymenttheory/go-apple-dm/commit/dd4c665bc583bc35d7f53c1ffd9f24b37a140916)), closes [#375](https://github.com/deploymenttheory/go-apple-dm/issues/375)
+
+
+### Documentation
+
+* guarantee support from macOS 26 and source availability from Apple's schema metadata ([#377](https://github.com/deploymenttheory/go-apple-dm/issues/377)) ([3659df3](https://github.com/deploymenttheory/go-apple-dm/commit/3659df3b5bc6fb84caee6ea472db508a06632a77)), closes [#366](https://github.com/deploymenttheory/go-apple-dm/issues/366)
+
 ## [0.8.7](https://github.com/deploymenttheory/go-apple-dm/compare/v0.8.6...v0.8.7) (2026-10-26)
 
 

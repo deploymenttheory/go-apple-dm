@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.10.8](https://github.com/deploymenttheory/go-apple-dm/compare/server/v0.10.7...server/v0.10.8) (2026-10-28)
+
+
+### Features
+
+* **ddm:** report declaration keys without availability data as unvalidated ([#380](https://github.com/deploymenttheory/go-apple-dm/issues/380)) ([a80085a](https://github.com/deploymenttheory/go-apple-dm/commit/a80085a575fddb63fe38d2bc97c40db6e29ffed8)), closes [#369](https://github.com/deploymenttheory/go-apple-dm/issues/369)
+* **server:** report the target's support tier in availability verdicts ([#382](https://github.com/deploymenttheory/go-apple-dm/issues/382)) ([e2258a3](https://github.com/deploymenttheory/go-apple-dm/commit/e2258a33d7ff9438a46b958153ce7ebdf74e4605)), closes [#370](https://github.com/deploymenttheory/go-apple-dm/issues/370)
+* **server:** return availability verdicts when assigning configuration and enqueuing commands ([#379](https://github.com/deploymenttheory/go-apple-dm/issues/379)) ([6fc1646](https://github.com/deploymenttheory/go-apple-dm/commit/6fc1646e9e9e3d7b9f3e56b0b47beea814345346)), closes [#368](https://github.com/deploymenttheory/go-apple-dm/issues/368)
+* **support:** mark targets below each OS's supported version floor as best effort ([#381](https://github.com/deploymenttheory/go-apple-dm/issues/381)) ([34bc3ba](https://github.com/deploymenttheory/go-apple-dm/commit/34bc3ba4b372795148a63bdeaf7aeca359fb4279)), closes [#370](https://github.com/deploymenttheory/go-apple-dm/issues/370)
+
+
+### Bug Fixes
+
+* **server:** return cleanly when the managed content worker is cancelled mid-tick ([#376](https://github.com/deploymenttheory/go-apple-dm/issues/376)) ([dd4c665](https://github.com/deploymenttheory/go-apple-dm/commit/dd4c665bc583bc35d7f53c1ffd9f24b37a140916)), closes [#375](https://github.com/deploymenttheory/go-apple-dm/issues/375)
+
 ## [0.10.7](https://github.com/deploymenttheory/go-apple-dm/compare/server/v0.10.6...server/v0.10.7) (2026-10-26)
 
 
