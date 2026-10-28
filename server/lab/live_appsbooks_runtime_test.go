@@ -338,6 +338,10 @@ func TestAppsBooksDeclarativeInstallationThroughReferenceRuntime(t *testing.T) {
 // well inside the package's 20-minute test timeout.
 const appsRuntimeScenarioBudget = 4 * time.Minute
 
+// appsRuntimeReportMaxAge is the runtime scenarios' operator freshness bound
+// for the native report an installation proof accepts.
+const appsRuntimeReportMaxAge = time.Minute
+
 // appsNativeInstallationRuntime exercises the real worker, authenticated native
 // reports and read-only acceptance with an APNs-driven protocol simulator.
 func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method, endpointFailures bool, beforeProof func(context.Context, *Session, *appsFixture, string) func(managedcontent.Operation)) {
@@ -590,7 +594,7 @@ func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method, e
 		t.Fatal("actual native installation proof did not reach SDK operation")
 	}
 	s.Info = target.Info{Kind: target.KindDevice, UDID: d.UDID, Serial: c.Serial}
-	installation := appsInstallation{Operation: id, BundleID: "com.example.selected", Version: "2.4", Platform: "macOS", Identity: "scep", MaxAgeSeconds: 60}
+	installation := appsInstallation{Operation: id, BundleID: "com.example.selected", Version: "2.4", Platform: "macOS", Identity: "scep", MaxAgeSeconds: int(appsRuntimeReportMaxAge / time.Second)}
 	adeTestJSON(t, s.Env.Workspace.path("appsbooks", "installation.json"), installation)
 	if method == managedcontent.DDM {
 		// The proof requires a status report no older than MaxAgeSeconds. Report
@@ -603,7 +607,7 @@ func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method, e
 		t.Fatal(err)
 	}
 	if endpointFailures {
-		appsNativeEndpointFailures(t, ctx, s, base)
+		appsNativeEndpointFailures(t, ctx, s, pathOf(d), base)
 		if f.postCount() != 0 {
 			t.Fatal("native inspection failure changed licensing")
 		}
@@ -1140,10 +1144,21 @@ func appsBlockScopeEvidence(s *Session, phase, name string) error {
 
 // appsNativeEndpointFailures fails explicit inspection boundaries while the
 // actual installed app and original licensing remain untouched.
-func appsNativeEndpointFailures(t *testing.T, ctx context.Context, s *Session, base string) {
+func appsNativeEndpointFailures(t *testing.T, ctx context.Context, s *Session, path, base string) {
 	t.Helper()
+	// Each proof first requires an installed-app report no older than the
+	// freshness bound, and several failures reject the proof before it queries
+	// the device. Refresh the report once half that bound has passed since the
+	// installation proof, so the named failure rejects each proof, not its age.
+	refreshed := time.Now()
 	for _, name := range []string{"selected serial mismatch", "different selected native device", "query metadata denied", "query metadata missing", "required query unsupported", "operation read denied", "dispatch evidence denied", "native observation denied", "foreign observation identity", "initial identity denied", "disabled identity", "device query denied", "installed query denied", "managed query denied", "identity readback denied", "identity continuity changed", "operation readback denied", "native readback denied", "native readback removed", "private SDK evidence unavailable", "private native observation unavailable", "private initial operation evidence unavailable", "private operation evidence unavailable", "private native source unavailable"} {
 		t.Run(name, func(t *testing.T) {
+			if time.Since(refreshed) > appsRuntimeReportMaxAge/2 {
+				if _, err := appsNativeQuery(ctx, s, path, &commands.InstalledApplicationList{Identifiers: []string{"com.example.selected"}}); err != nil {
+					t.Fatal(err)
+				}
+				refreshed = time.Now()
+			}
 			transport := s.Env.Client.Transport
 			var operations, observations, identities atomic.Int32
 			var hit atomic.Bool
