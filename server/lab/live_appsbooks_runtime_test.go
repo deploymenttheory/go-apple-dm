@@ -415,6 +415,9 @@ func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method, e
 	if err != nil {
 		t.Fatal(err)
 	}
+	id := "native-" + randomID()
+	base := "/managed-content/operations/" + id
+	started := time.Now()
 	ctx, cancel := context.WithTimeout(t.Context(), appsRuntimeScenarioBudget)
 	stopped := make(chan struct{})
 	var connects, empty, processed atomic.Int64
@@ -451,7 +454,10 @@ func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method, e
 	defer func() {
 		cancel()
 		<-stopped
-		t.Logf("native fixture flow: connects=%d empty=%d processed=%d wakes=%d", connects.Load(), empty.Load(), processed.Load(), len(s.Env.APNS.Requests())-wakesBefore)
+		t.Logf("native fixture flow: connects=%d empty=%d processed=%d wakes=%d elapsed=%s", connects.Load(), empty.Load(), processed.Load(), len(s.Env.APNS.Requests())-wakesBefore, time.Since(started).Round(time.Millisecond))
+		if t.Failed() {
+			appsRuntimeDiagnostics(t, s, d, base)
+		}
 	}()
 	query, err := mdm.NewCommand(&commands.DeviceInformation{Queries: []string{"OSVersion", "BuildVersion", "SerialNumber", "ProductName", "IsSupervised"}})
 	if err != nil {
@@ -468,8 +474,6 @@ func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method, e
 			t.Fatal(err)
 		}
 	}
-	id := "native-" + randomID()
-	base := "/managed-content/operations/" + id
 	plan := managedcontent.Plan{LocationID: c.Location, Content: managedcontent.Content{Asset: c.Asset, Kind: "App"}, Target: managedcontent.Selection{Enrollment: mdm.EnrollmentID{Channel: mdm.ChannelDevice, ID: d.UDID}, Serial: c.Serial}, Method: method, MaxPages: c.MaxPages}
 	var op managedcontent.Operation
 	if err = s.Env.api(ctx, "PUT", base, map[string]any{"mode": managedcontent.InstallOnly, "plan": plan}, &op); err != nil {
@@ -518,6 +522,24 @@ func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method, e
 		declaration = current.Dispatch.Declarations[0].Identifier
 		installed.Store(true)
 	}
+	if method == managedcontent.MDM {
+		// The supervised worker records native facts only while the stored
+		// observation is pending; a terminal one stays as of its inspection
+		// (docs/operations/apps-and-books.md). Let the worker record the
+		// acknowledged installation before the installed-app report exists, so
+		// this scenario always proves the documented path for a report that
+		// follows the acknowledgement, whatever the runner's timing.
+		if err = waitLive(ctx, func() (bool, error) {
+			var current managedcontent.Operation
+			if err := s.Env.api(ctx, "GET", base, nil, &current); err != nil {
+				return false, err
+			}
+			return current.Worker == "" && current.LeaseUntil.IsZero() && current.Observation != nil && current.Observation.Terminal, nil
+		}); err != nil {
+			capture("terminal-acknowledgement-error")
+			t.Fatal(err)
+		}
+	}
 	list, err := mdm.NewCommand(&commands.InstalledApplicationList{Identifiers: []string{"com.example.selected"}})
 	if err != nil {
 		t.Fatal(err)
@@ -533,7 +555,9 @@ func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method, e
 		proofRead = beforeProof(ctx, s, f, base)
 	}
 	// Observe the supervised worker's committed result instead of competing for
-	// its inspection lease after the authenticated native report arrives.
+	// its inspection lease after the authenticated native report arrives. A
+	// terminal observation recorded before that report stays as of its
+	// inspection, so step it explicitly, as the removal check below does.
 	if err = waitLive(ctx, func() (bool, error) {
 		var current managedcontent.Operation
 		if err := s.Env.api(ctx, "GET", base, nil, &current); err != nil {
@@ -542,7 +566,16 @@ func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method, e
 		if proofRead != nil {
 			proofRead(current)
 		}
-		if current.Worker != "" || !current.LeaseUntil.IsZero() || current.Observation == nil || !current.Observation.Installed {
+		if current.Worker != "" || !current.LeaseUntil.IsZero() || current.Observation == nil {
+			return false, nil
+		}
+		if current.Observation.Terminal && !current.Observation.Installed {
+			if err := s.Env.api(ctx, "POST", base+"/step", worker, &current); err != nil {
+				return false, err
+			}
+			return false, nil
+		}
+		if !current.Observation.Installed {
 			return false, nil
 		}
 		op = current
@@ -559,6 +592,12 @@ func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method, e
 	s.Info = target.Info{Kind: target.KindDevice, UDID: d.UDID, Serial: c.Serial}
 	installation := appsInstallation{Operation: id, BundleID: "com.example.selected", Version: "2.4", Platform: "macOS", Identity: "scep", MaxAgeSeconds: 60}
 	adeTestJSON(t, s.Env.Workspace.path("appsbooks", "installation.json"), installation)
+	if method == managedcontent.DDM {
+		// The proof requires a status report no older than MaxAgeSeconds. Report
+		// the unchanged app status again, so the bound measures the device's
+		// report rather than how long this runner took to reach the proof.
+		report(declaration, false)
+	}
 	if err = liveAppsBooksInstallation(ctx, s); err != nil {
 		capture("native-proof-error")
 		t.Fatal(err)
@@ -670,6 +709,42 @@ func appsNativeInstallationRuntime(t *testing.T, method managedcontent.Method, e
 	if err = liveAppsBooksInstallation(ctx, s); err == nil {
 		t.Fatal("unsupported native OS passed installation acceptance")
 	}
+}
+
+// appsRuntimeDiagnostics logs where a failed runtime scenario stopped: the request
+// types the simulated device processed, the server's queue for its enrollment and
+// the stored operation's state. It logs no payloads, identifiers or credentials.
+func appsRuntimeDiagnostics(t *testing.T, s *Session, d *simulator.Device, base string) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(t.Context()), 10*time.Second)
+	defer cancel()
+	var processed []string
+	for _, command := range d.Commands() {
+		processed = append(processed, command.RequestType)
+	}
+	t.Logf("device processed: %s", strings.Join(processed, ", "))
+	var queue struct {
+		Items []struct{ RequestType, State string }
+	}
+	if err := s.Env.api(ctx, "GET", pathOf(d)+"/commands", nil, &queue); err != nil {
+		t.Logf("server queue unavailable: %v", err)
+	} else {
+		rows := make([]string, 0, len(queue.Items))
+		for _, q := range queue.Items {
+			rows = append(rows, q.RequestType+"="+q.State)
+		}
+		t.Logf("server queue: %s", strings.Join(rows, ", "))
+	}
+	var op managedcontent.Operation
+	if err := s.Env.api(ctx, "GET", base, nil, &op); err != nil {
+		t.Logf("operation unavailable: %v", err)
+		return
+	}
+	observation := "none"
+	if o := op.Observation; o != nil {
+		observation = fmt.Sprintf("terminal=%t acknowledged=%t published=%t installed=%t observed=%s", o.Terminal, o.CommandAcknowledged, o.DeclarationPublished, o.Installed, o.ObservedAt.Format(time.RFC3339))
+	}
+	t.Logf("operation: phase=%s blocked=%q worker=%q lease=%s observation: %s", op.Phase, op.Blocked, op.Worker, op.LeaseUntil.Format(time.RFC3339), observation)
 }
 
 // appsNativeStackCapture is an opt-in private test diagnostic. It retains SQL
