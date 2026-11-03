@@ -1,0 +1,35 @@
+# Temporary verification for #406; removed before merge.
+name: Runtime shutdown repeat
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  repeat:
+    if: github.head_ref == 'fix/runtime-shutdown-test'
+    name: 'Runtime shutdown repeat (${{ matrix.os }})'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - name: Repeat the managed runtime shutdown test
+        shell: bash
+        working-directory: server
+        env:
+          CGO_ENABLED: '1'
+        run: go test -race -count=50 -run 'TestManagedRuntimeTLSHTTP01AndShutdown$' -v ./internal/runtime/ | grep -E -- '^(--- |ok|FAIL)' | sed -E 's/ \([0-9.]+s\)//' | sort | uniq -c
