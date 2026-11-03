@@ -1,0 +1,76 @@
+# Temporary measurement for #404; removed before merge.
+name: Windows socket measurement
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    if: github.head_ref == 'fix/windows-loopback-sockets'
+    name: 'Windows socket measurement (${{ matrix.repeat }})'
+    runs-on: windows-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        repeat: [1, 2, 3]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - name: Runner socket configuration
+        shell: pwsh
+        run: |
+          netsh int ipv4 show dynamicport tcp
+          netsh int ipv4 show excludedportrange protocol=tcp
+          Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters' -ErrorAction SilentlyContinue | Select-Object TcpTimedWaitDelay, MaxUserPort | Format-List
+          [Environment]::ProcessorCount
+      - name: Unit tests with socket sampling
+        shell: pwsh
+        env:
+          CGO_ENABLED: '1'
+        run: |
+          $samples = Join-Path $env:RUNNER_TEMP 'sockets.log'
+          $sampler = Start-Job -ArgumentList $samples -ScriptBlock {
+            param($out)
+            while ($true) {
+              $conns = @(Get-NetTCPConnection -ErrorAction SilentlyContinue)
+              $states = ($conns | Group-Object State | Sort-Object Name | ForEach-Object { "$($_.Name)=$($_.Count)" }) -join ' '
+              $dynamic = @($conns | Where-Object { $_.LocalPort -ge 49152 -and $_.State -ne 'Listen' }).Count
+              $tests = (@(Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -like '*.test' } | ForEach-Object { $_.ProcessName }) | Sort-Object -Unique) -join ','
+              "$(Get-Date -Format 'HH:mm:ss') total=$($conns.Count) dynamic=$dynamic $states tests=$tests" | Add-Content $out
+              Start-Sleep -Seconds 2
+            }
+          }
+          New-Item -ItemType Directory -Force cover/unit | Out-Null
+          $coverageDirectory = Join-Path $env:GITHUB_WORKSPACE 'cover/unit'
+          go test -race -shuffle=on -count=1 -cover -coverpkg=github.com/deploymenttheory/go-apple-dm/... ./... -args "-test.gocoverdir=$coverageDirectory" | Select-String -Pattern '^(ok|FAIL|---)' | ForEach-Object { "$(Get-Date -Format 'HH:mm:ss') $_" }
+          $library = $LASTEXITCODE
+          Push-Location server
+          go test -race -shuffle=on -count=1 -timeout 20m -cover '-coverpkg=github.com/deploymenttheory/go-apple-dm/...,github.com/deploymenttheory/go-apple-dm/server/...' ./... -args "-test.gocoverdir=$coverageDirectory" | Select-String -Pattern '^(ok|FAIL|---)' | ForEach-Object { "$(Get-Date -Format 'HH:mm:ss') $_" }
+          $server = $LASTEXITCODE
+          Pop-Location
+          Stop-Job $sampler
+          $lines = Get-Content $samples
+          "samples=$($lines.Count)"
+          foreach ($field in 'total', 'dynamic', 'TimeWait', 'Established') {
+            $peak = $lines | Sort-Object { if ($_ -match "\b$field=(\d+)") { [int]$Matches[1] } else { 0 } } -Descending | Select-Object -First 1
+            "peak $field :: $peak"
+          }
+          Copy-Item $samples (Join-Path $env:GITHUB_WORKSPACE 'sockets.log')
+          if ($library -ne 0 -or $server -ne 0) { exit 1 }
+      - name: Upload socket samples
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sockets-${{ matrix.repeat }}
+          path: sockets.log
