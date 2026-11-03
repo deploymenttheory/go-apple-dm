@@ -219,6 +219,26 @@ func TestTransportPolicyAndStorageFailure(t *testing.T) {
 	}
 }
 
+// receiverDeadline is a context whose deadline passes once the receiver holds the
+// request, so store reads, dialing and the TLS handshake cannot exhaust it.
+type receiverDeadline struct {
+	context.Context
+	held <-chan struct{}
+}
+
+// Done closes when the receiver holds the request.
+func (c receiverDeadline) Done() <-chan struct{} { return c.held }
+
+// Err reports the passed deadline once the receiver holds the request.
+func (c receiverDeadline) Err() error {
+	select {
+	case <-c.held:
+		return context.DeadlineExceeded
+	default:
+		return nil
+	}
+}
+
 // TestTransportRedirectTimeoutAndRetryDates checks transport redirect timeout and retry dates.
 func TestTransportRedirectTimeoutAndRetryDates(t *testing.T) {
 	var redirected atomic.Bool
@@ -228,6 +248,10 @@ func TestTransportRedirectTimeoutAndRetryDates(t *testing.T) {
 	}))
 	defer target.Close()
 	now := time.Now().UTC().Truncate(time.Second)
+	// The timeout receiver never replies while the test runs. A handler that
+	// returned when its request context ended would answer the client's
+	// cancellation with an implicit 200, which the client can still accept.
+	held, release := make(chan struct{}), make(chan struct{})
 	receiver := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/redirect":
@@ -240,10 +264,12 @@ func TestTransportRedirectTimeoutAndRetryDates(t *testing.T) {
 			w.WriteHeader(http.StatusServiceUnavailable)
 		case "/timeout":
 			_, _ = io.Copy(io.Discard, r.Body)
-			<-r.Context().Done()
+			close(held)
+			<-release
 		}
 	}))
 	defer receiver.Close()
+	defer close(release)
 	s := testStore(t, Config{Client: receiver.Client(), PrivateNetworks: []string{"127.0.0.0/8"}, Now: func() time.Time { return now }})
 	for _, tc := range []struct {
 		path  string
@@ -258,18 +284,21 @@ func TestTransportRedirectTimeoutAndRetryDates(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		ctx, cancel := context.WithTimeout(t.Context(), 100*time.Millisecond)
+		ctx := t.Context()
+		if tc.code == 0 {
+			ctx = receiverDeadline{Context: ctx, held: held}
+		}
+		started := time.Now()
 		err = s.Send(ctx, id)
-		cancel()
 		if tc.code == 0 {
 			if !errors.Is(err, context.DeadlineExceeded) {
-				t.Fatal(err)
+				t.Fatalf("%s: got %v after %s, want %v", tc.path, err, time.Since(started), context.DeadlineExceeded)
 			}
 			continue
 		}
 		var httpErr *eventsink.HTTPError
 		if !errors.As(err, &httpErr) || httpErr.Status != tc.code || httpErr.RetryAfter != tc.delay {
-			t.Fatal(tc.path, err)
+			t.Fatalf("%s: got %v after %s, want HTTP %d with Retry-After %s", tc.path, err, time.Since(started), tc.code, tc.delay)
 		}
 	}
 	if redirected.Load() {
