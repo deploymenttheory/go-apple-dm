@@ -3,6 +3,13 @@ description: Run both modules with the race detector and verify schema contracts
 runs:
   using: composite
   steps:
+    - name: Start resource sampling
+      shell: pwsh
+      run: |
+        $arguments = @('-NoProfile', '-File', (Join-Path $env:GITHUB_ACTION_PATH 'sample-resources.ps1'),
+          '-Path', (Join-Path $env:RUNNER_TEMP 'windows-test-resources.log'),
+          '-StopPath', (Join-Path $env:RUNNER_TEMP 'windows-test-resources.stop'))
+        Start-Process pwsh -ArgumentList $arguments -WindowStyle Hidden
     - name: Windows library unit tests
       shell: pwsh
       env:
@@ -26,3 +33,12 @@ runs:
       if: ${{ !cancelled() }}
       shell: pwsh
       run: python scripts/device-management-schema-contracts.py --output cover/schema-contracts --coverage-dir cover/unit
+    - name: Report runner resources after a failure
+      if: ${{ failure() }}
+      shell: pwsh
+      run: |
+        & (Join-Path $env:GITHUB_ACTION_PATH 'report-resources.ps1') -Path (Join-Path $env:RUNNER_TEMP 'windows-test-resources.log')
+    - name: Stop resource sampling
+      if: ${{ always() }}
+      shell: pwsh
+      run: New-Item -ItemType File -Force (Join-Path $env:RUNNER_TEMP 'windows-test-resources.stop') | Out-Null
