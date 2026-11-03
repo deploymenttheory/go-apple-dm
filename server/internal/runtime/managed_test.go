@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -8,6 +9,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"runtime/pprof"
 	"testing"
 	"time"
 
@@ -126,14 +128,23 @@ func TestManagedRuntimeTLSHTTP01AndShutdown(t *testing.T) {
 	if response.StatusCode != http.StatusNotFound {
 		t.Fatal("unissued challenge exposed", response.StatusCode)
 	}
+	// A startup request that timed out mid-handshake leaves the transport a
+	// connection that never sends a request. The server drains such a
+	// connection only after 5 seconds, so release it before shutdown.
+	transport.CloseIdleConnections()
 	cancel()
+	// A drain that exceeds shutdownTimeout returns the runtime's own error;
+	// only a runtime that never returns reaches the stack dump.
+	wait := shutdownTimeout + time.Second
 	select {
 	case err := <-done:
 		if err != nil {
 			t.Fatal(err)
 		}
-	case <-time.After(5 * time.Second):
-		t.Fatal("managed runtime did not drain")
+	case <-time.After(wait):
+		var stacks bytes.Buffer
+		_ = pprof.Lookup("goroutine").WriteTo(&stacks, 1)
+		t.Fatalf("managed runtime did not return within %s of cancellation:\n%s", wait, stacks.String())
 	}
 }
 
