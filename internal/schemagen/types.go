@@ -152,6 +152,11 @@ func (b *builder) build() (*SchemaType, error) {
 		)
 	}
 	st := &SchemaType{Schema: b.schema, Name: b.top}
+	for _, keys := range [][]Key{b.schema.PayloadKeys, b.schema.ResponseKeys} {
+		if err := b.checkRepetition(keys, "", false); err != nil {
+			return nil, err
+		}
+	}
 	var err error
 	if b.schema.Family == FamilyStatus && b.schema.Payload.StatusItemType != "" {
 		st.Request, err = b.buildStatusItem()
@@ -350,6 +355,32 @@ func (b *builder) field(parent *TypeDef, k *Key, parentPath string, stack []fram
 		return nil, err
 	}
 	return f, nil
+}
+
+// checkRepetition rejects a repetition that has no array to bound. Apple's
+// schema defines repetition as the cardinality of a value, so it bounds how
+// many items an array holds and belongs on that array's single item key.
+// items reports whether keys are the subkeys of such an array.
+func (b *builder) checkRepetition(keys []Key, path string, items bool) error {
+	for i := range keys {
+		k := &keys[i]
+		keyPath := k.Key
+		if path != "" {
+			keyPath = path + "." + k.Key
+		}
+		if k.Repetition != nil && !items {
+			return fmt.Errorf(
+				"%w: %s: repetition at %s is not on an array's item key",
+				ErrNaming,
+				b.schema.Path,
+				keyPath,
+			)
+		}
+		if err := b.checkRepetition(k.Subkeys, keyPath, k.Type == "<array>" && len(k.Subkeys) == 1); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // scalarType maps Apple scalar types to Go.

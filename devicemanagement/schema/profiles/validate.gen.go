@@ -10316,6 +10316,11 @@ func (x *ACMECertificate) validate(c *validation.Collector, path, supportPath st
 		_, _ = fieldPath, present
 		c.Support(fieldPath, present, supportTable[supportPath+".Subject"])
 		c.Required(fieldPath, present)
+		for i := range x.Subject {
+			for i1 := range x.Subject[i] {
+				c.Repetition(validation.Index(validation.Index(fieldPath, i), i1), true, len(x.Subject[i][i1]), 2, 2)
+			}
+		}
 	}
 	{
 		fieldPath := validation.Join(path, "SubjectAltName")
@@ -10880,6 +10885,11 @@ func (x *SCEPPayloadContent) validate(c *validation.Collector, path, supportPath
 		present := len(x.Subject) > 0
 		_, _ = fieldPath, present
 		c.Support(fieldPath, present, supportTable[supportPath+".Subject"])
+		for i := range x.Subject {
+			for i1 := range x.Subject[i] {
+				c.Repetition(validation.Index(validation.Index(fieldPath, i), i1), true, len(x.Subject[i][i1]), 2, 2)
+			}
+		}
 	}
 	{
 		fieldPath := validation.Join(path, "Challenge")
@@ -12839,6 +12849,7 @@ func (x *VPNPPP) validate(c *validation.Collector, path, supportPath string) {
 		present := len(x.AuthEAPPlugins) > 0
 		_, _ = fieldPath, present
 		c.Support(fieldPath, present, supportTable[supportPath+".AuthEAPPlugins"])
+		c.Repetition(fieldPath, present, len(x.AuthEAPPlugins), 1, 1)
 		for i, v := range x.AuthEAPPlugins {
 			itemPath := validation.Index(fieldPath, i)
 			c.Enum(itemPath, true, v, []any{"EAP-RSA", "EAP-TLS", "EAP-KRB"})
@@ -12849,6 +12860,7 @@ func (x *VPNPPP) validate(c *validation.Collector, path, supportPath string) {
 		present := len(x.AuthProtocol) > 0
 		_, _ = fieldPath, present
 		c.Support(fieldPath, present, supportTable[supportPath+".AuthProtocol"])
+		c.Repetition(fieldPath, present, len(x.AuthProtocol), 1, 1)
 		for i, v := range x.AuthProtocol {
 			itemPath := validation.Index(fieldPath, i)
 			c.Enum(itemPath, true, v, []any{"EAP"})
