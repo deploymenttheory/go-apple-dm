@@ -216,7 +216,8 @@ type Range struct {
 	Max *float64 `yaml:"max"`
 }
 
-// Repetition bounds array cardinality.
+// Repetition is Apple's cardinality for a value. Declared on an array's item
+// key, it bounds how many items the array holds.
 type Repetition struct {
 	Min int `yaml:"min"`
 	Max int `yaml:"max"`

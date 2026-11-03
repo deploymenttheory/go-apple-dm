@@ -257,8 +257,21 @@ func (e *emitter) sampleOf(f *Field) string {
 }
 
 // sampleArray builds a Go sample expression for an array from its element type or
-// heterogeneous variants.
+// heterogeneous variants. An element whose item key declares a repetition minimum
+// above one is repeated to that minimum so the populated sample validates.
 func (e *emitter) sampleArray(f *Field) string {
+	sample := e.sampleItems(f)
+	if f.Elem != nil {
+		if r := f.Elem.Src.Repetition; r != nil && r.Min > 1 {
+			return fmt.Sprintf("conformance.Repeat(%s, %d)", sample, r.Min)
+		}
+	}
+	return sample
+}
+
+// sampleItems builds a sample array holding one element, or one of each
+// heterogeneous variant.
+func (e *emitter) sampleItems(f *Field) string {
 	if len(f.Variants) > 0 {
 		parts := make([]string, 0, len(f.Variants))
 		for _, v := range f.Variants {

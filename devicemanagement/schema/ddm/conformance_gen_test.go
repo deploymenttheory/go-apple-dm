@@ -205,7 +205,7 @@ func sampleACMECredential(d int) *ddm.ACMECredential {
 		KeySize:          int64(1),
 		KeyType:          "RSA",
 		HardwareBound:    true,
-		Subject:          [][][]string{[][]string{[]string{"s"}}},
+		Subject:          [][][]string{[][]string{conformance.Repeat([]string{"s"}, 2)}},
 		SubjectAltName:   sampleACMECredentialSubjectAltName(d + 1),
 		UsageFlags:       new(int64(1)),
 		ExtendedKeyUsage: []string{"s"},
@@ -245,7 +245,7 @@ func sampleSCEPCredential(d int) *ddm.SCEPCredential {
 	return &ddm.SCEPCredential{
 		URL:            "s",
 		Name:           new("s"),
-		Subject:        [][][]string{[][]string{[]string{"s"}}},
+		Subject:        [][][]string{[][]string{conformance.Repeat([]string{"s"}, 2)}},
 		Challenge:      new("s"),
 		Keysize:        new(int64(1024)),
 		KeyType:        new("s"),

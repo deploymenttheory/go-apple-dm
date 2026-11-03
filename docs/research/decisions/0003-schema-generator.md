@@ -24,6 +24,13 @@ an array or of an array of arrays, so a shared type is checked against each use'
 entries. A value reached through a recursive reference, such as an element of a
 recursive array, is checked against the use of the key it recurses to.
 
+Generated validation reads each constraint from the key where Apple declares it.
+Apple defines `repetition` as the cardinality of a value and declares it on an
+array's single item key, so it bounds how many items that array holds, at any
+nesting depth: each pair in an ACME or SCEP `Subject` holds exactly two strings.
+The generator rejects a `repetition` on any other key, such as a dictionary
+member or a heterogeneous-array variant, because no array holds that key's value.
+
 Version parsing and comparison live in `devicemanagement/osversion`, with named
 macOS major constants used by generated availability boundaries. Generator input
 parsing and boundary comparisons call this package directly, and support metadata
@@ -68,7 +75,7 @@ Apple's descriptions are preserved verbatim. Project-authored generated document
 
 ## Verification
 
-Generator tests cover complete-tree generation, schema coverage, nested types, reason vocabularies and identifier removal. `make verify` compares deterministic regeneration with the committed output.
+Generator tests cover complete-tree generation, schema coverage, nested types, reason vocabularies and identifier removal. They also cover item repetition at each nesting depth, and the rejection of a repetition that is not on an array's item key. `make verify` compares deterministic regeneration with the committed output.
 
 An availability audit walks every key use of the current schema merged with the
 retained releases. It requires the entry that generated validation consults for each

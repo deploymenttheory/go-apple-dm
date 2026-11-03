@@ -280,6 +280,21 @@ func TestBuildErrors(t *testing.T) {
 			t.Errorf("%s: err = %v, want ErrNaming", name, err)
 		}
 	}
+	// Repetition bounds the array that holds the key, so only an array's
+	// single item key may declare it.
+	repetition := "\n  repetition:\n    min: 1\n    max: 1\n"
+	misplaced := map[string]string{
+		"payload key":       "payloadkeys:\n- key: A\n  type: <array>" + repetition + "  subkeys:\n  - key: AItem\n    type: <string>\n",
+		"response key":      "responsekeys:\n- key: A\n  type: <string>" + repetition,
+		"dictionary member": "payloadkeys:\n- key: D\n  type: <dictionary>\n  subkeys:\n  - key: A\n    type: <string>" + strings.ReplaceAll(repetition, "\n  ", "\n    "),
+		"variant item":      "payloadkeys:\n- key: U\n  type: <array>\n  subkeys:\n  - key: V\n    type: <dictionary>" + strings.ReplaceAll(repetition, "\n  ", "\n    ") + "    subkeys:\n    - key: A\n      type: <string>\n  - key: W\n    type: <string>\n",
+	}
+	for name, keys := range misplaced {
+		doc := "title: T\npayload:\n  requesttype: T\n" + keys
+		if _, err := buildOne(t, "mdm/commands/t.yaml", doc); !errors.Is(err, ErrNaming) || !strings.Contains(err.Error(), "repetition at ") {
+			t.Errorf("repetition on %s: err = %v, want ErrNaming for the repetition", name, err)
+		}
+	}
 	// Status items must have exactly one key.
 	if _, err := buildOne(
 		t,

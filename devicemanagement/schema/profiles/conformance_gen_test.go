@@ -2602,7 +2602,7 @@ func sampleACMECertificate(d int) *profiles.ACMECertificate {
 		KeySize:            int64(1),
 		KeyType:            "RSA",
 		HardwareBound:      true,
-		Subject:            [][][]string{[][]string{[]string{"s"}}},
+		Subject:            [][][]string{[][]string{conformance.Repeat([]string{"s"}, 2)}},
 		SubjectAltName:     sampleACMECertificateSubjectAltName(d + 1),
 		UsageFlags:         new(int64(1)),
 		ExtendedKeyUsage:   []string{"s"},
@@ -2783,7 +2783,7 @@ func sampleSCEPPayloadContent(d int) *profiles.SCEPPayloadContent {
 	return &profiles.SCEPPayloadContent{
 		URL:                "s",
 		Name:               new("s"),
-		Subject:            [][][]string{[][]string{[]string{"s"}}},
+		Subject:            [][][]string{[][]string{conformance.Repeat([]string{"s"}, 2)}},
 		Challenge:          new("s"),
 		Keysize:            new(int64(1024)),
 		KeyType:            new("s"),

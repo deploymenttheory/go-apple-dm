@@ -186,18 +186,6 @@ func (e *emitter) constraintChecks(
 			)
 		}
 	}
-	if k.Repetition != nil && f.Kind == KindArray {
-		checks = append(
-			checks,
-			fmt.Sprintf(
-				"c.Repetition(%s, true, len(%s), %d, %d)",
-				path,
-				value,
-				k.Repetition.Min,
-				k.Repetition.Max,
-			),
-		)
-	}
 	if len(checks) == 0 {
 		return
 	}
@@ -209,19 +197,13 @@ func (e *emitter) constraintChecks(
 	b.WriteString("\t\t}\n")
 }
 
-// arrayChecks emits per-element checks.
+// arrayChecks emits the array's repetition, which its item key declares, then
+// per-element checks.
 func (e *emitter) arrayChecks(b *bytes.Buffer, f *Field, patterns *[]string, td *TypeDef) {
-	k := f.Src
-	if k.Repetition != nil {
-		fmt.Fprintf(
-			b,
-			"\t\tc.Repetition(fieldPath, present, len(x.%s), %d, %d)\n",
-			f.Name,
-			k.Repetition.Min,
-			k.Repetition.Max,
-		)
-	}
 	el := f.Elem
+	if r := el.Src.Repetition; r != nil {
+		fmt.Fprintf(b, "\t\tc.Repetition(fieldPath, present, len(x.%s), %d, %d)\n", f.Name, r.Min, r.Max)
+	}
 	switch el.Kind {
 	case KindStruct:
 		fmt.Fprintf(
@@ -250,18 +232,19 @@ func (e *emitter) arrayChecks(b *bytes.Buffer, f *Field, patterns *[]string, td 
 }
 
 // nestedChecks returns the checks for value, an array element that is itself
-// an array: its repetition, then each of its items at any depth. path is the
-// element's validation path expression and suffix its support path suffix;
-// depth numbers the loop index over its items. Items reached through a
-// recursive reference have no Struct and are checked against the owner's use.
+// an array: the repetition its item key declares, then each of its items at
+// any depth. path is the element's validation path expression and suffix its
+// support path suffix; depth numbers the loop index over its items. Items
+// reached through a recursive reference have no Struct and are checked against
+// the owner's use.
 func (e *emitter) nestedChecks(td *TypeDef, el *Field, value, path, suffix string, depth int, patterns *[]string) string {
-	var b strings.Builder
-	if r := el.Src.Repetition; r != nil {
-		fmt.Fprintf(&b, "c.Repetition(%s, true, len(%s), %d, %d)\n", path, value, r.Min, r.Max)
-	}
 	item := el.Elem
 	if item == nil {
-		return b.String()
+		return ""
+	}
+	var b strings.Builder
+	if r := item.Src.Repetition; r != nil {
+		fmt.Fprintf(&b, "c.Repetition(%s, true, len(%s), %d, %d)\n", path, value, r.Min, r.Max)
 	}
 	index := "i" + strconv.Itoa(depth)
 	itemValue := value + "[" + index + "]"

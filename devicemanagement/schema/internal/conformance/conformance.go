@@ -149,3 +149,16 @@ func SliceOf[T any](p *T) []T {
 	}
 	return []T{*p}
 }
+
+// Repeat fills a one-item sample array to n items, the fewest that the
+// repetition declared on its item key allows. A nil sample stays nil.
+func Repeat[T any](items []T, n int) []T {
+	if len(items) == 0 {
+		return items
+	}
+	out := make([]T, n)
+	for i := range out {
+		out[i] = items[0]
+	}
+	return out
+}

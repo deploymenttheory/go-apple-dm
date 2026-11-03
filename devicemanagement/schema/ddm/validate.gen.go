@@ -582,6 +582,11 @@ func (x *ACMECredential) validate(c *validation.Collector, path, supportPath str
 		_, _ = fieldPath, present
 		c.Support(fieldPath, present, supportTable[supportPath+".Subject"])
 		c.Required(fieldPath, present)
+		for i := range x.Subject {
+			for i1 := range x.Subject[i] {
+				c.Repetition(validation.Index(validation.Index(fieldPath, i), i1), true, len(x.Subject[i][i1]), 2, 2)
+			}
+		}
 	}
 	{
 		fieldPath := validation.Join(path, "SubjectAltName")
@@ -715,6 +720,11 @@ func (x *SCEPCredential) validate(c *validation.Collector, path, supportPath str
 		present := len(x.Subject) > 0
 		_, _ = fieldPath, present
 		c.Support(fieldPath, present, supportTable[supportPath+".Subject"])
+		for i := range x.Subject {
+			for i1 := range x.Subject[i] {
+				c.Repetition(validation.Index(validation.Index(fieldPath, i), i1), true, len(x.Subject[i][i1]), 2, 2)
+			}
+		}
 	}
 	{
 		fieldPath := validation.Join(path, "Challenge")

@@ -40,12 +40,12 @@ payloadkeys:
 - key: Strs
   type: <array>
   presence: required
-  repetition:
-    min: 1
-    max: 3
   subkeys:
   - key: StrsItem
     type: <string>
+    repetition:
+      min: 1
+      max: 3
     rangelist: [a, b]
     format: ^[ab]$
 - key: Nums
@@ -364,11 +364,14 @@ payloadkeys:
   - key: Sheet
     type: <array>
     repetition:
-      min: 1
-      max: 4
+      min: 2
+      max: 5
     subkeys:
     - key: Tile
       type: <dictionary>
+      repetition:
+        min: 1
+        max: 4
       subkeys:
       - key: Name
         type: <string>
@@ -382,6 +385,9 @@ payloadkeys:
     - key: Cell
       type: <string>
       rangelist: [x, o]
+      repetition:
+        min: 3
+        max: 3
 `
 	s, err := Parse([]byte(doc))
 	if err != nil {
@@ -413,8 +419,9 @@ payloadkeys:
 		"for i := range x.Helpers { x.Helpers[i].validate(c, validation.Index(fieldPath, i), supportPath) }",
 		"for i := range x.Kids { x.Kids[i].validate(c, validation.Index(fieldPath, i), supportPath) }",
 		"for i := range x.Pages { for i1 := range x.Pages[i] { x.Pages[i][i1].validate(c, validation.Index(validation.Index(fieldPath, i), i1), supportPath) } }",
+		"c.Repetition(fieldPath, present, len(x.Sheets), 2, 5)",
 		"for i := range x.Sheets { c.Repetition(validation.Index(fieldPath, i), true, len(x.Sheets[i]), 1, 4) for i1 := range x.Sheets[i] { x.Sheets[i][i1].validate(c, validation.Index(validation.Index(fieldPath, i), i1), supportPath+\".Sheets.Sheet.Tile\") } }",
-		"for i := range x.Grid { for i1 := range x.Grid[i] { c.Enum(validation.Index(validation.Index(fieldPath, i), i1), true, x.Grid[i][i1], []any{\"x\", \"o\"}) } }",
+		"for i := range x.Grid { c.Repetition(validation.Index(fieldPath, i), true, len(x.Grid[i]), 3, 3) for i1 := range x.Grid[i] { c.Enum(validation.Index(validation.Index(fieldPath, i), i1), true, x.Grid[i][i1], []any{\"x\", \"o\"}) } }",
 	} {
 		if !strings.Contains(validate, want) {
 			t.Errorf("validate.gen.go missing %q", want)
@@ -422,6 +429,16 @@ payloadkeys:
 	}
 	if !strings.Contains(support, `table["Recursive.Sheets.Sheet.Tile.Name"]`) {
 		t.Error("support.gen.go has no entry for a struct nested in an array of arrays")
+	}
+	// Populated samples hold the fewest items each item key's repetition allows.
+	conformance := text("commands/conformance_gen_test.go")
+	for _, want := range []string{
+		"Sheets: conformance.Repeat([][]commands.RecursiveSheet{conformance.SliceOf(sampleRecursiveSheet(d + 1))}, 2),",
+		"Grid: [][]string{conformance.Repeat([]string{\"x\"}, 3)},",
+	} {
+		if !strings.Contains(conformance, want) {
+			t.Errorf("conformance_gen_test.go missing %q", want)
+		}
 	}
 }
 
