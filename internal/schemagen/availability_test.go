@@ -2,85 +2,15 @@ package schemagen
 
 import (
 	"errors"
-	"fmt"
-	"reflect"
-	"sort"
+	"os"
+	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/osversion"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 )
-
-// auditAvailability walks every key use of the built type model and reports
-// each use whose generated validation consults a support entry that is missing
-// or differs from the use's own source availability. Support paths are composed
-// as the validation emitter composes them, so a struct shared by several uses
-// is checked once per use against the entries that use's validation reads.
-func auditAvailability(
-	pkgs []*Package,
-	tables func(*SchemaType) (map[string]*support.Entry, error),
-) (problems []string, uses int, err error) {
-	for _, pkg := range pkgs {
-		for _, st := range pkg.Schemas {
-			table, err := tables(st)
-			if err != nil {
-				return nil, 0, err
-			}
-			source, err := keyAvailability(st.Schema)
-			if err != nil {
-				return nil, 0, err
-			}
-			check := func(use, consulted string) {
-				uses++
-				want, got := source[use], table[consulted]
-				switch {
-				case want == nil:
-					problems = append(problems, fmt.Sprintf("%s/%s: no source key for use %s", pkg.Name, st.Name, use))
-				case got == nil:
-					problems = append(problems, fmt.Sprintf("%s/%s: use %s consults missing entry %s", pkg.Name, st.Name, use, consulted))
-				case !reflect.DeepEqual(want, got.OS):
-					problems = append(problems, fmt.Sprintf("%s/%s: use %s consults %s with different availability", pkg.Name, st.Name, use, consulted))
-				}
-			}
-			var walk func(td *TypeDef, prefix, supportPath string)
-			walk = func(td *TypeDef, prefix, supportPath string) {
-				if td == nil || td.Leaf {
-					return
-				}
-				for _, f := range td.Fields {
-					use := joinKeyPath(prefix, f.Key)
-					check(use, supportPath+fieldSuffix(f))
-					walk(f.Struct, use, supportPath+fieldSuffix(f))
-					if f.Elem != nil {
-						item := use + "." + f.Elem.Key
-						walk(f.Elem.Struct, item, supportPath+elemSuffix(f))
-						if f.Elem.Kind == KindScalar && f.Elem.Base == "string" {
-							for _, value := range f.Elem.Src.Subkeys {
-								check(item+"."+value.Key, supportPath+elemSuffix(f)+"."+value.Key)
-							}
-						}
-						consulted := supportPath + elemSuffix(f)
-						for el := f.Elem; el.Kind == KindArray && el.Elem != nil; el = el.Elem {
-							item += "." + el.Elem.Key
-							consulted += "." + el.Elem.Key
-							walk(el.Elem.Struct, item, consulted)
-						}
-					}
-					for i, key := range variantKeys(f) {
-						walk(f.Variants[i], use+"."+key, supportPath+fieldSuffix(f)+"."+key)
-					}
-				}
-			}
-			walk(st.Request, "", rootSupportPath(st.Request))
-			if st.Response != nil {
-				walk(st.Response, responsePrefix, rootSupportPath(st.Response))
-			}
-		}
-	}
-	sort.Strings(problems)
-	return problems, uses, nil
-}
 
 // TestAvailabilityAuditCurrentTree requires every key use in the current
 // schema, merged with each retained release as generation merges them, to be
@@ -91,97 +21,14 @@ func TestAvailabilityAuditCurrentTree(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tree, err := Load(schemaRoot(t))
+	audit, err := AuditAvailability(schemaRoot(t), retained...)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, root := range retained {
-		history, err := Load(root)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if tree, err = MergeHistory(tree, history); err != nil {
-			t.Fatal(err)
-		}
-	}
-	pkgs, err := Build(tree)
-	if err != nil {
-		t.Fatal(err)
-	}
-	problems, uses, err := auditAvailability(pkgs, effective)
-	if err != nil {
-		t.Fatal(err)
-	}
-	recursive, err := auditRecursion(tree)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, p := range append(problems, recursive...) {
+	for _, p := range audit.Problems {
 		t.Error(p)
 	}
-	t.Logf("audited %d key uses, %d mismatched", uses, len(problems))
-}
-
-// auditRecursion reports recursive references whose values would be
-// validated with different availability from the use they nest under.
-// Generated validation checks a recursive value with its owner's struct, and
-// therefore against the owner's entries, so the recursive key must make
-// those values available exactly as the owner does.
-func auditRecursion(tree *Tree) ([]string, error) {
-	var problems []string
-	for _, s := range tree.Schemas {
-		source, err := keyAvailability(s)
-		if err != nil {
-			return nil, err
-		}
-		type ancestor struct {
-			key  *Key
-			path string
-		}
-		var walk func(keys []Key, prefix string, stack []ancestor) error
-		walk = func(keys []Key, prefix string, stack []ancestor) error {
-			for i := range keys {
-				k := &keys[i]
-				path := joinKeyPath(prefix, k.Key)
-				if k.RecursiveTo != "" {
-					var owner *ancestor
-					for j := len(stack) - 1; j >= 0 && owner == nil; j-- {
-						if stack[j].key.Key == k.RecursiveTo {
-							owner = &stack[j]
-						}
-					}
-					if owner == nil {
-						return fmt.Errorf("%s: %s: recursive reference %q has no ancestor", s.Path, path, k.RecursiveTo)
-					}
-					// An array owner's values are its item dictionaries, whose
-					// own block applies at both levels.
-					want, got := source[owner.path], source[path]
-					if owner.key.Type == "<array>" && len(owner.key.Subkeys) == 1 {
-						item := &owner.key.Subkeys[0]
-						want = source[owner.path+"."+item.Key]
-						if got, err = convertOS(got, item.SupportedOS); err != nil {
-							return err
-						}
-					}
-					if !reflect.DeepEqual(want, got) {
-						problems = append(problems, fmt.Sprintf("%s: recursive use %s differs from its owner %s", s.Path, path, owner.path))
-					}
-				}
-				if err := walk(k.Subkeys, path, append(append([]ancestor(nil), stack...), ancestor{k, path})); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-		if err := walk(s.PayloadKeys, "", nil); err != nil {
-			return nil, err
-		}
-		if err := walk(s.ResponseKeys, responsePrefix, nil); err != nil {
-			return nil, err
-		}
-	}
-	sort.Strings(problems)
-	return problems, nil
+	t.Logf("audited %d key uses, %d problems", audit.Uses, len(audit.Problems))
 }
 
 // availabilityFixture repeats subkeytype Rule under four arrays: First and
@@ -445,5 +292,78 @@ func TestAvailabilityFailures(t *testing.T) {
 	orphaned := &Tree{Schemas: []*Schema{{Path: "p", PayloadKeys: []Key{{Key: "Child", Type: "<dictionary>", RecursiveTo: "Nope"}}}}}
 	if _, err := auditRecursion(orphaned); err == nil {
 		t.Error("recursive reference without an ancestor accepted")
+	}
+}
+
+// recursionFixture nests Tree in itself through a YAML alias. The recursive
+// Child key is introduced later than Tree, so generated validation would
+// check Child's values against Tree's entries.
+const recursionFixture = `title: Recursion Test
+payload:
+  requesttype: RecursionTest
+  supportedOS:
+    macOS:
+      introduced: '12.0'
+payloadkeys:
+- key: Tree
+  type: <dictionary>
+  presence: optional
+  subkeys: &tree
+  - key: Name
+    type: <string>
+    presence: optional
+  - key: Child
+    type: <dictionary>
+    presence: optional
+    supportedOS:
+      macOS:
+        introduced: '27.0'
+    subkeys: *tree
+`
+
+// TestAuditAvailability checks the audit of schema trees on disk: a clean
+// tree, a recursive key narrowing its owner, and trees that cannot be loaded
+// or built.
+func TestAuditAvailability(t *testing.T) {
+	t.Parallel()
+	tree := func(files map[string]string) string {
+		root := t.TempDir()
+		for rel, body := range files {
+			path := filepath.Join(root, filepath.FromSlash(rel))
+			if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return root
+	}
+	clean := tree(map[string]string{"mdm/commands/avail.yaml": availabilityFixture})
+	audit, err := AuditAvailability(clean, "", clean)
+	if err != nil || audit.Uses == 0 || len(audit.Problems) != 0 {
+		t.Fatalf("clean tree: %+v, %v", audit, err)
+	}
+	recursive := tree(map[string]string{"mdm/commands/tree.yaml": recursionFixture})
+	audit, err = AuditAvailability(recursive)
+	want := []string{"mdm/commands/tree.yaml: recursive use Tree.Child differs from its owner Tree"}
+	if err != nil || !slices.Equal(audit.Problems, want) {
+		t.Fatalf("recursive tree: %+v, %v; want problems %q", audit, err, want)
+	}
+	misplaced := strings.Replace(availabilityFixture, "- key: Out\n", "- key: Out\n  repetition:\n    min: 1\n    max: 2\n", 1)
+	for name, c := range map[string]struct {
+		root      string
+		histories []string
+		want      error
+	}{
+		"missing schema":       {root: filepath.Join(clean, "missing"), want: os.ErrNotExist},
+		"missing history":      {root: clean, histories: []string{filepath.Join(clean, "missing")}, want: os.ErrNotExist},
+		"misplaced repetition": {root: tree(map[string]string{"mdm/commands/avail.yaml": misplaced}), want: ErrNaming},
+		"unparseable history":  {root: clean, histories: []string{tree(map[string]string{"mdm/commands/avail.yaml": "payload: ["})}},
+	} {
+		audit, err := AuditAvailability(c.root, c.histories...)
+		if err == nil || (c.want != nil && !errors.Is(err, c.want)) {
+			t.Errorf("%s: audit = %+v, error %v, want %v", name, audit, err, c.want)
+		}
 	}
 }

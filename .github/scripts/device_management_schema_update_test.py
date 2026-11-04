@@ -290,6 +290,21 @@ class DiagnosticTests(unittest.TestCase):
         item = diagnosis('parse', 'yaml: line 8: did not find expected key')
         self.assertIn('upstream correction', item['why'])
 
+    def test_availability_problems_form_one_finding(self):
+        text = ('mdm/profiles/a.yaml: use A.B consults A.B with different availability\n'
+                'mdm/profiles/c.yaml: recursive use C.D differs from its owner C\n'
+                'availability-audit: 40 key uses, 2 problems\nschemagen: availability audit: 2 problems\n')
+        with tempfile.TemporaryDirectory() as temp:
+            groups = findings('availability', text, Path(__file__).resolve().parents[2], temp, temp)
+        self.assertEqual(['codegen:availability-audit'], [g['key'] for g in groups])
+        self.assertEqual(['mdm/profiles/a.yaml', 'mdm/profiles/c.yaml'], [e['path'] for e in groups[0]['evidence']])
+        self.assertIn('emit_support.go#L', groups[0]['location'])
+        self.assertIn('availability_test.go', groups[0]['test'])
+        with tempfile.TemporaryDirectory() as temp:
+            groups = findings('availability', 'schemagen: load: permission', Path(__file__).resolve().parents[2], temp, temp)
+        self.assertNotEqual('codegen:availability-audit', groups[0]['key'])
+        self.assertIn('availability_audit.go#L', groups[0]['location'])
+
     def test_non_generator_audit_findings_are_ignored(self):
         audit = {'findings': [{'stage': 'audit', 'kind': 'review', 'evidence': []}]}
         with tempfile.TemporaryDirectory() as temp:
@@ -333,6 +348,38 @@ class AssessmentTests(unittest.TestCase):
             self.assertFalse(result['complete'])
             self.assertEqual([], result['findings'])
             self.assertIn('checkout unavailable', result['automationErrors'])
+
+    def test_availability_stage_outcomes(self):
+        problem = 'mdm/profiles/a.yaml: use A.B consults missing entry A.B\n'
+        for output, complete, state, keys, errors in (
+                ('', True, 'passed', [], 0),
+                (problem, True, 'failed', ['codegen:availability-audit'], 0),
+                ('dial tcp: lookup proxy.golang.org: no such host', False, 'failed', [], 1)):
+            def stage(result, name, args, root, directory, env):
+                ok = name != 'availability' or not output
+                if name == 'availability':
+                    self.assertEqual('availability-audit', args[-1])
+                result['stages'][name] = {'state': 'passed' if ok else 'failed'}
+                return ok, output
+            with tempfile.TemporaryDirectory() as temp, patch.object(m, 'checkout'), \
+                    patch.object(m, 'run', return_value=''), patch.object(m, 'new_major', return_value=False), \
+                    patch.object(m, 'stage', side_effect=stage):
+                result = m.assess(Path(temp), manifest(report()), report()['branch'], Path(temp))
+            self.assertEqual(complete, result['complete'], output)
+            self.assertEqual(state, result['stages']['availability']['state'], output)
+            self.assertEqual('passed' if not output else 'blocked', result['stages']['compile']['state'], output)
+            self.assertEqual(keys, [f['key'] for f in result['findings']], output)
+            self.assertEqual(errors, len(result['automationErrors']), output)
+            self.assertEqual(not output, m.passed(result), output)
+
+    def test_report_lists_each_assessment_stage(self):
+        failed = report()
+        failed['stages']['availability']['state'] = 'failed'
+        failed['stages']['compile']['state'] = 'blocked'
+        text = m.render_report(manifest(failed), [control(), failed])
+        self.assertIn('| Source | Generate | Verify | Availability | Compile |\n|---|---|---|---|---|', text)
+        self.assertIn('| control control `' + PIN[:12] + '` | passed | passed | passed | passed |', text)
+        self.assertIn('| seed seed_future `' + NEXT[:12] + '` | passed | passed | failed | blocked |', text)
 
     def test_new_major_candidate_is_assessed_with_the_pin_retained(self):
         versions = {'candidate': '28.0', 'control': '27.2', 'patch': '27.4'}
@@ -391,6 +438,34 @@ class GeneratorIntegrationTests(unittest.TestCase):
             result = findings('generate', caught.exception.stderr, Path(__file__).resolve().parents[2], source, source)
             self.assertEqual(1, len(result))
             self.assertEqual('codegen:unknown-field:schemagen.Schema:future-metadata', result[0]['key'])
+
+
+    def test_availability_audit_reports_a_recursive_key_narrowing_its_owner(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source = root / 'apple'
+            (source / 'mdm/commands').mkdir(parents=True)
+            yaml = source / 'mdm/commands/tree.yaml'
+            yaml.write_text('title: Tree\npayload:\n  requesttype: Tree\n  supportedOS:\n    macOS:\n'
+                            '      introduced: \'12.0\'\npayloadkeys:\n- key: Tree\n  type: <dictionary>\n'
+                            '  presence: optional\n  subkeys: &tree\n  - key: Name\n    type: <string>\n'
+                            '    presence: optional\n  - key: Child\n    type: <dictionary>\n    presence: optional\n'
+                            '    subkeys: *tree\n')
+            command = [self.tool, '-schema', source, '-history', '', '-ref', 'seed_future', 'availability-audit']
+            result = report()
+            ok, text = m.stage(result, 'availability', command, root, root, self.env)
+            self.assertTrue(ok, text)
+            self.assertIn('0 problems', text)
+            yaml.write_text(yaml.read_text().replace('    subkeys: *tree',
+                                                     '    supportedOS:\n      macOS:\n        introduced: \'27.0\'\n'
+                                                     '    subkeys: *tree'))
+            ok, text = m.stage(result, 'availability', command, root, root, self.env)
+            self.assertFalse(ok)
+            self.assertEqual('failed', result['stages']['availability']['state'])
+            groups = findings('availability', text, Path(__file__).resolve().parents[2], source, source)
+            self.assertEqual(['codegen:availability-audit'], [g['key'] for g in groups])
+            self.assertEqual([{'path': 'mdm/commands/tree.yaml',
+                               'detail': 'recursive use Tree.Child differs from its owner Tree'}], groups[0]['evidence'])
 
 
 class IncidentTests(unittest.TestCase):

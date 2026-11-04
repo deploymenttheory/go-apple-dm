@@ -26,7 +26,7 @@ CURRENT_SUBMODULE = "apple-device-management-current"
 RELEASE_NAME = re.compile(r"^[0-9]+(\.[0-9]+)*$")
 SHA = re.compile(r"^[0-9a-f]{40}$")
 REF = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
-STAGES = ("snapshot", "generate", "verify", "compile")
+STAGES = ("snapshot", "generate", "verify", "availability", "compile")
 MARKER = re.compile(r"<!-- schema-monitor (\{.*?\}) -->")
 START, END = "<!-- schema-monitor:evidence:start -->", "<!-- schema-monitor:evidence:end -->"
 SCRIPT = ".github/scripts/device_management_schema_update.py"
@@ -273,7 +273,10 @@ def assess(repo, manifest, branch, directory):
             run(["go", "mod", "download"], project, env)
             prepare_output(project)
             base = [tool, "-schema", candidate, *retain, "-ref", branch["ref"], "-out", project / SCHEMA]
+            # The availability audit fails when generated validation would check a key use
+            # against support that differs from Apple's supportedOS for that use.
             commands = [("generate", base + ["generate"]), ("verify", base + ["verify"]),
+                        ("availability", base + ["availability-audit"]),
                         ("compile", ["go", "build", "./devicemanagement/schema/..."])]
             for name, command in commands:
                 ok, text = stage(result, name, command, project, directory, env)
@@ -475,11 +478,11 @@ class GitHub:
 def render_report(manifest, reports):
     lines = ["# Apple Device Management Schema Updates", "",
              "Project: `" + manifest.get("projectCommit", "unknown") + "`.", "",
-             "| Source | Generate | Verify | Compile |", "|---|---|---|---|"]
+             "| Source | Generate | Verify | Availability | Compile |", "|---|---|---|---|---|"]
     for r in reports:
         b = r["branch"]
         lines.append("| " + b["kind"] + " " + b["ref"] + " `" + b["commit"][:12] + "` | " +
-                     " | ".join(r["stages"][s]["state"] for s in ("generate", "verify", "compile")) + " |")
+                     " | ".join(r["stages"][s]["state"] for s in STAGES[1:]) + " |")
         for error in r["automationErrors"]:
             lines += ["", "Monitoring failure: " + error[-1000:]]
     if reports and not passed(reports[0]):

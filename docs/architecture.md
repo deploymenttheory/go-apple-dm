@@ -194,7 +194,8 @@ for version construction and availability checks. SSO value-specific floors are 
 The [Apple Device Management Schema updates workflow](device-management-schema-updates.md) discovers upcoming
 release and seed schemas, retains immutable source commits and runs the generator
 on main in isolated workspaces. The published schema pin is a control. Generation,
-regeneration consistency and generated-package compilation determine compatibility.
+regeneration consistency, the availability audit and generated-package compilation
+determine compatibility.
 Grouped incidents describe the failing construct, generator code and required tests.
 A passing Apple release is proposed as one adoption pull request that moves the
 production pin and regenerates the library; merging it requires review. Server
