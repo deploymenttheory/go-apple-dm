@@ -58,7 +58,7 @@ func run(args []string, out *os.File) error {
 	}
 	if fs.NArg() != 1 {
 		return fmt.Errorf(
-			"usage: schemagen [-schema dir] [-history dir]... [-out dir] [-ref branch] [-baseline dir] [-report dir] generate|verify|identifiers|versions|audit|api-diff|boundaries",
+			"usage: schemagen [-schema dir] [-history dir]... [-out dir] [-ref branch] [-baseline dir] [-report dir] generate|verify|identifiers|versions|audit|availability-audit|api-diff|boundaries",
 		)
 	}
 	historyExplicit := false
@@ -122,6 +122,19 @@ func run(args []string, out *os.File) error {
 		}
 		_, err = fmt.Fprintln(out, string(data))
 		return err
+	case "availability-audit":
+		audit, err := schemagen.AuditAvailability(*schemaRoot, histories...)
+		if err != nil {
+			return err
+		}
+		for _, problem := range audit.Problems {
+			_, _ = fmt.Fprintln(out, problem)
+		}
+		_, _ = fmt.Fprintf(out, "availability-audit: %d key uses, %d problems\n", audit.Uses, len(audit.Problems))
+		if len(audit.Problems) > 0 {
+			return fmt.Errorf("availability audit: %d problems", len(audit.Problems))
+		}
+		return nil
 	case "api-diff":
 		if *baseline == "" {
 			return fmt.Errorf("api-diff requires -baseline")

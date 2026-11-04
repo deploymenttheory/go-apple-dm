@@ -26,7 +26,9 @@ Each assessment performs:
 
 1. Strict schema decoding, type construction and Go generation with `schemagen`.
 2. Regeneration verification against the newly generated output.
-3. Compilation of `devicemanagement/schema/...`, including its handwritten helpers.
+3. The availability audit (`schemagen availability-audit`): every key use must be validated
+   against the support entry that matches its own `supportedOS` availability.
+4. Compilation of `devicemanagement/schema/...`, including its handwritten helpers.
 
 The temporary output starts without the production exported-identifier lock. Removing
 an identifier from a candidate is not itself a generator failure. Normal `make verify`

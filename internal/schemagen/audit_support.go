@@ -21,15 +21,12 @@ type BoundaryCase struct {
 	Deprecated bool   `json:"deprecated"`
 }
 
-// sourceSupport builds effective support tables from current schemas and optional
-// historical inputs, returning the merged tree as well.
-func sourceSupport(
-	root string,
-	histories ...string,
-) (map[string]map[string]*support.Entry, *Tree, error) {
+// loadMerged loads the schema at root and merges each retained release into it,
+// newest first, as generation does. An empty history path retains nothing.
+func loadMerged(root string, histories ...string) (*Tree, error) {
 	tree, err := Load(root)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	for _, historyRoot := range histories {
 		if historyRoot == "" {
@@ -37,12 +34,25 @@ func sourceSupport(
 		}
 		history, err := Load(historyRoot)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		tree, err = MergeHistory(tree, history)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
+	}
+	return tree, nil
+}
+
+// sourceSupport builds effective support tables from current schemas and optional
+// historical inputs, returning the merged tree as well.
+func sourceSupport(
+	root string,
+	histories ...string,
+) (map[string]map[string]*support.Entry, *Tree, error) {
+	tree, err := loadMerged(root, histories...)
+	if err != nil {
+		return nil, nil, err
 	}
 	pkgs, err := Build(tree)
 	if err != nil {

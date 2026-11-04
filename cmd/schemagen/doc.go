@@ -4,13 +4,14 @@
 //
 // The command delegates loading and emission to internal/schemagen:
 //
-//	schemagen generate     regenerate schema packages
-//	schemagen verify       compare output and check exported identifiers
-//	schemagen identifiers  list generated exported names
-//	schemagen versions     report newest introduced OS versions in the schema
-//	schemagen audit        compare raw schemas and collect strict parsing failures
-//	schemagen api-diff     compare generated declarations and wire tags
-//	schemagen boundaries   derive changed support cases from source schemas
+//	schemagen generate            regenerate schema packages
+//	schemagen verify              compare output and check exported identifiers
+//	schemagen identifiers         list generated exported names
+//	schemagen versions            report newest introduced OS versions in the schema
+//	schemagen audit               compare raw schemas and collect strict parsing failures
+//	schemagen availability-audit  check each key use's support entry against its source availability
+//	schemagen api-diff            compare generated declarations and wire tags
+//	schemagen boundaries          derive changed support cases from source schemas
 //
 // The -schema and -out options select source and output directories. make
 // generate and make verify initialize the pinned submodule before running the
@@ -21,6 +22,9 @@
 // major schema release to retain, newest first; without one, the command
 // retains the versioned submodules beside the current checkout in .gitmodules. Audit and boundaries take a -baseline
 // source tree; api-diff takes baseline and candidate generated directories.
+// availability-audit exits non-zero when it reports a problem, so a schema
+// whose generated validation would check a key use against the wrong
+// availability fails before adoption.
 // The schema updates workflow uses immutable checkouts and invokes the command
 // directly, because make's submodule prerequisite restores the committed pin.
 //

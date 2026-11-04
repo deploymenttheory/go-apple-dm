@@ -10,7 +10,9 @@
 // Audit compares raw YAML independently of strict decoding so unsupported
 // metadata does not hide protocol changes. CompareAPI checks generated types,
 // signatures and wire tags. BoundaryProbes derives changed support cases from
-// source data for comparison with compiled candidate tables.
+// source data for comparison with compiled candidate tables. AuditAvailability
+// checks that generated validation consults, for every key use, the support
+// entry resolved from that use's own source keys.
 //
 // Apple's descriptions are retained verbatim; project-authored generated
 // documentation is maintained in the emitters. Protocol behavior described

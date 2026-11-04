@@ -112,7 +112,7 @@ jobs:
         with:
           name: device-management-schema-discovery
           path: ${{ runner.temp }}
-      - name: Generate, verify and compile the selected schema
+      - name: Generate, verify, audit and compile the selected schema
         env:
           SCHEMA_BRANCH_KEY: ${{ matrix.key }}
         run: >-

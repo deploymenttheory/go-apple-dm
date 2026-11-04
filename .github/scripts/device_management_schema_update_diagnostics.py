@@ -6,6 +6,12 @@ from pathlib import Path
 import re
 
 
+# An availability audit problem names an Apple schema file, then the key use
+# and the support entry its generated validation consults.
+AVAILABILITY_USE = r"(?:use \S+ consults|no source key for use|recursive use) .+"
+AVAILABILITY_PROBLEM = re.compile(r"^((?:mdm|declarative|other)/\S+\.yaml): (" + AVAILABILITY_USE + ")$", re.M)
+
+
 def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
@@ -15,7 +21,18 @@ def diagnosis(stage, message):
     unknown = re.search(r"field (\S+) not found in type (\S+)", message)
     shape = re.search(r"cannot unmarshal (!!\w+).*? into (\S+)", message)
     scalar = re.search(r'unsupported type "([^"]+)"', message)
-    if unknown:
+    if stage == "availability" and re.fullmatch(AVAILABILITY_USE, message):
+        cause, title = "availability-audit", "Validate each key use against its own availability"
+        why = ("Generated validation would check the listed key uses against support entries that are missing or "
+               "differ from the availability Apple's supportedOS blocks give each use.")
+        change = ("Trace each listed use through type construction, support-table resolution (`effective`) and the "
+                  "support path generated validation passes to nested values (`childSupportPath`). Give each use its "
+                  "own entry; do not edit generated tables or Apple's files.")
+        source, symbol = "internal/schemagen/emit_support.go", "func effective("
+        test = ("Add a fixture with the listed use's shape and availability to internal/schemagen/availability_test.go, "
+                "assert the entry each use's validation consults, and confirm `schemagen availability-audit` reports "
+                "no problems for the candidate.")
+    elif unknown:
         field, owner = unknown.groups()
         cause = f"unknown-field:{owner}:{field}"
         title = f"Support {owner}.{field} schema metadata"
@@ -54,6 +71,7 @@ def diagnosis(stage, message):
             "build-types": ("internal/schemagen/types.go", "func Build("),
             "generate": ("internal/schemagen/emit.go", "func Generate("),
             "verify": ("internal/schemagen/generate.go", "func Verify("),
+            "availability": ("internal/schemagen/availability_audit.go", "func AuditAvailability("),
             "compile": ("internal/schemagen/emit_types.go", ""),
         }.get(stage, ("internal/schemagen/generate.go", "func Run("))
         why = "The recorded diagnostic identifies a failure in " + stage + "; a precise implementation fix needs investigation."
@@ -97,6 +115,8 @@ def findings(stage, text, project, baseline, candidate, audit=None):
         for item in audit.get("findings", []):
             if item["stage"] == "parse" and item["kind"] == "failure":
                 observations.extend(("parse", e["path"], e["detail"]) for e in item["evidence"])
+    if stage == "availability":
+        observations = [(stage, path, problem) for path, problem in AVAILABILITY_PROBLEM.findall(text)]
     if not observations:
         path = re.search(r"((?:mdm|declarative|other)/[^\s:]+\.yaml)", text)
         observations = [(failure_stage(text) if stage == "generate" else stage,

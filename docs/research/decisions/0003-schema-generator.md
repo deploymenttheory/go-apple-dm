@@ -45,8 +45,9 @@ Generated conformance tests exercise XML plist, binary plist and JSON round trip
 
 The Apple Device Management Schema updates workflow discovers upcoming release and active
 seed heads dynamically, excluding inputs already contained in the published pin or
-promoted release. It verifies strict parsing, generation, regeneration consistency
-and compilation in isolated workspaces, with the published schema as a control.
+promoted release. It verifies strict parsing, generation, regeneration consistency,
+the availability audit and compilation in isolated workspaces, with the published
+schema as a control.
 Incidents group unsupported constructs across files and snapshots and identify the
 relevant generator code and required regression tests. The candidate output uses a
 fresh identifier lock; the published API guard remains in ordinary CI. When Apple's
@@ -80,7 +81,10 @@ Generator tests cover complete-tree generation, schema coverage, nested types, r
 An availability audit walks every key use of the current schema merged with the
 retained releases. It requires the entry that generated validation consults for each
 use to equal the support resolved from that use's source keys, and each recursive key
-to be available as the key it recurses to.
+to be available as the key it recurses to. `make test` runs it on the published pin,
+so an adoption pull request cannot merge while it reports a problem. The schema
+updates workflow runs it on every candidate through `schemagen availability-audit`,
+so a problem in a new Apple schema is reported before adoption.
 
 ## References
 
