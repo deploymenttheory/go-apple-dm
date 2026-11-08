@@ -14,7 +14,7 @@ require (
 	github.com/deploymenttheory/go-macos-pkg v0.7.3
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/jackc/pgx/v5 v5.11.0
-	github.com/micromdm/plist v0.3.0
+	github.com/micromdm/plist v0.4.0
 	github.com/smallstep/pkcs7 v0.2.3
 	golang.org/x/crypto v0.58.0
 	golang.org/x/sys v0.49.0
