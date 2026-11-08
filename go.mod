@@ -18,7 +18,7 @@ require (
 	github.com/aws/smithy-go v1.28.7
 	github.com/deploymenttheory/go-apfs-v2 v0.18.0
 	github.com/deploymenttheory/go-macos-pkg v0.7.3
-	github.com/micromdm/plist v0.3.0
+	github.com/micromdm/plist v0.4.0
 	github.com/smallstep/pkcs7 v0.2.3
 	github.com/smallstep/scep v0.0.0-20260331191114-261f960a40d1
 	go.opentelemetry.io/otel v1.47.0
