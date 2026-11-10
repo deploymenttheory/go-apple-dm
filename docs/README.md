@@ -16,6 +16,7 @@
 - [Application packages](operations/application-packages.md): verified installer storage, metadata and native MDM/DDM delivery.
 - [Application identities](operations/application-identities.md): artifact inspection, app discovery, authoring and native verification.
 - [Apple Device Management Schema updates](device-management-schema-updates.md): upcoming schema generation checks, diagnosis and release adoption.
+- [AXM webhook callbacks](operations/axm-webhooks.md): Apple subscriptions, signed receipt and targeted source refresh.
 - [Native webhooks](operations/webhooks.md): managed subscriptions, tested JSON examples, sensitive payloads and replay.
 - [Event delivery](operations/event-delivery.md): SQL event capture, audit/webhook delivery, inspection and retry.
 - [Status and profile inspection](operations/status-and-profile-inspection.md): paginated DDM diagnostics and offline profile lint.

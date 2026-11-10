@@ -69,6 +69,12 @@ Successful job history remains retained and inspectable. CLI verbs preserve the 
 assignment intent, retained operation/log inspection and synchronization jobs.
 See [named inspection](../../operations/abm-assignments.md#named-connection-inspection).
 
+AXM webhook management uses the existing client transport and explicit pagination.
+Signature verification and notification decoding are independently reusable. The
+reference server composes encrypted receipt and targeted inventory work in
+`server/axmwebhook`; remote provisioning happens outside local transactions and
+uncertain outcomes require explicit reconciliation. See [AXM webhooks](../../operations/axm-webhooks.md).
+
 ## Rationale
 
 Explicit pagination and retry policy give callers control over work and side effects. Separate activity completion and assignment convergence reflect asynchronous service behavior.

@@ -43,9 +43,18 @@ func accountFailure(err error) *accountRemoteError {
 // accountClient always reads the selected account's current credential. Neither a
 // missing account nor a revoked credential can fall back to the startup client.
 func (a *App) accountClient(ctx context.Context, id string) (*axm.Client, func() error, error) {
+	return a.accountClientAt(ctx, id, 0, time.Time{})
+}
+
+// accountClientAt checks an optional expected account incarnation before opening
+// a connector, then fences results against the same metadata and key snapshot.
+func (a *App) accountClientAt(ctx context.Context, id string, revision int64, created time.Time) (*axm.Client, func() error, error) {
 	account, key, err := a.accountSnapshot(ctx, id)
 	if err != nil {
 		return nil, nil, err
+	}
+	if revision != 0 && (account.Revision != revision || !account.CreatedAt.Equal(created)) {
+		return nil, nil, inventory.ErrConflict
 	}
 	if !account.Enabled {
 		return nil, nil, &accountRemoteError{status: http.StatusConflict, category: "account_disabled"}

@@ -20,6 +20,9 @@ func runDevices(ctx context.Context, e *env, args []string) error {
 
 // runAxM dispatches named Apple connection administration.
 func runAxM(ctx context.Context, e *env, args []string) error {
+	if len(args) > 0 && args[0] == "webhooks" {
+		return runAXMWebhooks(ctx, e, args[1:])
+	}
 	return runInventoryCommand(ctx, e, "axm", args)
 }
 

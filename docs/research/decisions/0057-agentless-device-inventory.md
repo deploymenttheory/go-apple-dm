@@ -58,6 +58,12 @@ older successful coverage result. Completed pagination does not imply an Apple-s
 consistent snapshot. Native observers retain acknowledged command and validated status
 history within the existing SQL protocol/event transaction.
 
+Signed AXM notifications enqueue targeted detail, assignment or coverage collection.
+Receipt and pending work commit together; callbacks remain separate source evidence.
+Queued work coalesces and events received during active work retain a successor
+generation. Account and lease fences protect every source commit. Failed refresh
+cannot establish absence or replace successful observations.
+
 ## Persistence and migration
 
 `Repository.Migrate` runs before workers and observers. One backend transaction extracts

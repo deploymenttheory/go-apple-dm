@@ -22,6 +22,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/schema/support"
 	"github.com/deploymenttheory/go-apple-dm/devicemanagement/storage"
 	"github.com/deploymenttheory/go-apple-dm/server/axmassignment"
+	"github.com/deploymenttheory/go-apple-dm/server/axmwebhook"
 	"github.com/deploymenttheory/go-apple-dm/server/inventorystore"
 	"github.com/deploymenttheory/go-apple-dm/server/service"
 )
@@ -44,6 +45,9 @@ func (a *App) openInventory(ctx context.Context) error {
 		return e
 	}
 	a.Inventory = r
+	if a.db != nil && a.keyring != nil {
+		a.AXMWebhooks = &axmwebhook.Coordinator{Repository: r}
+	}
 	a.Assignments = &axmassignment.Controller{Repository: r, Client: a.inventoryClient}
 	a.addWorker("axm-assignments", a.Assignments.Run)
 	if c := a.cfg.AxM; c.Enabled() {
