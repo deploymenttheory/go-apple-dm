@@ -272,6 +272,9 @@ func TestAXMWebhookAdministration(t *testing.T) {
 	if w := rbacRequest(a, "POST", base+"/ping", root, ""); w.Code != 409 {
 		t.Fatal("stale binding reached remote account", w.Code)
 	}
+	if w := rbacRequest(a, "POST", "/axm/accounts/apple/webhook-bindings/"+b.ID+"/reconcile", root, string(reconcileBody)); w.Code != 409 {
+		t.Fatal("stale binding reconciled against replaced account", w.Code, w.Body.String())
+	}
 	if len(remote.Requests()) != before {
 		t.Fatal("stale binding contacted Apple")
 	}
