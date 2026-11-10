@@ -228,11 +228,14 @@ func merge(defaults, attrs map[string]any) map[string]any {
 }
 
 // selectFields validates fields[typ] against the known names and returns
-// the selection (nil when absent), or writes 400.
-func (s *Server) selectFields(w http.ResponseWriter, r *http.Request, typ string) (map[string]struct{}, bool) {
+// the selection (nil when absent), or writes 400. Related resource types may
+// supply additional sparse field selections on endpoints with included resources.
+func (s *Server) selectFields(w http.ResponseWriter, r *http.Request, typ string, related ...string) (map[string]struct{}, bool) {
 	param := "fields[" + typ + "]"
 	for name := range r.URL.Query() {
-		if strings.HasPrefix(name, "fields[") && name != param {
+		if strings.HasPrefix(name, "fields[") && name != param && !slices.ContainsFunc(related, func(other string) bool {
+			return name == "fields["+other+"]"
+		}) {
 			s.badParameter(w, name, "unknown resource type in fields selection")
 			return nil, false
 		}

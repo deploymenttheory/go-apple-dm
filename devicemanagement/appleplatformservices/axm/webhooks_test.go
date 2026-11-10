@@ -164,6 +164,26 @@ func TestWebhookFakeSignedLifecycle(t *testing.T) {
 	if err != nil || len(deliveries.Items) != 1 || len(deliveries.Included) != 1 {
 		t.Fatal(deliveries, err)
 	}
+	query.Fields = []string{"deliveryState"}
+	query.EventFields = []string{"payload"}
+	sparse, err := c.ListWebhookDeliveries(ctx, created.ID, query)
+	if err != nil || len(sparse.Items) != 1 || len(sparse.Included) != 1 {
+		t.Fatal("sparse delivery and event fields rejected", err)
+	}
+	if sparse.Items[0].Attributes.DeliveryState != "PENDING" || !sparse.Items[0].Attributes.CreatedDateTime.IsZero() {
+		t.Fatal("delivery field selection ignored", sparse.Items[0])
+	}
+	var event map[string]json.RawMessage
+	if err := json.Unmarshal(sparse.Included[0].Attributes, &event); err != nil || len(event) != 1 || event["payload"] == nil {
+		t.Fatal("event field selection ignored", event, err)
+	}
+	query.EventFields = []string{"unknown"}
+	_, err = c.ListWebhookDeliveries(ctx, created.ID, query)
+	if apiErr, ok := errors.AsType[*Error](err); !ok || apiErr.Status != http.StatusBadRequest {
+		t.Fatal("invalid event field accepted", err)
+	}
+	query.EventFields = nil
+	query.Fields = nil
 	original := deliveries.Items[0]
 	if err := f.srv.DeliverWebhook(ctx, original.ID, receiver.Client()); err != nil {
 		t.Fatal(err)

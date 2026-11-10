@@ -1,7 +1,12 @@
 package inventory
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -87,5 +92,60 @@ func TestTargetedQueueDoesNotReachOlderWorkers(t *testing.T) {
 	legacy, err := r.Backend.Scan(t.Context(), "job/", "", 100)
 	if err != nil || len(legacy) != 0 {
 		t.Fatal("an older worker can consume targeted work", len(legacy), err)
+	}
+}
+
+// TestTargetedAssignmentAndCoverage checks real source reads for each refresh stream.
+func TestTargetedAssignmentAndCoverage(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		op       collection.Operation
+		assigned bool
+	}{
+		{"unassigned", collection.Assignment, false}, {"assigned", collection.Assignment, true}, {"coverage", collection.Coverage, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r, s, remote, a := syncFixture(t)
+			remote.AddOrgDevice("opaque", map[string]any{"serialNumber": "SER"})
+			if tc.name == "unassigned" {
+				base := remote.Client().Transport
+				remote.Client().Transport = transportFunc(func(req *http.Request) (*http.Response, error) {
+					if strings.HasSuffix(req.URL.Path, "/assignedServer") {
+						return &http.Response{StatusCode: 200, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(`{"data":null}`)), Request: req}, nil
+					}
+					return base.RoundTrip(req)
+				})
+			}
+			if tc.assigned {
+				server := remote.AddMDMServer("Managed", nil)
+				remote.Assign("opaque", server)
+			}
+			if tc.op == collection.Coverage {
+				for i := range 1001 {
+					remote.AddAppleCareCoverage("opaque", fmt.Sprintf("plan-%04d", i), map[string]any{"future": false})
+				}
+			}
+			job, err := r.EnqueueRefresh(t.Context(), RefreshRequest{AccountID: a.ID, ResourceID: "opaque", Operations: []collection.Operation{tc.op}}, time.Now())
+			if err != nil {
+				t.Fatal(err)
+			}
+			ran, err := s.RunOne(t.Context())
+			if err != nil || ran.State != "success" || ran.ID != job.ID {
+				t.Fatal(ran, err)
+			}
+			resource, err := r.SourceResource(t.Context(), source.Reference{Kind: "axm." + string(tc.op), AccountID: a.ID, ResourceID: "opaque"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.name == "unassigned" && string(resource.Snapshot.Raw) != "null" {
+				t.Fatal("unassigned was not retained as null")
+			}
+			if tc.op == collection.Coverage {
+				var plans []json.RawMessage
+				if json.Unmarshal(resource.Snapshot.Raw, &plans) != nil || len(plans) != 1001 {
+					t.Fatal("coverage traversal incomplete")
+				}
+			}
+		})
 	}
 }

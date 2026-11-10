@@ -128,11 +128,11 @@ func (s *Server) handleDeleteWebhook(w http.ResponseWriter, r *http.Request) {
 
 // handleWebhookDeliveries lists one filtered page with optional included event templates.
 func (s *Server) handleWebhookDeliveries(w http.ResponseWriter, r *http.Request) {
-	selection, ok := s.selectFields(w, r, typeWebhookDeliveries)
+	selection, ok := s.selectFields(w, r, typeWebhookDeliveries, typeWebhookEvents)
 	if !ok {
 		return
 	}
-	eventSelection, ok := s.selectFields(w, r, typeWebhookEvents)
+	eventSelection, ok := s.selectFields(w, r, typeWebhookEvents, typeWebhookDeliveries)
 	if !ok {
 		return
 	}
