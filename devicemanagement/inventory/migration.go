@@ -140,7 +140,7 @@ func (r *Repository) Migrate(ctx context.Context, now time.Time) error {
 				return err
 			}
 		}
-		if err := walk(ctx, tx, "job/", func(entry Entry) error {
+		if err := walkJobs(ctx, tx, func(entry Entry) error {
 			var j Job
 			if err := json.Unmarshal(entry.Value, &j); err != nil {
 				return err

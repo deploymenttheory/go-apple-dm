@@ -61,6 +61,9 @@ type tokenInfo struct {
 
 // Server is the fake. Create it with NewServer and Close it when done.
 type Server struct {
+	webhooks      map[string]*testWebhook
+	deliveries    map[string]*testDelivery
+	deliveryOrder []string
 	// URL is the base URL of the API; TokenURL the token endpoint.
 	URL      string
 	TokenURL string
@@ -93,6 +96,7 @@ type Server struct {
 // NewServer starts a fake with an empty organization.
 func NewServer() *Server {
 	s := &Server{
+		webhooks: make(map[string]*testWebhook), deliveries: make(map[string]*testDelivery),
 		now:      time.Now,
 		tokenTTL: DefaultTokenTTL,
 		keys:     map[string]registeredKey{},

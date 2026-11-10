@@ -13,6 +13,9 @@ import (
 
 // Resource type names.
 const (
+	typeWebhooks            = "webhooks"
+	typeWebhookDeliveries   = "webhookDeliveries"
+	typeWebhookEvents       = "webhookEvents"
 	typeOrgDevices          = "orgDevices"
 	typeAppleCareCoverage   = "appleCareCoverage"
 	typeMDMDevices          = "mdmDevices"
@@ -31,6 +34,9 @@ const (
 
 // fields lists the attribute names each type accepts in fields[type].
 var fields = map[string][]string{
+	typeWebhooks:          {"name", "enabled", "eventTypes", "url", "createdDateTime", "updatedDateTime", "deliveries"},
+	typeWebhookDeliveries: {"createdDateTime", "sentDateTime", "deliveryState", "redelivery", "errorMessage", "request", "response", "event"},
+	typeWebhookEvents:     {"eventType", "payload", "isPingEvent", "createdDateTime"},
 	typeOrgDevices: {
 		"serialNumber", "addedToOrgDateTime", "releasedFromOrgDateTime", "updatedDateTime", "deviceModel",
 		"productFamily", "productType", "deviceCapacity", "partNumber", "orderNumber", "color", "status",
@@ -150,8 +156,8 @@ type assignment struct {
 
 // store is the organization's state.
 type store struct {
-	devices, mdmDevices, servers, users, groups, ous, apps, packages, configurations, blueprints, audits *collection
-	assignments                                                                                          map[string]assignment
+	devices, mdmDevices, servers, users, groups, ous, apps, packages, configurations, blueprints, audits, webhooks *collection
+	assignments                                                                                                    map[string]assignment
 }
 
 // newStore allocates the fake service's resource collections.
@@ -160,13 +166,15 @@ func newStore() *store {
 		devices: newCollection(), mdmDevices: newCollection(), servers: newCollection(),
 		users: newCollection(), groups: newCollection(), ous: newCollection(), apps: newCollection(),
 		packages: newCollection(), configurations: newCollection(), blueprints: newCollection(), audits: newCollection(),
-		assignments: map[string]assignment{},
+		assignments: map[string]assignment{}, webhooks: newCollection(),
 	}
 }
 
 // byType returns the collection holding typ.
 func (st *store) byType(typ string) *collection {
 	switch typ {
+	case typeWebhooks:
+		return st.webhooks
 	case typeOrgDevices:
 		return st.devices
 	case typeMDMDevices:

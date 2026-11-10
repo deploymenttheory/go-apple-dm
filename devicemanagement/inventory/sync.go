@@ -59,7 +59,11 @@ func (s *Syncer) RunOne(ctx context.Context) (Job, error) {
 	}
 	c, err := factory(ctx, a, key)
 	if err == nil {
-		err = s.sync(ctx, c, a, &j)
+		if j.Kind == "axm-refresh" {
+			err = s.refresh(ctx, c, a, &j)
+		} else {
+			err = s.sync(ctx, c, a, &j)
+		}
 	}
 	if errors.Is(err, ErrStopped) || errors.Is(err, ErrLease) || ctx.Err() != nil {
 		return j, err

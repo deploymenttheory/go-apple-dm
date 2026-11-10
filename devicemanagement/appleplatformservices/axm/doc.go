@@ -28,6 +28,11 @@
 // API and token endpoint overrides require absolute HTTPS URLs with no user
 // information or fragment. Custom transports own TLS verification policy.
 //
+// Webhook methods manage subscriptions, delivery inspection, redelivery and pings.
+// DecodeWebhookNotification verifies the exact bounded body and preserves original
+// bytes. Hosts own deduplication, durable acknowledgement and refresh policy.
+// Delivery inspection requires both date bounds and explicit event inclusion.
+//
 // # References
 //
 //   - Decision record 0030: https://github.com/deploymenttheory/go-apple-dm/blob/main/docs/research/decisions/0030-apple-business-manager-api-client.md
