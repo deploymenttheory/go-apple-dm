@@ -217,7 +217,7 @@ func (c *Client) exchangeOnce(ctx context.Context) (TokenResponse, error) {
 	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxErrorBody))
 	if err != nil {
-		return TokenResponse{}, &AuthError{Status: resp.StatusCode, Err: fmt.Errorf("%w: %w", ErrTransport, err)}
+		return TokenResponse{}, &AuthError{Status: resp.StatusCode, RetryAfter: parseRetryAfter(resp.Header.Get("Retry-After"), c.clock.Now()), Err: fmt.Errorf("%w: %w", ErrTransport, err)}
 	}
 	if resp.StatusCode != http.StatusOK {
 		ae := &AuthError{Status: resp.StatusCode, Body: body, RetryAfter: parseRetryAfter(resp.Header.Get("Retry-After"), c.clock.Now())}

@@ -442,3 +442,30 @@ func TestSharedTokenWaitBudgetAndCancellation(t *testing.T) {
 		})
 	}
 }
+
+// throttleBrokenBody models a truncated provider body and tracks response ownership.
+type throttleBrokenBody struct{ closed bool }
+
+// Read reports truncation without a complete OAuth error document.
+func (b *throttleBrokenBody) Read([]byte) (int, error) { return 0, io.ErrUnexpectedEOF }
+
+// Close releases the unsuccessful token response.
+func (b *throttleBrokenBody) Close() error { b.closed = true; return nil }
+
+// TestTruncatedTokenThrottlePreservesHeader never retries early when OAuth diagnostics are truncated.
+func TestTruncatedTokenThrottlePreservesHeader(t *testing.T) {
+	t.Parallel()
+	calls := 0
+	body := &throttleBrokenBody{}
+	c := throttleClient(t, func(r *http.Request) (*http.Response, error) {
+		calls++
+		response := throttleResponse(r, 429, "3600", "")
+		response.Body = body
+		return response, nil
+	}, Retry{Max: 3, Base: time.Millisecond, Cap: time.Millisecond, MaxWait: time.Millisecond})
+	_, err := c.Token(t.Context())
+	limit, ok := errors.AsType[*RateLimitError](err)
+	if !ok || limit.RetryAfter < 59*time.Minute || calls != 1 || !body.closed || !errors.Is(err, io.ErrUnexpectedEOF) {
+		t.Fatalf("lost header or body ownership: %v calls=%d closed=%v", err, calls, body.closed)
+	}
+}
