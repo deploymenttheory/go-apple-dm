@@ -306,3 +306,109 @@ func TestAXMWebhookAdministration(t *testing.T) {
 	}
 	remote.Client().Transport = baseTransport
 }
+
+// TestAXMWebhookInterruptedAdministration preserves provisioning intent when credentials
+// or signing keys change across remote calls and when Apple rejects a secret update.
+func TestAXMWebhookInterruptedAdministration(t *testing.T) {
+	for _, tc := range []struct {
+		name, operation, boundary string
+		reject, replace, rotate   bool
+		status                    int
+	}{
+		{"reconcile/account_changed_after_read", "reconcile", "GET", false, true, false, 409},
+		{"reconcile/account_changed_after_update", "reconcile", "PATCH", false, true, false, 409},
+		{"reconcile/signing_key_changed_after_read", "reconcile", "GET", false, false, true, 409},
+		{"reconcile/secret_update_rejected", "reconcile", "PATCH", true, false, false, 502},
+		{"create/account_changed_after_create", "create", "POST", false, true, false, 409},
+		{"create/rejected_after_account_change", "create", "POST", true, true, false, 502},
+		{"get/account_changed_after_read", "get", "GET", false, true, false, 409},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			remote := axmtest.NewServer()
+			t.Cleanup(remote.Close)
+			key := accountTestKey(t)
+			parsed, err := axm.ParseKey(key)
+			if err != nil {
+				t.Fatal(err)
+			}
+			remote.RegisterKey("BUSINESSAPI.webhooks", "kid", &parsed.PublicKey)
+			a, err := Build(t.Context(), Config{Storage: "sqlite", DSN: filepath.Join(t.TempDir(), "server.db"), BootstrapToken: "bootstrap-secret", StorageKeys: []string{"test"}, Secrets: secrets.Static{"test": []byte("0123456789abcdef0123456789abcdef")}, AxM: AxMConfig{HTTPClient: remote.Client()}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { _ = a.Close() })
+			account, err := a.Inventory.SaveAccount(t.Context(), inventory.Account{ID: "apple", Name: "Apple", ClientID: "BUSINESSAPI.webhooks", KeyID: "kid", Enabled: true, BaseURL: remote.URL, TokenURL: remote.TokenURL}, key, time.Now())
+			if err != nil {
+				t.Fatal(err)
+			}
+			root := bootstrapRBAC(t, a)
+			policy := `{"Source":"permit(principal, action in [MDM::Action::\"readBusinessManager\",MDM::Action::\"manageAxMAccounts\"], resource);"}`
+			if w := rbacRequest(a, "PUT", "/policies/webhooks", root, policy); w.Code != 200 {
+				t.Fatal(w.Code, w.Body.String())
+			}
+			create := `{"name":"test","enabled":true,"event_types":["ORG_DEVICE_ATTRIBUTE_CHANGED"],"public_url":"https://mdm.example"}`
+			created := rbacRequest(a, "POST", "/axm/accounts/apple/webhooks", root, create)
+			var binding axmwebhook.Binding
+			if created.Code != 200 || json.Unmarshal(created.Body.Bytes(), &binding) != nil {
+				t.Fatal(created.Code, created.Body.String())
+			}
+			binding, err = a.AXMWebhooks.SetState(t.Context(), binding, "uncertain", binding.RemoteID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			base := remote.Client().Transport
+			boundaries := 0
+			remote.Client().Transport = setupRoundTrip(func(req *http.Request) (*http.Response, error) {
+				if req.Method != tc.boundary || !strings.HasPrefix(req.URL.Path, "/v1/webhooks") {
+					return base.RoundTrip(req)
+				}
+				boundaries++
+				var response *http.Response
+				var err error
+				if tc.reject {
+					response = &http.Response{StatusCode: 403, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(`{"errors":[{"status":"403","code":"PRIVATE_DIAGNOSTIC"}]}`)), Request: req}
+				} else {
+					response, err = base.RoundTrip(req)
+				}
+				if err != nil {
+					return response, err
+				}
+				if tc.replace {
+					if _, err := a.Inventory.SaveAccount(req.Context(), account, key, time.Now()); err != nil {
+						t.Fatal(err)
+					}
+				}
+				if tc.rotate {
+					if _, err := a.AXMWebhooks.Rotate(req.Context(), binding, 0); err != nil {
+						t.Fatal(err)
+					}
+				}
+				return response, nil
+			})
+			method, path, body := "POST", "/axm/accounts/apple/webhook-bindings/"+binding.ID+"/reconcile", `{"remote_id":"`+binding.RemoteID+`"}`
+			switch tc.operation {
+			case "create":
+				path, body = "/axm/accounts/apple/webhooks", create
+			case "get":
+				method, path, body = "GET", "/axm/accounts/apple/webhooks/"+binding.ID, ""
+			}
+			w := rbacRequest(a, method, path, root, body)
+			if w.Code != tc.status || boundaries != 1 || strings.Contains(w.Body.String(), "PRIVATE_DIAGNOSTIC") {
+				t.Fatal("unsafe remote result", w.Code, boundaries, w.Body.String())
+			}
+			bindings, err := a.AXMWebhooks.Bindings(t.Context(), account.ID, "")
+			wantBindings := 1
+			if tc.operation == "create" {
+				wantBindings = 2
+			}
+			if err != nil || len(bindings) != wantBindings {
+				t.Fatal("provisioning intent lost", len(bindings), err)
+			}
+			for _, current := range bindings {
+				if current.State == "active" {
+					t.Fatal("interrupted operation activated subscription")
+				}
+			}
+		})
+	}
+}
