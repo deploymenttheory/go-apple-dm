@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.9](https://github.com/deploymenttheory/go-apple-dm/compare/v0.8.8...v0.8.9) (2026-11-11)
+
+
+### Features
+
+* **axm:** add webhook-driven inventory refresh ([#428](https://github.com/deploymenttheory/go-apple-dm/issues/428)) ([33a94c7](https://github.com/deploymenttheory/go-apple-dm/commit/33a94c715ea85b41a7e4073e6f9e229c8db8816d))
+
 ## [0.8.8](https://github.com/deploymenttheory/go-apple-dm/compare/v0.8.7...v0.8.8) (2026-11-04)
 
 
