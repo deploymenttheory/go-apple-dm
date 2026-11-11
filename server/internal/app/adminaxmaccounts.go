@@ -18,6 +18,7 @@ import (
 type accountRemoteError struct {
 	status   int
 	category string
+	retryAt  time.Time
 }
 
 // Error returns only the reviewed administrative category.
@@ -27,25 +28,49 @@ func (e *accountRemoteError) Error() string { return "axm: " + e.category }
 func accountFailure(err error) *accountRemoteError {
 	category := "connection_failed"
 	var api *axm.Error
+	var auth *axm.AuthError
 	switch {
+	case axm.IsRateLimited(err):
+		category = "rate_limited"
 	case axm.IsUnauthorized(err):
 		category = "authentication_failed"
 	case errors.As(err, &api) && api.Status == http.StatusForbidden:
 		category = "permission_denied"
 	case axm.IsNotFound(err):
 		category = "resource_not_found"
-	case axm.IsRateLimited(err):
-		category = "rate_limited"
 	}
-	return &accountRemoteError{status: axmStatus(err), category: category}
+	out := &accountRemoteError{status: axmStatus(err), category: category}
+	if limited, ok := errors.AsType[*axm.RateLimitError](err); ok {
+		out.retryAt = limited.RetryAt
+	} else if category == "rate_limited" {
+		var after time.Duration
+		if errors.As(err, &auth) {
+			after = auth.RetryAfter
+		} else if errors.As(err, &api) {
+			after = api.RetryAfter
+		}
+		if after > 0 {
+			out.retryAt = time.Now().Add(after)
+		}
+	}
+	return out
 }
 
 // accountClient always reads the selected account's current credential. Neither a
 // missing account nor a revoked credential can fall back to the startup client.
 func (a *App) accountClient(ctx context.Context, id string) (*axm.Client, func() error, error) {
+	return a.accountClientAt(ctx, id, 0, time.Time{})
+}
+
+// accountClientAt checks an optional expected account incarnation before opening
+// a connector, then fences results against the same metadata and key snapshot.
+func (a *App) accountClientAt(ctx context.Context, id string, revision int64, created time.Time) (*axm.Client, func() error, error) {
 	account, key, err := a.accountSnapshot(ctx, id)
 	if err != nil {
 		return nil, nil, err
+	}
+	if revision != 0 && (account.Revision != revision || !account.CreatedAt.Equal(created)) {
+		return nil, nil, inventory.ErrConflict
 	}
 	if !account.Enabled {
 		return nil, nil, &accountRemoteError{status: http.StatusConflict, category: "account_disabled"}

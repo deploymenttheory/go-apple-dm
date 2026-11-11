@@ -59,7 +59,17 @@ func (s *Syncer) RunOne(ctx context.Context) (Job, error) {
 	}
 	c, err := factory(ctx, a, key)
 	if err == nil {
-		err = s.sync(ctx, c, a, &j)
+		if j.Kind == "axm-refresh" {
+			err = s.refresh(ctx, c, a, &j)
+		} else {
+			err = s.sync(ctx, c, a, &j)
+		}
+	}
+	if axm.IsRateLimited(err) && !errors.Is(err, ErrStopped) && !errors.Is(err, ErrLease) {
+		bookkeeping, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+		defer cancel()
+		saveErr := r.deferThrottled(bookkeeping, &j, err)
+		return j, errors.Join(err, saveErr)
 	}
 	if errors.Is(err, ErrStopped) || errors.Is(err, ErrLease) || ctx.Err() != nil {
 		return j, err
@@ -249,7 +259,7 @@ func (s *Syncer) enrich(ctx context.Context, c *axm.Client, a Account, j *Job, d
 		if errors.As(err, &local) {
 			return local.error
 		}
-		if axm.IsUnauthorized(err) {
+		if axm.IsRateLimited(err) || axm.IsUnauthorized(err) {
 			return err
 		}
 		j.Failed++
@@ -400,6 +410,9 @@ func (s *Syncer) enrich(ctx context.Context, c *axm.Client, a Account, j *Job, d
 
 // errorCode classifies failures without persisting response bodies or connection identifiers.
 func errorCode(err error) string {
+	if axm.IsRateLimited(err) {
+		return "apple_rate_limited"
+	}
 	var api *axm.Error
 	if errors.As(err, &api) {
 		return fmt.Sprintf("apple_http_%d", api.Status)
@@ -439,6 +452,9 @@ func (s *Syncer) appleMDM(ctx context.Context, c *axm.Client, a Account, j *Job)
 		return found, nil
 	})
 	if err != nil {
+		if axm.IsRateLimited(err) {
+			return err
+		}
 		j.Failed++
 		j.Error = errorCode(err)
 		return r.commitJob(ctx, j, nil)
@@ -463,6 +479,9 @@ func (s *Syncer) appleMDM(ctx context.Context, c *axm.Client, a Account, j *Job)
 			return c.ListMDMDevices(ctx, axm.ListOptions{Limit: 1000})
 		})
 		if err != nil {
+			if axm.IsRateLimited(err) {
+				return err
+			}
 			j.Failed++
 			j.Error = errorCode(err)
 			return r.commitJob(ctx, j, nil)
@@ -489,6 +508,9 @@ func (s *Syncer) appleMDM(ctx context.Context, c *axm.Client, a Account, j *Job)
 				return c.GetMDMDeviceDetails(ctx, device.ID, axm.GetOptions{})
 			})
 			if err != nil {
+				if axm.IsRateLimited(err) {
+					return err
+				}
 				j.Failed++
 				continue
 			}

@@ -155,6 +155,8 @@ func (c Collector) Step(ctx context.Context, req Request, before Checkpoint, sin
 		var api *axm.Error
 		if errors.As(err, &api) {
 			batch.Outcome.HTTPStatus = api.Status
+		} else if axm.IsRateLimited(err) {
+			batch.Outcome.HTTPStatus = 429
 		}
 	}
 	if saveErr := sink.Commit(ctx, batch); saveErr != nil {
@@ -210,6 +212,9 @@ func (c Collector) validate(req Request, cp Checkpoint, sink Sink) error {
 
 // failure classifies attempts without retaining potentially sensitive error text.
 func failure(err error) string {
+	if axm.IsRateLimited(err) {
+		return "rate_limited"
+	}
 	var api *axm.Error
 	if errors.As(err, &api) {
 		return fmt.Sprintf("apple_http_%d", api.Status)

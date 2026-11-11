@@ -1,6 +1,6 @@
 module github.com/deploymenttheory/go-apple-dm/server
 
-go 1.27.3
+go 1.27.4
 
 require (
 	cloud.google.com/go/storage v1.70.0
@@ -10,7 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.33.6
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.6
 	github.com/cedar-policy/cedar-go v1.8.0
-	github.com/deploymenttheory/go-apple-dm v0.8.8-0.20261027141321-34bc3ba4b372
+	github.com/deploymenttheory/go-apple-dm v0.8.8-0.20261111115414-7f27c0353715
 	github.com/deploymenttheory/go-macos-pkg v0.7.3
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/jackc/pgx/v5 v5.11.0
@@ -77,7 +77,7 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
-	github.com/klauspost/compress v1.19.2 // indirect
+	github.com/klauspost/compress v1.20.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect

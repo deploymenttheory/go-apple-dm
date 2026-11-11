@@ -372,7 +372,7 @@ func TestActivityDownloadRetry(t *testing.T) {
 			}
 			delays := f.clock.recorded()
 			if tc.name == "mixed retries" {
-				if len(delays) != 3 || delays[0] < time.Second/2 || delays[0] >= time.Second*3/2 || delays[1] != 7*time.Second || delays[2] < 2*time.Second || delays[2] >= 6*time.Second {
+				if len(delays) != 3 || delays[0] < time.Second/2 || delays[0] >= time.Second*3/2 || (delays[1] < 6990*time.Millisecond || delays[1] > 7*time.Second) || delays[2] < 2*time.Second || delays[2] >= 6*time.Second {
 					t.Fatalf("backoff and Retry-After not honored: %v", delays)
 				}
 			}
@@ -399,6 +399,7 @@ func TestActivityDownloadRetryCancellation(t *testing.T) {
 	retryClock := &activityRetryClock{cancel: cancel}
 	c := f.client(t, func(cfg *Config) {
 		cfg.Clock = retryClock
+		cfg.Retry.MaxWait = 2 * time.Minute
 		cfg.HTTPClient = &http.Client{Transport: activityTransport(func(r *http.Request) (*http.Response, error) {
 			calls++
 			return &http.Response{StatusCode: http.StatusTooManyRequests, Header: http.Header{"Retry-After": []string{"60"}}, Body: io.NopCloser(strings.NewReader("secret")), Request: r}, nil

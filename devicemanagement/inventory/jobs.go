@@ -4,32 +4,40 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"slices"
 	"strings"
 	"time"
+
+	"github.com/deploymenttheory/go-apple-dm/devicemanagement/appleplatformservices/axm/collection"
 )
 
 // Job persists progress independently of a worker process. Counters count committed work.
 type Job struct {
-	ID               string          `json:"id"`
-	Generation       string          `json:"generation"`
-	AccountID        string          `json:"account_id,omitempty"`
-	Revision         int64           `json:"revision"`
-	Kind             string          `json:"kind"`
-	State            string          `json:"state"`
-	Stage            string          `json:"stage"`
-	Cursor           string          `json:"cursor,omitempty"`
-	Checkpoint       json.RawMessage `json:"checkpoint,omitempty"`
-	CreatedAt        time.Time       `json:"created_at"`
-	UpdatedAt        time.Time       `json:"updated_at"`
-	FinishedAt       *time.Time      `json:"finished_at,omitempty"`
-	Devices          int             `json:"devices"`
-	Coverage         int             `json:"coverage"`
-	CoverageAttempts int             `json:"coverage_attempts"`
-	Failed           int             `json:"failed"`
-	Error            string          `json:"error,omitempty"`
-	Force            bool            `json:"force"`
-	Owner            string          `json:"-"`
-	LeaseUntil       time.Time       `json:"-"`
+	// RetryAt defers throttled work without marking it finished.
+	RetryAt          time.Time              `json:"retry_at,omitzero"`
+	ResourceID       string                 `json:"resource_id,omitempty"`
+	Operations       []collection.Operation `json:"operations,omitempty"`
+	AccountCreatedAt time.Time              `json:"account_created_at,omitzero"`
+	ID               string                 `json:"id"`
+	Generation       string                 `json:"generation"`
+	AccountID        string                 `json:"account_id,omitempty"`
+	Revision         int64                  `json:"revision"`
+	Kind             string                 `json:"kind"`
+	State            string                 `json:"state"`
+	Stage            string                 `json:"stage"`
+	Cursor           string                 `json:"cursor,omitempty"`
+	Checkpoint       json.RawMessage        `json:"checkpoint,omitempty"`
+	CreatedAt        time.Time              `json:"created_at"`
+	UpdatedAt        time.Time              `json:"updated_at"`
+	FinishedAt       *time.Time             `json:"finished_at,omitempty"`
+	Devices          int                    `json:"devices"`
+	Coverage         int                    `json:"coverage"`
+	CoverageAttempts int                    `json:"coverage_attempts"`
+	Failed           int                    `json:"failed"`
+	Error            string                 `json:"error,omitempty"`
+	Force            bool                   `json:"force"`
+	Owner            string                 `json:"-"`
+	LeaseUntil       time.Time              `json:"-"`
 }
 
 type lease struct {
@@ -54,7 +62,7 @@ func (r *Repository) Enqueue(ctx context.Context, account string, force bool, no
 			if e := json.Unmarshal(e.Value, &j); e != nil {
 				return e
 			}
-			if j.AccountID == account && j.Revision == a.Revision && (j.State == "queued" || j.State == "running" || j.State == "paused") {
+			if j.Kind == "axm" && j.AccountID == account && j.Revision == a.Revision && (j.State == "queued" || j.State == "running" || j.State == "paused" || j.State == "deferred") {
 				out = j
 			}
 			return nil
@@ -65,30 +73,36 @@ func (r *Repository) Enqueue(ctx context.Context, account string, force bool, no
 		if out.ID != "" {
 			return nil
 		}
-		out = Job{ID: ID(), Generation: ID(), AccountID: account, Revision: a.Revision, Kind: "axm", State: "queued", Stage: "devices", CreatedAt: now, UpdatedAt: now, Force: force}
-		return put(ctx, tx, "job/"+out.ID, out)
+		out = Job{ID: ID(), Generation: ID(), AccountID: account, Revision: a.Revision, AccountCreatedAt: a.CreatedAt, Kind: "axm", State: "queued", Stage: "devices", CreatedAt: now, UpdatedAt: now, Force: force}
+		return put(ctx, tx, jobKey(out.Kind, out.ID), out)
 	})
 	return out, err
 }
 
 // Job returns durable progress.
 func (r *Repository) Job(ctx context.Context, id string) (Job, error) {
-	return get[Job](ctx, r.Backend, "job/"+id)
+	return readJob(ctx, r.Backend, id)
 }
 
 // Jobs returns bounded job metadata ordered by key. Cursor is the last ID seen.
 func (r *Repository) Jobs(ctx context.Context, after string, limit int) ([]Job, error) {
-	es, err := r.Backend.Scan(ctx, "job/", "job/"+after, limit)
-	if err != nil {
-		return nil, err
-	}
 	out := []Job{}
-	for _, e := range es {
-		var j Job
-		if err := json.Unmarshal(e.Value, &j); err != nil {
+	for _, prefix := range []string{"job/", "axm-refresh-job/"} {
+		entries, err := r.Backend.Scan(ctx, prefix, prefix+after, limit)
+		if err != nil {
 			return nil, err
 		}
-		out = append(out, j)
+		for _, entry := range entries {
+			var job Job
+			if err := json.Unmarshal(entry.Value, &job); err != nil {
+				return nil, err
+			}
+			out = append(out, job)
+		}
+	}
+	slices.SortFunc(out, func(a, b Job) int { return strings.Compare(a.ID, b.ID) })
+	if len(out) > limit {
+		out = out[:limit]
 	}
 	return out, nil
 }
@@ -96,13 +110,13 @@ func (r *Repository) Jobs(ctx context.Context, after string, limit int) ([]Job, 
 // Control pauses, resumes, or cancels a job. A running worker is fenced at its next commit.
 func (r *Repository) Control(ctx context.Context, id, action string, now time.Time) error {
 	return r.Backend.Update(ctx, func(tx Tx) error {
-		j, e := get[Job](ctx, tx, "job/"+id)
+		j, e := readJob(ctx, tx, id)
 		if e != nil {
 			return e
 		}
 		switch action {
 		case "pause":
-			if j.State != "running" && j.State != "queued" {
+			if j.State != "running" && j.State != "queued" && j.State != "deferred" {
 				return ErrConflict
 			}
 			j.State = "paused"
@@ -122,7 +136,7 @@ func (r *Repository) Control(ctx context.Context, id, action string, now time.Ti
 		}
 		// Keep the lease until the worker acknowledges the stop, avoiding overlapping Apple requests.
 		j.UpdatedAt = now
-		return put(ctx, tx, "job/"+id, j)
+		return put(ctx, tx, jobKey(j.Kind, j.ID), j)
 	})
 }
 
@@ -137,12 +151,19 @@ func (r *Repository) claim(ctx context.Context, owner string, now time.Time) (Jo
 		if l.Until.After(now) {
 			return ErrLease
 		}
-		e = walk(ctx, tx, "job/", func(e Entry) error {
+		e = walkJobs(ctx, tx, func(e Entry) error {
 			var j Job
 			if err := json.Unmarshal(e.Value, &j); err != nil {
 				return err
 			}
-			if j.State == "queued" || j.State == "running" {
+			if j.State == "queued" || j.State == "running" || j.State == "deferred" {
+				ready, err := readyJob(ctx, tx, j, now)
+				if err != nil {
+					return err
+				}
+				if !ready {
+					return nil
+				}
 				if out.ID == "" || j.CreatedAt.Before(out.CreatedAt) {
 					out = j
 				}
@@ -159,10 +180,19 @@ func (r *Repository) claim(ctx context.Context, owner string, now time.Time) (Jo
 		if e != nil && !errors.Is(e, ErrNotFound) {
 			return e
 		}
-		if e != nil || !a.Enabled || a.Revision != out.Revision {
+		if e != nil || !a.Enabled || a.Revision != out.Revision || (!out.AccountCreatedAt.IsZero() && !out.AccountCreatedAt.Equal(a.CreatedAt)) {
 			out.State = "cancelled"
 			out.FinishedAt = &now
-			return put(ctx, tx, "job/"+out.ID, out)
+			return put(ctx, tx, jobKey(out.Kind, out.ID), out)
+		}
+		if out.Kind == "axm-refresh" && !out.RetryAt.IsZero() {
+			// A targeted retry reads all requested operations again in the same generation.
+			// Counters describe that completed pass; retained failed attempts remain evidence.
+			out.Devices, out.Coverage, out.Failed = 0, 0, 0
+		}
+		out.RetryAt = time.Time{}
+		if out.Error == "apple_rate_limited" {
+			out.Error = ""
 		}
 		out.State = "running"
 		out.Owner = owner
@@ -172,7 +202,7 @@ func (r *Repository) claim(ctx context.Context, owner string, now time.Time) (Jo
 			return e
 		}
 		// Private lease fields are persisted separately, not exposed in job JSON.
-		return put(ctx, tx, "job/"+out.ID, out)
+		return put(ctx, tx, jobKey(out.Kind, out.ID), out)
 	})
 	return out, err
 }
@@ -188,7 +218,7 @@ func (r *Repository) commitJob(ctx context.Context, j *Job, fn func(Tx) error) e
 		if l.JobID != j.ID || l.Owner != j.Owner || !l.Until.After(now) {
 			return ErrLease
 		}
-		old, e := get[Job](ctx, tx, "job/"+j.ID)
+		old, e := get[Job](ctx, tx, jobKey(j.Kind, j.ID))
 		if e != nil {
 			return e
 		}
@@ -199,7 +229,7 @@ func (r *Repository) commitJob(ctx context.Context, j *Job, fn func(Tx) error) e
 		if e != nil {
 			return e
 		}
-		if a.Revision != j.Revision || !a.Enabled {
+		if a.Revision != j.Revision || !a.Enabled || (!j.AccountCreatedAt.IsZero() && !j.AccountCreatedAt.Equal(a.CreatedAt)) {
 			return ErrStopped
 		}
 		if fn != nil {
@@ -212,7 +242,7 @@ func (r *Repository) commitJob(ctx context.Context, j *Job, fn func(Tx) error) e
 		if e := put(ctx, tx, "lease/axm", l); e != nil {
 			return e
 		}
-		return put(ctx, tx, "job/"+j.ID, j)
+		return put(ctx, tx, jobKey(j.Kind, j.ID), j)
 	})
 }
 
@@ -241,7 +271,7 @@ func (r *Repository) DeleteAccount(ctx context.Context, id string, revision int6
 		if a.Revision != revision {
 			return ErrConflict
 		}
-		if e := walk(ctx, tx, "job/", func(entry Entry) error {
+		if e := walkJobs(ctx, tx, func(entry Entry) error {
 			var j Job
 			if e := json.Unmarshal(entry.Value, &j); e != nil {
 				return e
@@ -285,7 +315,7 @@ func (r *Repository) DeleteAccount(ctx context.Context, id string, revision int6
 func (r *Repository) CancelAll(ctx context.Context, now time.Time) (int, error) {
 	count := 0
 	err := r.Backend.Update(ctx, func(tx Tx) error {
-		return walk(ctx, tx, "job/", func(entry Entry) error {
+		return walkJobs(ctx, tx, func(entry Entry) error {
 			var j Job
 			if err := json.Unmarshal(entry.Value, &j); err != nil {
 				return err
@@ -304,4 +334,29 @@ func (r *Repository) CancelAll(ctx context.Context, now time.Time) (int, error) 
 		})
 	})
 	return count, err
+}
+
+// jobKey isolates targeted work from older workers that only understand full sync.
+func jobKey(kind, id string) string {
+	if kind == "axm-refresh" {
+		return "axm-refresh-job/" + id
+	}
+	return "job/" + id
+}
+
+// readJob preserves the existing public job-ID addressing across both queues.
+func readJob(ctx context.Context, r Reader, id string) (Job, error) {
+	job, err := get[Job](ctx, r, "job/"+id)
+	if errors.Is(err, ErrNotFound) {
+		return get[Job](ctx, r, "axm-refresh-job/"+id)
+	}
+	return job, err
+}
+
+// walkJobs enumerates both queues without exposing targeted work to old workers.
+func walkJobs(ctx context.Context, r Reader, fn func(Entry) error) error {
+	if err := walk(ctx, r, "job/", fn); err != nil {
+		return err
+	}
+	return walk(ctx, r, "axm-refresh-job/", fn)
 }

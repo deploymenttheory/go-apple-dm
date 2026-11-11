@@ -649,7 +649,7 @@ func TestTokenCache(t *testing.T) {
 		f := newFixture(t)
 		c := f.client(t, nil)
 		c.mu.Lock()
-		c.inflight = make(chan struct{})
+		c.inflight = &tokenExchange{done: make(chan struct{})}
 		c.mu.Unlock()
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()

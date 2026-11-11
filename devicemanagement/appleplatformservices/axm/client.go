@@ -39,12 +39,14 @@ const (
 )
 
 // Retry bounds the retry policy: Max attempts after the first, Base the
-// first backoff, Cap the largest backoff. A 429 waits for Retry-After
+// first backoff, Cap the largest backoff before jitter. MaxWait bounds cumulative throttle waiting
+// per call (zero uses DefaultThrottleWait). A 429 waits for Retry-After
 // instead of backing off.
 type Retry struct {
-	Max  int
-	Base time.Duration
-	Cap  time.Duration
+	Max     int
+	Base    time.Duration
+	Cap     time.Duration
+	MaxWait time.Duration
 }
 
 // DefaultRetry is used when Config.Retry is zero.
@@ -104,10 +106,10 @@ type Client struct {
 	clock clock.Clock
 	log   *slog.Logger
 
-	mu       sync.Mutex
-	tok      cachedToken
-	inflight chan struct{}
-	exchErr  error
+	mu        sync.Mutex
+	tok       cachedToken
+	inflight  *tokenExchange
+	cooldowns [3]cooldown
 }
 
 // New validates cfg, resolves the private key, and returns a Client. No
@@ -174,6 +176,12 @@ func New(ctx context.Context, cfg Config) (*Client, error) {
 	}
 	if cfg.Retry == (Retry{}) {
 		cfg.Retry = DefaultRetry
+	}
+	if cfg.Retry.MaxWait < 0 {
+		return nil, fmt.Errorf("%w: Retry.MaxWait must not be negative", ErrConfig)
+	}
+	if cfg.Retry.MaxWait == 0 {
+		cfg.Retry.MaxWait = DefaultThrottleWait
 	}
 	if cfg.Retry.Max < 0 {
 		return nil, fmt.Errorf("%w: Retry.Max must not be negative", ErrConfig)
@@ -331,11 +339,19 @@ func (c *Client) roundTrip(ctx context.Context, r request) (*http.Response, erro
 	}
 	retryable := r.opts.idempotent || r.method != http.MethodPost
 	attempt, replayed := 0, false
+	budget := c.throttleBudget()
 	for {
-		tok, err := c.token(ctx, "")
+		if err := c.awaitLimit(ctx, apiThrottle, budget); err != nil {
+			return nil, err
+		}
+		tok, err := c.tokenWithBudget(ctx, "", budget)
 		if err != nil {
 			return nil, err
 		}
+		if err := c.awaitLimit(ctx, apiThrottle, budget); err != nil {
+			return nil, err
+		}
+		sequence := c.limitSequence(apiThrottle)
 		resp, err := c.send(ctx, r, target, payload, tok)
 		if err != nil {
 			if ctx.Err() != nil {
@@ -351,11 +367,13 @@ func (c *Client) roundTrip(ctx context.Context, r request) (*http.Response, erro
 			continue
 		}
 		if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
+			c.clearLimit(apiThrottle, sequence)
 			return resp, nil
 		}
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxErrorBody))
 		_ = resp.Body.Close()
 		apiErr := newError(resp, body)
+		apiErr.RetryAfter = parseRetryAfter(resp.Header.Get("Retry-After"), c.clock.Now())
 		switch {
 		case resp.StatusCode == http.StatusUnauthorized:
 			if !replayed {
@@ -373,17 +391,11 @@ func (c *Client) roundTrip(ctx context.Context, r request) (*http.Response, erro
 			}
 			return nil, &AuthError{Status: resp.StatusCode, Body: body, Err: apiErr}
 		case resp.StatusCode == http.StatusTooManyRequests:
+			limited := c.limit(apiThrottle, apiErr.RetryAfter, apiErr)
 			if !retryable || attempt >= c.cfg.Retry.Max {
-				return nil, apiErr
+				return nil, limited
 			}
 			attempt++
-			delay := parseRetryAfter(resp.Header.Get("Retry-After"), c.clock.Now())
-			if delay == 0 {
-				delay = c.backoff(attempt)
-			}
-			if err := c.wait(ctx, delay, "429", apiErr); err != nil {
-				return nil, err
-			}
 		case resp.StatusCode >= http.StatusInternalServerError:
 			if !retryable || attempt >= c.cfg.Retry.Max {
 				return nil, apiErr
@@ -445,7 +457,11 @@ func (c *Client) invalidate(tok string) {
 func (c *Client) backoff(attempt int) time.Duration {
 	d := c.cfg.Retry.Base
 	for i := 1; i < attempt && d < c.cfg.Retry.Cap; i++ {
-		d *= 2
+		if d > c.cfg.Retry.Cap/2 {
+			d = c.cfg.Retry.Cap
+		} else {
+			d *= 2
+		}
 	}
 	if d > c.cfg.Retry.Cap {
 		d = c.cfg.Retry.Cap

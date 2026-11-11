@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -189,8 +190,8 @@ type oauthError struct {
 // maxErrorBody bounds how much of an error body is kept.
 const maxErrorBody = 64 << 10
 
-// exchange posts the client assertion to the token endpoint.
-func (c *Client) exchange(ctx context.Context) (TokenResponse, error) {
+// exchangeOnce posts one fresh client assertion to the token endpoint.
+func (c *Client) exchangeOnce(ctx context.Context) (TokenResponse, error) {
 	assertion, err := Assertion(c.key, c.cfg.ClientID, c.cfg.KeyID, c.clock.Now(), c.cfg.AssertionTTL, c.cfg.ClockSkew)
 	if err != nil {
 		return TokenResponse{}, &AuthError{Err: err}
@@ -216,10 +217,10 @@ func (c *Client) exchange(ctx context.Context) (TokenResponse, error) {
 	defer func(body io.Closer) { _ = body.Close() }(resp.Body)
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxErrorBody))
 	if err != nil {
-		return TokenResponse{}, &AuthError{Status: resp.StatusCode, Err: fmt.Errorf("%w: %w", ErrTransport, err)}
+		return TokenResponse{}, &AuthError{Status: resp.StatusCode, RetryAfter: parseRetryAfter(resp.Header.Get("Retry-After"), c.clock.Now()), Err: fmt.Errorf("%w: %w", ErrTransport, err)}
 	}
 	if resp.StatusCode != http.StatusOK {
-		ae := &AuthError{Status: resp.StatusCode, Body: body}
+		ae := &AuthError{Status: resp.StatusCode, Body: body, RetryAfter: parseRetryAfter(resp.Header.Get("Retry-After"), c.clock.Now())}
 		var oe oauthError
 		if json.Unmarshal(body, &oe) == nil {
 			ae.Code, ae.Description = oe.Error, oe.Description
@@ -254,15 +255,46 @@ func (c *Client) Token(ctx context.Context) (string, error) {
 // token a 401 just rejected), in which case one caller exchanges while the
 // others wait for its result.
 func (c *Client) token(ctx context.Context, invalid string) (string, error) {
-	c.mu.Lock()
-	if tok := c.tok; tok.value != "" && tok.value != invalid && c.clock.Now().Before(tok.renewAt) {
+	return c.tokenWithBudget(ctx, invalid, c.throttleBudget())
+}
+
+// tokenWithBudget shares a refresh and accounts for this caller's remaining wait allowance.
+func (c *Client) tokenWithBudget(ctx context.Context, invalid string, budget *throttleBudget) (string, error) {
+	for {
+		if err := ctx.Err(); err != nil {
+			return "", c.tokenWaitError(err)
+		}
+		c.mu.Lock()
+		if tok := c.tok; tok.value != "" && tok.value != invalid && c.clock.Now().Before(tok.renewAt) {
+			c.mu.Unlock()
+			return tok.value, nil
+		}
+		if c.inflight != nil {
+			exchange := c.inflight
+			c.mu.Unlock()
+			waitContext, cancel := context.WithTimeout(ctx, budget.remaining)
+			started := time.Now()
+			select {
+			case <-exchange.done:
+			case <-waitContext.Done():
+				cause := waitContext.Err()
+				if ctx.Err() == nil {
+					cause = errRetryBudget
+				}
+				cancel()
+				return "", c.tokenWaitError(cause)
+			}
+			cancel()
+			budget.remaining -= min(budget.remaining, time.Since(started))
+			if (errors.Is(exchange.err, context.Canceled) || errors.Is(exchange.err, context.DeadlineExceeded)) && ctx.Err() == nil {
+				continue
+			}
+			return exchange.value, exchange.err
+		}
+		exchange := &tokenExchange{done: make(chan struct{})}
+		c.inflight = exchange
 		c.mu.Unlock()
-		return tok.value, nil
-	}
-	if c.inflight == nil {
-		c.inflight = make(chan struct{})
-		c.mu.Unlock()
-		tr, err := c.exchange(ctx)
+		tr, err := c.exchange(ctx, budget)
 		c.mu.Lock()
 		if err == nil {
 			now := c.clock.Now()
@@ -274,29 +306,36 @@ func (c *Client) token(ctx context.Context, invalid string) (string, error) {
 			c.tok = cachedToken{value: tr.AccessToken, expires: now.Add(ttl), renewAt: now.Add(renew)}
 			c.log.DebugContext(ctx, "axm: token exchanged", "scope", tr.Scope, "expires_in", tr.ExpiresIn)
 		}
-		c.exchErr = err
-		close(c.inflight)
+		exchange.value, exchange.err = tr.AccessToken, err
+		close(exchange.done)
 		c.inflight = nil
 		c.mu.Unlock()
-		if err != nil {
-			return "", err
+		return exchange.value, exchange.err
+	}
+}
+
+// exchange retries only explicit OAuth throttling; it never sends the protected
+// API operation. Each attempt mints a fresh assertion and closes its response.
+func (c *Client) exchange(ctx context.Context, budget *throttleBudget) (TokenResponse, error) {
+	for attempt := 0; ; attempt++ {
+		if err := c.awaitLimit(ctx, tokenThrottle, budget); err != nil {
+			return TokenResponse{}, err
 		}
-		return tr.AccessToken, nil
+		sequence := c.limitSequence(tokenThrottle)
+		tr, err := c.exchangeOnce(ctx)
+		if err == nil {
+			c.clearLimit(tokenThrottle, sequence)
+			return tr, nil
+		}
+		var auth *AuthError
+		if !errors.As(err, &auth) || auth.Status != http.StatusTooManyRequests {
+			return tr, err
+		}
+		limited := c.limit(tokenThrottle, auth.RetryAfter, auth)
+		if attempt >= c.cfg.Retry.Max {
+			return TokenResponse{}, limited
+		}
 	}
-	wait := c.inflight
-	c.mu.Unlock()
-	select {
-	case <-wait:
-	case <-ctx.Done():
-		return "", fmt.Errorf("%w: waiting for token: %w", ErrTransport, ctx.Err())
-	}
-	c.mu.Lock()
-	tok, err := c.tok, c.exchErr
-	c.mu.Unlock()
-	if err != nil {
-		return "", err
-	}
-	return tok.value, nil
 }
 
 // ForceRefresh drops the cached token so the next request exchanges a new

@@ -51,6 +51,11 @@ per-attempt bookkeeping do not recursively produce webhook occurrences.
 In-memory applications can still use ephemeral slog,
 audit and direct bus subscribers; managed webhooks require persistent encrypted SQL.
 
+Incoming Apple AXM callbacks are provider protocol data, verified by the AXM library
+and composed into receipt/refresh workflows by the server. Their payload and HMAC
+contract are independent of the native outgoing envelope described here. See
+[AXM callbacks](../../operations/axm-webhooks.md).
+
 ## Rationale
 
 Audit projections and sensitive workflow export have different disclosure contracts.

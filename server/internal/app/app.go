@@ -46,6 +46,7 @@ import (
 	"github.com/deploymenttheory/go-apple-dm/server/apppush"
 	"github.com/deploymenttheory/go-apple-dm/server/audit"
 	"github.com/deploymenttheory/go-apple-dm/server/axmassignment"
+	"github.com/deploymenttheory/go-apple-dm/server/axmwebhook"
 	"github.com/deploymenttheory/go-apple-dm/server/blueprints"
 	"github.com/deploymenttheory/go-apple-dm/server/configurationprofile"
 	"github.com/deploymenttheory/go-apple-dm/server/ddmadapter/inproc"
@@ -228,9 +229,11 @@ type App struct {
 	Store                 storage.Store
 	keyring               *crypt.Keyring
 	// AxM is the Business Manager client when configured.
-	AxM         *axm.Client
-	Inventory   *inventory.Repository
-	Assignments *axmassignment.Controller
+	AxM              *axm.Client
+	Inventory        *inventory.Repository
+	Assignments      *axmassignment.Controller
+	AXMWebhooks      *axmwebhook.Coordinator
+	inventoryClients inventoryClientPool
 	// DEP is the device enrollment service when configured.
 	DEP *dep.Client
 	// Push wakes devices; nil when no push source is configured.
@@ -691,6 +694,9 @@ func (a *App) wire(ctx context.Context) error {
 		pusher = a.Push
 	}
 	mux := http.NewServeMux()
+	if a.AXMWebhooks != nil {
+		mux.HandleFunc("POST "+axmwebhook.CallbackPath+"{binding}", a.axmWebhookNotification)
+	}
 	if a.AppsBooks != nil {
 		mux.HandleFunc("POST /appsbooks/notifications/{location}", a.appsBooksNotification)
 	}

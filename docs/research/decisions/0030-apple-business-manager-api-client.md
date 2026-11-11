@@ -8,6 +8,23 @@ The Apple School Manager and Apple Business Manager APIs use ES256 client assert
 
 `axm.Client` provides typed resource and relationship methods, explicit single-page results and opt-in iteration. Authentication accepts P-256 keys, creates time-bounded assertions and coordinates cached token refresh. An API 401 triggers one replay; retries for rate limits and transient failures are bounded, with POST retry requiring an explicit safe option.
 
+OAuth HTTP 429 responses use bounded retries with fresh assertions. Shared client
+cooldowns coordinate concurrent and subsequent callers independently for the token
+endpoint, API and presigned activity downloads. `Retry.MaxWait` bounds cooldown and
+shared-token waiting, defaulting to 30 seconds; server Retry-After guidance is never
+shortened to fit that budget. A structured `RateLimitError` exposes endpoint and
+retry timing, retains the original typed failure/cancellation and excludes remote
+diagnostics from its string. Rate limiting is distinct from credential rejection.
+The library owns no cross-process limiter or durable scheduling. API mutation retry
+eligibility remains explicit; token acquisition precedes the protected mutation.
+
+The inventory worker persists deferred jobs and account-incarnation/revision retry
+deadlines under its existing lease fence. Other workers and successor callbacks
+respect those deadlines. Checkpoints and prior successful observations survive;
+due targeted work recollects all requested operations. Administrative rate-limit
+responses preserve HTTP 429 and safe numeric Retry-After guidance. Credential and
+account replacement fence both client reuse and durable cooldown applicability.
+
 Activity helpers validate required fields and migration deadlines, poll terminal activity state, download activity logs and wait for assigned-server convergence. `ResolveOrgDevicesBySerial` performs an exact, complete paginated lookup before serial-based assignment helpers submit returned opaque organization-device IDs. Missing, ambiguous or unaddressable resources and incomplete enumeration stop the operation before mutation. `NewActivityRequest` and resource endpoints accept opaque IDs, independently of any inventory model. Errors retain Apple's structured entries and expose typed classification helpers.
 
 Activity downloads allow the configured API origin and Apple's documented HTTPS `store.blobstore.apple.com` origin on port 443. API-origin downloads authenticate and replay once with a refreshed token after a 401; a second 401 is a sanitized authentication error. Presigned storage requests carry neither API bearer nor cookies. Redirects are rejected, including redirects to another allowed origin: callers obtain a fresh URL from the activity resource. Downloads apply the configured bounded GET retry policy to transport, rate-limit and server failures, honoring Retry-After and cancellation while logging only sanitized causes. Downloads buffer bounded CSV and reject truncated transport, malformed records and missing outcomes. Download errors omit URLs and response bodies to protect signed query credentials.
@@ -69,6 +86,12 @@ Successful job history remains retained and inspectable. CLI verbs preserve the 
 assignment intent, retained operation/log inspection and synchronization jobs.
 See [named inspection](../../operations/abm-assignments.md#named-connection-inspection).
 
+AXM webhook management uses the existing client transport and explicit pagination.
+Signature verification and notification decoding are independently reusable. The
+reference server composes encrypted receipt and targeted inventory work in
+`server/axmwebhook`; remote provisioning happens outside local transactions and
+uncertain outcomes require explicit reconciliation. See [AXM webhooks](../../operations/axm-webhooks.md).
+
 ## Rationale
 
 Explicit pagination and retry policy give callers control over work and side effects. Separate activity completion and assignment convergence reflect asynchronous service behavior.
@@ -96,6 +119,9 @@ defines selection, grants and restoration limits. Live interoperability remains
 pending until these modules execute against designated Apple resources.
 
 ## References
+
+- [HTTP 429 semantics](https://www.rfc-editor.org/rfc/rfc6585.html#section-4)
+- [Retry-After and retry safety](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.3)
 
 - [appleplatformservices/axm](../../../devicemanagement/appleplatformservices/axm)
 - [server/axmcreds](../../../server/axmcreds)

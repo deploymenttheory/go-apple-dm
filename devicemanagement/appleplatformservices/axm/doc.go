@@ -5,7 +5,14 @@
 //
 // The client exchanges ES256 assertions for cached bearer tokens, coordinates
 // refresh, retries an API 401 once and applies bounded backoff to retryable
-// failures. Lists return a single page; opt-in iterators follow links.next with
+// failures. OAuth HTTP 429 uses the same retry count and fresh assertions per
+// attempt. Token, API and presigned-download cooldowns are independent and shared
+// by callers of this client. Retry.MaxWait bounds throttle and shared-token waits;
+// long provider delays return a RateLimitError without retrying early. Its RetryAt,
+// RetryAfter and Endpoint fields support caller scheduling, and its error chain
+// retains the provider failure and cancellation. IsRateLimited recognizes OAuth
+// throttling; IsUnauthorized excludes rate limits and transient token failures.
+// Clients do not coordinate across processes. Lists return a single page; opt-in iterators follow links.next with
 // a page cap. Activity helpers validate request rules and wait for completion
 // and assignment convergence. Serial-based helpers first enumerate and resolve
 // actual organization resources with ResolveOrgDevicesBySerial; endpoint paths
@@ -27,6 +34,11 @@
 //
 // API and token endpoint overrides require absolute HTTPS URLs with no user
 // information or fragment. Custom transports own TLS verification policy.
+//
+// Webhook methods manage subscriptions, delivery inspection, redelivery and pings.
+// DecodeWebhookNotification verifies the exact bounded body and preserves original
+// bytes. Hosts own deduplication, durable acknowledgement and refresh policy.
+// Delivery inspection requires both date bounds and explicit event inclusion.
 //
 // # References
 //

@@ -13,6 +13,9 @@ import (
 
 // Resource type names.
 const (
+	typeWebhooks            = "webhooks"
+	typeWebhookDeliveries   = "webhookDeliveries"
+	typeWebhookEvents       = "webhookEvents"
 	typeOrgDevices          = "orgDevices"
 	typeAppleCareCoverage   = "appleCareCoverage"
 	typeMDMDevices          = "mdmDevices"
@@ -31,6 +34,9 @@ const (
 
 // fields lists the attribute names each type accepts in fields[type].
 var fields = map[string][]string{
+	typeWebhooks:          {"name", "enabled", "eventTypes", "url", "createdDateTime", "updatedDateTime", "deliveries"},
+	typeWebhookDeliveries: {"createdDateTime", "sentDateTime", "deliveryState", "redelivery", "errorMessage", "request", "response", "event"},
+	typeWebhookEvents:     {"eventType", "payload", "isPingEvent", "createdDateTime"},
 	typeOrgDevices: {
 		"serialNumber", "addedToOrgDateTime", "releasedFromOrgDateTime", "updatedDateTime", "deviceModel",
 		"productFamily", "productType", "deviceCapacity", "partNumber", "orderNumber", "color", "status",
@@ -150,8 +156,8 @@ type assignment struct {
 
 // store is the organization's state.
 type store struct {
-	devices, mdmDevices, servers, users, groups, ous, apps, packages, configurations, blueprints, audits *collection
-	assignments                                                                                          map[string]assignment
+	devices, mdmDevices, servers, users, groups, ous, apps, packages, configurations, blueprints, audits, webhooks *collection
+	assignments                                                                                                    map[string]assignment
 }
 
 // newStore allocates the fake service's resource collections.
@@ -160,13 +166,15 @@ func newStore() *store {
 		devices: newCollection(), mdmDevices: newCollection(), servers: newCollection(),
 		users: newCollection(), groups: newCollection(), ous: newCollection(), apps: newCollection(),
 		packages: newCollection(), configurations: newCollection(), blueprints: newCollection(), audits: newCollection(),
-		assignments: map[string]assignment{},
+		assignments: map[string]assignment{}, webhooks: newCollection(),
 	}
 }
 
 // byType returns the collection holding typ.
 func (st *store) byType(typ string) *collection {
 	switch typ {
+	case typeWebhooks:
+		return st.webhooks
 	case typeOrgDevices:
 		return st.devices
 	case typeMDMDevices:
@@ -220,11 +228,14 @@ func merge(defaults, attrs map[string]any) map[string]any {
 }
 
 // selectFields validates fields[typ] against the known names and returns
-// the selection (nil when absent), or writes 400.
-func (s *Server) selectFields(w http.ResponseWriter, r *http.Request, typ string) (map[string]struct{}, bool) {
+// the selection (nil when absent), or writes 400. Related resource types may
+// supply additional sparse field selections on endpoints with included resources.
+func (s *Server) selectFields(w http.ResponseWriter, r *http.Request, typ string, related ...string) (map[string]struct{}, bool) {
 	param := "fields[" + typ + "]"
 	for name := range r.URL.Query() {
-		if strings.HasPrefix(name, "fields[") && name != param {
+		if strings.HasPrefix(name, "fields[") && name != param && !slices.ContainsFunc(related, func(other string) bool {
+			return name == "fields["+other+"]"
+		}) {
 			s.badParameter(w, name, "unknown resource type in fields selection")
 			return nil, false
 		}

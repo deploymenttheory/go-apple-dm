@@ -29,7 +29,11 @@
 // source documents, safe outcomes and enumeration checkpoints share fenced backend
 // transactions. Coverage publishes only after complete traversal; a failed refresh
 // never replaces successful source evidence. Account revisions and renewable leases
-// serialize work. Native observers retain successful report history so omitted
+// serialize work. Throttled jobs remain deferred with RetryAt and preserve their
+// progress, source history and pending successor generations. A persisted cooldown
+// gates other jobs for the same account incarnation/revision across workers and
+// restarts. Due targeted retries recollect all selected operations; they do not
+// authorize device assignment. Native observers retain successful report history so omitted
 // fields remain available to an explicit resolver with their original times.
 //
 // Backend supplies atomic document updates. Memory is suitable for embedding and
