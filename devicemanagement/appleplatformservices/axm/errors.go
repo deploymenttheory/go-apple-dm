@@ -187,6 +187,8 @@ type AuthError struct {
 	// the token endpoint answered with them.
 	Code        string
 	Description string
+	// RetryAfter retains token-endpoint throttling guidance.
+	RetryAfter time.Duration
 	// Body is the raw response body.
 	Body []byte
 	// Err is the underlying error, if any.
@@ -225,14 +227,19 @@ func IsNotFound(err error) bool { return hasStatus(err, http.StatusNotFound) }
 // IsConflict reports whether err is a 409 from the API.
 func IsConflict(err error) bool { return hasStatus(err, http.StatusConflict) }
 
-// IsRateLimited reports whether err is a 429 from the API.
-func IsRateLimited(err error) bool { return hasStatus(err, http.StatusTooManyRequests) }
+// IsRateLimited reports throttling from the API or token endpoint.
+func IsRateLimited(err error) bool {
+	var limited *RateLimitError
+	var auth *AuthError
+	return errors.As(err, &limited) || (errors.As(err, &auth) && auth.Status == http.StatusTooManyRequests) || hasStatus(err, http.StatusTooManyRequests)
+}
 
-// IsUnauthorized reports whether err is an *AuthError or a 401 from the API.
+// IsUnauthorized reports rejected credentials or an API 401, excluding throttling
+// and transient token-endpoint server failures.
 func IsUnauthorized(err error) bool {
 	var ae *AuthError
 	if errors.As(err, &ae) {
-		return true
+		return ae.Status != http.StatusTooManyRequests && ae.Status < http.StatusInternalServerError
 	}
 	return hasStatus(err, http.StatusUnauthorized)
 }
@@ -273,11 +280,14 @@ func parseRetryAfter(v string, now time.Time) time.Duration {
 	if v == "" {
 		return 0
 	}
-	if secs, err := strconv.Atoi(v); err == nil {
-		if secs < 0 {
-			return 0
+	if secs, err := strconv.ParseUint(v, 10, 64); err == nil {
+		if secs > uint64((1<<63-1)/int64(time.Second)) {
+			return time.Duration(1<<63 - 1)
 		}
 		return time.Duration(secs) * time.Second
+	}
+	if len(v) > 0 && strings.IndexFunc(v, func(r rune) bool { return r < '0' || r > '9' }) == -1 {
+		return time.Duration(1<<63 - 1)
 	}
 	at, err := http.ParseTime(v)
 	if err != nil {

@@ -13,6 +13,8 @@ import (
 
 // Job persists progress independently of a worker process. Counters count committed work.
 type Job struct {
+	// RetryAt defers throttled work without marking it finished.
+	RetryAt          time.Time              `json:"retry_at,omitzero"`
 	ResourceID       string                 `json:"resource_id,omitempty"`
 	Operations       []collection.Operation `json:"operations,omitempty"`
 	AccountCreatedAt time.Time              `json:"account_created_at,omitzero"`
@@ -60,7 +62,7 @@ func (r *Repository) Enqueue(ctx context.Context, account string, force bool, no
 			if e := json.Unmarshal(e.Value, &j); e != nil {
 				return e
 			}
-			if j.Kind == "axm" && j.AccountID == account && j.Revision == a.Revision && (j.State == "queued" || j.State == "running" || j.State == "paused") {
+			if j.Kind == "axm" && j.AccountID == account && j.Revision == a.Revision && (j.State == "queued" || j.State == "running" || j.State == "paused" || j.State == "deferred") {
 				out = j
 			}
 			return nil
@@ -71,7 +73,7 @@ func (r *Repository) Enqueue(ctx context.Context, account string, force bool, no
 		if out.ID != "" {
 			return nil
 		}
-		out = Job{ID: ID(), Generation: ID(), AccountID: account, Revision: a.Revision, Kind: "axm", State: "queued", Stage: "devices", CreatedAt: now, UpdatedAt: now, Force: force}
+		out = Job{ID: ID(), Generation: ID(), AccountID: account, Revision: a.Revision, AccountCreatedAt: a.CreatedAt, Kind: "axm", State: "queued", Stage: "devices", CreatedAt: now, UpdatedAt: now, Force: force}
 		return put(ctx, tx, jobKey(out.Kind, out.ID), out)
 	})
 	return out, err
@@ -114,7 +116,7 @@ func (r *Repository) Control(ctx context.Context, id, action string, now time.Ti
 		}
 		switch action {
 		case "pause":
-			if j.State != "running" && j.State != "queued" {
+			if j.State != "running" && j.State != "queued" && j.State != "deferred" {
 				return ErrConflict
 			}
 			j.State = "paused"
@@ -154,7 +156,14 @@ func (r *Repository) claim(ctx context.Context, owner string, now time.Time) (Jo
 			if err := json.Unmarshal(e.Value, &j); err != nil {
 				return err
 			}
-			if j.State == "queued" || j.State == "running" {
+			if j.State == "queued" || j.State == "running" || j.State == "deferred" {
+				ready, err := readyJob(ctx, tx, j, now)
+				if err != nil {
+					return err
+				}
+				if !ready {
+					return nil
+				}
 				if out.ID == "" || j.CreatedAt.Before(out.CreatedAt) {
 					out = j
 				}
@@ -175,6 +184,15 @@ func (r *Repository) claim(ctx context.Context, owner string, now time.Time) (Jo
 			out.State = "cancelled"
 			out.FinishedAt = &now
 			return put(ctx, tx, jobKey(out.Kind, out.ID), out)
+		}
+		if out.Kind == "axm-refresh" && !out.RetryAt.IsZero() {
+			// A targeted retry reads all requested operations again in the same generation.
+			// Counters describe that completed pass; retained failed attempts remain evidence.
+			out.Devices, out.Coverage, out.Failed = 0, 0, 0
+		}
+		out.RetryAt = time.Time{}
+		if out.Error == "apple_rate_limited" {
+			out.Error = ""
 		}
 		out.State = "running"
 		out.Owner = owner

@@ -473,7 +473,9 @@ checkpoints commit together. A process restart reclaims expired work; pause/resu
 the checkpoint. Cancellation and account changes fence subsequent commits. In-flight
 HTTP operations have a 75-second bound, below the two-minute lease, and may finish before
 observing a stop. Runs distinguish `success`, `partial`, `failed`, and `cancelled`, with
-`queued`, `running`, and `paused` as nonterminal states. Finished job metadata is retained
+`queued`, `running`, `paused` and `deferred` as nonterminal states. A throttled job
+retains `retry_at`; the account incarnation/revision cooldown also gates successor
+jobs across workers and restarts. See [AXM throttling](axm-webhooks.md#throttling). Finished job metadata is retained
 for 30 days by default. Records and disconnected-source history remain.
 
 ## Schedules, filtering and exports

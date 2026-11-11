@@ -52,7 +52,7 @@ func (r *Repository) EnqueueRefreshTx(ctx context.Context, tx Tx, req RefreshReq
 		if err := json.Unmarshal(e.Value, &j); err != nil {
 			return err
 		}
-		if j.Kind == "axm-refresh" && j.State == "queued" && j.AccountID == a.ID && j.Revision == a.Revision && j.AccountCreatedAt.Equal(a.CreatedAt) && j.ResourceID == req.ResourceID {
+		if j.Kind == "axm-refresh" && (j.State == "queued" || j.State == "deferred") && j.AccountID == a.ID && j.Revision == a.Revision && j.AccountCreatedAt.Equal(a.CreatedAt) && j.ResourceID == req.ResourceID {
 			out = j
 		}
 		return nil
@@ -90,7 +90,7 @@ func (s *Syncer) refresh(ctx context.Context, c *axm.Client, a Account, j *Job) 
 			if errors.As(err, &local) {
 				return local.error
 			}
-			if axm.IsUnauthorized(err) || errors.Is(err, ErrStopped) || errors.Is(err, ErrLease) || ctx.Err() != nil {
+			if axm.IsRateLimited(err) || axm.IsUnauthorized(err) || errors.Is(err, ErrStopped) || errors.Is(err, ErrLease) || ctx.Err() != nil {
 				return err
 			}
 			j.Failed++

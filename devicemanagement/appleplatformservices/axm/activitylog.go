@@ -80,16 +80,28 @@ func (c *Client) activityLogResponse(ctx context.Context, req *http.Request, aut
 	downloadClient := *c.http
 	downloadClient.Jar = nil
 	attempt, replayed := 0, false
+	budget := c.throttleBudget()
+	bucket := storageThrottle
+	if authenticated {
+		bucket = apiThrottle
+	}
 	for {
+		if err := c.awaitLimit(ctx, bucket, budget); err != nil {
+			return nil, err
+		}
 		var tok string
 		if authenticated {
 			var tokenErr error
-			tok, tokenErr = c.token(ctx, "")
+			tok, tokenErr = c.tokenWithBudget(ctx, "", budget)
 			if tokenErr != nil {
 				return nil, tokenErr
 			}
 			req.Header.Set("Authorization", "Bearer "+tok)
 		}
+		if err := c.awaitLimit(ctx, bucket, budget); err != nil {
+			return nil, err
+		}
+		sequence := c.limitSequence(bucket)
 		resp, err := downloadClient.Do(req)
 		if err != nil {
 			if ctx.Err() != nil {
@@ -106,6 +118,7 @@ func (c *Client) activityLogResponse(ctx context.Context, req *http.Request, aut
 			continue
 		}
 		if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
+			c.clearLimit(bucket, sequence)
 			return resp, nil
 		}
 		_ = resp.Body.Close()
@@ -118,7 +131,14 @@ func (c *Client) activityLogResponse(ctx context.Context, req *http.Request, aut
 			replayed = true
 			c.invalidate(tok)
 			continue
-		case resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= http.StatusInternalServerError:
+		case resp.StatusCode == http.StatusTooManyRequests:
+			safeErr.RetryAfter = parseRetryAfter(resp.Header.Get("Retry-After"), c.clock.Now())
+			limited := c.limit(bucket, safeErr.RetryAfter, safeErr)
+			if attempt >= c.cfg.Retry.Max {
+				return nil, limited
+			}
+			attempt++
+		case resp.StatusCode >= http.StatusInternalServerError:
 			safeErr.RetryAfter = parseRetryAfter(resp.Header.Get("Retry-After"), c.clock.Now())
 			if attempt >= c.cfg.Retry.Max {
 				return nil, safeErr

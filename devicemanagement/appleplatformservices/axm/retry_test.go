@@ -24,7 +24,7 @@ func TestRetry(t *testing.T) {
 			t.Fatal(err)
 		}
 		delays := f.clock.recorded()
-		if len(delays) != 1 || delays[0] != 2*time.Second {
+		if len(delays) != 1 || delays[0] < 1990*time.Millisecond || delays[0] > 2*time.Second {
 			t.Fatalf("delays %v, want [2s]", delays)
 		}
 		if n := len(apiRequests(f.srv)); n != 2 {

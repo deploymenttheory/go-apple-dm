@@ -36,7 +36,49 @@ not authentication.
 The server reuses synchronized SDK token caches for the same account incarnation,
 credential revision, key and outbound configuration. The pool retains at most 128
 account clients; credential changes create a separate client and existing account
-fences still reject stale work. OAuth throttling is reported as HTTP 429.
+fences still reject stale work. OAuth and API throttling are reported as HTTP 429
+with a safe numeric `Retry-After` when retry timing is available. Remote OAuth
+error descriptions and provider bodies are omitted.
+
+### Throttling
+
+The library retries explicit token-endpoint HTTP 429 responses with fresh client
+assertions and a shared token exchange. It honours `Retry-After` as seconds or an
+HTTP date; absent or invalid guidance uses exponential backoff with jitter. The
+configured retry count bounds attempts. `Retry.MaxWait` bounds cumulative cooldown
+and shared-token waiting per call, defaulting to 30 seconds. A provider cooldown
+longer than the budget or caller deadline returns immediately with `RateLimitError`;
+it is retained for subsequent calls and is never shortened into an early retry.
+Token, API and presigned activity-download cooldowns are separate per client.
+
+Use `errors.As` with `*axm.RateLimitError` to inspect `Endpoint`, `RetryAt` and
+`RetryAfter`. `axm.IsRateLimited` recognizes both token and API throttling;
+`axm.IsUnauthorized` distinguishes rejected credentials. Cancellation remains
+available through `errors.Is`. The error string omits provider diagnostics.
+The provider's actual quota and recovery time are not inferred from a 429.
+
+```mermaid
+stateDiagram-v2
+    queued --> running: eligible account and lease
+    running --> deferred: rate limit retained with RetryAt
+    deferred --> running: account cooldown elapsed
+    running --> success: complete source reads committed
+```
+
+Inventory synchronization and targeted refresh retain `deferred` work and its
+`retry_at` rather than finishing it as an authentication failure. A durable account
+cooldown prevents other queued callbacks from immediately reattempting the same
+account after restart or on another worker. Existing source evidence, checkpoints,
+leases and account fences remain authoritative. Later callbacks can coalesce with
+deferred work or retain their existing successor generation. Targeted retries read
+all selected operations again before completing. Pausing/resuming a job cannot
+bypass its cooldown; account replacement does not inherit an old incarnation's
+cooldown. Deploy compatible workers together so they all respect these deadlines.
+
+These policies do not enable automatic retries of uncertain webhook creation,
+ping, redelivery or assignment POSTs. Authentication retries acquire a token before
+sending the protected API operation. Recover uncertain provisioning using the
+retained intent and exact remote readback before another create.
 
 Admin routes below are relative to `/admin/v1/axm/accounts/{account}`:
 

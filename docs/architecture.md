@@ -39,7 +39,10 @@ AXM subscriptions and signed notification decoding belong to the existing Apple 
 The reference server composes durable receipt and targeted refresh through
 `server/axmwebhook`, using the encrypted inventory backend. Incoming notifications
 and outgoing native webhooks have independent contracts; see
-[AXM callbacks](operations/axm-webhooks.md).
+[AXM callbacks](operations/axm-webhooks.md). The client coordinates independent
+OAuth/API cooldowns and returns structured rate-limit timing within bounded retry
+budgets. Inventory persists account-scoped retry deadlines and deferred work; the
+server returns sanitized HTTP 429 guidance. See [throttling](operations/axm-webhooks.md#throttling).
 
 Apple organization-device collection is independently reusable through
 `devicemanagement/appleplatformservices/axm/collection`. It emits complete source JSON,
