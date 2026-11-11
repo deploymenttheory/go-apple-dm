@@ -1,6 +1,6 @@
 module github.com/deploymenttheory/go-apple-dm
 
-go 1.27.3
+go 1.27.4
 
 // These releases are withdrawn. Use the pre-1.0 API; it is not yet stable.
 retract (
@@ -68,7 +68,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.23 // indirect
 	github.com/googleapis/gax-go/v2 v2.26.2 // indirect
-	github.com/klauspost/compress v1.19.2 // indirect
+	github.com/klauspost/compress v1.20.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
 	github.com/mikelolasagasti/xz v1.0.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.31 // indirect

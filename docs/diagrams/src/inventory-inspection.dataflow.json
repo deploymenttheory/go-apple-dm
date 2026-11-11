@@ -158,13 +158,13 @@
       "dot": "service",
       "title": "Implementation",
       "items": [
-        "native: Native device report — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/internal/app/inventory.go",
-        "cloudEvidence: Apple source evidence — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/devicemanagement/inventory/records.go",
-        "nativeEvidence: Native source evidence — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/internal/app/inventory.go",
-        "correlate: Correlate serials — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/devicemanagement/inventory/records.go",
-        "resolve: Resolve declared paths — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/internal/app/inventory_inspection.go",
-        "Raw source export — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/devicemanagement/inventory/views.go",
-        "ABM acceptance — https://github.com/deploymenttheory/go-apple-dm/blob/da9ffc5ff613d47d0153f82ce8c7ab59b8f73d01/server/lab/live_abm.go"
+        "native: Native device report — https://github.com/deploymenttheory/go-apple-dm/blob/438887b6e56b3726ee8df3d625f2c8aff83ce773/server/internal/app/inventory.go",
+        "cloudEvidence: Apple source evidence — https://github.com/deploymenttheory/go-apple-dm/blob/438887b6e56b3726ee8df3d625f2c8aff83ce773/devicemanagement/inventory/records.go",
+        "nativeEvidence: Native source evidence — https://github.com/deploymenttheory/go-apple-dm/blob/438887b6e56b3726ee8df3d625f2c8aff83ce773/server/internal/app/inventory.go",
+        "correlate: Correlate serials — https://github.com/deploymenttheory/go-apple-dm/blob/438887b6e56b3726ee8df3d625f2c8aff83ce773/devicemanagement/inventory/records.go",
+        "resolve: Resolve declared paths — https://github.com/deploymenttheory/go-apple-dm/blob/438887b6e56b3726ee8df3d625f2c8aff83ce773/server/internal/app/inventory_inspection.go",
+        "Raw source export — https://github.com/deploymenttheory/go-apple-dm/blob/438887b6e56b3726ee8df3d625f2c8aff83ce773/devicemanagement/inventory/views.go",
+        "ABM acceptance — https://github.com/deploymenttheory/go-apple-dm/blob/438887b6e56b3726ee8df3d625f2c8aff83ce773/server/lab/live_abm.go"
       ]
     }
   ]
