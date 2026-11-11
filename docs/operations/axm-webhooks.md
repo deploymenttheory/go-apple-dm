@@ -33,6 +33,11 @@ when omitted, the configured enrollment public URL supplies it. Apple POSTs to
 `/axm/notifications/{binding}`. The binding identifier selects a signing key and is
 not authentication.
 
+The server reuses synchronized SDK token caches for the same account incarnation,
+credential revision, key and outbound configuration. The pool retains at most 128
+account clients; credential changes create a separate client and existing account
+fences still reject stale work. OAuth throttling is reported as HTTP 429.
+
 Admin routes below are relative to `/admin/v1/axm/accounts/{account}`:
 
 | Route | Purpose | Authority |

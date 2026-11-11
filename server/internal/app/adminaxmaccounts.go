@@ -27,7 +27,10 @@ func (e *accountRemoteError) Error() string { return "axm: " + e.category }
 func accountFailure(err error) *accountRemoteError {
 	category := "connection_failed"
 	var api *axm.Error
+	var auth *axm.AuthError
 	switch {
+	case errors.As(err, &auth) && auth.Status == http.StatusTooManyRequests:
+		category = "rate_limited"
 	case axm.IsUnauthorized(err):
 		category = "authentication_failed"
 	case errors.As(err, &api) && api.Status == http.StatusForbidden:

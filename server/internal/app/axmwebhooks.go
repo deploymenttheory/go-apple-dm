@@ -320,7 +320,8 @@ func (a *App) axmWebhookOperation(w http.ResponseWriter, r *http.Request, op str
 	}
 	if err != nil {
 		var remote *axm.Error
-		if errors.As(err, &remote) || errors.Is(err, axm.ErrTransport) {
+		var auth *axm.AuthError
+		if errors.As(err, &remote) || errors.As(err, &auth) || errors.Is(err, axm.ErrTransport) {
 			return nil, accountFailure(err)
 		}
 		return nil, err

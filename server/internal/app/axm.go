@@ -90,7 +90,10 @@ func listOptions(r *http.Request) axm.ListOptions {
 // axmStatus maps client errors to admin API statuses without leaking
 // Apple's response bodies.
 func axmStatus(err error) int {
+	var auth *axm.AuthError
 	switch {
+	case errors.As(err, &auth) && auth.Status == http.StatusTooManyRequests:
+		return http.StatusTooManyRequests
 	case axm.IsNotFound(err):
 		return http.StatusNotFound
 	case axm.IsConflict(err):

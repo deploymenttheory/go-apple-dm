@@ -76,13 +76,9 @@ func (a *App) openInventory(ctx context.Context) error {
 	return nil
 }
 
-// inventoryClient constructs an isolated AxM client using the configured outbound TLS trust.
+// inventoryClient reuses an account- and credential-scoped SDK client with synchronized OAuth caching.
 func (a *App) inventoryClient(ctx context.Context, account inventory.Account, key []byte) (*axm.Client, error) {
-	transport, e := outboundClient(a.cfg.AxM.HTTPClient, a.cfg.AxM.RootCAFile)
-	if e != nil {
-		return nil, e
-	}
-	return axm.New(ctx, axm.Config{ClientID: account.ClientID, KeyID: account.KeyID, PrivateKeyPEM: key, Scope: account.Scope, BaseURL: account.BaseURL, TokenURL: account.TokenURL, HTTPClient: transport, Logger: a.cfg.Logger, PageCap: 100000})
+	return a.reuseInventoryClient(ctx, account, key)
 }
 
 // initialInventorySync installs the default daily schedule and queues initial discovery.

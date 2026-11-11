@@ -229,10 +229,11 @@ type App struct {
 	Store                 storage.Store
 	keyring               *crypt.Keyring
 	// AxM is the Business Manager client when configured.
-	AxM         *axm.Client
-	Inventory   *inventory.Repository
-	Assignments *axmassignment.Controller
-	AXMWebhooks *axmwebhook.Coordinator
+	AxM              *axm.Client
+	Inventory        *inventory.Repository
+	Assignments      *axmassignment.Controller
+	AXMWebhooks      *axmwebhook.Coordinator
+	inventoryClients inventoryClientPool
 	// DEP is the device enrollment service when configured.
 	DEP *dep.Client
 	// Push wakes devices; nil when no push source is configured.
