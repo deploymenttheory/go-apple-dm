@@ -93,6 +93,7 @@ func checkStore(t *testing.T, db *sql.DB, dialect sqlcommon.Dialect) {
 	if e != nil || len(page.Items) != 1 {
 		t.Fatal("projection survived protocol rollback", e, len(page.Items))
 	}
+	checkInventoryCooldown(t, db, dialect, keys)
 	set, e := inventorystore.MigrationSet(dialect)
 	if e != nil {
 		t.Fatal(e)

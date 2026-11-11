@@ -26,6 +26,15 @@ func inventoryError(w http.ResponseWriter, err error) {
 	status := http.StatusInternalServerError
 	var remote *accountRemoteError
 	if errors.As(err, &remote) {
+		if remote.status == http.StatusTooManyRequests {
+			if delay := time.Until(remote.retryAt); delay > 0 {
+				seconds := int64(delay / time.Second)
+				if delay%time.Second != 0 {
+					seconds++
+				}
+				w.Header().Set("Retry-After", strconv.FormatInt(seconds, 10))
+			}
+		}
 		writeJSON(w, remote.status, map[string]string{"Error": remote.Error()})
 		return
 	}

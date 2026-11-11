@@ -18,6 +18,7 @@ import (
 type accountRemoteError struct {
 	status   int
 	category string
+	retryAt  time.Time
 }
 
 // Error returns only the reviewed administrative category.
@@ -29,7 +30,7 @@ func accountFailure(err error) *accountRemoteError {
 	var api *axm.Error
 	var auth *axm.AuthError
 	switch {
-	case errors.As(err, &auth) && auth.Status == http.StatusTooManyRequests:
+	case axm.IsRateLimited(err):
 		category = "rate_limited"
 	case axm.IsUnauthorized(err):
 		category = "authentication_failed"
@@ -37,10 +38,22 @@ func accountFailure(err error) *accountRemoteError {
 		category = "permission_denied"
 	case axm.IsNotFound(err):
 		category = "resource_not_found"
-	case axm.IsRateLimited(err):
-		category = "rate_limited"
 	}
-	return &accountRemoteError{status: axmStatus(err), category: category}
+	out := &accountRemoteError{status: axmStatus(err), category: category}
+	if limited, ok := errors.AsType[*axm.RateLimitError](err); ok {
+		out.retryAt = limited.RetryAt
+	} else if category == "rate_limited" {
+		var after time.Duration
+		if errors.As(err, &auth) {
+			after = auth.RetryAfter
+		} else if errors.As(err, &api) {
+			after = api.RetryAfter
+		}
+		if after > 0 {
+			out.retryAt = time.Now().Add(after)
+		}
+	}
+	return out
 }
 
 // accountClient always reads the selected account's current credential. Neither a
