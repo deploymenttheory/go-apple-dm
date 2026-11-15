@@ -13,7 +13,7 @@ require (
 	github.com/deploymenttheory/go-apple-dm v0.8.8-0.20261111115414-7f27c0353715
 	github.com/deploymenttheory/go-macos-pkg v0.7.3
 	github.com/go-sql-driver/mysql v1.10.1
-	github.com/jackc/pgx/v5 v5.11.0
+	github.com/jackc/pgx/v5 v5.13.0
 	github.com/micromdm/plist v0.4.0
 	github.com/smallstep/pkcs7 v0.2.3
 	golang.org/x/crypto v0.58.0
@@ -76,7 +76,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.27.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/puddle/v2 v2.2.2 // indirect
+	github.com/jackc/puddle/v2 v2.2.3 // indirect
 	github.com/klauspost/compress v1.20.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
